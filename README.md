@@ -1,5 +1,7 @@
 # DuckDB Data Agent
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
 A SQL playground with an AI-powered data analysis agent. Upload CSV files, write SQL queries, or ask questions in plain English — powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend.
 
 ## Features
@@ -76,16 +78,28 @@ make backend    # http://localhost:8000
 
 Open http://localhost:5173 to use the app. The Vite dev server proxies `/api` requests to the backend automatically.
 
-## Production Build
+## Production Build and Deployment
+
+The project ships as a single Docker image that bundles the React frontend and FastAPI backend. A multi-stage `Dockerfile` builds the frontend, then copies the output into the backend's static directory.
+
+### Build and run locally
 
 ```bash
-npm run build
-npm run preview
+docker build -t duckdb-data-agent .
+docker run -p 10000:10000 -e ANTHROPIC_API_KEY=sk-ant-... duckdb-data-agent
 ```
 
-## Deployment
+Open http://localhost:10000 to use the app.
 
-A GitHub Actions workflow automatically builds and deploys the frontend to GitHub Pages on push to `main`. The backend must be hosted separately for the app to function.
+### Deploy to Render
+
+A `render.yaml` is included for one-click deployment on [Render](https://render.com/):
+
+1. Push this repo to GitHub.
+2. In Render, create a new **Blueprint** and connect the repo.
+3. Set the `ANTHROPIC_API_KEY` environment variable in the Render dashboard.
+
+Render will build the Docker image and deploy it automatically on every push to `main`.
 
 ## Project Structure
 
