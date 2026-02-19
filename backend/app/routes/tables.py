@@ -33,19 +33,12 @@ async def upload_csv(file: UploadFile = File(...)):
 @router.post("/upload/sample")
 async def load_sample():
     """Load the built-in Titanic sample dataset."""
-    import urllib.request
-    import tempfile
-    import os
+    from pathlib import Path
 
-    sample_url = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"
-    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
-        urllib.request.urlretrieve(sample_url, tmp.name)
-        tmp_path = tmp.name
-    try:
-        result = db.load_sample_data(tmp_path, "titanic")
-    finally:
-        os.unlink(tmp_path)
-    return result
+    csv_path = Path(__file__).resolve().parent.parent / "data" / "titanic.csv"
+    if not csv_path.exists():
+        raise HTTPException(status_code=404, detail="Sample dataset not found")
+    return db.load_sample_data(str(csv_path), "titanic")
 
 
 @router.delete("/tables/{table_name}")
