@@ -1,0 +1,12 @@
+node_modules
+dist
+backend/.venv
+backend/__pycache__
+backend/app/__pycache__
+backend/app/routes/__pycache__
+.git
+.entire
+.claude
+docs
+*.md
+LICENSE.txt

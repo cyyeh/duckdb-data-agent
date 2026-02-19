@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
 export default defineConfig({
-  base: '/duckdb-data-agent/',
+  base: '/',
   plugins: [react()],
   build: {
     target: 'esnext',
