@@ -5,7 +5,49 @@
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
-    "README.md"
+    ".dockerignore",
+    ".gitignore",
+    "Dockerfile",
+    "Makefile",
+    "README.md",
+    "docs/plans/2026-02-20-frontend-folder-restructure-design.md",
+    "frontend/eslint.config.js",
+    "frontend/index.html",
+    "frontend/package-lock.json",
+    "frontend/package.json",
+    "frontend/public/titanic.csv",
+    "frontend/src/AgentContext.tsx",
+    "frontend/src/App.css",
+    "frontend/src/App.tsx",
+    "frontend/src/agent/agentService.ts",
+    "frontend/src/components/AgentPanel.css",
+    "frontend/src/components/AgentPanel.tsx",
+    "frontend/src/components/ChatInput.css",
+    "frontend/src/components/ChatInput.tsx",
+    "frontend/src/components/ErrorMessage.css",
+    "frontend/src/components/ErrorMessage.tsx",
+    "frontend/src/components/FileUpload.css",
+    "frontend/src/components/FileUpload.tsx",
+    "frontend/src/components/InlineQueryResult.css",
+    "frontend/src/components/InlineQueryResult.tsx",
+    "frontend/src/components/MessageBubble.css",
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/components/QueryEditor.css",
+    "frontend/src/components/QueryEditor.tsx",
+    "frontend/src/components/ResultMarkdown.css",
+    "frontend/src/components/ResultMarkdown.tsx",
+    "frontend/src/components/ResultsTable.css",
+    "frontend/src/components/ResultsTable.tsx",
+    "frontend/src/components/Sidebar.css",
+    "frontend/src/components/Sidebar.tsx",
+    "frontend/src/index.css",
+    "frontend/src/main.tsx",
+    "frontend/src/types.ts",
+    "frontend/src/vite-env.d.ts",
+    "frontend/tsconfig.app.json",
+    "frontend/tsconfig.json",
+    "frontend/tsconfig.node.json",
+    "frontend/vite.config.ts"
   ],
   "sessions": [
     {
@@ -14,13 +56,20 @@
       "context": "/73/1093f31fd2/0/context.md",
       "content_hash": "/73/1093f31fd2/0/content_hash.txt",
       "prompt": "/73/1093f31fd2/0/prompt.txt"
+    },
+    {
+      "metadata": "/73/1093f31fd2/1/metadata.json",
+      "transcript": "/73/1093f31fd2/1/full.jsonl",
+      "context": "/73/1093f31fd2/1/context.md",
+      "content_hash": "/73/1093f31fd2/1/content_hash.txt",
+      "prompt": "/73/1093f31fd2/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 16,
-    "cache_creation_tokens": 11325,
-    "cache_read_tokens": 246844,
-    "output_tokens": 708,
-    "api_call_count": 10
+    "input_tokens": 31,
+    "cache_creation_tokens": 30203,
+    "cache_read_tokens": 653300,
+    "output_tokens": 850,
+    "api_call_count": 23
   }
 }
