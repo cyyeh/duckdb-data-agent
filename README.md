@@ -1,5 +1,7 @@
 # DuckDB Data Agent
 
+> **Note:** This project is built with Claude Code by more than 95% and human-reviewed by author.
+
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
 A SQL playground with an AI-powered data analysis agent. Upload CSV files, write SQL queries, or ask questions in plain English — powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend.
