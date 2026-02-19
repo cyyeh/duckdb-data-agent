@@ -1,0 +1,12 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+fix readme on Production Build and Deployment: now there is no github actions, instead focusing on using dockerfile and render deployment
+
+### Prompt 2
+
+commit this
+
