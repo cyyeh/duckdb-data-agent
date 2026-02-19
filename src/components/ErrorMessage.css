@@ -1,0 +1,31 @@
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.error-message__text {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-message__dismiss {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #b91c1c;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.error-message__dismiss:hover {
+  opacity: 0.7;
+}
