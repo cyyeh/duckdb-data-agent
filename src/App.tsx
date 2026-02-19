@@ -13,7 +13,9 @@ import './App.css';
 function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTables: () => Promise<void> }) {
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [editorQuery, setEditorQuery] = useState<string | undefined>(undefined);
+  const [editorQuery, setEditorQuery] = useState<string | undefined>(
+    () => tables.length > 0 ? `SELECT * FROM "${tables[0].name}" LIMIT 100` : undefined
+  );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
 
