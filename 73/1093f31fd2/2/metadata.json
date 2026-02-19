@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "731093f31fd2",
+  "session_id": "72a7f9a7-deff-4d51-9d26-38d8fa3fe93c",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-19T17:15:39.641799Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".dockerignore",
+    ".gitignore",
+    "Dockerfile",
+    "Makefile",
+    "README.md",
+    "docs/plans/2026-02-20-frontend-folder-restructure-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "4721d4cab12c",
+  "transcript_identifier_at_start": "6366f6e5-3f6c-40e6-91ed-c3279a66a0a4",
+  "token_usage": {
+    "input_tokens": 64,
+    "cache_creation_tokens": 32489,
+    "cache_read_tokens": 2054768,
+    "output_tokens": 2477,
+    "api_call_count": 59
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-19T17:15:39.547Z",
+    "agent_lines": 87,
+    "human_added": 7378,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 7465,
+    "agent_percentage": 1.1654387139986604
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/72a7f9a7-deff-4d51-9d26-38d8fa3fe93c.jsonl"
+}
