@@ -3,7 +3,7 @@
   "checkpoint_id": "3b39167d9c6b",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "backend/app/data/titanic.csv",
     "backend/app/routes/tables.py"
@@ -15,13 +15,20 @@
       "context": "/3b/39167d9c6b/0/context.md",
       "content_hash": "/3b/39167d9c6b/0/content_hash.txt",
       "prompt": "/3b/39167d9c6b/0/prompt.txt"
+    },
+    {
+      "metadata": "/3b/39167d9c6b/1/metadata.json",
+      "transcript": "/3b/39167d9c6b/1/full.jsonl",
+      "context": "/3b/39167d9c6b/1/context.md",
+      "content_hash": "/3b/39167d9c6b/1/content_hash.txt",
+      "prompt": "/3b/39167d9c6b/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 15,
-    "cache_creation_tokens": 18878,
-    "cache_read_tokens": 406456,
-    "output_tokens": 142,
-    "api_call_count": 13
+    "input_tokens": 28,
+    "cache_creation_tokens": 39341,
+    "cache_read_tokens": 636125,
+    "output_tokens": 1218,
+    "api_call_count": 22
   }
 }
