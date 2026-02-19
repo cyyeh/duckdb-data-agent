@@ -41,7 +41,7 @@ make install
 Or install frontend and backend separately:
 
 ```bash
-npm install
+cd frontend && npm install
 cd backend && poetry install
 ```
 
@@ -104,11 +104,16 @@ Render will build the Docker image and deploy it automatically on every push to 
 ## Project Structure
 
 ```
-├── src/                    # React frontend
-│   ├── components/         #   UI components (editor, results, sidebar, chat)
-│   ├── agent/              #   Agent service (SSE event handling)
-│   ├── AgentContext.tsx     #   Agent state management
-│   └── types.ts            #   Shared TypeScript interfaces
+├── frontend/               # React frontend
+│   ├── src/
+│   │   ├── components/     #   UI components (editor, results, sidebar, chat)
+│   │   ├── agent/          #   Agent service (SSE event handling)
+│   │   ├── AgentContext.tsx #   Agent state management
+│   │   └── types.ts        #   Shared TypeScript interfaces
+│   ├── public/             #   Static assets (sample dataset)
+│   ├── index.html          #   HTML entry point
+│   ├── package.json        #   npm config
+│   └── vite.config.ts      #   Vite bundler config
 ├── backend/                # FastAPI backend
 │   └── app/
 │       ├── main.py         #   App setup & CORS

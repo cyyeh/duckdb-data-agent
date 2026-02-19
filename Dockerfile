@@ -1,11 +1,11 @@
 # Stage 1: Build frontend
 FROM node:20-slim AS frontend-build
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
-COPY index.html vite.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json ./
-COPY src/ src/
-COPY public/ public/
+COPY frontend/index.html frontend/vite.config.ts frontend/tsconfig.json frontend/tsconfig.app.json frontend/tsconfig.node.json ./
+COPY frontend/src/ src/
+COPY frontend/public/ public/
 RUN npm run build
 
 # Stage 2: Python backend
