@@ -1,0 +1,5 @@
+fix dockerfile to install claude cli globally, since it's needed to run claude agent
+
+---
+
+commit this
