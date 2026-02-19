@@ -102,8 +102,7 @@ A GitHub Actions workflow automatically builds and deploys the frontend to GitHu
 │       ├── agent.py        #   Agent loop & SSE streaming
 │       ├── tools.py        #   MCP tool definitions
 │       └── routes/         #   API endpoints (tables, query, chat)
-├── Makefile                # Dev commands (install, dev, clean)
-└── .github/workflows/      # CI/CD (GitHub Pages deploy)
+└── Makefile                # Dev commands (install, dev, clean)
 ```
 
 ## Tech Stack
