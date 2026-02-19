@@ -33,6 +33,10 @@ COPY backend/app/ app/
 # Copy built frontend into backend static directory
 COPY --from=frontend-build /app/dist/ static/
 
+# Create non-root user (Claude CLI refuses --dangerously-skip-permissions as root)
+RUN useradd -m appuser
+USER appuser
+
 EXPOSE 10000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
