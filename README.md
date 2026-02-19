@@ -1,6 +1,6 @@
 # DuckDB Data Agent
 
-> **Note:** This project is built with Claude Code by more than 95% and human-reviewed by author.
+> **Note:** This project is built with [Claude Code](https://claude.com/product/claude-code)(using Opus 4.6 and [superpowers](https://github.com/obra/superpowers)) by more than 95% and human-reviewed by author.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
