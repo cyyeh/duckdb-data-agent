@@ -118,6 +118,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
 .sidebar__toggle {
@@ -139,6 +140,11 @@
   padding: 2px 4px;
   border-radius: 3px;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .sidebar__table-name:hover {

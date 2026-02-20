@@ -1,5 +1,4 @@
 import os
-import re
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
@@ -10,11 +9,7 @@ router = APIRouter(prefix="/api", tags=["tables"])
 
 
 def sanitize_table_name(filename: str) -> str:
-    base = re.sub(r"\.(csv|json|parquet|xlsx)$", "", filename, flags=re.IGNORECASE)
-    sanitized = re.sub(r"[^a-z0-9_]", "_", base.lower())
-    sanitized = re.sub(r"^[^a-z]", lambda m: "t_" + m.group(), sanitized)
-    sanitized = re.sub(r"_+", "_", sanitized).rstrip("_")
-    return sanitized or "table"
+    return filename
 
 
 @router.get("/tables")
@@ -61,7 +56,7 @@ async def load_sample():
     return db.load_sample_data(str(csv_path), "titanic")
 
 
-@router.delete("/tables/{table_name}")
+@router.delete("/tables/{table_name:path}")
 async def drop_table(table_name: str):
     db.drop_table(table_name)
     return {"ok": True}

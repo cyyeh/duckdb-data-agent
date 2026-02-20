@@ -48,6 +48,7 @@ export function Sidebar({ tables, onTableClick, onTableDelete, collapsed, onTogg
                 <button
                   className="sidebar__table-name"
                   onClick={() => { onTableClick(table.name); toggle(table.name); }}
+                  title={table.name}
                 >
                   {table.name}
                 </button>
