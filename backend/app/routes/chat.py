@@ -1,8 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.agent import stream_chat
+from app.database import Database
+from app.dependencies import get_session_db
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
@@ -18,9 +20,12 @@ class ChatEditRequest(BaseModel):
 
 
 @router.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(
+    request: ChatRequest,
+    db: Database = Depends(get_session_db),
+):
     return StreamingResponse(
-        stream_chat(request.message, request.session_id),
+        stream_chat(request.message, request.session_id, db),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -31,12 +36,16 @@ async def chat(request: ChatRequest):
 
 
 @router.post("/chat/edit")
-async def chat_edit(request: ChatEditRequest):
+async def chat_edit(
+    request: ChatEditRequest,
+    db: Database = Depends(get_session_db),
+):
     """Edit a message: start a fresh session with conversation history as context."""
     return StreamingResponse(
         stream_chat(
             request.new_message,
             session_id=None,
+            db=db,
             conversation_history=request.conversation_history,
         ),
         media_type="text/event-stream",
