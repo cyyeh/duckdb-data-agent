@@ -63,6 +63,8 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
     duckdb_server = create_duckdb_server()
 
     logger.info("Using model: %s", ANTHROPIC_MODEL)
+
+    # Use the --resume flag to continue an existing session
     options = ClaudeAgentOptions(
         model=ANTHROPIC_MODEL,
         system_prompt=build_system_prompt(),
@@ -71,18 +73,20 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
         permission_mode="bypassPermissions",
         max_turns=20,
         include_partial_messages=True,
+        **({"resume": session_id} if session_id else {}),
     )
 
     client = ClaudeSDKClient(options=options)
+    # Will be set from the CLI's ResultMessage; use the passed-in value until then
     actual_session_id = session_id
 
     # --- Langfuse OTel tracing setup (conditional) ---
+    # Deferred: session_id is set after the CLI returns it in ResultMessage
     langfuse = get_langfuse_client()
     observation_ctx = None
+    propagate_ctx = None
     if langfuse:
         try:
-            from langfuse import propagate_attributes
-
             observation_ctx = langfuse.start_as_current_observation(
                 name="agent-chat",
                 input={"message": message[:500]},
@@ -90,10 +94,11 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
             )
             observation_ctx.__enter__()
 
-            # Propagate session_id so auto-instrumented child spans inherit it
-            propagate_attributes(
-                session_id=session_id or "default",
-            ).__enter__()
+            # If resuming, propagate the known session_id for child spans
+            if session_id:
+                from langfuse import propagate_attributes
+                propagate_ctx = propagate_attributes(session_id=session_id)
+                propagate_ctx.__enter__()
         except Exception as e:
             logger.debug("Failed to set up Langfuse tracing context: %s", e)
             observation_ctx = None
@@ -112,9 +117,6 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
         async for msg in client.receive_response():
             if isinstance(msg, StreamEvent):
                 event = msg.event
-                if not actual_session_id:
-                    actual_session_id = msg.session_id
-
                 event_type = event.get("type", "")
 
                 if event_type == "content_block_delta":
@@ -146,9 +148,6 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                         has_tool_calls = True
 
             elif isinstance(msg, AssistantMessage):
-                if not actual_session_id:
-                    actual_session_id = "default"
-
                 for block in msg.content:
                     if isinstance(block, ToolUseBlock):
                         has_tool_calls = True
@@ -197,7 +196,8 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
             elif isinstance(msg, ResultMessage):
-                actual_session_id = msg.session_id
+                # Use the CLI's session_id so --resume can find it
+                actual_session_id = msg.session_id or actual_session_id
                 if msg.is_error and msg.result:
                     yield f"event: error\ndata: {json.dumps({'message': msg.result})}\n\n"
                 yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
@@ -205,12 +205,15 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
     except Exception as e:
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
     finally:
-        # Update trace output and end observation context
+        # Update trace with the CLI's session_id so Langfuse session matches
         if langfuse and observation_ctx:
             try:
                 langfuse.update_current_trace(
+                    session_id=actual_session_id,
                     output={"session_id": actual_session_id},
                 )
+                if propagate_ctx:
+                    propagate_ctx.__exit__(None, None, None)
                 observation_ctx.__exit__(None, None, None)
             except Exception as e:
                 logger.debug("Failed to finalize Langfuse trace: %s", e)
