@@ -1,0 +1,9 @@
+add value of MAX_TOTAL_SIZE_BYTES to i18n text
+
+---
+
+should also show maxSize in uploadDropText
+
+---
+
+commit this and push
