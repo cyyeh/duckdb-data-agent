@@ -3,7 +3,7 @@
   "checkpoint_id": "9faa20317304",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "backend/app/tracing.py"
   ],
@@ -49,13 +49,20 @@
       "context": "/9f/aa20317304/5/context.md",
       "content_hash": "/9f/aa20317304/5/content_hash.txt",
       "prompt": "/9f/aa20317304/5/prompt.txt"
+    },
+    {
+      "metadata": "/9f/aa20317304/6/metadata.json",
+      "transcript": "/9f/aa20317304/6/full.jsonl",
+      "context": "/9f/aa20317304/6/context.md",
+      "content_hash": "/9f/aa20317304/6/content_hash.txt",
+      "prompt": "/9f/aa20317304/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 194,
-    "cache_creation_tokens": 161732,
-    "cache_read_tokens": 5286004,
-    "output_tokens": 7152,
-    "api_call_count": 155
+    "input_tokens": 218,
+    "cache_creation_tokens": 180607,
+    "cache_read_tokens": 5878228,
+    "output_tokens": 8738,
+    "api_call_count": 175
   }
 }
