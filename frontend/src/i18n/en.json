@@ -60,5 +60,6 @@
   "rowsFilteredInTime": "{count} of {total} rows in {time} ms",
   "showingCount": "(showing {count})",
   "duplicateFilesInBatch": "Duplicate filenames selected: {names}. Please remove duplicates before uploading.",
-  "duplicateFilesExist": "Files already uploaded: {names}. Please remove or rename them before uploading."
+  "duplicateFilesExist": "Files already uploaded: {names}. Please remove or rename them before uploading.",
+  "viewOnGitHub": "View on GitHub"
 }
