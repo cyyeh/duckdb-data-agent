@@ -205,6 +205,9 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                         # End the current generation before tool use
                         if trace:
                             _end_generation()
+                        # Reset so the next turn correctly detects its own
+                        # thinking block (or lack thereof)
+                        has_thinking = False
                         if current_text.strip() and not thinking_sent:
                             thinking_sent = True
                         has_tool_calls = True
