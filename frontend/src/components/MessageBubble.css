@@ -5,13 +5,13 @@
 }
 
 .message-bubble--user {
-  background: #eef2ff;
+  background: var(--color-bg-user-msg);
   margin-left: 32px;
 }
 
 .message-bubble--assistant {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
   margin-right: 32px;
 }
 
@@ -21,7 +21,7 @@
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-subtle);
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -30,7 +30,7 @@
 .message-bubble__content {
   font-size: 14px;
   line-height: 1.5;
-  color: #1f2937;
+  color: var(--color-text-secondary);
 }
 
 .message-bubble__content p {
@@ -42,7 +42,7 @@
 }
 
 .message-bubble__content pre {
-  background: #f3f4f6;
+  background: var(--color-bg-code);
   padding: 8px 12px;
   border-radius: 6px;
   overflow-x: auto;
@@ -50,7 +50,7 @@
 }
 
 .message-bubble__content code {
-  background: #f3f4f6;
+  background: var(--color-bg-code);
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 13px;
@@ -72,23 +72,23 @@
 
 .message-bubble__content th,
 .message-bubble__content td {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-dark);
   padding: 6px 10px;
   text-align: left;
   white-space: nowrap;
 }
 
 .message-bubble__content th {
-  background: #f3f4f6;
+  background: var(--color-bg-code);
   font-weight: 600;
 }
 
 .message-bubble__content tr:nth-child(even) {
-  background: #f9fafb;
+  background: var(--color-bg-secondary);
 }
 
 .message-bubble__typing {
-  color: #9ca3af;
+  color: var(--color-text-disabled);
   font-style: italic;
 }
 
@@ -109,13 +109,13 @@
 }
 
 .message-bubble__segment--thinking {
-  background: #f9fafb;
-  border-left: 3px solid #d1d5db;
+  background: var(--color-bg-secondary);
+  border-left: 3px solid var(--color-border-dark);
 }
 
 .message-bubble__segment--answer {
-  background: #f0fdf4;
-  border-left: 3px solid #22c55e;
+  background: var(--color-success-bg);
+  border-left: 3px solid var(--color-success-border);
 }
 
 .message-bubble__segment-label {
@@ -123,18 +123,18 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #9ca3af;
+  color: var(--color-text-disabled);
   margin-bottom: 4px;
 }
 
 .message-bubble__segment-label--answer {
-  color: #16a34a;
+  color: var(--color-success-text);
 }
 
 .message-bubble__segment-content {
   font-size: 14px;
   line-height: 1.5;
-  color: #1f2937;
+  color: var(--color-text-secondary);
 }
 
 .message-bubble__segment-content p {
@@ -146,7 +146,7 @@
 }
 
 .message-bubble__segment-content pre {
-  background: #f3f4f6;
+  background: var(--color-bg-code);
   padding: 8px 12px;
   border-radius: 6px;
   overflow-x: auto;
@@ -154,7 +154,7 @@
 }
 
 .message-bubble__segment-content code {
-  background: #f3f4f6;
+  background: var(--color-bg-code);
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 13px;
@@ -176,19 +176,19 @@
 
 .message-bubble__segment-content th,
 .message-bubble__segment-content td {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-dark);
   padding: 6px 10px;
   text-align: left;
   white-space: nowrap;
 }
 
 .message-bubble__segment-content th {
-  background: #f3f4f6;
+  background: var(--color-bg-code);
   font-weight: 600;
 }
 
 .message-bubble__segment-content tr:nth-child(even) {
-  background: #f9fafb;
+  background: var(--color-bg-secondary);
 }
 
 /* Collapsible thinking segments */
@@ -212,7 +212,7 @@
 .message-bubble__collapsible-summary::before {
   content: '▶';
   font-size: 9px;
-  color: #9ca3af;
+  color: var(--color-text-disabled);
   transition: transform 0.15s ease;
   flex-shrink: 0;
 }
@@ -228,7 +228,7 @@
 
 .message-bubble__collapsible-preview {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-text-disabled);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -267,19 +267,19 @@
   cursor: pointer;
   padding: 2px 4px;
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--color-text-disabled);
   border-radius: 4px;
   line-height: 1;
 }
 
 .message-bubble__action-btn:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--color-border-light);
+  color: var(--color-text-tertiary);
 }
 
 .message-bubble__action-btn--delete:hover {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--color-error-bg-hover);
+  color: var(--color-error);
 }
 
 /* Edit mode */
@@ -290,21 +290,21 @@
 .message-bubble__edit-textarea {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #c7d2fe;
+  border: 1px solid var(--color-accent-primary-border);
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   line-height: 1.5;
   resize: vertical;
-  background: #fff;
-  color: #1f2937;
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
   box-sizing: border-box;
 }
 
 .message-bubble__edit-textarea:focus {
   outline: none;
-  border-color: #818cf8;
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+  border-color: var(--color-accent-primary-light);
+  box-shadow: 0 0 0 2px var(--color-accent-primary-shadow-strong);
 }
 
 .message-bubble__edit-actions {
@@ -315,37 +315,37 @@
 
 .message-bubble__edit-btn {
   padding: 4px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-dark);
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  background: #fff;
-  color: #374151;
+  background: var(--color-bg-primary);
+  color: var(--color-text-tertiary);
 }
 
 .message-bubble__edit-btn:hover {
-  background: #f3f4f6;
+  background: var(--color-bg-code);
 }
 
 .message-bubble__edit-btn--save {
-  background: #4f46e5;
-  color: #fff;
-  border-color: #4f46e5;
+  background: var(--color-accent-primary-hover);
+  color: var(--color-bg-primary);
+  border-color: var(--color-accent-primary-hover);
 }
 
 .message-bubble__edit-btn--save:hover {
-  background: #4338ca;
+  background: var(--color-accent-primary-active);
 }
 
 /* Delete confirmation */
 .message-bubble__confirm-delete {
   margin-top: 4px;
   padding: 8px 10px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border-light);
   border-radius: 6px;
   font-size: 13px;
-  color: #991b1b;
+  color: var(--color-error-text-dark);
 }
 
 .message-bubble__confirm-actions {
@@ -356,24 +356,24 @@
 
 .message-bubble__confirm-btn {
   padding: 4px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-dark);
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  background: #fff;
-  color: #374151;
+  background: var(--color-bg-primary);
+  color: var(--color-text-tertiary);
 }
 
 .message-bubble__confirm-btn:hover {
-  background: #f3f4f6;
+  background: var(--color-bg-code);
 }
 
 .message-bubble__confirm-btn--delete {
-  background: #dc2626;
-  color: #fff;
-  border-color: #dc2626;
+  background: var(--color-error);
+  color: var(--color-bg-primary);
+  border-color: var(--color-error);
 }
 
 .message-bubble__confirm-btn--delete:hover {
-  background: #b91c1c;
+  background: var(--color-error-hover);
 }

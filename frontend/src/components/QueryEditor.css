@@ -8,7 +8,7 @@
   font-family: 'Courier New', Courier, monospace;
   font-size: 14px;
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-medium);
   border-radius: 6px;
   resize: vertical;
   outline: none;
@@ -16,8 +16,8 @@
 }
 
 .query-editor__textarea:focus {
-  border-color: #4a90d9;
-  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+  border-color: var(--color-accent-secondary);
+  box-shadow: 0 0 0 2px var(--color-accent-secondary-shadow);
 }
 
 .query-editor__actions {
@@ -27,7 +27,7 @@
 
 .query-editor__run-btn {
   padding: 8px 20px;
-  background: #4a90d9;
+  background: var(--color-accent-secondary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -37,7 +37,7 @@
 }
 
 .query-editor__run-btn:hover:not(:disabled) {
-  background: #357abd;
+  background: var(--color-accent-secondary-hover);
 }
 
 .query-editor__run-btn:disabled {

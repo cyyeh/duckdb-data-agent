@@ -6,7 +6,7 @@
 }
 
 .file-upload {
-  border: 2px dashed #ccc;
+  border: 2px dashed var(--color-border-dashed);
   border-radius: 8px;
   padding: 24px;
   text-align: center;
@@ -18,8 +18,8 @@
 
 .file-upload:hover,
 .file-upload--dragging {
-  border-color: #4a90d9;
-  background-color: #f0f7ff;
+  border-color: var(--color-accent-secondary);
+  background-color: var(--color-bg-hover);
 }
 
 .file-upload__input {
@@ -28,7 +28,7 @@
 
 .file-upload__text {
   margin: 0;
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
@@ -43,28 +43,28 @@
 .file-upload-divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--color-border-medium);
 }
 
 .file-upload-divider span {
   padding: 0 12px;
-  color: #999;
+  color: var(--color-text-faint);
   font-size: 13px;
 }
 
 .file-upload-sample-btn {
   padding: 8px 20px;
-  border: 1px solid #4a90d9;
+  border: 1px solid var(--color-accent-secondary);
   border-radius: 6px;
   background: transparent;
-  color: #4a90d9;
+  color: var(--color-accent-secondary);
   font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
 }
 
 .file-upload-sample-btn:hover:not(:disabled) {
-  background-color: #4a90d9;
+  background-color: var(--color-accent-secondary);
   color: #fff;
 }
 
