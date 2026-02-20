@@ -59,15 +59,19 @@ async function streamSSE(
 
 export async function runAgentLoop(
   message: string,
-  sessionId: string | null,
+  agentSessionId: string | null,
   callbacks: AgentCallbacks,
   signal?: AbortSignal,
+  userSessionId?: string,
 ): Promise<void> {
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, session_id: sessionId }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(userSessionId ? { 'X-Session-ID': userSessionId } : {}),
+      },
+      body: JSON.stringify({ message, session_id: agentSessionId }),
       signal,
     });
 
@@ -90,11 +94,15 @@ export async function runAgentEditLoop(
   conversationHistory: { role: string; content: string }[],
   callbacks: AgentCallbacks,
   signal?: AbortSignal,
+  userSessionId?: string,
 ): Promise<void> {
   try {
     const response = await fetch('/api/chat/edit', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(userSessionId ? { 'X-Session-ID': userSessionId } : {}),
+      },
       body: JSON.stringify({
         new_message: newMessage,
         conversation_history: conversationHistory,
