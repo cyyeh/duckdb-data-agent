@@ -16,6 +16,7 @@ from claude_agent_sdk._internal.message_parser import parse_message
 from claude_agent_sdk.types import StreamEvent
 from app.tools import create_duckdb_server
 from app.database import db
+from app.config import ANTHROPIC_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,9 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
     """Stream agent chat responses as SSE events."""
     duckdb_server = create_duckdb_server()
 
+    logger.info("Using model: %s", ANTHROPIC_MODEL)
     options = ClaudeAgentOptions(
+        model=ANTHROPIC_MODEL,
         system_prompt=build_system_prompt(),
         mcp_servers={"duckdb": duckdb_server},
         allowed_tools=["mcp__duckdb__execute_sql"],
