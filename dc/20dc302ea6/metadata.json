@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "dc20dc302ea6",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/session.py",
+    "frontend/src/AgentContext.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/agent/agentService.ts",
+    "frontend/src/types.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/dc/20dc302ea6/0/metadata.json",
+      "transcript": "/dc/20dc302ea6/0/full.jsonl",
+      "context": "/dc/20dc302ea6/0/context.md",
+      "content_hash": "/dc/20dc302ea6/0/content_hash.txt",
+      "prompt": "/dc/20dc302ea6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 18878,
+    "cache_read_tokens": 406456,
+    "output_tokens": 142,
+    "api_call_count": 13
+  }
+}
