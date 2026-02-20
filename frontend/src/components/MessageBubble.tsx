@@ -25,10 +25,11 @@ function getLastThinkingLine(segments: ContentSegment[], streamingRemainder: str
   return t('thinking');
 }
 
-function ThinkingBlock({ segments, streamingRemainder, isActivelyStreaming }: {
+function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentStreaming }: {
   segments: ContentSegment[];
   streamingRemainder?: string;
-  isActivelyStreaming: boolean;
+  isThinkingPhase: boolean;
+  isAgentStreaming: boolean;
 }) {
   const { t } = useTranslation();
   // All non-answer segments go inside the thinking block
@@ -39,10 +40,11 @@ function ThinkingBlock({ segments, streamingRemainder, isActivelyStreaming }: {
 
   if (!hasContent) return null;
 
-  const summary = isActivelyStreaming ? getLastThinkingLine(segments, streamingRemainder, t) : '';
+  // Show preview only while agent is still working (hidden by CSS when collapsible is open anyway)
+  const summary = isAgentStreaming ? getLastThinkingLine(segments, streamingRemainder, t) : '';
 
   return (
-    <details className="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible" open={isActivelyStreaming || undefined}>
+    <details className="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible" open={isThinkingPhase || undefined}>
       <summary className="message-bubble__collapsible-summary">
         <span className="message-bubble__segment-label">{t('thinkingLabel')}</span>
         {summary && <span className="message-bubble__collapsible-preview">{summary}</span>}
@@ -222,7 +224,8 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
           <ThinkingBlock
             segments={message.segments!}
             streamingRemainder={isThinkingPhase ? streamingRemainder : undefined}
-            isActivelyStreaming={isThinkingPhase}
+            isThinkingPhase={isThinkingPhase}
+            isAgentStreaming={!!message.isStreaming}
           />
           {answerSegments.map((seg, i) => (
             <div key={i} className="message-bubble__segment message-bubble__segment--answer">
