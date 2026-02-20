@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAgent } from '../hooks/useAgent';
 import { ChatInput } from './ChatInput';
@@ -17,9 +17,23 @@ export function AgentPanel({ tables, onUpload, onLoadSample }: AgentPanelProps) 
   const { t } = useTranslation();
   const { messages, clearMessages } = useAgent();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
+
+  const isNearBottom = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    userScrolledUp.current = !isNearBottom();
+  }, [isNearBottom]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!userScrolledUp.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   return (
@@ -34,7 +48,7 @@ export function AgentPanel({ tables, onUpload, onLoadSample }: AgentPanelProps) 
           )}
         </div>
       </div>
-      <div className="agent-panel__messages">
+      <div className="agent-panel__messages" ref={scrollContainerRef} onScroll={handleScroll}>
         {messages.length === 0 && (
           <div className="agent-panel__empty">
             {tables.length === 0 ? (
