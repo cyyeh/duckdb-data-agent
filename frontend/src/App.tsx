@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useTheme } from './hooks/useTheme';
+import { useSessionId } from './hooks/useSessionId';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { useTranslation } from './hooks/useTranslation';
 import { AgentProvider } from './contexts/AgentContext';
@@ -27,7 +28,15 @@ function findDuplicateFileNames(files: File[]): string[] {
   return Array.from(duplicates);
 }
 
-function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTables: () => Promise<void> }) {
+function AppContent({
+  tables,
+  refreshTables,
+  sessionId,
+}: {
+  tables: TableInfo[];
+  refreshTables: () => Promise<void>;
+  sessionId: string;
+}) {
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useTranslation();
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
@@ -61,14 +70,14 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
   const handleLoadSample = useCallback(async () => {
     setError(null);
     try {
-      const response = await fetch('/api/upload/sample', { method: 'POST' });
+      const response = await fetch('/api/upload/sample', { method: 'POST', headers: { 'X-Session-ID': sessionId } });
       if (!response.ok) throw new Error('Failed to load sample dataset');
       await refreshTables();
       setEditorQuery('SELECT * FROM "titanic" LIMIT 100');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load sample dataset');
     }
-  }, [refreshTables]);
+  }, [refreshTables, sessionId]);
 
   const handleFileUpload = useCallback(
     async (files: File[]) => {
@@ -96,6 +105,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
           formData.append('file', file);
           const response = await fetch('/api/upload', {
             method: 'POST',
+            headers: { 'X-Session-ID': sessionId },
             body: formData,
           });
           if (!response.ok) {
@@ -118,7 +128,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
         setError(e instanceof Error ? e.message : 'Failed to upload file');
       }
     },
-    [refreshTables]
+    [refreshTables, sessionId, tables]
   );
 
   const handleQueryExecute = useCallback(
@@ -129,7 +139,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
         const start = performance.now();
         const response = await fetch('/api/query', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
           body: JSON.stringify({ sql }),
         });
         const elapsed = performance.now() - start;
@@ -152,7 +162,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
         setError(e instanceof Error ? e.message : 'Query execution failed');
       }
     },
-    [refreshTables]
+    [refreshTables, sessionId]
   );
 
   const handleTableClick = useCallback((tableName: string) => {
@@ -164,13 +174,14 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
     try {
       const response = await fetch(`/api/tables/${encodeURIComponent(tableName)}`, {
         method: 'DELETE',
+        headers: { 'X-Session-ID': sessionId },
       });
       if (!response.ok) throw new Error('Failed to delete table');
       await refreshTables();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to delete table');
     }
-  }, [refreshTables, t]);
+  }, [refreshTables, t, sessionId]);
 
   const handleDeleteAll = useCallback(async () => {
     if (tables.length === 0) return;
@@ -179,6 +190,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
       for (const table of tables) {
         const response = await fetch(`/api/tables/${encodeURIComponent(table.name)}`, {
           method: 'DELETE',
+          headers: { 'X-Session-ID': sessionId },
         });
         if (!response.ok) throw new Error('Failed to delete table');
       }
@@ -186,7 +198,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to delete tables');
     }
-  }, [tables, refreshTables, t]);
+  }, [tables, refreshTables, t, sessionId]);
 
   const appClass = [
     'app',
@@ -315,19 +327,22 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
 }
 
 export default function App() {
+  const sessionId = useSessionId();
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const refreshTables = useCallback(async () => {
     try {
-      const response = await fetch('/api/tables');
+      const response = await fetch('/api/tables', {
+        headers: { 'X-Session-ID': sessionId },
+      });
       if (!response.ok) throw new Error('Failed to fetch tables');
       const data = await response.json();
       setTables(data);
     } catch (e) {
       console.error('Failed to refresh tables:', e);
     }
-  }, []);
+  }, [sessionId]);
 
   useEffect(() => {
     (async () => {
@@ -358,7 +373,7 @@ export default function App() {
       <LanguageProvider>
         <ThemeProvider>
           <AgentProvider refreshTables={refreshTables}>
-            <AppContent tables={tables} refreshTables={refreshTables} />
+            <AppContent tables={tables} refreshTables={refreshTables} sessionId={sessionId} />
           </AgentProvider>
         </ThemeProvider>
       </LanguageProvider>
