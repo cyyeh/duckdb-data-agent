@@ -1,0 +1,24 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+a new feature alert, please write design doc first:
+set agent mode as default mode, and also allow users to upload csv in agent mode. use the same upload ui in agent mode and display it only if there is no any table found in table list
+
+### Prompt 2
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/claude-plugins-official/superpowers/4.3.0/skills/brainstorming
+
+# Brainstorming Ideas Into Designs
+
+## Overview
+
+Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
+
+Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
+
+<HARD-GATE>
+Do NOT invoke any implemen...
+
