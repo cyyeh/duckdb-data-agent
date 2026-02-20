@@ -6,7 +6,7 @@ Add Langfuse observability tracing to the agent backend and a "Langfuse Traces" 
 
 ## Approach
 
-**@observe decorator + manual spans** — wraps the existing `stream_chat()` function with Langfuse tracing. Each agent chat request produces one trace containing LLM generation spans and tool execution spans. No changes to the SSE streaming protocol.
+**OpenTelemetry auto-instrumentation via langsmith** — uses `langsmith[claude-agent-sdk]` to automatically capture LLM calls, tool calls, and token usage via OTel. Langfuse receives traces through its OTel receiver. The `start_as_current_observation()` context manager creates the parent trace, and `propagate_attributes()` sets session/metadata. No manual generation or tool spans needed. No changes to the SSE streaming protocol.
 
 ## Backend Changes
 
@@ -31,37 +31,30 @@ LANGFUSE_BASE_URL=https://cloud.langfuse.com
 
 ### 2. Tracing Module (`backend/app/tracing.py`)
 
-New module that:
+Module that:
 
-- Initializes Langfuse client only when `LANGFUSE_ENABLED` is True
+- Uses `langfuse.get_client()` singleton (reads from env vars) when `LANGFUSE_ENABLED` is True
 - Verifies connection with `auth_check()` at startup (logs warning on failure)
+- Calls `configure_claude_agent_sdk()` from `langsmith.integrations.claude_agent_sdk` to enable auto-instrumentation
+- Sets OTel env vars (`LANGSMITH_OTEL_ENABLED`, `LANGSMITH_OTEL_ONLY`, `LANGSMITH_TRACING`) programmatically
 - Exposes `get_langfuse_client()` returning the client or `None`
-- Exposes `get_langfuse_dashboard_url()` returning the base URL or `None`
+- Exposes `get_langfuse_dashboard_url()` returning the project traces URL or `None`
 
 ### 3. Agent Instrumentation (`backend/app/agent.py`)
 
-Wrap `stream_chat()` with conditional Langfuse tracing:
+Minimal tracing context in `stream_chat()` — auto-instrumentation handles the rest:
 
-**Trace hierarchy:**
+- `start_as_current_observation()` creates the parent "agent-chat" observation
+- `propagate_attributes()` sets session_id for trace grouping
+- `update_current_trace()` records trace output
+- `flush()` ensures traces are sent before response ends
 
-```
-Trace: "agent-chat"
-  metadata: { session_id, model, user_message (truncated) }
-  ├── Generation: "llm-turn-N"
-  │   input: messages context
-  │   output: thinking + text content
-  │   usage: { input_tokens, output_tokens }
-  ├── Span: "tool-execute_sql"
-  │   input: { sql }
-  │   output: { columns, rows (truncated), rowCount } or { error }
-  └── (repeats for multi-turn agent loops)
-```
+LLM generations, tool calls, and token usage are automatically captured by the langsmith integration. No manual generation or tool spans needed.
 
 Key constraints:
-- Tracing is conditional — if `get_langfuse_client()` returns `None`, no spans are created
+- Tracing is conditional — if `get_langfuse_client()` returns `None`, no context is created
 - Zero changes to the SSE event protocol
-- Trace captures the session_id as the Langfuse session ID for grouping multi-turn conversations
-- Tool results are truncated in traces to avoid sending large datasets to Langfuse
+- SQL execution for frontend display remains unchanged (auto-instrumentation captures MCP execution separately)
 
 ### 4. API Endpoint (`backend/app/routes/langfuse.py`)
 
@@ -79,7 +72,7 @@ Register the new langfuse router.
 
 ### 6. Dependencies (`backend/pyproject.toml`)
 
-Add `langfuse` package.
+Add `langfuse` and `langsmith[claude-agent-sdk,otel]` packages.
 
 ## Frontend Changes
 
@@ -93,7 +86,7 @@ Add "Langfuse Traces" button in the agent panel header, between the "Agent Mode"
 
 ```
 ┌──────────────────────────────────────────────┐
-│ Agent Mode    [Langfuse Traces ↗]    [Clear] │
+│ Agent Mode    [Langfuse Traces]    [Clear] │
 ├──────────────────────────────────────────────┤
 ```
 

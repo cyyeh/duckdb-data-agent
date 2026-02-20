@@ -4,9 +4,9 @@
 
 **Goal:** Add optional Langfuse observability tracing to the agent backend and a "Langfuse Traces" button to the agent mode UI.
 
-**Architecture:** Backend uses Langfuse Python SDK v3 with `@observe` decorator and manual spans to trace each agent chat request. Frontend fetches Langfuse status from a new API endpoint and renders a button that opens the Langfuse dashboard. Tracing is conditional — zero overhead when Langfuse is not configured.
+**Architecture:** Backend uses Langfuse Python SDK v3 with OpenTelemetry auto-instrumentation via `langsmith[claude-agent-sdk]`. The langsmith integration automatically captures LLM generations, tool calls, and token usage. Langfuse receives traces through its OTel receiver. Frontend fetches Langfuse status from an API endpoint and renders a button that opens the Langfuse dashboard. Tracing is conditional — zero overhead when Langfuse is not configured.
 
-**Tech Stack:** Langfuse Python SDK v3, FastAPI, React 18, TypeScript
+**Tech Stack:** Langfuse Python SDK v3, langsmith (OTel), FastAPI, React 18, TypeScript
 
 **Design Doc:** `docs/plans/2026-02-20-langfuse-integration-design.md`
 
@@ -571,7 +571,7 @@ export function AgentPanel({ langfuseStatus }: AgentPanelProps) {
               }
             }}
           >
-            Langfuse Traces ↗
+            Langfuse Traces
           </button>
           {messages.length > 0 && (
             <button className="agent-panel__clear" onClick={clearMessages}>
