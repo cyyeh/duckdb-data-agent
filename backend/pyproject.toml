@@ -16,6 +16,7 @@ python-multipart = "^0.0.22"
 claude-agent-sdk = "^0.1.38"
 langfuse = "^3.0.0"
 langsmith = {extras = ["claude-agent-sdk", "otel"], version = ">=0.3.0"}
+openpyxl = "^3.1.0"
 
 
 [build-system]
