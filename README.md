@@ -11,6 +11,7 @@ A SQL playground with an AI-powered data analysis agent. Upload CSV files, write
 ### General
 
 - **Dark / light mode** — Toggle between dark and light themes with the sun/moon button in the header; respects your OS preference on first visit and remembers your choice across sessions
+- **Internationalization (i18n)** — Switch between English and Traditional Chinese with the EN/中 toggle in the header; auto-detects your OS language on first visit and remembers your choice across sessions
 
 ### SQL Playground
 
@@ -134,8 +135,10 @@ Render will build the Docker image and deploy it automatically on every push to 
 │   ├── src/
 │   │   ├── components/     #   UI components (editor, results, sidebar, chat)
 │   │   ├── agent/          #   Agent service (SSE event handling)
+│   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
 │   │   ├── AgentContext.tsx #   Agent state management
 │   │   ├── ThemeContext.tsx #   Dark/light theme state & persistence
+│   │   ├── LanguageContext.tsx # i18n state, detection & translation
 │   │   └── types.ts        #   Shared TypeScript interfaces
 │   ├── index.html          #   HTML entry point
 │   ├── package.json        #   npm config
