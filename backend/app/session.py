@@ -2,8 +2,13 @@
 
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
+
+from app.config import PROJECT_DIR
+
+_SESSION_ID_PATTERN = re.compile(r"^[a-f0-9\-]{36}$")
 
 
 def get_session_path(session_id: str) -> Path:
@@ -14,7 +19,9 @@ def get_session_path(session_id: str) -> Path:
 
     where <encoded-cwd> replaces "/" with "-" in the current working directory.
     """
-    cwd = os.getcwd()
+    if not _SESSION_ID_PATTERN.match(session_id):
+        raise ValueError(f"Invalid session_id format: {session_id}")
+    cwd = PROJECT_DIR
     encoded_cwd = cwd.replace("/", "-")
     return Path.home() / ".claude" / "projects" / encoded_cwd / f"{session_id}.jsonl"
 
@@ -50,7 +57,7 @@ def truncate_session(session_id: str, user_message_index: int) -> None:
     session_path = get_session_path(session_id)
 
     if not session_path.exists():
-        raise FileNotFoundError(f"Session file not found: {session_path}")
+        raise FileNotFoundError(f"Session file not found: {session_id}")
 
     lines = session_path.read_text().splitlines(keepends=True)
 
