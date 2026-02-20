@@ -90,11 +90,11 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
     trace = None
     if langfuse:
         try:
-            trace = langfuse.trace(
-                name="agent-chat",
+            trace = langfuse.start_span(name="agent-chat")
+            trace.update_trace(
+                session_id=session_id or "default",
                 input={"message": _truncate(message, 500)},
                 metadata={"model": ANTHROPIC_MODEL},
-                session_id=session_id or "default",
             )
         except Exception as e:
             logger.debug("Failed to create Langfuse trace: %s", e)
@@ -116,7 +116,8 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                     output_data["thinking"] = _truncate(accumulated_thinking)
                 if accumulated_answer:
                     output_data["text"] = _truncate(accumulated_answer)
-                current_generation.end(output=output_data)
+                current_generation.update(output=output_data)
+                current_generation.end()
             except Exception as e:
                 logger.debug("Failed to end Langfuse generation: %s", e)
             current_generation = None
@@ -136,7 +137,7 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                 if turn_number == 1
                 else {"continued": True}
             )
-            current_generation = trace.generation(
+            current_generation = trace.start_generation(
                 name=f"llm-turn-{turn_number}",
                 model=ANTHROPIC_MODEL,
                 input=input_data,
@@ -238,7 +239,7 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                             tool_span = None
                             if trace:
                                 try:
-                                    tool_span = trace.span(
+                                    tool_span = trace.start_span(
                                         name=f"tool-{tool_name}",
                                         input={"sql": sql},
                                     )
@@ -253,10 +254,11 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                                 # End tool span with success
                                 if tool_span:
                                     try:
-                                        tool_span.end(output={
+                                        tool_span.update(output={
                                             "rowCount": result["rowCount"],
                                             "columns": result["columns"],
                                         })
+                                        tool_span.end()
                                     except Exception as e:
                                         logger.debug("Failed to end Langfuse tool span: %s", e)
 
@@ -266,7 +268,11 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                                 # End tool span with error
                                 if tool_span:
                                     try:
-                                        tool_span.end(output={"error": str(e)})
+                                        tool_span.update(
+                                            output={"error": str(e)},
+                                            level="ERROR",
+                                        )
+                                        tool_span.end()
                                     except Exception as ex:
                                         logger.debug("Failed to end Langfuse tool span: %s", ex)
 
@@ -307,9 +313,10 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
         # Update trace output and flush
         if trace:
             try:
-                trace.update(
+                trace.update_trace(
                     output={"session_id": actual_session_id},
                 )
+                trace.end()
             except Exception as e:
                 logger.debug("Failed to update Langfuse trace: %s", e)
 
