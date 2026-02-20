@@ -3,7 +3,7 @@
   "checkpoint_id": "cc0bd22cc0a5",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "frontend/src/agent/agentService.ts"
   ],
@@ -63,13 +63,20 @@
       "context": "/cc/0bd22cc0a5/7/context.md",
       "content_hash": "/cc/0bd22cc0a5/7/content_hash.txt",
       "prompt": "/cc/0bd22cc0a5/7/prompt.txt"
+    },
+    {
+      "metadata": "/cc/0bd22cc0a5/8/metadata.json",
+      "transcript": "/cc/0bd22cc0a5/8/full.jsonl",
+      "context": "/cc/0bd22cc0a5/8/context.md",
+      "content_hash": "/cc/0bd22cc0a5/8/content_hash.txt",
+      "prompt": "/cc/0bd22cc0a5/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1234,
-    "cache_creation_tokens": 493657,
-    "cache_read_tokens": 20087836,
-    "output_tokens": 22085,
-    "api_call_count": 373
+    "input_tokens": 1406,
+    "cache_creation_tokens": 780412,
+    "cache_read_tokens": 35998063,
+    "output_tokens": 53690,
+    "api_call_count": 532
   }
 }
