@@ -24,6 +24,7 @@ A SQL playground with an AI-powered data analysis agent. Upload CSV files, write
 - **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
+- **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and key are never sent anywhere besides the Anthropic API
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions, with a one-click dashboard link in the UI
 
