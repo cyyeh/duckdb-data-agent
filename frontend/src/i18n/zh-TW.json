@@ -57,5 +57,7 @@
   "executing": "執行中...",
   "rowCountInTime": "{count} 列，耗時 {time} 毫秒",
   "rowsFilteredInTime": "{total} 列中的 {count} 列，耗時 {time} 毫秒",
-  "showingCount": "（顯示 {count} 筆）"
+  "showingCount": "（顯示 {count} 筆）",
+  "duplicateFilesInBatch": "選取的檔案名稱重複：{names}。請移除重複檔案後再上傳。",
+  "duplicateFilesExist": "檔案已上傳：{names}。請先移除或重新命名後再上傳。"
 }

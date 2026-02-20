@@ -57,5 +57,7 @@
   "executing": "Executing...",
   "rowCountInTime": "{count} row(s) in {time} ms",
   "rowsFilteredInTime": "{count} of {total} rows in {time} ms",
-  "showingCount": "(showing {count})"
+  "showingCount": "(showing {count})",
+  "duplicateFilesInBatch": "Duplicate filenames selected: {names}. Please remove duplicates before uploading.",
+  "duplicateFilesExist": "Files already uploaded: {names}. Please remove or rename them before uploading."
 }

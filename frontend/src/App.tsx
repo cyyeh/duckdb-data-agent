@@ -15,11 +15,23 @@ import { AgentPanel } from './components/AgentPanel';
 import type { TableInfo, QueryResult, LangfuseStatus } from './types';
 import './App.css';
 
+function findDuplicateFileNames(files: File[]): string[] {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const file of files) {
+    if (seen.has(file.name)) {
+      duplicates.add(file.name);
+    }
+    seen.add(file.name);
+  }
+  return Array.from(duplicates);
+}
+
 function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableInfo[]; refreshTables: () => Promise<void>; langfuseStatus: LangfuseStatus }) {
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useTranslation();
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | { key: string; params: Record<string, string> } | null>(null);
   const [editorQuery, setEditorQuery] = useState<string | undefined>(
     () => tables.length > 0 ? `SELECT * FROM "${tables[0].name}" LIMIT 100` : undefined
   );
@@ -37,6 +49,10 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
       setEditorQuery(undefined);
     }
   }, [tables]);
+
+  const errorMessage = error
+    ? (typeof error === 'string' ? error : t(error.key, error.params))
+    : null;
 
   const handleAgentToggle = () => {
     setAgentOpen((prev) => !prev);
@@ -57,6 +73,22 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
   const handleFileUpload = useCallback(
     async (files: File[]) => {
       setError(null);
+
+      // Check for duplicate filenames within the batch
+      const batchDuplicates = findDuplicateFileNames(files);
+      if (batchDuplicates.length > 0) {
+        setError({ key: 'duplicateFilesInBatch', params: { names: batchDuplicates.join(', ') } });
+        return;
+      }
+
+      // Check for filenames that match already-uploaded table names
+      const existingNames = new Set(tables.map((tbl) => tbl.name));
+      const alreadyUploaded = files.filter((f) => existingNames.has(f.name)).map((f) => f.name);
+      if (alreadyUploaded.length > 0) {
+        setError({ key: 'duplicateFilesExist', params: { names: alreadyUploaded.join(', ') } });
+        return;
+      }
+
       let lastName = '';
       try {
         for (const file of files) {
@@ -213,6 +245,9 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
               </button>
             </div>
           </div>
+          {errorMessage && (
+            <ErrorMessage message={errorMessage} onDismiss={() => setError(null)} />
+          )}
           <AgentPanel
             langfuseStatus={langfuseStatus}
             tables={tables}
@@ -252,6 +287,9 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
           <div className="app__mode-header">
             <span className="app__mode-title">{t('editorMode')}</span>
           </div>
+          {errorMessage && (
+            <ErrorMessage message={errorMessage} onDismiss={() => setError(null)} />
+          )}
           <main className="app__main">
             {tables.length === 0 ? (
               <div className="app__empty">
@@ -263,9 +301,6 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
                   onExecute={handleQueryExecute}
                   initialQuery={editorQuery}
                 />
-                {error && (
-                  <ErrorMessage message={error} onDismiss={() => setError(null)} />
-                )}
                 {queryResult?.resultType === 'markdown' ? (
                   <ResultMarkdown result={queryResult} />
                 ) : (
