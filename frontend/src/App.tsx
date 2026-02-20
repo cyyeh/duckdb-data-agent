@@ -10,7 +10,12 @@ import { AgentPanel } from './components/AgentPanel';
 import type { TableInfo, QueryResult } from './types';
 import './App.css';
 
-function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTables: () => Promise<void> }) {
+interface LangfuseStatus {
+  enabled: boolean;
+  dashboardUrl: string | null;
+}
+
+function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableInfo[]; refreshTables: () => Promise<void>; langfuseStatus: LangfuseStatus }) {
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editorQuery, setEditorQuery] = useState<string | undefined>(
@@ -128,7 +133,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
               Editor Mode
             </button>
           </div>
-          <AgentPanel />
+          <AgentPanel langfuseStatus={langfuseStatus} />
         </div>
       ) : (
         <div className="app__editor-wrapper">
@@ -169,6 +174,7 @@ export default function App() {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [langfuseStatus, setLangfuseStatus] = useState<LangfuseStatus>({ enabled: false, dashboardUrl: null });
 
   const refreshTables = useCallback(async () => {
     try {
@@ -187,6 +193,14 @@ export default function App() {
         const response = await fetch('/api/health');
         if (!response.ok) throw new Error('Backend is not available');
         await refreshTables();
+        try {
+          const lfRes = await fetch('/api/langfuse/status');
+          if (lfRes.ok) {
+            setLangfuseStatus(await lfRes.json());
+          }
+        } catch {
+          // Langfuse status fetch is non-critical
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to connect to backend');
       } finally {
@@ -207,7 +221,7 @@ export default function App() {
 
   return (
     <AgentProvider tables={tables} refreshTables={refreshTables}>
-      <AppContent tables={tables} refreshTables={refreshTables} />
+      <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
     </AgentProvider>
   );
 }
