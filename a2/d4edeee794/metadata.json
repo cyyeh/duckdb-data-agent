@@ -3,7 +3,7 @@
   "checkpoint_id": "a2d4edeee794",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 4,
   "files_touched": [
     "backend/app/routes/tables.py",
     "frontend/src/App.tsx",
@@ -94,13 +94,20 @@
       "context": "/a2/d4edeee794/11/context.md",
       "content_hash": "/a2/d4edeee794/11/content_hash.txt",
       "prompt": "/a2/d4edeee794/11/prompt.txt"
+    },
+    {
+      "metadata": "/a2/d4edeee794/12/metadata.json",
+      "transcript": "/a2/d4edeee794/12/full.jsonl",
+      "context": "/a2/d4edeee794/12/context.md",
+      "content_hash": "/a2/d4edeee794/12/content_hash.txt",
+      "prompt": "/a2/d4edeee794/12/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1767,
-    "cache_creation_tokens": 1132272,
-    "cache_read_tokens": 60950474,
-    "output_tokens": 78851,
-    "api_call_count": 836
+    "input_tokens": 1812,
+    "cache_creation_tokens": 1175626,
+    "cache_read_tokens": 62492941,
+    "output_tokens": 80290,
+    "api_call_count": 869
   }
 }
