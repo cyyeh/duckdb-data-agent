@@ -25,7 +25,7 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
     }
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
     if (totalSize > MAX_TOTAL_SIZE_BYTES) {
-      alert(t('fileTooLarge'));
+      alert(t('fileTooLarge', { maxSize: `${MAX_TOTAL_SIZE_BYTES / (1024 * 1024)}MB` }));
       return;
     }
     setUploading(true);
@@ -84,7 +84,7 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
           <p className="file-upload__text">{t('uploading')}</p>
         ) : (
           <p className="file-upload__text">
-            {t('uploadDropText')}
+            {t('uploadDropText', { maxSize: `${MAX_TOTAL_SIZE_BYTES / (1024 * 1024)}MB` })}
           </p>
         )}
       </div>
