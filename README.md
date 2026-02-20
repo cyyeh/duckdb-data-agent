@@ -25,6 +25,7 @@ A SQL playground with an AI-powered data analysis agent. Upload CSV files, write
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and key are never sent anywhere besides the Anthropic API
+- **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions, with a one-click dashboard link in the UI
 
 ## Getting Started
 
@@ -64,6 +65,18 @@ ANTHROPIC_MODEL=sonnet    # optional, defaults to sonnet
 
 > Both variables are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
 
+#### Langfuse (optional)
+
+To enable agent tracing with [Langfuse](https://langfuse.com/), add these to `backend/.env`:
+
+```
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_BASE_URL=https://cloud.langfuse.com   # optional, defaults to cloud
+```
+
+When configured, every agent conversation is traced (LLM turns, tool calls, SQL execution) and a **Langfuse Traces** button appears in the agent panel header linking to your dashboard. When not configured, tracing is disabled with zero overhead.
+
 ### Development
 
 Start both the frontend and backend:
@@ -89,7 +102,11 @@ The project ships as a single Docker image that bundles the React frontend and F
 
 ```bash
 docker build -t duckdb-data-agent .
-docker run -p 10000:10000 -e ANTHROPIC_API_KEY=sk-ant-... duckdb-data-agent
+docker run -p 10000:10000 \
+  -e ANTHROPIC_API_KEY=sk-ant-... \
+  -e LANGFUSE_PUBLIC_KEY=pk-lf-... \
+  -e LANGFUSE_SECRET_KEY=sk-lf-... \
+  duckdb-data-agent
 ```
 
 Open http://localhost:10000 to use the app.
@@ -100,7 +117,7 @@ A `render.yaml` is included for one-click deployment on [Render](https://render.
 
 1. Push this repo to GitHub.
 2. In Render, create a new **Blueprint** and connect the repo.
-3. Set the `ANTHROPIC_API_KEY` environment variable in the Render dashboard. Optionally set `ANTHROPIC_MODEL` to override the default model (`sonnet`).
+3. Set the `ANTHROPIC_API_KEY` environment variable in the Render dashboard. Optionally set `ANTHROPIC_MODEL` to override the default model (`sonnet`). To enable Langfuse tracing, also set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`.
 
 Render will build the Docker image and deploy it automatically on every push to `main`.
 
@@ -122,9 +139,10 @@ Render will build the Docker image and deploy it automatically on every push to 
 │       ├── config.py       #   Environment variables (API key, model)
 │       ├── database.py     #   DuckDB connection & query execution
 │       ├── agent.py        #   Agent loop & SSE streaming
+│       ├── tracing.py      #   Langfuse client wrapper & initialization
 │       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
 │       ├── data/           #   Sample datasets (titanic.csv)
-│       └── routes/         #   API endpoints (tables, query, chat)
+│       └── routes/         #   API endpoints (tables, query, chat, langfuse status)
 ├── Dockerfile              # Multi-stage production build
 ├── render.yaml             # Render deployment config
 └── Makefile                # Dev commands (install, dev, clean)
@@ -140,6 +158,7 @@ Render will build the Docker image and deploy it automatically on every push to 
 - [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/)
 - [DuckDB](https://duckdb.org/) (Python)
 - [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
+- [Langfuse](https://langfuse.com/) (optional, for observability)
 
 ## License
 
