@@ -3,11 +3,11 @@ import { useTranslation } from '../LanguageContext';
 import './FileUpload.css';
 
 interface FileUploadProps {
-  onUpload: (file: File) => Promise<void>;
+  onUpload: (files: File[]) => Promise<void>;
   onLoadSample: () => Promise<void>;
 }
 
-const MAX_SIZE_BYTES = 500 * 1024 * 1024; // 500MB
+const MAX_TOTAL_SIZE_BYTES = 500 * 1024 * 1024; // 500MB
 
 export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
   const { t } = useTranslation();
@@ -16,18 +16,21 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
   const [loadingSample, setLoadingSample] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback(async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.csv')) {
+  const handleFiles = useCallback(async (fileList: FileList) => {
+    const files = Array.from(fileList);
+    const nonCsv = files.filter(f => !f.name.toLowerCase().endsWith('.csv'));
+    if (nonCsv.length > 0) {
       alert(t('csvOnly'));
       return;
     }
-    if (file.size > MAX_SIZE_BYTES) {
+    const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+    if (totalSize > MAX_TOTAL_SIZE_BYTES) {
       alert(t('fileTooLarge'));
       return;
     }
     setUploading(true);
     try {
-      await onUpload(file);
+      await onUpload(files);
     } finally {
       setUploading(false);
     }
@@ -45,9 +48,8 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
   const onDrop = useCallback((e: DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
+    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+  }, [handleFiles]);
 
   const onDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
@@ -71,10 +73,10 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
           ref={inputRef}
           type="file"
           accept=".csv"
+          multiple
           className="file-upload__input"
           onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
+            if (e.target.files && e.target.files.length > 0) handleFiles(e.target.files);
             e.target.value = '';
           }}
         />

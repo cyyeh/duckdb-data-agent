@@ -27,6 +27,14 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
     document.title = t('appTitle');
   }, [t]);
 
+  useEffect(() => {
+    if (tables.length === 0) {
+      setQueryResult(null);
+      setError(null);
+      setEditorQuery(undefined);
+    }
+  }, [tables]);
+
   const handleAgentToggle = () => {
     setAgentOpen((prev) => !prev);
   };
@@ -44,19 +52,25 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
   }, [refreshTables]);
 
   const handleFileUpload = useCallback(
-    async (file: File) => {
+    async (files: File[]) => {
       setError(null);
+      let lastName = '';
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        if (!response.ok) throw new Error('Failed to upload file');
-        const result = await response.json();
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('file', file);
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          if (!response.ok) throw new Error('Failed to upload file');
+          const result = await response.json();
+          lastName = result.name;
+        }
         await refreshTables();
-        setEditorQuery(`SELECT * FROM "${result.name}" LIMIT 100`);
+        if (lastName) {
+          setEditorQuery(`SELECT * FROM "${lastName}" LIMIT 100`);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to upload file');
       }
@@ -212,22 +226,25 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
             <span className="app__mode-title">{t('editorMode')}</span>
           </div>
           <main className="app__main">
-            {tables.length === 0 && (
+            {tables.length === 0 ? (
               <div className="app__empty">
                 <FileUpload onUpload={handleFileUpload} onLoadSample={handleLoadSample} />
               </div>
-            )}
-            <QueryEditor
-              onExecute={handleQueryExecute}
-              initialQuery={editorQuery}
-            />
-            {error && (
-              <ErrorMessage message={error} onDismiss={() => setError(null)} />
-            )}
-            {queryResult?.resultType === 'markdown' ? (
-              <ResultMarkdown result={queryResult} />
             ) : (
-              <ResultsTable result={queryResult} />
+              <>
+                <QueryEditor
+                  onExecute={handleQueryExecute}
+                  initialQuery={editorQuery}
+                />
+                {error && (
+                  <ErrorMessage message={error} onDismiss={() => setError(null)} />
+                )}
+                {queryResult?.resultType === 'markdown' ? (
+                  <ResultMarkdown result={queryResult} />
+                ) : (
+                  <ResultsTable result={queryResult} />
+                )}
+              </>
             )}
           </main>
         </div>

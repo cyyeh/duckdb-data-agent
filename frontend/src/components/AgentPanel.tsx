@@ -10,7 +10,7 @@ import './AgentPanel.css';
 interface AgentPanelProps {
   langfuseStatus: LangfuseStatus;
   tables: TableInfo[];
-  onUpload: (file: File) => Promise<void>;
+  onUpload: (files: File[]) => Promise<void>;
   onLoadSample: () => Promise<void>;
 }
 
