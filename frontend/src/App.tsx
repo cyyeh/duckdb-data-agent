@@ -140,6 +140,22 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
     }
   }, [refreshTables, t]);
 
+  const handleDeleteAll = useCallback(async () => {
+    if (tables.length === 0) return;
+    if (!confirm(t('deleteAllTablesConfirm'))) return;
+    try {
+      for (const table of tables) {
+        const response = await fetch(`/api/tables/${encodeURIComponent(table.name)}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete table');
+      }
+      await refreshTables();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete tables');
+    }
+  }, [tables, refreshTables, t]);
+
   const appClass = [
     'app',
     sidebarCollapsed ? 'app--sidebar-collapsed' : '',
@@ -166,7 +182,7 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
   return (
     <div className={appClass}>
       <div className="app__sidebar-wrapper">
-        <Sidebar tables={tables} onTableClick={handleTableClick} onTableDelete={handleTableDelete} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} />
+        <Sidebar tables={tables} onTableClick={handleTableClick} onTableDelete={handleTableDelete} onUpload={handleFileUpload} onDeleteAll={handleDeleteAll} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} />
       </div>
       {agentOpen ? (
         <div className="app__agent-wrapper">
