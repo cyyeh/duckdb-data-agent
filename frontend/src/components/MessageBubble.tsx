@@ -88,9 +88,10 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
     }
   }
 
-  // Check if currently in a thinking-only phase (no answer segment yet)
+  // Check if currently in a thinking-only phase (no answer content yet)
   const hasAnswer = hasSegments && message.segments!.some((s) => s.type === 'answer');
-  const isThinkingPhase = !!message.isStreaming && !hasAnswer;
+  const isInAnswerPhase = message.currentPhase === 'answer';
+  const isThinkingPhase = !!message.isStreaming && !hasAnswer && !isInAnswerPhase;
 
   // Extract answer segments
   const answerSegments = hasSegments
@@ -118,6 +119,14 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
               </div>
             </div>
           ))}
+          {isInAnswerPhase && !hasAnswer && streamingRemainder?.trim() && (
+            <div className="message-bubble__segment message-bubble__segment--answer">
+              <div className="message-bubble__segment-label message-bubble__segment-label--answer">Answer</div>
+              <div className="message-bubble__segment-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingRemainder}</ReactMarkdown>
+              </div>
+            </div>
+          )}
           {message.isStreaming && !message.content && (
             <span className="message-bubble__typing">Thinking...</span>
           )}

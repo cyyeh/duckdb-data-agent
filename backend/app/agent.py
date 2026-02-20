@@ -6,8 +6,10 @@ from claude_agent_sdk import (
     ClaudeSDKClient,
     ClaudeAgentOptions,
     AssistantMessage,
+    UserMessage,
     ResultMessage,
     ToolUseBlock,
+    ToolResultBlock,
 )
 from claude_agent_sdk._errors import MessageParseError
 from claude_agent_sdk._internal.message_parser import parse_message
@@ -41,6 +43,21 @@ Guidelines:
     return prompt
 
 
+def _extract_tool_result_text(content: object) -> str:
+    """Extract text from ToolResultBlock.content."""
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                parts.append(item.get("text", ""))
+        return "\n".join(parts)
+    return str(content)
+
+
 async def stream_chat(message: str, session_id: str | None = None) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events."""
     duckdb_server = create_duckdb_server()
@@ -64,6 +81,9 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
         current_text = ""
         has_tool_calls = False
         thinking_sent = False
+        has_thinking = False
+        sql_result_ids: set[str] = set()
+        tool_names: dict[str, str] = {}
 
         async for raw_data in client._query.receive_messages():
             try:
@@ -82,7 +102,12 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                 if event_type == "content_block_delta":
                     delta = event.get("delta", {})
                     delta_type = delta.get("type", "")
-                    if delta_type == "text_delta":
+                    if delta_type == "thinking_delta":
+                        text = delta.get("thinking", "")
+                        if text:
+                            current_text += text
+                            yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
+                    elif delta_type == "text_delta":
                         text = delta.get("text", "")
                         current_text += text
                         event_name = "thinking" if not has_tool_calls else "answer"
@@ -90,7 +115,13 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
 
                 elif event_type == "content_block_start":
                     block = event.get("content_block", {})
-                    if block.get("type") == "tool_use":
+                    block_type = block.get("type")
+                    if block_type == "thinking":
+                        has_thinking = True
+                    elif block_type == "text":
+                        if has_thinking:
+                            yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
+                    elif block_type == "tool_use":
                         if current_text.strip() and not thinking_sent:
                             thinking_sent = True
                         has_tool_calls = True
@@ -101,18 +132,50 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
 
                 for block in msg.content:
                     if isinstance(block, ToolUseBlock):
-                        sql = block.input.get("sql", "")
-                        yield f"event: tool_call\ndata: {json.dumps({'id': block.id, 'sql': sql})}\n\n"
                         has_tool_calls = True
+                        tool_name = getattr(block, "name", "") or ""
+                        tool_names[block.id] = tool_name
+                        sql = block.input.get("sql", "")
+                        command = block.input.get("command", "")
 
-                        # Execute the query directly for the UI since
-                        # ToolResultBlock is not exposed in the SDK stream
-                        try:
-                            result = db.execute_query(sql)
-                            truncated = result["rows"][:100]
-                            yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'sql': sql, 'columns': result['columns'], 'rows': truncated, 'rowCount': result['rowCount']}, default=str)}\n\n"
-                        except Exception as e:
-                            yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'sql': sql, 'error': str(e)})}\n\n"
+                        # Emit tool_call for ALL tool types
+                        tool_call_data: dict = {"id": block.id, "name": tool_name}
+                        if sql:
+                            tool_call_data["sql"] = sql
+                        if command:
+                            tool_call_data["command"] = command
+                        if not sql and not command:
+                            tool_call_data["input"] = block.input
+                        yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
+
+                        # For SQL tools, execute query for structured results
+                        if sql:
+                            sql_result_ids.add(block.id)
+                            try:
+                                result = db.execute_query(sql)
+                                truncated = result["rows"][:100]
+                                yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'name': tool_name, 'sql': sql, 'columns': result['columns'], 'rows': truncated, 'rowCount': result['rowCount']}, default=str)}\n\n"
+                            except Exception as e:
+                                yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'name': tool_name, 'sql': sql, 'error': str(e)})}\n\n"
+
+            elif isinstance(msg, UserMessage):
+                # Capture tool results from the SDK for non-SQL tools
+                content = msg.content
+                if isinstance(content, list):
+                    for block in content:
+                        if isinstance(block, ToolResultBlock):
+                            if block.tool_use_id in sql_result_ids:
+                                continue
+                            output = _extract_tool_result_text(block.content)
+                            name = tool_names.get(block.tool_use_id, "")
+                            result_data: dict = {
+                                "id": block.tool_use_id,
+                                "name": name,
+                                "output": output,
+                            }
+                            if block.is_error:
+                                result_data["error"] = output
+                            yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
             elif isinstance(msg, ResultMessage):
                 actual_session_id = msg.session_id

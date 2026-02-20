@@ -24,11 +24,15 @@ export interface ToolCallInfo {
 
 export interface ToolCallResult {
   toolCallId: string;
+  toolName?: string;
   sql: string;
+  command?: string;
+  toolInput?: Record<string, unknown>;
   columns: string[];
   rows: Record<string, unknown>[];
   rowCount: number;
   error?: string;
+  output?: string;
   rawContent?: string;
 }
 
@@ -45,4 +49,5 @@ export interface ChatMessage {
   toolCalls?: ToolCallResult[];
   segments?: ContentSegment[];
   isStreaming?: boolean;
+  currentPhase?: 'thinking' | 'answer';
 }

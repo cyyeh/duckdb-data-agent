@@ -100,7 +100,9 @@ export function AgentProvider({
               }, 50);
             }
           },
-          onToolCall: (toolCallId: string, sql: string) => {
+          onThinkingDone: () => {
+            // Extended thinking just ended and a text block is starting.
+            // Create a thinking segment from accumulated thinking text.
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -110,10 +112,28 @@ export function AgentProvider({
               segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
               currentTextRef.current = '';
             }
-            // Add a pending tool segment so the SQL is shown immediately
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
+          onToolCall: (pending: ToolCallResult) => {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            if (currentTextRef.current.trim()) {
+              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            // Add a pending tool segment so the input is shown immediately
             segmentsRef.current.push({
               type: 'tool',
-              toolResult: { toolCallId, sql, columns: [], rows: [], rowCount: 0 },
+              toolResult: pending,
             });
             setMessages((prev) =>
               prev.map((m) =>
@@ -124,12 +144,22 @@ export function AgentProvider({
             );
           },
           onToolResult: (result: ToolCallResult) => {
-            // Replace the pending tool segment with the full result
+            // Merge result into pending tool segment (keep input info, add output)
             const pendingIdx = segmentsRef.current.findIndex(
               (s) => s.type === 'tool' && s.toolResult?.toolCallId === result.toolCallId
             );
             if (pendingIdx !== -1) {
-              segmentsRef.current[pendingIdx] = { type: 'tool', toolResult: result };
+              const pending = segmentsRef.current[pendingIdx].toolResult!;
+              segmentsRef.current[pendingIdx] = {
+                type: 'tool',
+                toolResult: {
+                  ...pending,
+                  ...result,
+                  toolName: result.toolName || pending.toolName,
+                  command: result.command || pending.command,
+                  toolInput: result.toolInput || pending.toolInput,
+                },
+              };
             } else {
               segmentsRef.current.push({ type: 'tool', toolResult: result });
             }
@@ -159,7 +189,7 @@ export function AgentProvider({
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, segments: [...segmentsRef.current] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...segmentsRef.current] }
                   : m
               )
             );

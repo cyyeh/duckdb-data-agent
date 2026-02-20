@@ -2,11 +2,14 @@ import type { ToolCallResult } from '../types';
 
 interface AgentCallbacks {
   onTextChunk: (text: string) => void;
-  onToolCall: (toolCallId: string, sql: string) => void;
+  onThinkingDone: () => void;
+  onToolCall: (pending: ToolCallResult) => void;
   onToolResult: (result: ToolCallResult) => void;
   onDone: (sessionId: string | null) => void;
   onError: (error: string) => void;
 }
+
+export type { AgentCallbacks };
 
 export async function runAgentLoop(
   message: string,
@@ -78,17 +81,31 @@ function handleSSEEvent(
     case 'answer':
       callbacks.onTextChunk(data.text as string);
       break;
+    case 'thinking_done':
+      callbacks.onThinkingDone();
+      break;
     case 'tool_call':
-      callbacks.onToolCall(data.id as string, data.sql as string);
+      callbacks.onToolCall({
+        toolCallId: (data.id as string) ?? '',
+        toolName: (data.name as string) ?? undefined,
+        sql: (data.sql as string) ?? '',
+        command: (data.command as string) ?? undefined,
+        toolInput: (data.input as Record<string, unknown>) ?? undefined,
+        columns: [],
+        rows: [],
+        rowCount: 0,
+      });
       break;
     case 'tool_result': {
       const result: ToolCallResult = {
         toolCallId: (data.id as string) ?? '',
+        toolName: (data.name as string) ?? undefined,
         sql: (data.sql as string) ?? '',
         columns: (data.columns as string[]) ?? [],
         rows: (data.rows as Record<string, unknown>[]) ?? [],
         rowCount: (data.rowCount as number) ?? 0,
         error: (data.error as string) ?? undefined,
+        output: (data.output as string) ?? undefined,
         rawContent: (data.content as string) ?? undefined,
       };
       callbacks.onToolResult(result);

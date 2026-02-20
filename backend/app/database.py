@@ -11,6 +11,8 @@ class Database:
     def execute_query(self, sql: str) -> dict[str, Any]:
         """Execute a SQL query and return results as dict with columns, rows, rowCount."""
         result = self.conn.execute(sql)
+        if result is None:
+            return {"columns": [], "rows": [], "rowCount": 0}
         columns = [desc[0] for desc in result.description] if result.description else []
         rows = [dict(zip(columns, row)) for row in result.fetchall()] if columns else []
         return {"columns": columns, "rows": rows, "rowCount": len(rows)}
