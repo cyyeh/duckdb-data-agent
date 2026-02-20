@@ -43,9 +43,15 @@ def get_langfuse_client():
 
 
 def get_langfuse_dashboard_url() -> str | None:
-    """Return the Langfuse dashboard base URL or None."""
+    """Return the Langfuse project traces URL or None."""
     if _langfuse_client is None:
         return None
+    try:
+        project_id = _langfuse_client._get_project_id()
+        if project_id:
+            return f"{LANGFUSE_BASE_URL}/project/{project_id}/traces"
+    except Exception as e:
+        logger.warning("Failed to get Langfuse project ID: %s", e)
     return LANGFUSE_BASE_URL
 
 
