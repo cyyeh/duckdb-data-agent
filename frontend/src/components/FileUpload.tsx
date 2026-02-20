@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 import { useTranslation } from '../LanguageContext';
+import { useConfig } from '../ConfigContext';
 import './FileUpload.css';
 
 interface FileUploadProps {
@@ -7,10 +8,9 @@ interface FileUploadProps {
   onLoadSample: () => Promise<void>;
 }
 
-const MAX_TOTAL_SIZE_BYTES = 500 * 1024 * 1024; // 500MB
-
 export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
   const { t } = useTranslation();
+  const { maxTotalSizeBytes } = useConfig();
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loadingSample, setLoadingSample] = useState(false);
@@ -24,8 +24,8 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
       return;
     }
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
-    if (totalSize > MAX_TOTAL_SIZE_BYTES) {
-      alert(t('fileTooLarge', { maxSize: `${MAX_TOTAL_SIZE_BYTES / (1024 * 1024)}MB` }));
+    if (totalSize > maxTotalSizeBytes) {
+      alert(t('fileTooLarge', { maxSize: `${maxTotalSizeBytes / (1024 * 1024)}MB` }));
       return;
     }
     setUploading(true);
@@ -34,7 +34,7 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
     } finally {
       setUploading(false);
     }
-  }, [onUpload, t]);
+  }, [onUpload, t, maxTotalSizeBytes]);
 
   const handleLoadSample = useCallback(async () => {
     setLoadingSample(true);
@@ -84,7 +84,7 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
           <p className="file-upload__text">{t('uploading')}</p>
         ) : (
           <p className="file-upload__text">
-            {t('uploadDropText', { maxSize: `${MAX_TOTAL_SIZE_BYTES / (1024 * 1024)}MB` })}
+            {t('uploadDropText', { maxSize: `${maxTotalSizeBytes / (1024 * 1024)}MB` })}
           </p>
         )}
       </div>

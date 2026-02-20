@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { LanguageProvider, useTranslation } from './LanguageContext';
 import { AgentProvider } from './AgentContext';
+import { ConfigProvider } from './ConfigContext';
 import { FileUpload } from './components/FileUpload';
 import { QueryEditor } from './components/QueryEditor';
 import { ResultsTable } from './components/ResultsTable';
@@ -303,12 +304,14 @@ export default function App() {
   }
 
   return (
-    <LanguageProvider>
-      <ThemeProvider>
-        <AgentProvider refreshTables={refreshTables}>
-          <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
-        </AgentProvider>
-      </ThemeProvider>
-    </LanguageProvider>
+    <ConfigProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AgentProvider refreshTables={refreshTables}>
+            <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
+          </AgentProvider>
+        </ThemeProvider>
+      </LanguageProvider>
+    </ConfigProvider>
   );
 }
