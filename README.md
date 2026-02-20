@@ -125,6 +125,7 @@ Render will build the Docker image and deploy it automatically on every push to 
 
 ```
 ├── frontend/               # React frontend
+│   ├── public/             #   Static assets (Langfuse icon)
 │   ├── src/
 │   │   ├── components/     #   UI components (editor, results, sidebar, chat)
 │   │   ├── agent/          #   Agent service (SSE event handling)
