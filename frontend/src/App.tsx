@@ -23,6 +23,10 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
 
+  useEffect(() => {
+    document.title = t('appTitle');
+  }, [t]);
+
   const handleAgentToggle = () => {
     setAgentOpen((prev) => !prev);
   };
