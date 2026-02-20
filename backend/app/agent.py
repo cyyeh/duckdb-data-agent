@@ -11,13 +11,36 @@ from claude_agent_sdk import (
     ToolUseBlock,
     ToolResultBlock,
 )
-from claude_agent_sdk.types import StreamEvent
+from claude_agent_sdk.types import StreamEvent, SystemMessage
+from claude_agent_sdk._errors import MessageParseError
 from app.tools import create_duckdb_server
 from app.database import db
 from app.config import ANTHROPIC_MODEL
 from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
+
+# Monkey-patch parse_message to handle unknown message types (e.g. rate_limit_event)
+# gracefully instead of crashing the stream. The SDK (v0.1.39) doesn't recognize
+# newer message types from the CLI. Returning a SystemMessage lets the stream
+# continue since our code ignores SystemMessage instances.
+import claude_agent_sdk._internal.message_parser as _parser
+
+_original_parse_message = _parser.parse_message
+
+
+def _safe_parse_message(data):
+    try:
+        return _original_parse_message(data)
+    except MessageParseError as e:
+        if "Unknown message type" in str(e):
+            msg_type = data.get("type", "unknown") if isinstance(data, dict) else "unknown"
+            logger.warning("Skipping unrecognized message type from CLI: %s", msg_type)
+            return SystemMessage(subtype=msg_type, data=data if isinstance(data, dict) else {})
+        raise
+
+
+_parser.parse_message = _safe_parse_message
 
 
 def build_system_prompt(conversation_history: list[dict] | None = None) -> str:
