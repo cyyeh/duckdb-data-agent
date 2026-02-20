@@ -71,6 +71,90 @@ export async function runAgentLoop(
   }
 }
 
+export async function runAgentEditLoop(
+  sessionId: string,
+  userMessageIndex: number,
+  newMessage: string,
+  callbacks: AgentCallbacks,
+  signal?: AbortSignal,
+): Promise<void> {
+  try {
+    const response = await fetch('/api/chat/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        user_message_index: userMessageIndex,
+        new_message: newMessage,
+      }),
+      signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      callbacks.onError(`Server error: ${errorText}`);
+      return;
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      callbacks.onError('No response stream');
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      let eventType = '';
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          try {
+            const parsed = JSON.parse(data);
+            handleSSEEvent(eventType, parsed, callbacks);
+          } catch {
+            // Skip malformed JSON
+          }
+          eventType = '';
+        }
+      }
+    }
+  } catch (e: unknown) {
+    if (signal?.aborted) return;
+    const msg = e instanceof Error ? e.message : 'Connection failed';
+    callbacks.onError(msg);
+  }
+}
+
+export async function deleteAgentMessage(
+  sessionId: string,
+  userMessageIndex: number,
+): Promise<void> {
+  const response = await fetch('/api/chat/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: sessionId,
+      user_message_index: userMessageIndex,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Delete failed: ${errorText}`);
+  }
+}
+
 function handleSSEEvent(
   eventType: string,
   data: Record<string, unknown>,
