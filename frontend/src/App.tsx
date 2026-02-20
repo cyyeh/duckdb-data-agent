@@ -21,7 +21,7 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
     () => tables.length > 0 ? `SELECT * FROM "${tables[0].name}" LIMIT 100` : undefined
   );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [agentOpen, setAgentOpen] = useState(false);
+  const [agentOpen, setAgentOpen] = useState(true);
 
   useEffect(() => {
     document.title = t('appTitle');
