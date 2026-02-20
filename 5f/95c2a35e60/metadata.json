@@ -3,7 +3,7 @@
   "checkpoint_id": "5f95c2a35e60",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     "Dockerfile",
     "frontend/public/langfuse-color.svg",
@@ -59,13 +59,20 @@
       "context": "/5f/95c2a35e60/6/context.md",
       "content_hash": "/5f/95c2a35e60/6/content_hash.txt",
       "prompt": "/5f/95c2a35e60/6/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/7/metadata.json",
+      "transcript": "/5f/95c2a35e60/7/full.jsonl",
+      "context": "/5f/95c2a35e60/7/context.md",
+      "content_hash": "/5f/95c2a35e60/7/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1240,
-    "cache_creation_tokens": 566858,
-    "cache_read_tokens": 22021833,
-    "output_tokens": 22116,
-    "api_call_count": 379
+    "input_tokens": 1269,
+    "cache_creation_tokens": 590986,
+    "cache_read_tokens": 22705992,
+    "output_tokens": 22856,
+    "api_call_count": 402
   }
 }
