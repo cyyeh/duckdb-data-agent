@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "53eab6ff64eb",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".gitignore",
+    "backend/app/agent.py",
+    "backend/app/routes/chat.py",
+    "frontend/src/agent/agentService.ts",
+    "frontend/src/contexts/AgentContext.tsx",
+    "frontend/src/contexts/SessionContext.tsx",
+    "frontend/src/hooks/useSessionId.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/53/eab6ff64eb/0/metadata.json",
+      "transcript": "/53/eab6ff64eb/0/full.jsonl",
+      "context": "/53/eab6ff64eb/0/context.md",
+      "content_hash": "/53/eab6ff64eb/0/content_hash.txt",
+      "prompt": "/53/eab6ff64eb/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 18878,
+    "cache_read_tokens": 406456,
+    "output_tokens": 142,
+    "api_call_count": 13
+  }
+}
