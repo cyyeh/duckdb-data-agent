@@ -3,7 +3,7 @@
   "checkpoint_id": "8cd69cd2bce7",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "backend/app/agent.py",
     "backend/app/routes/chat.py",
@@ -59,13 +59,20 @@
       "context": "/8c/d69cd2bce7/6/context.md",
       "content_hash": "/8c/d69cd2bce7/6/content_hash.txt",
       "prompt": "/8c/d69cd2bce7/6/prompt.txt"
+    },
+    {
+      "metadata": "/8c/d69cd2bce7/7/metadata.json",
+      "transcript": "/8c/d69cd2bce7/7/full.jsonl",
+      "context": "/8c/d69cd2bce7/7/context.md",
+      "content_hash": "/8c/d69cd2bce7/7/content_hash.txt",
+      "prompt": "/8c/d69cd2bce7/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 369,
-    "cache_creation_tokens": 435613,
-    "cache_read_tokens": 21431588,
-    "output_tokens": 38445,
-    "api_call_count": 315
+    "input_tokens": 431,
+    "cache_creation_tokens": 479754,
+    "cache_read_tokens": 29518813,
+    "output_tokens": 43692,
+    "api_call_count": 372
   }
 }
