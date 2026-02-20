@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "fb90d09264d5",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/tracing.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fb/90d09264d5/0/metadata.json",
+      "transcript": "/fb/90d09264d5/0/full.jsonl",
+      "context": "/fb/90d09264d5/0/context.md",
+      "content_hash": "/fb/90d09264d5/0/content_hash.txt",
+      "prompt": "/fb/90d09264d5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 44,
+    "cache_creation_tokens": 57366,
+    "cache_read_tokens": 853788,
+    "output_tokens": 1491,
+    "api_call_count": 30
+  }
+}
