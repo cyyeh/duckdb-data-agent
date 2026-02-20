@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api", tags=["tables"])
 
 
 def sanitize_table_name(filename: str) -> str:
-    base = re.sub(r"\.(csv|json|parquet|xlsx|xls)$", "", filename, flags=re.IGNORECASE)
+    base = re.sub(r"\.(csv|json|parquet|xlsx)$", "", filename, flags=re.IGNORECASE)
     sanitized = re.sub(r"[^a-z0-9_]", "_", base.lower())
     sanitized = re.sub(r"^[^a-z]", lambda m: "t_" + m.group(), sanitized)
     sanitized = re.sub(r"_+", "_", sanitized).rstrip("_")
@@ -39,7 +39,12 @@ async def upload_file(file: UploadFile = File(...)):
             detail=f"File size exceeds the {MAX_TOTAL_SIZE_BYTES // (1024 * 1024)}MB limit"
         )
     table_name = sanitize_table_name(file.filename)
-    results = db.load_file(content, file.filename, table_name)
+    try:
+        results = db.load_file(content, file.filename, table_name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Failed to process file: {e}")
     if len(results) == 1:
         return results[0]
     return results

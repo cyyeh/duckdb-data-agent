@@ -5,7 +5,7 @@ import re
 import tempfile
 from typing import Any
 
-SUPPORTED_EXTENSIONS = {".csv", ".json", ".parquet", ".xlsx", ".xls"}
+SUPPORTED_EXTENSIONS = {".csv", ".json", ".parquet", ".xlsx"}
 
 
 class Database:
@@ -94,6 +94,8 @@ class Database:
                 finally:
                     os.unlink(csv_tmp_path)
             wb.close()
+            if not results:
+                raise ValueError("Excel file contains no data")
             return results
         finally:
             os.unlink(tmp_path)
@@ -107,7 +109,7 @@ class Database:
             return [self.load_json(file_bytes, filename, table_name)]
         elif ext == ".parquet":
             return [self.load_parquet(file_bytes, filename, table_name)]
-        elif ext in (".xlsx", ".xls"):
+        elif ext == ".xlsx":
             return self.load_excel(file_bytes, filename, table_name)
         else:
             raise ValueError(f"Unsupported file format: {ext}")
