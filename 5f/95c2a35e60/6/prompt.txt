@@ -1,0 +1,24 @@
+in ui agent mode, if thinking block content is too wide, make it scrollable instead of expanding to the global view
+
+---
+
+now the issue is that query result content is too wide
+
+---
+
+try it out
+
+---
+
+it's still too wide, you could run this query in agent mode yourself: explain query plan: select * from titanic
+
+---
+
+<task-notification>
+<task-id>b49cbf1</task-id>
+<tool-use-id>toolu_01QB7yPubtZGQ882hAMGRp8W</tool-use-id>
+<output-file>REDACTED.output</output-file>
+<status>killed</status>
+<summary>Background command "Start backend and frontend dev servers" was stopped</summary>
+</task-notification>
+Read the output file to retrieve the result: REDACTED.output
