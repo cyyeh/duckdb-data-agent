@@ -51,3 +51,8 @@ export interface ChatMessage {
   isStreaming?: boolean;
   currentPhase?: 'thinking' | 'answer';
 }
+
+export interface LangfuseStatus {
+  enabled: boolean;
+  dashboardUrl: string | null;
+}

@@ -2,12 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useAgent } from '../AgentContext';
 import { ChatInput } from './ChatInput';
 import { MessageBubble } from './MessageBubble';
+import type { LangfuseStatus } from '../types';
 import './AgentPanel.css';
-
-interface LangfuseStatus {
-  enabled: boolean;
-  dashboardUrl: string | null;
-}
 
 interface AgentPanelProps {
   langfuseStatus: LangfuseStatus;

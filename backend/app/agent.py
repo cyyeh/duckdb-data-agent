@@ -272,6 +272,7 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
 
             elif isinstance(msg, UserMessage):
                 # Capture tool results from the SDK for non-SQL tools
+                # Note: only SQL tool executions produce Langfuse spans (see above)
                 content = msg.content
                 if isinstance(content, list):
                     for block in content:

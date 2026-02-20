@@ -7,13 +7,8 @@ import { ResultMarkdown } from './components/ResultMarkdown';
 import { Sidebar } from './components/Sidebar';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AgentPanel } from './components/AgentPanel';
-import type { TableInfo, QueryResult } from './types';
+import type { TableInfo, QueryResult, LangfuseStatus } from './types';
 import './App.css';
-
-interface LangfuseStatus {
-  enabled: boolean;
-  dashboardUrl: string | null;
-}
 
 function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableInfo[]; refreshTables: () => Promise<void>; langfuseStatus: LangfuseStatus }) {
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
