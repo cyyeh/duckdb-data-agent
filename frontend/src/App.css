@@ -5,42 +5,14 @@
 }
 
 .app--sidebar-collapsed {
-  grid-template-columns: 0px 1fr;
+  grid-template-columns: auto 1fr;
 }
 
 .app__sidebar-wrapper {
-  position: relative;
+  position: sticky;
+  top: 0;
+  height: 100vh;
   overflow: visible;
-}
-
-.app__sidebar-toggle {
-  position: fixed;
-  left: 236px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid #ddd;
-  background: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  color: #666;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: left 0.2s ease;
-}
-
-.app--sidebar-collapsed .app__sidebar-toggle {
-  left: 0;
-}
-
-.app__sidebar-toggle:hover {
-  background: #f0f0f0;
-  color: #333;
 }
 
 .app__header {

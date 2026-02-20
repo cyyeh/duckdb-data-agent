@@ -115,14 +115,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
   return (
     <div className={appClass}>
       <div className="app__sidebar-wrapper">
-        <Sidebar tables={tables} onTableClick={handleTableClick} onTableDelete={handleTableDelete} collapsed={sidebarCollapsed} />
-        <button
-          className="app__sidebar-toggle"
-          onClick={() => setSidebarCollapsed((prev) => !prev)}
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {sidebarCollapsed ? '\u25B6' : '\u25C0'}
-        </button>
+        <Sidebar tables={tables} onTableClick={handleTableClick} onTableDelete={handleTableDelete} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} />
       </div>
       {agentOpen ? (
         <div className="app__agent-wrapper">
