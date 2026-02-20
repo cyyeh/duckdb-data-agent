@@ -39,13 +39,13 @@ function ThinkingBlock({ segments, streamingRemainder, isActivelyStreaming }: {
 
   if (!hasContent) return null;
 
-  const summary = getLastThinkingLine(segments, streamingRemainder, t);
+  const summary = isActivelyStreaming ? getLastThinkingLine(segments, streamingRemainder, t) : '';
 
   return (
     <details className="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible" open={isActivelyStreaming || undefined}>
       <summary className="message-bubble__collapsible-summary">
         <span className="message-bubble__segment-label">{t('thinkingLabel')}</span>
-        <span className="message-bubble__collapsible-preview">{summary}</span>
+        {summary && <span className="message-bubble__collapsible-preview">{summary}</span>}
       </summary>
       <div className="message-bubble__thinking-body">
         {thinkingSegments.map((seg, i) => {

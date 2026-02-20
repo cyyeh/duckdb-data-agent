@@ -25,7 +25,12 @@ function getToolInputDisplay(result: ToolCallResult): string | null {
     const entries = Object.entries(result.toolInput);
     if (entries.length === 0) return null;
     // For single-value inputs, show just the value
-    if (entries.length === 1) return String(entries[0][1]);
+    if (entries.length === 1) {
+      const val = entries[0][1];
+      if (val === null || val === undefined) return '';
+      if (typeof val === 'object') return JSON.stringify(val, null, 2);
+      return String(val);
+    }
     return JSON.stringify(result.toolInput, null, 2);
   }
   return null;
