@@ -8,6 +8,10 @@ A SQL playground with an AI-powered data analysis agent. Upload CSV files, write
 
 ## Features
 
+### General
+
+- **Dark / light mode** — Toggle between dark and light themes with the sun/moon button in the header; respects your OS preference on first visit and remembers your choice across sessions
+
 ### SQL Playground
 
 - **DuckDB SQL engine** — Fast, in-process analytical database on the backend
@@ -131,6 +135,7 @@ Render will build the Docker image and deploy it automatically on every push to 
 │   │   ├── components/     #   UI components (editor, results, sidebar, chat)
 │   │   ├── agent/          #   Agent service (SSE event handling)
 │   │   ├── AgentContext.tsx #   Agent state management
+│   │   ├── ThemeContext.tsx #   Dark/light theme state & persistence
 │   │   └── types.ts        #   Shared TypeScript interfaces
 │   ├── index.html          #   HTML entry point
 │   ├── package.json        #   npm config
