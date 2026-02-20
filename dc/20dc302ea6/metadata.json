@@ -68,13 +68,20 @@
       "context": "/dc/20dc302ea6/7/context.md",
       "content_hash": "/dc/20dc302ea6/7/content_hash.txt",
       "prompt": "/dc/20dc302ea6/7/prompt.txt"
+    },
+    {
+      "metadata": "/dc/20dc302ea6/8/metadata.json",
+      "transcript": "/dc/20dc302ea6/8/full.jsonl",
+      "context": "/dc/20dc302ea6/8/context.md",
+      "content_hash": "/dc/20dc302ea6/8/content_hash.txt",
+      "prompt": "/dc/20dc302ea6/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 377,
-    "cache_creation_tokens": 436134,
-    "cache_read_tokens": 22086716,
-    "output_tokens": 38561,
-    "api_call_count": 319
+    "input_tokens": 529,
+    "cache_creation_tokens": 502965,
+    "cache_read_tokens": 22625095,
+    "output_tokens": 38990,
+    "api_call_count": 339
   }
 }
