@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useAgent } from '../AgentContext';
+import { useAgent } from '../useAgent';
 import { ChatInput } from './ChatInput';
 import { MessageBubble } from './MessageBubble';
 import type { LangfuseStatus } from '../types';

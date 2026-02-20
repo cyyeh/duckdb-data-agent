@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useAgent } from '../AgentContext';
+import { useAgent } from '../useAgent';
 import './ChatInput.css';
 
 export function ChatInput() {

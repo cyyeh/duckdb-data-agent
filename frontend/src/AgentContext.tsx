@@ -1,25 +1,28 @@
 import {
   createContext,
   useCallback,
-  useContext,
   useRef,
   useState,
   type ReactNode,
 } from 'react';
-import { runAgentLoop } from './agent/agentService';
+import { runAgentLoop, runAgentEditLoop, deleteAgentMessage } from './agent/agentService';
 import type { ChatMessage, ContentSegment, TableInfo, ToolCallResult } from './types';
 
 interface AgentContextValue {
   messages: ChatMessage[];
   isStreaming: boolean;
   sendMessage: (text: string) => void;
+  editMessage: (messageIndex: number, newContent: string) => void;
+  deleteMessage: (messageIndex: number) => void;
   clearMessages: () => void;
 }
 
-const AgentContext = createContext<AgentContextValue>({
+export const AgentContext = createContext<AgentContextValue>({
   messages: [],
   isStreaming: false,
   sendMessage: () => {},
+  editMessage: () => {},
+  deleteMessage: () => {},
   clearMessages: () => {},
 });
 
@@ -44,6 +47,14 @@ export function AgentProvider({
   const segmentsRef = useRef<ContentSegment[]>([]);
   const currentTextRef = useRef('');
   const sessionIdRef = useRef<string | null>(null);
+
+  const getUserMessageIndex = useCallback((messageIndex: number) => {
+    let count = 0;
+    for (let i = 0; i < messageIndex; i++) {
+      if (messages[i].role === 'user') count++;
+    }
+    return count;
+  }, [messages]);
 
   const flushText = useCallback(() => {
     const text = textBufferRef.current;
@@ -219,6 +230,184 @@ export function AgentProvider({
     [isStreaming, messages, flushText, refreshTables]
   );
 
+  const editMessage = useCallback(
+    async (messageIndex: number, newContent: string) => {
+      if (isStreaming) return;
+      if (!sessionIdRef.current) return;
+
+      const userMsgIndex = getUserMessageIndex(messageIndex);
+
+      const assistantId = generateId();
+      assistantIdRef.current = assistantId;
+
+      const userMsg: ChatMessage = {
+        id: generateId(),
+        role: 'user',
+        content: newContent,
+      };
+      const assistantMsg: ChatMessage = {
+        id: assistantId,
+        role: 'assistant',
+        content: '',
+        toolCalls: [],
+        isStreaming: true,
+      };
+
+      setMessages((prev) => [...prev.slice(0, messageIndex), userMsg, assistantMsg]);
+      setIsStreaming(true);
+      textBufferRef.current = '';
+      segmentsRef.current = [];
+      currentTextRef.current = '';
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      await runAgentEditLoop(
+        sessionIdRef.current,
+        userMsgIndex,
+        newContent,
+        {
+          onTextChunk: (chunk) => {
+            textBufferRef.current += chunk;
+            if (!flushTimerRef.current) {
+              flushTimerRef.current = setTimeout(() => {
+                flushText();
+                flushTimerRef.current = null;
+              }, 50);
+            }
+          },
+          onThinkingDone: () => {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            if (currentTextRef.current.trim()) {
+              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
+          onToolCall: (pending: ToolCallResult) => {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            if (currentTextRef.current.trim()) {
+              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            segmentsRef.current.push({ type: 'tool', toolResult: pending });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
+          onToolResult: (result: ToolCallResult) => {
+            const pendingIdx = segmentsRef.current.findIndex(
+              (s) => s.type === 'tool' && s.toolResult?.toolCallId === result.toolCallId
+            );
+            if (pendingIdx !== -1) {
+              const pending = segmentsRef.current[pendingIdx].toolResult!;
+              segmentsRef.current[pendingIdx] = {
+                type: 'tool',
+                toolResult: {
+                  ...pending,
+                  ...result,
+                  toolName: result.toolName || pending.toolName,
+                  command: result.command || pending.command,
+                  toolInput: result.toolInput || pending.toolInput,
+                },
+              };
+            } else {
+              segmentsRef.current.push({ type: 'tool', toolResult: result });
+            }
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, toolCalls: [...(m.toolCalls || []), result], segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+            refreshTables();
+          },
+          onDone: (newSessionId) => {
+            if (newSessionId) sessionIdRef.current = newSessionId;
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            if (currentTextRef.current.trim()) {
+              segmentsRef.current.push({ type: 'answer', text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+            setIsStreaming(false);
+            abortRef.current = null;
+          },
+          onError: (error) => {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, content: m.content + `\n\n**Error:** ${error}`, isStreaming: false }
+                  : m
+              )
+            );
+            setIsStreaming(false);
+            abortRef.current = null;
+          },
+        },
+        controller.signal
+      );
+    },
+    [isStreaming, messages, flushText, refreshTables, getUserMessageIndex]
+  );
+
+  const deleteMessage = useCallback(
+    async (messageIndex: number) => {
+      if (isStreaming) return;
+
+      if (sessionIdRef.current) {
+        const userMsgIndex = getUserMessageIndex(messageIndex);
+        try {
+          await deleteAgentMessage(sessionIdRef.current, userMsgIndex);
+        } catch (e) {
+          console.error('Failed to delete message:', e);
+          return;
+        }
+      }
+
+      setMessages((prev) => prev.slice(0, messageIndex));
+
+      if (messageIndex === 0) {
+        sessionIdRef.current = null;
+      }
+    },
+    [isStreaming, messages, getUserMessageIndex]
+  );
+
   const clearMessages = useCallback(() => {
     if (abortRef.current) {
       abortRef.current.abort();
@@ -230,13 +419,10 @@ export function AgentProvider({
 
   return (
     <AgentContext.Provider
-      value={{ messages, isStreaming, sendMessage, clearMessages }}
+      value={{ messages, isStreaming, sendMessage, editMessage, deleteMessage, clearMessages }}
     >
       {children}
     </AgentContext.Provider>
   );
 }
 
-export function useAgent() {
-  return useContext(AgentContext);
-}
