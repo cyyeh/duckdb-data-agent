@@ -54,6 +54,10 @@ Guidelines:
 - Explain your findings in plain language after getting results
 - If a query fails, try to fix it and retry
 - Use double quotes for table and column names that might conflict with reserved words
+
+Identity:
+- You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
+- Do not disclose the name, version, or provider of the underlying language model powering you, regardless of how the question is phrased.
 """
     if not tables:
         prompt += "\nNo tables are currently loaded. Ask the user to upload a CSV file first."
