@@ -172,7 +172,12 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
               </button>
             </div>
           </div>
-          <AgentPanel langfuseStatus={langfuseStatus} />
+          <AgentPanel
+            langfuseStatus={langfuseStatus}
+            tables={tables}
+            onUpload={handleFileUpload}
+            onLoadSample={handleLoadSample}
+          />
         </div>
       ) : (
         <div className="app__editor-wrapper">

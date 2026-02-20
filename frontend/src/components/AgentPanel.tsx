@@ -3,14 +3,18 @@ import { useTranslation } from '../LanguageContext';
 import { useAgent } from '../useAgent';
 import { ChatInput } from './ChatInput';
 import { MessageBubble } from './MessageBubble';
-import type { LangfuseStatus } from '../types';
+import { FileUpload } from './FileUpload';
+import type { LangfuseStatus, TableInfo } from '../types';
 import './AgentPanel.css';
 
 interface AgentPanelProps {
   langfuseStatus: LangfuseStatus;
+  tables: TableInfo[];
+  onUpload: (file: File) => Promise<void>;
+  onLoadSample: () => Promise<void>;
 }
 
-export function AgentPanel({ langfuseStatus }: AgentPanelProps) {
+export function AgentPanel({ langfuseStatus, tables, onUpload, onLoadSample }: AgentPanelProps) {
   const { t } = useTranslation();
   const { messages, clearMessages } = useAgent();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -47,7 +51,11 @@ export function AgentPanel({ langfuseStatus }: AgentPanelProps) {
       <div className="agent-panel__messages">
         {messages.length === 0 && (
           <div className="agent-panel__empty">
-            {t('agentEmptyState')}
+            {tables.length === 0 ? (
+              <FileUpload onUpload={onUpload} onLoadSample={onLoadSample} />
+            ) : (
+              t('agentEmptyState')
+            )}
           </div>
         )}
         {messages.map((msg, index) => (
