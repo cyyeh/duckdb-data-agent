@@ -88,8 +88,29 @@
 }
 
 .message-bubble__typing {
-  color: var(--color-text-disabled);
   font-style: italic;
+  background: linear-gradient(
+    90deg,
+    var(--color-text-disabled) 0%,
+    var(--color-text-disabled) 40%,
+    var(--color-accent-primary-light) 50%,
+    var(--color-text-disabled) 60%,
+    var(--color-text-disabled) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .message-bubble__tools {
