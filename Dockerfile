@@ -5,7 +5,6 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/index.html frontend/vite.config.ts frontend/tsconfig.json frontend/tsconfig.app.json frontend/tsconfig.node.json ./
 COPY frontend/src/ src/
-COPY frontend/public/ public/
 RUN npm run build
 
 # Stage 2: Python backend
