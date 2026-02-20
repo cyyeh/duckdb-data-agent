@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "b09b80ed16fe",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".dockerignore",
+    "Dockerfile",
+    "README.md",
+    "backend/pyproject.toml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b0/9b80ed16fe/0/metadata.json",
+      "transcript": "/b0/9b80ed16fe/0/full.jsonl",
+      "context": "/b0/9b80ed16fe/0/context.md",
+      "content_hash": "/b0/9b80ed16fe/0/content_hash.txt",
+      "prompt": "/b0/9b80ed16fe/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 18878,
+    "cache_read_tokens": 406456,
+    "output_tokens": 142,
+    "api_call_count": 13
+  }
+}
