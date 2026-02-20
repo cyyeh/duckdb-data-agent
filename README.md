@@ -4,26 +4,20 @@
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-A SQL playground with an AI-powered data analysis agent. Upload CSV files, write SQL queries, or ask questions in plain English — powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend.
+An AI-powered data analysis agent with a built-in SQL playground. Upload CSV files and ask questions in plain English, or switch to the SQL editor for direct queries — powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
 ## Features
 
 ### General
 
+- **DuckDB SQL engine** — Fast, in-process analytical database on the backend
+- **CSV file upload** — Drag-and-drop or click to import CSV files (up to 500 MB) with automatic schema detection; the upload UI appears when no tables are loaded and disappears once data is available
+- **Sample dataset** — One-click load of the Titanic dataset to get started quickly
+- **Table sidebar** — Collapsible panel to browse tables, inspect columns, and view types
 - **Dark / light mode** — Toggle between dark and light themes with the sun/moon button in the header; respects your OS preference on first visit and remembers your choice across sessions
 - **Internationalization (i18n)** — Switch between English and Traditional Chinese with the EN/中 toggle in the header; auto-detects your OS language on first visit and remembers your choice across sessions
 
-### SQL Playground
-
-- **DuckDB SQL engine** — Fast, in-process analytical database on the backend
-- **CSV file upload** — Drag-and-drop or click to import CSV files (up to 500 MB) with automatic schema detection
-- **Sample dataset** — One-click load of the Titanic dataset to get started quickly
-- **SQL query editor** — Write and execute queries with Ctrl/Cmd+Enter
-- **Interactive results** — Sortable columns, per-column filters, and global search across results
-- **EXPLAIN support** — Markdown-rendered output for `EXPLAIN` and `EXPLAIN ANALYZE` queries
-- **Table sidebar** — Collapsible panel to browse tables, inspect columns, and view types
-
-### AI Agent
+### Agent Mode (default mode)
 
 - **Natural language queries** — Ask questions about your data in plain English; the agent writes and executes SQL for you
 - **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
@@ -32,6 +26,12 @@ A SQL playground with an AI-powered data analysis agent. Upload CSV files, write
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and key are never sent anywhere besides the Anthropic API
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions, with a one-click dashboard link in the UI
+
+### Editor Mode
+
+- **SQL query editor** — Write and execute queries with Ctrl/Cmd+Enter
+- **Interactive results** — Sortable columns, per-column filters, and global search across results
+- **EXPLAIN support** — Markdown-rendered output for `EXPLAIN` and `EXPLAIN ANALYZE` queries
 
 ## Getting Started
 

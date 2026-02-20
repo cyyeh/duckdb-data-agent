@@ -20,7 +20,7 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
   const [editorQuery, setEditorQuery] = useState<string | undefined>(
     () => tables.length > 0 ? `SELECT * FROM "${tables[0].name}" LIMIT 100` : undefined
   );
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [agentOpen, setAgentOpen] = useState(true);
 
   useEffect(() => {
