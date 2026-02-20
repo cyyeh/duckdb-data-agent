@@ -131,7 +131,7 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
           <AgentPanel />
         </div>
       ) : (
-        <main className="app__main">
+        <div className="app__editor-wrapper">
           <div className="app__header">
             <h1 className="app__title">DuckDB Data Agent</h1>
             <button
@@ -141,20 +141,25 @@ function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTab
               Agent Mode
             </button>
           </div>
-          <FileUpload onUpload={handleFileUpload} onLoadSample={handleLoadSample} />
-          <QueryEditor
-            onExecute={handleQueryExecute}
-            initialQuery={editorQuery}
-          />
-          {error && (
-            <ErrorMessage message={error} onDismiss={() => setError(null)} />
-          )}
-          {queryResult?.resultType === 'markdown' ? (
-            <ResultMarkdown result={queryResult} />
-          ) : (
-            <ResultsTable result={queryResult} />
-          )}
-        </main>
+          <div className="app__mode-header">
+            <span className="app__mode-title">Editor Mode</span>
+          </div>
+          <main className="app__main">
+            <FileUpload onUpload={handleFileUpload} onLoadSample={handleLoadSample} />
+            <QueryEditor
+              onExecute={handleQueryExecute}
+              initialQuery={editorQuery}
+            />
+            {error && (
+              <ErrorMessage message={error} onDismiss={() => setError(null)} />
+            )}
+            {queryResult?.resultType === 'markdown' ? (
+              <ResultMarkdown result={queryResult} />
+            ) : (
+              <ResultsTable result={queryResult} />
+            )}
+          </main>
+        </div>
       )}
     </div>
   );
