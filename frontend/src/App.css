@@ -67,6 +67,27 @@
   color: var(--color-text-primary);
 }
 
+.app__lang-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app__lang-toggle:hover {
+  background: var(--color-bg-hover-strong);
+  color: var(--color-text-primary);
+}
+
 .app__agent-toggle {
   padding: 6px 14px;
   font-size: 13px;

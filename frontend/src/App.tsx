@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { ThemeProvider, useTheme } from './ThemeContext';
+import { LanguageProvider, useTranslation } from './LanguageContext';
 import { AgentProvider } from './AgentContext';
 import { FileUpload } from './components/FileUpload';
 import { QueryEditor } from './components/QueryEditor';
@@ -13,6 +14,7 @@ import './App.css';
 
 function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableInfo[]; refreshTables: () => Promise<void>; langfuseStatus: LangfuseStatus }) {
   const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useTranslation();
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editorQuery, setEditorQuery] = useState<string | undefined>(
@@ -97,7 +99,7 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
   }, []);
 
   const handleTableDelete = useCallback(async (tableName: string) => {
-    if (!confirm(`Delete table "${tableName}"?`)) return;
+    if (!confirm(t('deleteTableConfirm', { name: tableName }))) return;
     try {
       const response = await fetch(`/api/tables/${encodeURIComponent(tableName)}`, {
         method: 'DELETE',
@@ -107,7 +109,7 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to delete table');
     }
-  }, [refreshTables]);
+  }, [refreshTables, t]);
 
   const appClass = [
     'app',
@@ -140,13 +142,21 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
       {agentOpen ? (
         <div className="app__agent-wrapper">
           <div className="app__header">
-            <h1 className="app__title">DuckDB Data Agent</h1>
+            <h1 className="app__title">{t('appTitle')}</h1>
             <div className="app__header-actions">
+              <button
+                className="app__lang-toggle"
+                onClick={() => setLanguage(language === 'en' ? 'zh-TW' : 'en')}
+                aria-label={language === 'en' ? t('switchToZh') : t('switchToEn')}
+                title={language === 'en' ? t('switchToZh') : t('switchToEn')}
+              >
+                {language === 'en' ? 'EN' : '中'}
+              </button>
               <button
                 className="app__theme-toggle"
                 onClick={toggleTheme}
-                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
+                title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
               >
                 {themeIcon}
               </button>
@@ -154,7 +164,7 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
                 className="app__agent-toggle app__agent-toggle--active"
                 onClick={handleAgentToggle}
               >
-                Editor Mode
+                {t('editorMode')}
               </button>
             </div>
           </div>
@@ -163,13 +173,21 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
       ) : (
         <div className="app__editor-wrapper">
           <div className="app__header">
-            <h1 className="app__title">DuckDB Data Agent</h1>
+            <h1 className="app__title">{t('appTitle')}</h1>
             <div className="app__header-actions">
+              <button
+                className="app__lang-toggle"
+                onClick={() => setLanguage(language === 'en' ? 'zh-TW' : 'en')}
+                aria-label={language === 'en' ? t('switchToZh') : t('switchToEn')}
+                title={language === 'en' ? t('switchToZh') : t('switchToEn')}
+              >
+                {language === 'en' ? 'EN' : '中'}
+              </button>
               <button
                 className="app__theme-toggle"
                 onClick={toggleTheme}
-                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
+                title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
               >
                 {themeIcon}
               </button>
@@ -177,12 +195,12 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
                 className="app__agent-toggle"
                 onClick={handleAgentToggle}
               >
-                Agent Mode
+                {t('agentMode')}
               </button>
             </div>
           </div>
           <div className="app__mode-header">
-            <span className="app__mode-title">Editor Mode</span>
+            <span className="app__mode-title">{t('editorMode')}</span>
           </div>
           <main className="app__main">
             <FileUpload onUpload={handleFileUpload} onLoadSample={handleLoadSample} />
@@ -255,10 +273,12 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider>
-      <AgentProvider refreshTables={refreshTables}>
-        <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
-      </AgentProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <AgentProvider refreshTables={refreshTables}>
+          <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
+        </AgentProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
