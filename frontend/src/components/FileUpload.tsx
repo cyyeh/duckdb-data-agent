@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react';
-import { useTranslation } from '../LanguageContext';
-import { useConfig } from '../ConfigContext';
+import { useTranslation } from '../hooks/useTranslation';
+import { useConfig } from '../hooks/useConfig';
 import './FileUpload.css';
 
 interface FileUploadProps {

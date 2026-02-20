@@ -1,5 +1,5 @@
 import { useState, useCallback, type KeyboardEvent } from 'react';
-import { useTranslation } from '../LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
 import './QueryEditor.css';
 
 interface QueryEditorProps {

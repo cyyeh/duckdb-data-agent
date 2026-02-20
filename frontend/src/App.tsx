@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ThemeProvider, useTheme } from './ThemeContext';
-import { LanguageProvider, useTranslation } from './LanguageContext';
-import { AgentProvider } from './AgentContext';
-import { ConfigProvider } from './ConfigContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { useTheme } from './hooks/useTheme';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { useTranslation } from './hooks/useTranslation';
+import { AgentProvider } from './contexts/AgentContext';
+import { ConfigProvider } from './contexts/ConfigContext';
 import { FileUpload } from './components/FileUpload';
 import { QueryEditor } from './components/QueryEditor';
 import { ResultsTable } from './components/ResultsTable';

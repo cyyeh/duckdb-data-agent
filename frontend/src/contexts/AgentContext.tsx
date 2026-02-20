@@ -1,30 +1,12 @@
 import {
-  createContext,
   useCallback,
   useRef,
   useState,
   type ReactNode,
 } from 'react';
-import { runAgentLoop, runAgentEditLoop } from './agent/agentService';
-import type { ChatMessage, ContentSegment, ToolCallResult } from './types';
-
-interface AgentContextValue {
-  messages: ChatMessage[];
-  isStreaming: boolean;
-  sendMessage: (text: string) => void;
-  editMessage: (messageIndex: number, newContent: string) => void;
-  deleteMessage: (messageIndex: number) => void;
-  clearMessages: () => void;
-}
-
-export const AgentContext = createContext<AgentContextValue>({
-  messages: [],
-  isStreaming: false,
-  sendMessage: () => {},
-  editMessage: () => {},
-  deleteMessage: () => {},
-  clearMessages: () => {},
-});
+import { AgentContext } from '../hooks/useAgent';
+import { runAgentLoop, runAgentEditLoop } from '../agent/agentService';
+import type { ChatMessage, ContentSegment, ToolCallResult } from '../types';
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
@@ -410,4 +392,3 @@ export function AgentProvider({
     </AgentContext.Provider>
   );
 }
-

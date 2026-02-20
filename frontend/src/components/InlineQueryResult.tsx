@@ -1,4 +1,4 @@
-import { useTranslation } from '../LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
 import type { ToolCallResult } from '../types';
 import './InlineQueryResult.css';
 

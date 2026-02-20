@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useTranslation } from '../LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
 import type { ChatMessage, ContentSegment } from '../types';
-import { useAgent } from '../useAgent';
+import { useAgent } from '../hooks/useAgent';
 import { InlineQueryResult } from './InlineQueryResult';
 import './MessageBubble.css';
 

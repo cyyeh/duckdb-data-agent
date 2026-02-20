@@ -1,21 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import en from './i18n/en.json';
-import zhTW from './i18n/zh-TW.json';
-
-export type Language = 'en' | 'zh-TW';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { LanguageContext, type Language } from '../hooks/useTranslation';
+import en from '../i18n/en.json';
+import zhTW from '../i18n/zh-TW.json';
 
 const translations: Record<Language, Record<string, string>> = {
   'en': en,
   'zh-TW': zhTW,
 };
-
-interface LanguageContextValue {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
-}
-
-const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function getInitialLanguage(): Language {
   const stored = localStorage.getItem('language');
@@ -51,10 +42,4 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       {children}
     </LanguageContext.Provider>
   );
-}
-
-export function useTranslation() {
-  const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error('useTranslation must be used within LanguageProvider');
-  return ctx;
 }

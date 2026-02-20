@@ -11,7 +11,7 @@ An AI-powered data analysis agent with a built-in SQL playground. Upload CSV fil
 ### General
 
 - **DuckDB SQL engine** — Fast, in-process analytical database on the backend
-- **CSV file upload** — Drag-and-drop or click to import CSV files (up to 500 MB) with automatic schema detection; the upload UI appears when no tables are loaded and disappears once data is available
+- **CSV file upload** — Drag-and-drop or click to import CSV files (default limit: 500 MB, configurable via `MAX_TOTAL_SIZE_BYTES` env var) with automatic schema detection; the upload UI appears when no tables are loaded and disappears once data is available
 - **Sample dataset** — One-click load of the Titanic dataset to get started quickly
 - **Table sidebar** — Collapsible panel to browse tables, inspect columns, and view types
 - **Dark / light mode** — Toggle between dark and light themes with the sun/moon button in the header; respects your OS preference on first visit and remembers your choice across sessions
@@ -66,10 +66,11 @@ Edit `backend/.env` and set your key:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=sonnet    # optional, defaults to sonnet
+ANTHROPIC_MODEL=sonnet              # optional, defaults to sonnet
+MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (default: 500 MB)
 ```
 
-> Both variables are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
+> `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
 
 #### Langfuse (optional)
 
@@ -134,11 +135,10 @@ Render will build the Docker image and deploy it automatically on every push to 
 │   ├── public/             #   Static assets (Langfuse icon)
 │   ├── src/
 │   │   ├── components/     #   UI components (editor, results, sidebar, chat)
+│   │   ├── contexts/       #   React context providers (theme, language, agent, config)
+│   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig)
 │   │   ├── agent/          #   Agent service (SSE event handling)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
-│   │   ├── AgentContext.tsx #   Agent state management
-│   │   ├── ThemeContext.tsx #   Dark/light theme state & persistence
-│   │   ├── LanguageContext.tsx # i18n state, detection & translation
 │   │   └── types.ts        #   Shared TypeScript interfaces
 │   ├── index.html          #   HTML entry point
 │   ├── package.json        #   npm config
@@ -146,13 +146,13 @@ Render will build the Docker image and deploy it automatically on every push to 
 ├── backend/                # FastAPI backend
 │   └── app/
 │       ├── main.py         #   App setup & CORS
-│       ├── config.py       #   Environment variables (API key, model)
+│       ├── config.py       #   Environment variables (API key, model, upload limits)
 │       ├── database.py     #   DuckDB connection & query execution
 │       ├── agent.py        #   Agent loop & SSE streaming
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
 │       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
 │       ├── data/           #   Sample datasets (titanic.csv)
-│       └── routes/         #   API endpoints (tables, query, chat, langfuse status)
+│       └── routes/         #   API endpoints (tables, query, chat, config, langfuse status)
 ├── Dockerfile              # Multi-stage production build
 ├── render.yaml             # Render deployment config
 └── Makefile                # Dev commands (install, dev, clean)

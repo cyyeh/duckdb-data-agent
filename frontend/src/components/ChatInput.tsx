@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
-import { useTranslation } from '../LanguageContext';
-import { useAgent } from '../useAgent';
+import { useTranslation } from '../hooks/useTranslation';
+import { useAgent } from '../hooks/useAgent';
 import './ChatInput.css';
 
 export function ChatInput() {

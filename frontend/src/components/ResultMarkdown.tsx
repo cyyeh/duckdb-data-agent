@@ -1,5 +1,5 @@
 import ReactMarkdown from 'react-markdown';
-import { useTranslation } from '../LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
 import type { QueryResult } from '../types';
 import './ResultMarkdown.css';
 

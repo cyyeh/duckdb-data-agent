@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useTranslation } from '../LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
 import type { QueryResult } from '../types';
 import './ResultsTable.css';
 

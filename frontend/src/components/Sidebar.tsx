@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTranslation } from '../LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
 import type { TableInfo } from '../types';
 import './Sidebar.css';
 

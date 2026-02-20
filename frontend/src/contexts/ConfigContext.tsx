@@ -1,14 +1,5 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-
-interface ConfigContextValue {
-  maxTotalSizeBytes: number;
-}
-
-const DEFAULT_MAX_TOTAL_SIZE_BYTES = 500 * 1024 * 1024; // 500MB
-
-const ConfigContext = createContext<ConfigContextValue>({
-  maxTotalSizeBytes: DEFAULT_MAX_TOTAL_SIZE_BYTES,
-});
+import { useState, useEffect, type ReactNode } from 'react';
+import { ConfigContext, DEFAULT_MAX_TOTAL_SIZE_BYTES } from '../hooks/useConfig';
 
 export function ConfigProvider({ children }: { children: ReactNode }) {
   const [maxTotalSizeBytes, setMaxTotalSizeBytes] = useState(DEFAULT_MAX_TOTAL_SIZE_BYTES);
@@ -34,8 +25,4 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       {children}
     </ConfigContext.Provider>
   );
-}
-
-export function useConfig() {
-  return useContext(ConfigContext);
 }

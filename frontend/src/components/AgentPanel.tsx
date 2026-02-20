@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { useTranslation } from '../LanguageContext';
-import { useAgent } from '../useAgent';
+import { useTranslation } from '../hooks/useTranslation';
+import { useAgent } from '../hooks/useAgent';
 import { ChatInput } from './ChatInput';
 import { MessageBubble } from './MessageBubble';
 import { FileUpload } from './FileUpload';
