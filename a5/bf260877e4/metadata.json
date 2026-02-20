@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a5bf260877e4",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/database.py",
+    "backend/app/routes/tables.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a5/bf260877e4/0/metadata.json",
+      "transcript": "/a5/bf260877e4/0/full.jsonl",
+      "context": "/a5/bf260877e4/0/context.md",
+      "content_hash": "/a5/bf260877e4/0/content_hash.txt",
+      "prompt": "/a5/bf260877e4/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 59,
+    "cache_creation_tokens": 99057,
+    "cache_read_tokens": 2628254,
+    "output_tokens": 1756,
+    "api_call_count": 52
+  }
+}
