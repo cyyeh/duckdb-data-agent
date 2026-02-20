@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "4bdd49c27228",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/AgentPanel.css",
+    "frontend/src/components/ChatInput.css",
+    "frontend/src/components/ErrorMessage.css",
+    "frontend/src/components/FileUpload.css",
+    "frontend/src/components/InlineQueryResult.css",
+    "frontend/src/components/MessageBubble.css",
+    "frontend/src/components/QueryEditor.css",
+    "frontend/src/components/ResultMarkdown.css",
+    "frontend/src/components/ResultsTable.css",
+    "frontend/src/components/Sidebar.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4b/dd49c27228/0/metadata.json",
+      "transcript": "/4b/dd49c27228/0/full.jsonl",
+      "context": "/4b/dd49c27228/0/context.md",
+      "content_hash": "/4b/dd49c27228/0/content_hash.txt",
+      "prompt": "/4b/dd49c27228/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 18878,
+    "cache_read_tokens": 406456,
+    "output_tokens": 142,
+    "api_call_count": 13
+  }
+}
