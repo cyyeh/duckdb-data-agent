@@ -36,6 +36,32 @@
   color: #374151;
 }
 
+.agent-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-panel__langfuse {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.agent-panel__langfuse:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.agent-panel__langfuse--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .agent-panel__messages {
   flex: 1;
   overflow-y: auto;
