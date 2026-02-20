@@ -122,7 +122,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       handleCancelEdit();
-    } else if (e.key === 'Enter' && !e.shiftKey) {
+    } else if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSaveEdit();
     }
