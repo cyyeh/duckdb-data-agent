@@ -17,11 +17,6 @@ export interface QueryResult {
   resultType: 'table' | 'markdown';
 }
 
-export interface ToolCallInfo {
-  id: string;
-  sql: string;
-}
-
 export interface ToolCallResult {
   toolCallId: string;
   toolName?: string;

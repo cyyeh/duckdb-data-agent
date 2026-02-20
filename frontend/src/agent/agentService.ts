@@ -11,32 +11,18 @@ interface AgentCallbacks {
 
 export type { AgentCallbacks };
 
-export async function runAgentLoop(
-  message: string,
-  sessionId: string | null,
+async function streamSSE(
+  response: Response,
   callbacks: AgentCallbacks,
   signal?: AbortSignal,
 ): Promise<void> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    callbacks.onError('No response stream');
+    return;
+  }
+
   try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, session_id: sessionId }),
-      signal,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      callbacks.onError(`Server error: ${errorText}`);
-      return;
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      callbacks.onError('No response stream');
-      return;
-    }
-
     const decoder = new TextDecoder();
     let buffer = '';
 
@@ -71,6 +57,34 @@ export async function runAgentLoop(
   }
 }
 
+export async function runAgentLoop(
+  message: string,
+  sessionId: string | null,
+  callbacks: AgentCallbacks,
+  signal?: AbortSignal,
+): Promise<void> {
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, session_id: sessionId }),
+      signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      callbacks.onError(`Server error: ${errorText}`);
+      return;
+    }
+
+    await streamSSE(response, callbacks, signal);
+  } catch (e: unknown) {
+    if (signal?.aborted) return;
+    const msg = e instanceof Error ? e.message : 'Connection failed';
+    callbacks.onError(msg);
+  }
+}
+
 export async function runAgentEditLoop(
   newMessage: string,
   conversationHistory: { role: string; content: string }[],
@@ -94,39 +108,7 @@ export async function runAgentEditLoop(
       return;
     }
 
-    const reader = response.body?.getReader();
-    if (!reader) {
-      callbacks.onError('No response stream');
-      return;
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
-
-      let eventType = '';
-      for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          eventType = line.slice(7).trim();
-        } else if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          try {
-            const parsed = JSON.parse(data);
-            handleSSEEvent(eventType, parsed, callbacks);
-          } catch {
-            // Skip malformed JSON
-          }
-          eventType = '';
-        }
-      }
-    }
+    await streamSSE(response, callbacks, signal);
   } catch (e: unknown) {
     if (signal?.aborted) return;
     const msg = e instanceof Error ? e.message : 'Connection failed';

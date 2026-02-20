@@ -215,7 +215,7 @@ export default function App() {
   }
 
   return (
-    <AgentProvider tables={tables} refreshTables={refreshTables}>
+    <AgentProvider refreshTables={refreshTables}>
       <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
     </AgentProvider>
   );

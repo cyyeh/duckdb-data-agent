@@ -123,9 +123,7 @@ async def stream_chat(
         await client.connect()
         await client.query(message, session_id=session_id or "default")
 
-        current_text = ""
         has_tool_calls = False
-        thinking_sent = False
         has_thinking = False
         sql_result_ids: set[str] = set()
         tool_names: dict[str, str] = {}
@@ -141,11 +139,9 @@ async def stream_chat(
                     if delta_type == "thinking_delta":
                         text = delta.get("thinking", "")
                         if text:
-                            current_text += text
                             yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
                     elif delta_type == "text_delta":
                         text = delta.get("text", "")
-                        current_text += text
                         event_name = "thinking" if not has_tool_calls else "answer"
                         yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
 
@@ -159,8 +155,6 @@ async def stream_chat(
                             yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
                     elif block_type == "tool_use":
                         has_thinking = False
-                        if current_text.strip() and not thinking_sent:
-                            thinking_sent = True
                         has_tool_calls = True
 
             elif isinstance(msg, AssistantMessage):

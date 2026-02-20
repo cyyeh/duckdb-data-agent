@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { runAgentLoop, runAgentEditLoop } from './agent/agentService';
-import type { ChatMessage, ContentSegment, TableInfo, ToolCallResult } from './types';
+import type { ChatMessage, ContentSegment, ToolCallResult } from './types';
 
 interface AgentContextValue {
   messages: ChatMessage[];
@@ -35,7 +35,6 @@ export function AgentProvider({
   refreshTables,
 }: {
   children: ReactNode;
-  tables: TableInfo[];
   refreshTables: () => Promise<void>;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -219,7 +218,7 @@ export function AgentProvider({
         controller.signal
       );
     },
-    [isStreaming, messages, flushText, refreshTables]
+    [isStreaming, flushText, refreshTables]
   );
 
   const editMessage = useCallback(
