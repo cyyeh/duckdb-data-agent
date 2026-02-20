@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f3a66a486274",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/poetry.lock",
+    "backend/pyproject.toml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f3/a66a486274/0/metadata.json",
+      "transcript": "/f3/a66a486274/0/full.jsonl",
+      "context": "/f3/a66a486274/0/context.md",
+      "content_hash": "/f3/a66a486274/0/content_hash.txt",
+      "prompt": "/f3/a66a486274/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 49340,
+    "cache_read_tokens": 711636,
+    "output_tokens": 328,
+    "api_call_count": 12
+  }
+}
