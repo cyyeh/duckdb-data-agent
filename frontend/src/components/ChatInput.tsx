@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { useAgent } from '../useAgent';
 import './ChatInput.css';
 
 export function ChatInput() {
+  const { t } = useTranslation();
   const { sendMessage, isStreaming } = useAgent();
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -39,7 +41,7 @@ export function ChatInput() {
         value={text}
         onChange={handleInput}
         onKeyDown={handleKeyDown}
-        placeholder={isStreaming ? 'Waiting for response...' : 'Ask about your data...'}
+        placeholder={isStreaming ? t('chatPlaceholderWaiting') : t('chatPlaceholder')}
         disabled={isStreaming}
         rows={1}
       />
@@ -48,7 +50,7 @@ export function ChatInput() {
         onClick={handleSend}
         disabled={isStreaming || !text.trim()}
       >
-        Send
+        {t('send')}
       </button>
     </div>
   );

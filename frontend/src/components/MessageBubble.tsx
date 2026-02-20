@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from '../LanguageContext';
 import type { ChatMessage, ContentSegment } from '../types';
 import { useAgent } from '../useAgent';
 import { InlineQueryResult } from './InlineQueryResult';
 import './MessageBubble.css';
 
-function getLastThinkingLine(segments: ContentSegment[], streamingRemainder?: string): string {
+function getLastThinkingLine(segments: ContentSegment[], streamingRemainder: string | undefined, t: (key: string) => string): string {
   // Use streaming remainder if available
   if (streamingRemainder?.trim()) {
     const lines = streamingRemainder.trim().split('\n').filter((l) => l.trim());
@@ -21,7 +22,7 @@ function getLastThinkingLine(segments: ContentSegment[], streamingRemainder?: st
       return last.length > 100 ? last.slice(0, 100) + '...' : last;
     }
   }
-  return 'Thinking...';
+  return t('thinking');
 }
 
 function ThinkingBlock({ segments, streamingRemainder, isActivelyStreaming }: {
@@ -29,6 +30,7 @@ function ThinkingBlock({ segments, streamingRemainder, isActivelyStreaming }: {
   streamingRemainder?: string;
   isActivelyStreaming: boolean;
 }) {
+  const { t } = useTranslation();
   // All non-answer segments go inside the thinking block
   const thinkingSegments = segments.filter((s) => s.type !== 'answer');
   const hasContent = thinkingSegments.some(
@@ -37,12 +39,12 @@ function ThinkingBlock({ segments, streamingRemainder, isActivelyStreaming }: {
 
   if (!hasContent) return null;
 
-  const summary = getLastThinkingLine(segments, streamingRemainder);
+  const summary = getLastThinkingLine(segments, streamingRemainder, t);
 
   return (
     <details className="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible" open={isActivelyStreaming || undefined}>
       <summary className="message-bubble__collapsible-summary">
-        <span className="message-bubble__segment-label">Thinking</span>
+        <span className="message-bubble__segment-label">{t('thinkingLabel')}</span>
         <span className="message-bubble__collapsible-preview">{summary}</span>
       </summary>
       <div className="message-bubble__thinking-body">
@@ -74,6 +76,7 @@ function ThinkingBlock({ segments, streamingRemainder, isActivelyStreaming }: {
 }
 
 export function MessageBubble({ message, messageIndex }: { message: ChatMessage; messageIndex: number }) {
+  const { t } = useTranslation();
   const { isStreaming, editMessage, deleteMessage } = useAgent();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
@@ -148,20 +151,20 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
   return (
     <div className={`message-bubble message-bubble--${message.role}`}>
       <div className="message-bubble__header">
-        {isUser ? 'You' : 'Assistant'}
+        {isUser ? t('you') : t('assistant')}
         {isUser && !isStreaming && !isEditing && !isConfirmingDelete && (
           <span className="message-bubble__actions">
             <button
               className="message-bubble__action-btn"
               onClick={handleEdit}
-              title="Edit message"
+              title={t('editMessage')}
             >
               &#9998;
             </button>
             <button
               className="message-bubble__action-btn message-bubble__action-btn--delete"
               onClick={() => setIsConfirmingDelete(true)}
-              title="Delete message"
+              title={t('deleteMessage')}
             >
               &#128465;
             </button>
@@ -171,19 +174,19 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
 
       {isUser && isConfirmingDelete && (
         <div className="message-bubble__confirm-delete">
-          <span>Delete this and all following messages?</span>
+          <span>{t('deleteConfirm')}</span>
           <div className="message-bubble__confirm-actions">
             <button
               className="message-bubble__confirm-btn message-bubble__confirm-btn--delete"
               onClick={handleDeleteConfirm}
             >
-              Delete
+              {t('delete')}
             </button>
             <button
               className="message-bubble__confirm-btn"
               onClick={() => setIsConfirmingDelete(false)}
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </div>
@@ -204,13 +207,13 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               className="message-bubble__edit-btn message-bubble__edit-btn--save"
               onClick={handleSaveEdit}
             >
-              Save &amp; Resend
+              {t('saveResend')}
             </button>
             <button
               className="message-bubble__edit-btn"
               onClick={handleCancelEdit}
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </div>
@@ -223,7 +226,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
           />
           {answerSegments.map((seg, i) => (
             <div key={i} className="message-bubble__segment message-bubble__segment--answer">
-              <div className="message-bubble__segment-label message-bubble__segment-label--answer">Answer</div>
+              <div className="message-bubble__segment-label message-bubble__segment-label--answer">{t('answer')}</div>
               <div className="message-bubble__segment-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text!}</ReactMarkdown>
               </div>
@@ -231,14 +234,14 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
           ))}
           {isInAnswerPhase && !hasAnswer && streamingRemainder?.trim() && (
             <div className="message-bubble__segment message-bubble__segment--answer">
-              <div className="message-bubble__segment-label message-bubble__segment-label--answer">Answer</div>
+              <div className="message-bubble__segment-label message-bubble__segment-label--answer">{t('answer')}</div>
               <div className="message-bubble__segment-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingRemainder}</ReactMarkdown>
               </div>
             </div>
           )}
           {message.isStreaming && !message.content && (
-            <span className="message-bubble__typing">Thinking...</span>
+            <span className="message-bubble__typing">{t('thinking')}</span>
           )}
         </div>
       ) : (
@@ -247,7 +250,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
             {message.content ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
             ) : message.isStreaming ? (
-              <span className="message-bubble__typing">Thinking...</span>
+              <span className="message-bubble__typing">{t('thinking')}</span>
             ) : null}
           </div>
           {message.toolCalls && message.toolCalls.length > 0 && (

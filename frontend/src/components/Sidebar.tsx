@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import type { TableInfo } from '../types';
 import './Sidebar.css';
 
@@ -11,6 +12,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ tables, onTableClick, onTableDelete, collapsed, onToggle }: SidebarProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const toggle = (name: string) => {
@@ -20,18 +22,18 @@ export function Sidebar({ tables, onTableClick, onTableDelete, collapsed, onTogg
   return (
     <div className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
       <div className="sidebar__header">
-        <h3 className="sidebar__title">Tables</h3>
+        <h3 className="sidebar__title">{t('tablesHeader')}</h3>
         <button
           className="sidebar__collapse-toggle"
           onClick={onToggle}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')}
         >
           <span className="sidebar__hamburger" />
         </button>
       </div>
       <div className="sidebar__content">
         {tables.length === 0 && (
-          <p className="sidebar__empty">No tables yet. Upload a CSV to get started.</p>
+          <p className="sidebar__empty">{t('noTables')}</p>
         )}
         <ul className="sidebar__list">
           {tables.map((table) => (
@@ -50,7 +52,7 @@ export function Sidebar({ tables, onTableClick, onTableDelete, collapsed, onTogg
                   {table.name}
                 </button>
                 <span className="sidebar__row-count">
-                  {table.rowCount} row{table.rowCount !== 1 ? 's' : ''}
+                  {t('rowCount', { count: table.rowCount })}
                 </span>
                 <button
                   className="sidebar__delete"
@@ -58,8 +60,8 @@ export function Sidebar({ tables, onTableClick, onTableDelete, collapsed, onTogg
                     e.stopPropagation();
                     onTableDelete(table.name);
                   }}
-                  title={`Delete table "${table.name}"`}
-                  aria-label={`Delete table ${table.name}`}
+                  title={t('deleteTable', { name: table.name })}
+                  aria-label={t('deleteTable', { name: table.name })}
                 >
                   🗑
                 </button>

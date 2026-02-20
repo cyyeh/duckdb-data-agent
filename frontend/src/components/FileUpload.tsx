@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react';
+import { useTranslation } from '../LanguageContext';
 import './FileUpload.css';
 
 interface FileUploadProps {
@@ -9,6 +10,7 @@ interface FileUploadProps {
 const MAX_SIZE_BYTES = 500 * 1024 * 1024; // 500MB
 
 export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
+  const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loadingSample, setLoadingSample] = useState(false);
@@ -16,11 +18,11 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      alert('Only .csv files are supported.');
+      alert(t('csvOnly'));
       return;
     }
     if (file.size > MAX_SIZE_BYTES) {
-      alert('File exceeds 500MB limit.');
+      alert(t('fileTooLarge'));
       return;
     }
     setUploading(true);
@@ -77,22 +79,22 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
           }}
         />
         {uploading ? (
-          <p className="file-upload__text">Uploading...</p>
+          <p className="file-upload__text">{t('uploading')}</p>
         ) : (
           <p className="file-upload__text">
-            Drop a CSV file here or click to browse
+            {t('uploadDropText')}
           </p>
         )}
       </div>
       <div className="file-upload-divider">
-        <span>or</span>
+        <span>{t('uploadOr')}</span>
       </div>
       <button
         className="file-upload-sample-btn"
         onClick={handleLoadSample}
         disabled={loadingSample}
       >
-        {loadingSample ? 'Loading...' : 'Load Sample Dataset (Titanic)'}
+        {loadingSample ? t('loading') : t('loadSample')}
       </button>
     </div>
   );

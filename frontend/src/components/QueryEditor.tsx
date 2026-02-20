@@ -1,4 +1,5 @@
 import { useState, useCallback, type KeyboardEvent } from 'react';
+import { useTranslation } from '../LanguageContext';
 import './QueryEditor.css';
 
 interface QueryEditorProps {
@@ -7,6 +8,7 @@ interface QueryEditorProps {
 }
 
 export function QueryEditor({ onExecute, initialQuery }: QueryEditorProps) {
+  const { t } = useTranslation();
   const [sql, setSql] = useState(initialQuery ?? '');
   const [running, setRunning] = useState(false);
 
@@ -45,7 +47,7 @@ export function QueryEditor({ onExecute, initialQuery }: QueryEditorProps) {
         value={sql}
         onChange={(e) => setSql(e.target.value)}
         onKeyDown={onKeyDown}
-        placeholder="Enter SQL query... (Ctrl+Enter to run)"
+        placeholder={t('queryPlaceholder')}
         rows={6}
         spellCheck={false}
       />
@@ -55,7 +57,7 @@ export function QueryEditor({ onExecute, initialQuery }: QueryEditorProps) {
           onClick={run}
           disabled={running || !sql.trim()}
         >
-          {running ? 'Running...' : 'Run Query'}
+          {running ? t('running') : t('runQuery')}
         </button>
       </div>
     </div>

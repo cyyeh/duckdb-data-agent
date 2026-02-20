@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import type { QueryResult } from '../types';
 import './ResultsTable.css';
 
@@ -14,6 +15,7 @@ interface SortConfig {
 }
 
 export function ResultsTable({ result }: ResultsTableProps) {
+  const { t } = useTranslation();
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: 'asc' });
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [globalFilter, setGlobalFilter] = useState('');
@@ -100,17 +102,16 @@ export function ResultsTable({ result }: ResultsTableProps) {
         <input
           className="results-table__global-search"
           type="text"
-          placeholder="Search all columns…"
+          placeholder={t('searchColumns')}
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
         />
       </div>
       <div className="results-table__summary">
         {isFiltered
-          ? `${sortedRows.length} of ${result.rowCount} rows`
-          : `${result.rowCount} row${result.rowCount !== 1 ? 's' : ''}`}{' '}
-        in {result.executionTimeMs.toFixed(1)} ms
-        {truncated && ` (showing first ${DISPLAY_CAP})`}
+          ? t('rowsFilteredInTime', { count: sortedRows.length, total: result.rowCount, time: result.executionTimeMs.toFixed(1) })
+          : t('rowCountInTime', { count: result.rowCount, time: result.executionTimeMs.toFixed(1) })}
+        {truncated && ` ${t('showingFirst', { count: DISPLAY_CAP })}`}
       </div>
       {result.columns.length > 0 && (
         <div className="results-table__scroll">
@@ -133,7 +134,7 @@ export function ResultsTable({ result }: ResultsTableProps) {
                     <input
                       className="results-table__col-filter"
                       type="text"
-                      placeholder="Filter…"
+                      placeholder={t('filterPlaceholder')}
                       value={columnFilters[col] || ''}
                       onChange={(e) => handleColumnFilter(col, e.target.value)}
                     />

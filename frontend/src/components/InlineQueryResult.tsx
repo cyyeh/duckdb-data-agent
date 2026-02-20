@@ -1,17 +1,17 @@
+import { useTranslation } from '../LanguageContext';
 import type { ToolCallResult } from '../types';
 import './InlineQueryResult.css';
 
 const MAX_DISPLAY_ROWS = 20;
 
-function getToolDisplayName(result: ToolCallResult): string {
+function getToolDisplayName(result: ToolCallResult, t: (key: string) => string): string {
   const name = result.toolName || '';
-  if (name.includes('execute_sql')) return 'SQL Query';
-  if (name === 'Bash') return 'Bash';
-  if (name === 'Read') return 'Read File';
-  if (name === 'Write') return 'Write File';
-  if (name === 'Edit') return 'Edit File';
+  if (name.includes('execute_sql')) return t('sqlQuery');
+  if (name === 'Bash') return t('bash');
+  if (name === 'Read') return t('readFile');
+  if (name === 'Write') return t('writeFile');
+  if (name === 'Edit') return t('editFile');
   if (name.startsWith('mcp__')) {
-    // e.g. "mcp__server__tool_name" -> "tool_name"
     const parts = name.split('__');
     return parts[parts.length - 1] || name;
   }
@@ -36,7 +36,8 @@ function isSQL(result: ToolCallResult): boolean {
 }
 
 export function InlineQueryResult({ result }: { result: ToolCallResult }) {
-  const displayName = getToolDisplayName(result);
+  const { t } = useTranslation();
+  const displayName = getToolDisplayName(result, t);
   const inputDisplay = getToolInputDisplay(result);
   const isSQLTool = isSQL(result);
   const hasStructuredData = result.columns.length > 0;
@@ -91,8 +92,8 @@ export function InlineQueryResult({ result }: { result: ToolCallResult }) {
             </table>
           </div>
           <div className="inline-query__meta">
-            {result.rowCount} row{result.rowCount !== 1 ? 's' : ''}
-            {result.rowCount > MAX_DISPLAY_ROWS && ` (showing ${MAX_DISPLAY_ROWS})`}
+            {t('rowCount', { count: result.rowCount })}
+            {result.rowCount > MAX_DISPLAY_ROWS && ` ${t('showingCount', { count: MAX_DISPLAY_ROWS })}`}
           </div>
         </>
       )}
@@ -113,7 +114,7 @@ export function InlineQueryResult({ result }: { result: ToolCallResult }) {
 
       {/* Pending state */}
       {!result.error && !hasStructuredData && !result.output && !result.rawContent && inputDisplay && (
-        <div className="inline-query__meta">Executing...</div>
+        <div className="inline-query__meta">{t('executing')}</div>
       )}
     </div>
   );
