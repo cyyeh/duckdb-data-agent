@@ -14,7 +14,7 @@ from claude_agent_sdk import (
 from claude_agent_sdk.types import StreamEvent, SystemMessage
 from claude_agent_sdk._errors import MessageParseError
 from app.tools import create_duckdb_server
-from app.database import db
+from app.database import Database
 from app.config import ANTHROPIC_MODEL
 from app.tracing import get_langfuse_client
 
@@ -43,7 +43,7 @@ def _safe_parse_message(data):
 _parser.parse_message = _safe_parse_message
 
 
-def build_system_prompt(conversation_history: list[dict] | None = None) -> str:
+def build_system_prompt(db: Database, conversation_history: list[dict] | None = None) -> str:
     tables = db.list_tables()
     prompt = """You are a helpful data analyst assistant working with a DuckDB database.
 You can execute SQL queries using the execute_sql tool to answer questions about the user's data.
@@ -96,10 +96,13 @@ def _extract_tool_result_text(content: object) -> str:
 async def stream_chat(
     message: str,
     session_id: str | None = None,
+    db: Database | None = None,
     conversation_history: list[dict] | None = None,
 ) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events."""
-    duckdb_server = create_duckdb_server()
+    if db is None:
+        raise ValueError("db must be provided")
+    duckdb_server = create_duckdb_server(db)
 
     logger.info("Using model: %s", ANTHROPIC_MODEL)
 
@@ -109,7 +112,7 @@ async def stream_chat(
     # Use the --resume flag to continue an existing session
     options = ClaudeAgentOptions(
         model=ANTHROPIC_MODEL,
-        system_prompt=build_system_prompt(conversation_history),
+        system_prompt=build_system_prompt(db, conversation_history),
         mcp_servers={"duckdb": duckdb_server},
         allowed_tools=["mcp__duckdb__execute_sql"],
         permission_mode="bypassPermissions",
