@@ -45,8 +45,7 @@ export function Sidebar({ tables, onTableClick, onTableDelete, collapsed, onTogg
                 </button>
                 <button
                   className="sidebar__table-name"
-                  onClick={() => onTableClick(table.name)}
-                  title={`SELECT * FROM "${table.name}" LIMIT 100`}
+                  onClick={() => { onTableClick(table.name); toggle(table.name); }}
                 >
                   {table.name}
                 </button>
