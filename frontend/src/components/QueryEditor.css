@@ -13,6 +13,8 @@
   resize: vertical;
   outline: none;
   line-height: 1.5;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
 }
 
 .query-editor__textarea:focus {

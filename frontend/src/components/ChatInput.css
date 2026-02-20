@@ -16,6 +16,8 @@
   resize: none;
   line-height: 1.4;
   max-height: 150px;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
 }
 
 .chat-input__textarea:focus {
