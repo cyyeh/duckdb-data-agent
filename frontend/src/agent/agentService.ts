@@ -72,9 +72,8 @@ export async function runAgentLoop(
 }
 
 export async function runAgentEditLoop(
-  sessionId: string,
-  userMessageIndex: number,
   newMessage: string,
+  conversationHistory: { role: string; content: string }[],
   callbacks: AgentCallbacks,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -83,9 +82,8 @@ export async function runAgentEditLoop(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        session_id: sessionId,
-        user_message_index: userMessageIndex,
         new_message: newMessage,
+        conversation_history: conversationHistory,
       }),
       signal,
     });
@@ -133,25 +131,6 @@ export async function runAgentEditLoop(
     if (signal?.aborted) return;
     const msg = e instanceof Error ? e.message : 'Connection failed';
     callbacks.onError(msg);
-  }
-}
-
-export async function deleteAgentMessage(
-  sessionId: string,
-  userMessageIndex: number,
-): Promise<void> {
-  const response = await fetch('/api/chat/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      session_id: sessionId,
-      user_message_index: userMessageIndex,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Delete failed: ${errorText}`);
   }
 }
 

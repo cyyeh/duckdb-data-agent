@@ -20,7 +20,7 @@ from app.tracing import get_langfuse_client
 logger = logging.getLogger(__name__)
 
 
-def build_system_prompt() -> str:
+def build_system_prompt(conversation_history: list[dict] | None = None) -> str:
     tables = db.list_tables()
     prompt = """You are a helpful data analyst assistant working with a DuckDB database.
 You can execute SQL queries using the execute_sql tool to answer questions about the user's data.
@@ -40,6 +40,14 @@ Guidelines:
             prompt += f'\nTable: "{table["name"]}" ({table["rowCount"]} rows)\nColumns:\n'
             for col in table["columns"]:
                 prompt += f'  - "{col["name"]}" ({col["type"]})\n'
+
+    if conversation_history:
+        prompt += "\n\nPrevious conversation (for context, the user is now editing a message):\n"
+        for entry in conversation_history:
+            role = entry.get("role", "user").capitalize()
+            content = entry.get("content", "")
+            prompt += f"\n{role}: {content}\n"
+
     return prompt
 
 
@@ -58,21 +66,29 @@ def _extract_tool_result_text(content: object) -> str:
     return str(content)
 
 
-async def stream_chat(message: str, session_id: str | None = None) -> AsyncIterator[str]:
+async def stream_chat(
+    message: str,
+    session_id: str | None = None,
+    conversation_history: list[dict] | None = None,
+) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events."""
     duckdb_server = create_duckdb_server()
 
     logger.info("Using model: %s", ANTHROPIC_MODEL)
 
+    # Collect stderr from the CLI subprocess for debugging
+    stderr_lines: list[str] = []
+
     # Use the --resume flag to continue an existing session
     options = ClaudeAgentOptions(
         model=ANTHROPIC_MODEL,
-        system_prompt=build_system_prompt(),
+        system_prompt=build_system_prompt(conversation_history),
         mcp_servers={"duckdb": duckdb_server},
         allowed_tools=["mcp__duckdb__execute_sql"],
         permission_mode="bypassPermissions",
         max_turns=20,
         include_partial_messages=True,
+        stderr=lambda line: stderr_lines.append(line),
         **({"resume": session_id} if session_id else {}),
     )
 
@@ -203,7 +219,11 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                 yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
 
     except Exception as e:
-        yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
+        error_msg = str(e)
+        if stderr_lines:
+            error_msg += f" | CLI stderr: {' '.join(stderr_lines[-5:])}"
+        logger.error("Agent error: %s", error_msg)
+        yield f"event: error\ndata: {json.dumps({'message': error_msg})}\n\n"
     finally:
         # Update trace with the CLI's session_id so Langfuse session matches
         if langfuse and observation_ctx:

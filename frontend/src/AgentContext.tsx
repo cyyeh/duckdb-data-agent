@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { runAgentLoop, runAgentEditLoop, deleteAgentMessage } from './agent/agentService';
+import { runAgentLoop, runAgentEditLoop } from './agent/agentService';
 import type { ChatMessage, ContentSegment, TableInfo, ToolCallResult } from './types';
 
 interface AgentContextValue {
@@ -47,14 +47,6 @@ export function AgentProvider({
   const segmentsRef = useRef<ContentSegment[]>([]);
   const currentTextRef = useRef('');
   const sessionIdRef = useRef<string | null>(null);
-
-  const getUserMessageIndex = useCallback((messageIndex: number) => {
-    let count = 0;
-    for (let i = 0; i < messageIndex; i++) {
-      if (messages[i].role === 'user') count++;
-    }
-    return count;
-  }, [messages]);
 
   const flushText = useCallback(() => {
     const text = textBufferRef.current;
@@ -233,9 +225,15 @@ export function AgentProvider({
   const editMessage = useCallback(
     async (messageIndex: number, newContent: string) => {
       if (isStreaming) return;
-      if (!sessionIdRef.current) return;
 
-      const userMsgIndex = getUserMessageIndex(messageIndex);
+      // Build conversation history from messages before the edit point
+      const conversationHistory: { role: string; content: string }[] = [];
+      for (let i = 0; i < messageIndex; i++) {
+        const msg = messages[i];
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          conversationHistory.push({ role: msg.role, content: msg.content });
+        }
+      }
 
       const assistantId = generateId();
       assistantIdRef.current = assistantId;
@@ -263,9 +261,8 @@ export function AgentProvider({
       abortRef.current = controller;
 
       await runAgentEditLoop(
-        sessionIdRef.current,
-        userMsgIndex,
         newContent,
+        conversationHistory,
         {
           onTextChunk: (chunk) => {
             textBufferRef.current += chunk;
@@ -382,30 +379,19 @@ export function AgentProvider({
         controller.signal
       );
     },
-    [isStreaming, messages, flushText, refreshTables, getUserMessageIndex]
+    [isStreaming, messages, flushText, refreshTables]
   );
 
   const deleteMessage = useCallback(
-    async (messageIndex: number) => {
+    (messageIndex: number) => {
       if (isStreaming) return;
-
-      if (sessionIdRef.current) {
-        const userMsgIndex = getUserMessageIndex(messageIndex);
-        try {
-          await deleteAgentMessage(sessionIdRef.current, userMsgIndex);
-        } catch (e) {
-          console.error('Failed to delete message:', e);
-          return;
-        }
-      }
 
       setMessages((prev) => prev.slice(0, messageIndex));
 
-      if (messageIndex === 0) {
-        sessionIdRef.current = null;
-      }
+      // Clear session so next message starts fresh
+      sessionIdRef.current = null;
     },
-    [isStreaming, messages, getUserMessageIndex]
+    [isStreaming]
   );
 
   const clearMessages = useCallback(() => {
