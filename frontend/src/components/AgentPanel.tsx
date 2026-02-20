@@ -32,7 +32,8 @@ export function AgentPanel({ langfuseStatus }: AgentPanelProps) {
               }
             }}
           >
-            Langfuse Traces ↗
+            <img src="/langfuse-color.svg" alt="Langfuse" className="agent-panel__langfuse-icon" />
+            Langfuse Traces
           </button>
           {messages.length > 0 && (
             <button className="agent-panel__clear" onClick={clearMessages}>

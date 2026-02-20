@@ -43,6 +43,9 @@
 }
 
 .agent-panel__langfuse {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 4px 10px;
   font-size: 12px;
   background: none;
@@ -50,6 +53,11 @@
   border-radius: 6px;
   color: #6b7280;
   cursor: pointer;
+}
+
+.agent-panel__langfuse-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .agent-panel__langfuse:hover:not(:disabled) {
