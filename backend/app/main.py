@@ -1,3 +1,6 @@
+import asyncio
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -7,7 +10,27 @@ from fastapi.responses import FileResponse
 
 from app.routes import tables, query, chat, langfuse_status, config, session
 
-app = FastAPI(title="DuckDB Data Agent API")
+logger = logging.getLogger(__name__)
+
+from app.session_manager import session_manager
+
+
+async def _cleanup_loop():
+    while True:
+        await asyncio.sleep(60)
+        removed = session_manager.cleanup_stale(ttl_seconds=300)
+        if removed:
+            logger.info("Background cleanup: removed %d stale sessions", removed)
+
+
+@asynccontextmanager
+async def lifespan(app):
+    task = asyncio.create_task(_cleanup_loop())
+    yield
+    task.cancel()
+
+
+app = FastAPI(title="DuckDB Data Agent API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
