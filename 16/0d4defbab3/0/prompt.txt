@@ -1,0 +1,5 @@
+remove hover text of table name in table list and after clicking table name, should also expand the table name collapse
+
+---
+
+commit this
