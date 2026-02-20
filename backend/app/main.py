@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from app.routes import tables, query, chat, langfuse_status, config
+from app.routes import tables, query, chat, langfuse_status, config, session
 
 app = FastAPI(title="DuckDB Data Agent API")
 
@@ -22,6 +22,7 @@ app.include_router(query.router)
 app.include_router(chat.router)
 app.include_router(langfuse_status.router)
 app.include_router(config.router)
+app.include_router(session.router)
 
 
 @app.get("/api/health")
