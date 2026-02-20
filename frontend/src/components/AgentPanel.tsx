@@ -42,7 +42,7 @@ export function AgentPanel({ langfuseStatus, tables, onUpload, onLoadSample }: A
             {t('langfuseTraces')}
           </button>
           {messages.length > 0 && (
-            <button className="agent-panel__clear" onClick={clearMessages}>
+            <button className="agent-panel__clear" onClick={() => { if (confirm(t('clearConfirm'))) clearMessages(); }}>
               {t('clear')}
             </button>
           )}

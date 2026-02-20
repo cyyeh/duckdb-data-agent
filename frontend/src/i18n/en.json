@@ -31,6 +31,7 @@
   "openLangfuse": "Open Langfuse",
   "langfuseNotConfigured": "Langfuse not configured",
   "clear": "Clear Chat History",
+  "clearConfirm": "Clear all chat history? This will erase the agent's memory of this conversation.",
   "agentEmptyState": "Ask a question about your data, and the agent will write and run SQL queries to find the answer.",
   "chatPlaceholderWaiting": "Waiting for response...",
   "chatPlaceholder": "Ask about your data...",

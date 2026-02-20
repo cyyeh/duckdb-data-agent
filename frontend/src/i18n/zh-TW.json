@@ -31,6 +31,7 @@
   "openLangfuse": "開啟 Langfuse",
   "langfuseNotConfigured": "Langfuse 未設定",
   "clear": "清除聊天記錄",
+  "clearConfirm": "確定清除所有聊天記錄？這將清除代理對此對話的記憶。",
   "agentEmptyState": "詢問有關您資料的問題，代理將撰寫並執行 SQL 查詢為您找到答案。",
   "chatPlaceholderWaiting": "等待回應中...",
   "chatPlaceholder": "詢問有關您的資料...",
