@@ -12,11 +12,14 @@ router = APIRouter(prefix="/api", tags=["chat"])
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
+    langfuse_session_id: str | None = None
+    conversation_history: list[dict] = []
 
 
 class ChatEditRequest(BaseModel):
     new_message: str
     conversation_history: list[dict] = []
+    langfuse_session_id: str | None = None
 
 
 @router.post("/chat")
@@ -25,7 +28,7 @@ async def chat(
     db: Database = Depends(get_session_db),
 ):
     return StreamingResponse(
-        stream_chat(request.message, request.session_id, db),
+        stream_chat(request.message, request.session_id, db, conversation_history=request.conversation_history or None, langfuse_session_id=request.langfuse_session_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -47,6 +50,7 @@ async def chat_edit(
             session_id=None,
             db=db,
             conversation_history=request.conversation_history,
+            langfuse_session_id=request.langfuse_session_id,
         ),
         media_type="text/event-stream",
         headers={

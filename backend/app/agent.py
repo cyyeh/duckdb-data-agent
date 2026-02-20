@@ -98,6 +98,7 @@ async def stream_chat(
     session_id: str | None = None,
     db: Database | None = None,
     conversation_history: list[dict] | None = None,
+    langfuse_session_id: str | None = None,
 ) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events."""
     if db is None:
@@ -133,17 +134,21 @@ async def stream_chat(
     propagate_ctx = None
     if langfuse:
         try:
+            trace_input: dict = {"message": message[:500]}
+            if conversation_history:
+                trace_input["conversation_history"] = conversation_history
             observation_ctx = langfuse.start_as_current_observation(
                 name="agent-chat",
-                input={"message": message[:500]},
+                input=trace_input,
                 metadata={"model": ANTHROPIC_MODEL},
             )
             observation_ctx.__enter__()
 
-            # If resuming, propagate the known session_id for child spans
-            if session_id:
+            # Propagate the stable conversation session_id for child spans
+            effective_langfuse_session_id = langfuse_session_id or session_id
+            if effective_langfuse_session_id:
                 from langfuse import propagate_attributes
-                propagate_ctx = propagate_attributes(session_id=session_id)
+                propagate_ctx = propagate_attributes(session_id=effective_langfuse_session_id)
                 propagate_ctx.__enter__()
         except Exception as e:
             logger.debug("Failed to set up Langfuse tracing context: %s", e)
@@ -252,8 +257,9 @@ async def stream_chat(
         # Update trace with the CLI's session_id so Langfuse session matches
         if langfuse and observation_ctx:
             try:
+                trace_session_id = langfuse_session_id or actual_session_id
                 langfuse.update_current_trace(
-                    session_id=actual_session_id,
+                    session_id=trace_session_id,
                     output={"session_id": actual_session_id},
                 )
                 if propagate_ctx:

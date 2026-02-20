@@ -30,6 +30,7 @@ export function AgentProvider({
   const segmentsRef = useRef<ContentSegment[]>([]);
   const currentTextRef = useRef('');
   const sessionIdRef = useRef<string | null>(null);
+  const pendingHistoryRef = useRef<{ role: string; content: string }[] | null>(null);
 
   const flushText = useCallback(() => {
     const text = textBufferRef.current;
@@ -70,12 +71,19 @@ export function AgentProvider({
       segmentsRef.current = [];
       currentTextRef.current = '';
 
+      // If there's pending history from a delete, start a new Langfuse session with that context
+      const pendingHistory = pendingHistoryRef.current;
+      pendingHistoryRef.current = null;
+      const langfuseSessionId = pendingHistory ? crypto.randomUUID() : null;
+
       const controller = new AbortController();
       abortRef.current = controller;
 
       await runAgentLoop(
         text,
         sessionIdRef.current,
+        langfuseSessionId,
+        pendingHistory,
         {
           onTextChunk: (chunk) => {
             textBufferRef.current += chunk;
@@ -247,6 +255,7 @@ export function AgentProvider({
       await runAgentEditLoop(
         newContent,
         conversationHistory,
+        crypto.randomUUID(),
         {
           onTextChunk: (chunk) => {
             textBufferRef.current += chunk;
@@ -371,7 +380,14 @@ export function AgentProvider({
     (messageIndex: number) => {
       if (isStreaming) return;
 
-      setMessages((prev) => prev.slice(0, messageIndex));
+      // Store remaining messages as history for Langfuse context on next send
+      setMessages((prev) => {
+        const remaining = prev.slice(0, messageIndex);
+        pendingHistoryRef.current = remaining
+          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .map((m) => ({ role: m.role, content: m.content }));
+        return remaining;
+      });
 
       // Clear session so next message starts fresh
       sessionIdRef.current = null;
@@ -386,6 +402,7 @@ export function AgentProvider({
     setMessages([]);
     setIsStreaming(false);
     sessionIdRef.current = null;
+    pendingHistoryRef.current = null;
   }, []);
 
   return (

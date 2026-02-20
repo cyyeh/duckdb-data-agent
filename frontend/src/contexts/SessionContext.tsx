@@ -1,6 +1,5 @@
-import { createContext, useEffect, useRef, type ReactNode } from 'react';
-
-export const SessionContext = createContext<string>('');
+import { useEffect, useRef, type ReactNode } from 'react';
+import { SessionContext } from '../hooks/useSessionId';
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const sessionIdRef = useRef<string>(crypto.randomUUID());

@@ -24,3 +24,4 @@ frontend/dist-ssr
 *.sw?
 .claude/settings.local.json
 .env
+.pytest_cache

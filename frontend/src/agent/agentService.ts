@@ -60,6 +60,8 @@ async function streamSSE(
 export async function runAgentLoop(
   message: string,
   agentSessionId: string | null,
+  langfuseSessionId: string | null,
+  conversationHistory: { role: string; content: string }[] | null,
   callbacks: AgentCallbacks,
   signal?: AbortSignal,
   userSessionId?: string,
@@ -71,7 +73,12 @@ export async function runAgentLoop(
         'Content-Type': 'application/json',
         ...(userSessionId ? { 'X-Session-ID': userSessionId } : {}),
       },
-      body: JSON.stringify({ message, session_id: agentSessionId }),
+      body: JSON.stringify({
+        message,
+        session_id: agentSessionId,
+        langfuse_session_id: langfuseSessionId,
+        conversation_history: conversationHistory ?? [],
+      }),
       signal,
     });
 
@@ -92,6 +99,7 @@ export async function runAgentLoop(
 export async function runAgentEditLoop(
   newMessage: string,
   conversationHistory: { role: string; content: string }[],
+  langfuseSessionId: string | null,
   callbacks: AgentCallbacks,
   signal?: AbortSignal,
   userSessionId?: string,
@@ -106,6 +114,7 @@ export async function runAgentEditLoop(
       body: JSON.stringify({
         new_message: newMessage,
         conversation_history: conversationHistory,
+        langfuse_session_id: langfuseSessionId,
       }),
       signal,
     });
