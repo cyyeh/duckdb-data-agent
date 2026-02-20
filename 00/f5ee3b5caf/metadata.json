@@ -3,7 +3,7 @@
   "checkpoint_id": "00f5ee3b5caf",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "frontend/src/components/MessageBubble.css"
   ],
@@ -91,13 +91,20 @@
       "context": "/00/f5ee3b5caf/11/context.md",
       "content_hash": "/00/f5ee3b5caf/11/content_hash.txt",
       "prompt": "/00/f5ee3b5caf/11/prompt.txt"
+    },
+    {
+      "metadata": "/00/f5ee3b5caf/12/metadata.json",
+      "transcript": "/00/f5ee3b5caf/12/full.jsonl",
+      "context": "/00/f5ee3b5caf/12/context.md",
+      "content_hash": "/00/f5ee3b5caf/12/content_hash.txt",
+      "prompt": "/00/f5ee3b5caf/12/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1767,
-    "cache_creation_tokens": 1132272,
-    "cache_read_tokens": 60950474,
-    "output_tokens": 78851,
-    "api_call_count": 836
+    "input_tokens": 1782,
+    "cache_creation_tokens": 1144336,
+    "cache_read_tokens": 61227051,
+    "output_tokens": 78936,
+    "api_call_count": 847
   }
 }

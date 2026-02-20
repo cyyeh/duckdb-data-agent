@@ -1,0 +1,5 @@
+add some "blingbling" animation for "thinking" placeholder text in agent mode while agent is thinking
+
+---
+
+commit and push
