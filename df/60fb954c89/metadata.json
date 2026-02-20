@@ -3,7 +3,7 @@
   "checkpoint_id": "df60fb954c89",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     "backend/app/routes/tables.py",
     "frontend/src/components/Sidebar.css",
@@ -37,13 +37,20 @@
       "context": "/df/60fb954c89/3/context.md",
       "content_hash": "/df/60fb954c89/3/content_hash.txt",
       "prompt": "/df/60fb954c89/3/prompt.txt"
+    },
+    {
+      "metadata": "/df/60fb954c89/4/metadata.json",
+      "transcript": "/df/60fb954c89/4/full.jsonl",
+      "context": "/df/60fb954c89/4/context.md",
+      "content_hash": "/df/60fb954c89/4/content_hash.txt",
+      "prompt": "/df/60fb954c89/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 336,
-    "cache_creation_tokens": 342206,
-    "cache_read_tokens": 9534561,
-    "output_tokens": 8692,
-    "api_call_count": 172
+    "input_tokens": 374,
+    "cache_creation_tokens": 372031,
+    "cache_read_tokens": 10549532,
+    "output_tokens": 12382,
+    "api_call_count": 200
   }
 }
