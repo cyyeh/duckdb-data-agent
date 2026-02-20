@@ -5,7 +5,9 @@
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
-    "backend/app/main.py"
+    "backend/app/main.py",
+    "backend/app/routes/session.py",
+    "backend/tests/test_session_routes.py"
   ],
   "sessions": [
     {
@@ -14,13 +16,20 @@
       "context": "/f9/f6eeccf4eb/0/context.md",
       "content_hash": "/f9/f6eeccf4eb/0/content_hash.txt",
       "prompt": "/f9/f6eeccf4eb/0/prompt.txt"
+    },
+    {
+      "metadata": "/f9/f6eeccf4eb/1/metadata.json",
+      "transcript": "/f9/f6eeccf4eb/1/full.jsonl",
+      "context": "/f9/f6eeccf4eb/1/context.md",
+      "content_hash": "/f9/f6eeccf4eb/1/content_hash.txt",
+      "prompt": "/f9/f6eeccf4eb/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 15,
-    "cache_creation_tokens": 18878,
-    "cache_read_tokens": 406456,
-    "output_tokens": 142,
-    "api_call_count": 13
+    "input_tokens": 33,
+    "cache_creation_tokens": 39982,
+    "cache_read_tokens": 730301,
+    "output_tokens": 1248,
+    "api_call_count": 25
   }
 }
