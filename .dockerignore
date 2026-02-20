@@ -4,6 +4,7 @@ backend/.venv
 backend/__pycache__
 backend/app/__pycache__
 backend/app/routes/__pycache__
+backend/tests
 .git
 .entire
 .claude

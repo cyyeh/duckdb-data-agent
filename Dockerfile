@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false
 
 COPY backend/pyproject.toml backend/poetry.lock ./
-RUN poetry install --no-root --no-interaction
+RUN poetry install --no-root --no-interaction --only main
 
 COPY backend/app/ app/
 

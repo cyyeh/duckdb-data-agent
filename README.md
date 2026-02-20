@@ -6,10 +6,13 @@
 
 An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English, or switch to the SQL editor for direct queries — powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
+Each browser tab gets its own isolated, in-memory DuckDB session — uploaded data and query state are fully isolated between users and tabs, with idle sessions automatically cleaned up after 5 minutes of inactivity.
+
 ## Features
 
 ### General
 
+- **Per-user DuckDB sessions** — Each browser tab gets its own isolated in-memory DuckDB instance, identified by a `X-Session-ID` header generated client-side; data and state are never shared between users or tabs; idle sessions are automatically cleaned up after 5 minutes
 - **DuckDB SQL engine** — Fast, in-process analytical database on the backend
 - **Multi-format file upload** — Drag-and-drop or click to import CSV, JSON, Parquet, and Excel (.xlsx) files (default limit: 500 MB, configurable via `MAX_TOTAL_SIZE_BYTES` env var) with automatic schema detection; Excel workbooks with multiple sheets create one table per sheet; duplicate filename detection prevents accidental overwrites; the upload UI appears when no tables are loaded, and files can also be added via the sidebar upload button
 - **Sample dataset** — One-click load of the Titanic dataset to get started quickly
@@ -146,9 +149,9 @@ Render will build the Docker image and deploy it automatically on every push to 
 ├── frontend/               # React frontend
 │   ├── src/
 │   │   ├── components/     #   UI components (editor, results, sidebar, chat)
-│   │   ├── contexts/       #   React context providers (theme, language, agent, config)
+│   │   ├── contexts/       #   React context providers (theme, language, agent, config, session)
 │   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig)
-│   │   ├── agent/          #   Agent service (SSE event handling)
+│   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
 │   │   └── types.ts        #   Shared TypeScript interfaces
 │   ├── index.html          #   HTML entry point
@@ -156,14 +159,14 @@ Render will build the Docker image and deploy it automatically on every push to 
 │   └── vite.config.ts      #   Vite bundler config
 ├── backend/                # FastAPI backend
 │   └── app/
-│       ├── main.py         #   App setup & CORS
+│       ├── main.py         #   App setup, CORS, and background session cleanup loop
 │       ├── config.py       #   Environment variables (API key, model, upload limits)
-│       ├── database.py     #   DuckDB connection & query execution
+│       ├── database.py     #   DuckDB connection, query execution, and per-user SessionManager
 │       ├── agent.py        #   Agent loop & SSE streaming
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
 │       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
 │       ├── data/           #   Sample datasets (titanic.csv)
-│       └── routes/         #   API endpoints (tables, query, chat, config, langfuse status)
+│       └── routes/         #   API endpoints (tables, query, chat, config, langfuse status, heartbeat)
 ├── Dockerfile              # Multi-stage production build
 ├── render.yaml             # Render deployment config
 └── Makefile                # Dev commands (install, dev, clean)
