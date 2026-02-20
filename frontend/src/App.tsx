@@ -66,7 +66,10 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
             method: 'POST',
             body: formData,
           });
-          if (!response.ok) throw new Error('Failed to upload file');
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to upload file');
+          }
           const result = await response.json();
           // Handle both single table and array of tables (Excel with multiple sheets)
           if (Array.isArray(result)) {
