@@ -17,6 +17,7 @@ from claude_agent_sdk.types import StreamEvent
 from app.tools import create_duckdb_server
 from app.database import db
 from app.config import ANTHROPIC_MODEL
+from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,13 @@ Guidelines:
             for col in table["columns"]:
                 prompt += f'  - "{col["name"]}" ({col["type"]})\n'
     return prompt
+
+
+def _truncate(text: str, max_len: int = 1000) -> str:
+    """Truncate text for trace data, appending '...' if trimmed."""
+    if len(text) <= max_len:
+        return text
+    return text[:max_len] + "..."
 
 
 def _extract_tool_result_text(content: object) -> str:
@@ -77,6 +85,66 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
     client = ClaudeSDKClient(options=options)
     actual_session_id = session_id
 
+    # --- Langfuse tracing setup (conditional) ---
+    langfuse = get_langfuse_client()
+    trace = None
+    if langfuse:
+        try:
+            trace = langfuse.trace(
+                name="agent-chat",
+                input={"message": _truncate(message, 500)},
+                metadata={"model": ANTHROPIC_MODEL},
+                session_id=session_id or "default",
+            )
+        except Exception as e:
+            logger.debug("Failed to create Langfuse trace: %s", e)
+            trace = None
+
+    # Tracing state
+    current_generation = None
+    turn_number = 0
+    accumulated_thinking = ""
+    accumulated_answer = ""
+
+    def _end_generation():
+        """End the current generation span, recording accumulated text."""
+        nonlocal current_generation, accumulated_thinking, accumulated_answer
+        if current_generation:
+            try:
+                output_data = {}
+                if accumulated_thinking:
+                    output_data["thinking"] = _truncate(accumulated_thinking)
+                if accumulated_answer:
+                    output_data["text"] = _truncate(accumulated_answer)
+                current_generation.end(output=output_data)
+            except Exception as e:
+                logger.debug("Failed to end Langfuse generation: %s", e)
+            current_generation = None
+        accumulated_thinking = ""
+        accumulated_answer = ""
+
+    def _start_generation():
+        """Start a new generation span for an LLM turn."""
+        nonlocal current_generation, turn_number
+        if not trace:
+            return
+        _end_generation()
+        turn_number += 1
+        try:
+            input_data = (
+                {"message": _truncate(message, 500)}
+                if turn_number == 1
+                else {"continued": True}
+            )
+            current_generation = trace.generation(
+                name=f"llm-turn-{turn_number}",
+                model=ANTHROPIC_MODEL,
+                input=input_data,
+            )
+        except Exception as e:
+            logger.debug("Failed to create Langfuse generation: %s", e)
+            current_generation = None
+
     try:
         await client.connect()
         await client.query(message, session_id=session_id or "default")
@@ -109,10 +177,12 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                         text = delta.get("thinking", "")
                         if text:
                             current_text += text
+                            accumulated_thinking += text
                             yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
                     elif delta_type == "text_delta":
                         text = delta.get("text", "")
                         current_text += text
+                        accumulated_answer += text
                         event_name = "thinking" if not has_tool_calls else "answer"
                         yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
 
@@ -121,10 +191,19 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                     block_type = block.get("type")
                     if block_type == "thinking":
                         has_thinking = True
+                        # Start a new generation span for this LLM turn
+                        if trace:
+                            _start_generation()
                     elif block_type == "text":
                         if has_thinking:
                             yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
+                        # If no thinking block preceded, start generation now
+                        if not has_thinking and trace:
+                            _start_generation()
                     elif block_type == "tool_use":
+                        # End the current generation before tool use
+                        if trace:
+                            _end_generation()
                         if current_text.strip() and not thinking_sent:
                             thinking_sent = True
                         has_tool_calls = True
@@ -154,12 +233,42 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                         # For SQL tools, execute query for structured results
                         if sql:
                             sql_result_ids.add(block.id)
+
+                            # Create a tool span for the SQL execution
+                            tool_span = None
+                            if trace:
+                                try:
+                                    tool_span = trace.span(
+                                        name=f"tool-{tool_name}",
+                                        input={"sql": sql},
+                                    )
+                                except Exception as e:
+                                    logger.debug("Failed to create Langfuse tool span: %s", e)
+
                             try:
                                 result = db.execute_query(sql)
                                 truncated = result["rows"][:100]
                                 yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'name': tool_name, 'sql': sql, 'columns': result['columns'], 'rows': truncated, 'rowCount': result['rowCount']}, default=str)}\n\n"
+
+                                # End tool span with success
+                                if tool_span:
+                                    try:
+                                        tool_span.end(output={
+                                            "rowCount": result["rowCount"],
+                                            "columns": result["columns"],
+                                        })
+                                    except Exception as e:
+                                        logger.debug("Failed to end Langfuse tool span: %s", e)
+
                             except Exception as e:
                                 yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'name': tool_name, 'sql': sql, 'error': str(e)})}\n\n"
+
+                                # End tool span with error
+                                if tool_span:
+                                    try:
+                                        tool_span.end(output={"error": str(e)})
+                                    except Exception as ex:
+                                        logger.debug("Failed to end Langfuse tool span: %s", ex)
 
             elif isinstance(msg, UserMessage):
                 # Capture tool results from the SDK for non-SQL tools
@@ -190,6 +299,25 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
     except Exception as e:
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
     finally:
+        # End any open generation span
+        if trace:
+            _end_generation()
+
+        # Update trace output and flush
+        if trace:
+            try:
+                trace.update(
+                    output={"session_id": actual_session_id},
+                )
+            except Exception as e:
+                logger.debug("Failed to update Langfuse trace: %s", e)
+
+        if langfuse:
+            try:
+                langfuse.flush()
+            except Exception as e:
+                logger.debug("Failed to flush Langfuse: %s", e)
+
         try:
             await client.disconnect()
         except Exception:
