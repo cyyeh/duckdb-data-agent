@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { ThemeProvider, useTheme } from './ThemeContext';
 import { AgentProvider } from './AgentContext';
 import { FileUpload } from './components/FileUpload';
 import { QueryEditor } from './components/QueryEditor';
@@ -11,6 +12,7 @@ import type { TableInfo, QueryResult, LangfuseStatus } from './types';
 import './App.css';
 
 function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableInfo[]; refreshTables: () => Promise<void>; langfuseStatus: LangfuseStatus }) {
+  const { theme, toggleTheme } = useTheme();
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editorQuery, setEditorQuery] = useState<string | undefined>(
@@ -112,6 +114,24 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
     sidebarCollapsed ? 'app--sidebar-collapsed' : '',
   ].filter(Boolean).join(' ');
 
+  const themeIcon = theme === 'dark' ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+
   return (
     <div className={appClass}>
       <div className="app__sidebar-wrapper">
@@ -121,12 +141,22 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
         <div className="app__agent-wrapper">
           <div className="app__header">
             <h1 className="app__title">DuckDB Data Agent</h1>
-            <button
-              className="app__agent-toggle app__agent-toggle--active"
-              onClick={handleAgentToggle}
-            >
-              Editor Mode
-            </button>
+            <div className="app__header-actions">
+              <button
+                className="app__theme-toggle"
+                onClick={toggleTheme}
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {themeIcon}
+              </button>
+              <button
+                className="app__agent-toggle app__agent-toggle--active"
+                onClick={handleAgentToggle}
+              >
+                Editor Mode
+              </button>
+            </div>
           </div>
           <AgentPanel langfuseStatus={langfuseStatus} />
         </div>
@@ -134,12 +164,22 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
         <div className="app__editor-wrapper">
           <div className="app__header">
             <h1 className="app__title">DuckDB Data Agent</h1>
-            <button
-              className="app__agent-toggle"
-              onClick={handleAgentToggle}
-            >
-              Agent Mode
-            </button>
+            <div className="app__header-actions">
+              <button
+                className="app__theme-toggle"
+                onClick={toggleTheme}
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {themeIcon}
+              </button>
+              <button
+                className="app__agent-toggle"
+                onClick={handleAgentToggle}
+              >
+                Agent Mode
+              </button>
+            </div>
           </div>
           <div className="app__mode-header">
             <span className="app__mode-title">Editor Mode</span>
@@ -215,8 +255,10 @@ export default function App() {
   }
 
   return (
-    <AgentProvider refreshTables={refreshTables}>
-      <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
-    </AgentProvider>
+    <ThemeProvider>
+      <AgentProvider refreshTables={refreshTables}>
+        <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
+      </AgentProvider>
+    </ThemeProvider>
   );
 }

@@ -20,8 +20,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
+}
+
+.app__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .app__main {
@@ -39,32 +45,51 @@
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #333;
+  color: var(--color-text-primary);
+}
+
+.app__theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.app__theme-toggle:hover {
+  background: var(--color-bg-hover-strong);
+  color: var(--color-text-primary);
 }
 
 .app__agent-toggle {
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid #6366f1;
+  border: 1px solid var(--color-accent-primary);
   border-radius: 8px;
-  background: #fff;
-  color: #6366f1;
+  background: var(--color-bg-primary);
+  color: var(--color-accent-primary);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .app__agent-toggle:hover {
-  background: #eef2ff;
+  background: var(--color-bg-user-msg);
 }
 
 .app__agent-toggle--active {
-  background: #6366f1;
+  background: var(--color-accent-primary);
   color: #fff;
 }
 
 .app__agent-toggle--active:hover {
-  background: #4f46e5;
+  background: var(--color-accent-primary-hover);
 }
 
 .app__agent-wrapper,
@@ -80,14 +105,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #fff;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-primary);
 }
 
 .app__mode-title {
   font-size: 15px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-text-secondary);
 }
 
 .app-loading,
@@ -97,9 +122,9 @@
   justify-content: center;
   min-height: 100vh;
   font-size: 16px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .app-error {
-  color: #b91c1c;
+  color: var(--color-error-text);
 }
