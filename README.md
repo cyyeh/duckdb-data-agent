@@ -59,9 +59,10 @@ Edit `backend/.env` and set your key:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=sonnet    # optional, defaults to sonnet
 ```
 
-> The API key is only needed for the AI agent. The SQL playground works without it, but both require the backend running.
+> Both variables are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
 
 ### Development
 
@@ -99,7 +100,7 @@ A `render.yaml` is included for one-click deployment on [Render](https://render.
 
 1. Push this repo to GitHub.
 2. In Render, create a new **Blueprint** and connect the repo.
-3. Set the `ANTHROPIC_API_KEY` environment variable in the Render dashboard.
+3. Set the `ANTHROPIC_API_KEY` environment variable in the Render dashboard. Optionally set `ANTHROPIC_MODEL` to override the default model (`sonnet`).
 
 Render will build the Docker image and deploy it automatically on every push to `main`.
 
@@ -112,17 +113,20 @@ Render will build the Docker image and deploy it automatically on every push to 
 │   │   ├── agent/          #   Agent service (SSE event handling)
 │   │   ├── AgentContext.tsx #   Agent state management
 │   │   └── types.ts        #   Shared TypeScript interfaces
-│   ├── public/             #   Static assets (sample dataset)
 │   ├── index.html          #   HTML entry point
 │   ├── package.json        #   npm config
 │   └── vite.config.ts      #   Vite bundler config
 ├── backend/                # FastAPI backend
 │   └── app/
 │       ├── main.py         #   App setup & CORS
+│       ├── config.py       #   Environment variables (API key, model)
 │       ├── database.py     #   DuckDB connection & query execution
 │       ├── agent.py        #   Agent loop & SSE streaming
-│       ├── tools.py        #   MCP tool definitions
+│       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
+│       ├── data/           #   Sample datasets (titanic.csv)
 │       └── routes/         #   API endpoints (tables, query, chat)
+├── Dockerfile              # Multi-stage production build
+├── render.yaml             # Render deployment config
 └── Makefile                # Dev commands (install, dev, clean)
 ```
 
