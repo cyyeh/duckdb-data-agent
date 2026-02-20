@@ -141,7 +141,3 @@ class Database:
             f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{csv_path}\')'
         )
         return self.get_table_info(table_name)
-
-
-# Singleton instance
-db = Database()
