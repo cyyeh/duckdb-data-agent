@@ -48,8 +48,8 @@ export function AgentPanel({ langfuseStatus }: AgentPanelProps) {
             Ask a question about your data, and the agent will write and run SQL queries to find the answer.
           </div>
         )}
-        {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+        {messages.map((msg, index) => (
+          <MessageBubble key={msg.id} message={msg} messageIndex={index} />
         ))}
         <div ref={bottomRef} />
       </div>

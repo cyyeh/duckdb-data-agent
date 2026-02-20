@@ -16,6 +16,9 @@
 }
 
 .message-bubble__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
   font-weight: 600;
   color: #6b7280;
@@ -245,4 +248,132 @@
 
 .message-bubble__tool-segment {
   margin: 2px 0;
+}
+
+/* Hover actions for user messages */
+.message-bubble__actions {
+  display: none;
+  margin-left: auto;
+  gap: 4px;
+}
+
+.message-bubble--user:hover .message-bubble__actions {
+  display: inline-flex;
+}
+
+.message-bubble__action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 14px;
+  color: #9ca3af;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.message-bubble__action-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.message-bubble__action-btn--delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Edit mode */
+.message-bubble__edit-mode {
+  margin-top: 4px;
+}
+
+.message-bubble__edit-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  background: #fff;
+  color: #1f2937;
+  box-sizing: border-box;
+}
+
+.message-bubble__edit-textarea:focus {
+  outline: none;
+  border-color: #818cf8;
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+}
+
+.message-bubble__edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.message-bubble__edit-btn {
+  padding: 4px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #fff;
+  color: #374151;
+}
+
+.message-bubble__edit-btn:hover {
+  background: #f3f4f6;
+}
+
+.message-bubble__edit-btn--save {
+  background: #4f46e5;
+  color: #fff;
+  border-color: #4f46e5;
+}
+
+.message-bubble__edit-btn--save:hover {
+  background: #4338ca;
+}
+
+/* Delete confirmation */
+.message-bubble__confirm-delete {
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #991b1b;
+}
+
+.message-bubble__confirm-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.message-bubble__confirm-btn {
+  padding: 4px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #fff;
+  color: #374151;
+}
+
+.message-bubble__confirm-btn:hover {
+  background: #f3f4f6;
+}
+
+.message-bubble__confirm-btn--delete {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+
+.message-bubble__confirm-btn--delete:hover {
+  background: #b91c1c;
 }

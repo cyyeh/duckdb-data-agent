@@ -1,6 +1,8 @@
+import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ChatMessage, ContentSegment } from '../types';
+import { useAgent } from '../useAgent';
 import { InlineQueryResult } from './InlineQueryResult';
 import './MessageBubble.css';
 
@@ -71,11 +73,58 @@ function ThinkingBlock({ segments, streamingRemainder, isActivelyStreaming }: {
   );
 }
 
-export function MessageBubble({ message }: { message: ChatMessage }) {
+export function MessageBubble({ message, messageIndex }: { message: ChatMessage; messageIndex: number }) {
+  const { isStreaming, editMessage, deleteMessage } = useAgent();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.content);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const isUser = message.role === 'user';
   const hasSegments = !isUser && message.segments && message.segments.length > 0;
 
-  // Compute streaming remainder text
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.selectionStart = textareaRef.current.value.length;
+    }
+  }, [isEditing]);
+
+  const handleEdit = () => {
+    setEditText(message.content);
+    setIsEditing(true);
+    setIsConfirmingDelete(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditText(message.content);
+  };
+
+  const handleSaveEdit = () => {
+    const trimmed = editText.trim();
+    if (!trimmed || trimmed === message.content) {
+      handleCancelEdit();
+      return;
+    }
+    setIsEditing(false);
+    editMessage(messageIndex, trimmed);
+  };
+
+  const handleDeleteConfirm = () => {
+    setIsConfirmingDelete(false);
+    deleteMessage(messageIndex);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      handleCancelEdit();
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSaveEdit();
+    }
+  };
+
   let streamingRemainder: string | undefined;
   if (hasSegments && message.isStreaming && message.content) {
     const segmentedText = message.segments!
@@ -88,12 +137,10 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
     }
   }
 
-  // Check if currently in a thinking-only phase (no answer content yet)
   const hasAnswer = hasSegments && message.segments!.some((s) => s.type === 'answer');
   const isInAnswerPhase = message.currentPhase === 'answer';
   const isThinkingPhase = !!message.isStreaming && !hasAnswer && !isInAnswerPhase;
 
-  // Extract answer segments
   const answerSegments = hasSegments
     ? message.segments!.filter((s) => s.type === 'answer' && s.text?.trim())
     : [];
@@ -102,9 +149,72 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
     <div className={`message-bubble message-bubble--${message.role}`}>
       <div className="message-bubble__header">
         {isUser ? 'You' : 'Assistant'}
+        {isUser && !isStreaming && !isEditing && !isConfirmingDelete && (
+          <span className="message-bubble__actions">
+            <button
+              className="message-bubble__action-btn"
+              onClick={handleEdit}
+              title="Edit message"
+            >
+              &#9998;
+            </button>
+            <button
+              className="message-bubble__action-btn message-bubble__action-btn--delete"
+              onClick={() => setIsConfirmingDelete(true)}
+              title="Delete message"
+            >
+              &#128465;
+            </button>
+          </span>
+        )}
       </div>
 
-      {hasSegments ? (
+      {isUser && isConfirmingDelete && (
+        <div className="message-bubble__confirm-delete">
+          <span>Delete this and all following messages?</span>
+          <div className="message-bubble__confirm-actions">
+            <button
+              className="message-bubble__confirm-btn message-bubble__confirm-btn--delete"
+              onClick={handleDeleteConfirm}
+            >
+              Delete
+            </button>
+            <button
+              className="message-bubble__confirm-btn"
+              onClick={() => setIsConfirmingDelete(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isUser && isEditing ? (
+        <div className="message-bubble__edit-mode">
+          <textarea
+            ref={textareaRef}
+            className="message-bubble__edit-textarea"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={3}
+          />
+          <div className="message-bubble__edit-actions">
+            <button
+              className="message-bubble__edit-btn message-bubble__edit-btn--save"
+              onClick={handleSaveEdit}
+            >
+              Save &amp; Resend
+            </button>
+            <button
+              className="message-bubble__edit-btn"
+              onClick={handleCancelEdit}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : hasSegments ? (
         <div className="message-bubble__segments">
           <ThinkingBlock
             segments={message.segments!}
