@@ -1,9 +1,10 @@
 import os
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.config import MAX_TOTAL_SIZE_BYTES
-from app.database import db, SUPPORTED_EXTENSIONS
+from app.database import Database, SUPPORTED_EXTENSIONS
+from app.dependencies import get_session_db
 
 router = APIRouter(prefix="/api", tags=["tables"])
 
@@ -13,12 +14,15 @@ def sanitize_table_name(filename: str) -> str:
 
 
 @router.get("/tables")
-async def list_tables():
+async def list_tables(db: Database = Depends(get_session_db)):
     return db.list_tables()
 
 
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...),
+    db: Database = Depends(get_session_db),
+):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
     ext = os.path.splitext(file.filename)[1].lower()
@@ -52,7 +56,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 @router.post("/upload/sample")
-async def load_sample():
+async def load_sample(db: Database = Depends(get_session_db)):
     """Load the built-in Titanic sample dataset."""
     from pathlib import Path
 
@@ -63,6 +67,6 @@ async def load_sample():
 
 
 @router.delete("/tables/{table_name:path}")
-async def drop_table(table_name: str):
+async def drop_table(table_name: str, db: Database = Depends(get_session_db)):
     db.drop_table(table_name)
     return {"ok": True}
