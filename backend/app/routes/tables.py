@@ -1,15 +1,16 @@
+import os
 import re
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
 from app.config import MAX_TOTAL_SIZE_BYTES
-from app.database import db
+from app.database import db, SUPPORTED_EXTENSIONS
 
 router = APIRouter(prefix="/api", tags=["tables"])
 
 
 def sanitize_table_name(filename: str) -> str:
-    base = re.sub(r"\.csv$", "", filename, flags=re.IGNORECASE)
+    base = re.sub(r"\.(csv|json|parquet|xlsx|xls)$", "", filename, flags=re.IGNORECASE)
     sanitized = re.sub(r"[^a-z0-9_]", "_", base.lower())
     sanitized = re.sub(r"^[^a-z]", lambda m: "t_" + m.group(), sanitized)
     sanitized = re.sub(r"_+", "_", sanitized).rstrip("_")
@@ -22,9 +23,15 @@ async def list_tables():
 
 
 @router.post("/upload")
-async def upload_csv(file: UploadFile = File(...)):
-    if not file.filename or not file.filename.lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only CSV files are supported")
+async def upload_file(file: UploadFile = File(...)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file format. Supported: {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
+        )
     content = await file.read()
     if len(content) > MAX_TOTAL_SIZE_BYTES:
         raise HTTPException(
@@ -32,8 +39,10 @@ async def upload_csv(file: UploadFile = File(...)):
             detail=f"File size exceeds the {MAX_TOTAL_SIZE_BYTES // (1024 * 1024)}MB limit"
         )
     table_name = sanitize_table_name(file.filename)
-    result = db.load_csv(content, file.filename, table_name)
-    return result
+    results = db.load_file(content, file.filename, table_name)
+    if len(results) == 1:
+        return results[0]
+    return results
 
 
 @router.post("/upload/sample")
