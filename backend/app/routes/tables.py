@@ -2,6 +2,7 @@ import re
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
+from app.config import MAX_TOTAL_SIZE_BYTES
 from app.database import db
 
 router = APIRouter(prefix="/api", tags=["tables"])
@@ -25,6 +26,11 @@ async def upload_csv(file: UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported")
     content = await file.read()
+    if len(content) > MAX_TOTAL_SIZE_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File size exceeds the {MAX_TOTAL_SIZE_BYTES // (1024 * 1024)}MB limit"
+        )
     table_name = sanitize_table_name(file.filename)
     result = db.load_csv(content, file.filename, table_name)
     return result
