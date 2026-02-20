@@ -3,6 +3,8 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useConfig } from '../hooks/useConfig';
 import './FileUpload.css';
 
+const SUPPORTED_EXTENSIONS = ['.csv', '.json', '.parquet', '.xlsx'];
+
 interface FileUploadProps {
   onUpload: (files: File[]) => Promise<void>;
   onLoadSample: () => Promise<void>;
@@ -18,9 +20,12 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
 
   const handleFiles = useCallback(async (fileList: FileList) => {
     const files = Array.from(fileList);
-    const nonCsv = files.filter(f => !f.name.toLowerCase().endsWith('.csv'));
-    if (nonCsv.length > 0) {
-      alert(t('csvOnly'));
+    const unsupported = files.filter(f => {
+      const ext = f.name.toLowerCase().slice(f.name.lastIndexOf('.'));
+      return !SUPPORTED_EXTENSIONS.includes(ext);
+    });
+    if (unsupported.length > 0) {
+      alert(t('unsupportedFormat'));
       return;
     }
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
@@ -72,7 +77,7 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
         <input
           ref={inputRef}
           type="file"
-          accept=".csv"
+          accept=".csv,.json,.parquet,.xlsx"
           multiple
           className="file-upload__input"
           onChange={(e) => {

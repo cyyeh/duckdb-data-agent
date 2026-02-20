@@ -68,7 +68,12 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
           });
           if (!response.ok) throw new Error('Failed to upload file');
           const result = await response.json();
-          lastName = result.name;
+          // Handle both single table and array of tables (Excel with multiple sheets)
+          if (Array.isArray(result)) {
+            lastName = result[result.length - 1]?.name || '';
+          } else {
+            lastName = result.name;
+          }
         }
         await refreshTables();
         if (lastName) {
