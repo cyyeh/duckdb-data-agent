@@ -4,14 +4,14 @@
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-An AI-powered data analysis agent with a built-in SQL playground. Upload CSV files and ask questions in plain English, or switch to the SQL editor for direct queries — powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
+An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English, or switch to the SQL editor for direct queries — powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
 ## Features
 
 ### General
 
 - **DuckDB SQL engine** — Fast, in-process analytical database on the backend
-- **CSV file upload** — Drag-and-drop or click to import CSV files (default limit: 500 MB, configurable via `MAX_TOTAL_SIZE_BYTES` env var) with automatic schema detection; the upload UI appears when no tables are loaded and disappears once data is available
+- **Multi-format file upload** — Drag-and-drop or click to import CSV, JSON, Parquet, and Excel (.xlsx) files (default limit: 500 MB, configurable via `MAX_TOTAL_SIZE_BYTES` env var) with automatic schema detection; Excel workbooks with multiple sheets create one table per sheet; duplicate filename detection prevents accidental overwrites; the upload UI appears when no tables are loaded, and files can also be added via the sidebar upload button
 - **Sample dataset** — One-click load of the Titanic dataset to get started quickly
 - **Table sidebar** — Collapsible panel to browse tables, inspect columns, and view types
 - **Dark / light mode** — Toggle between dark and light themes with the sun/moon button in the header; respects your OS preference on first visit and remembers your choice across sessions
