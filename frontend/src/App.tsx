@@ -12,7 +12,7 @@ import { ResultMarkdown } from './components/ResultMarkdown';
 import { Sidebar } from './components/Sidebar';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AgentPanel } from './components/AgentPanel';
-import type { TableInfo, QueryResult, LangfuseStatus } from './types';
+import type { TableInfo, QueryResult } from './types';
 import './App.css';
 
 function findDuplicateFileNames(files: File[]): string[] {
@@ -27,7 +27,7 @@ function findDuplicateFileNames(files: File[]): string[] {
   return Array.from(duplicates);
 }
 
-function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableInfo[]; refreshTables: () => Promise<void>; langfuseStatus: LangfuseStatus }) {
+function AppContent({ tables, refreshTables }: { tables: TableInfo[]; refreshTables: () => Promise<void> }) {
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useTranslation();
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
@@ -249,7 +249,6 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
             <ErrorMessage message={errorMessage} onDismiss={() => setError(null)} />
           )}
           <AgentPanel
-            langfuseStatus={langfuseStatus}
             tables={tables}
             onUpload={handleFileUpload}
             onLoadSample={handleLoadSample}
@@ -319,8 +318,6 @@ export default function App() {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [langfuseStatus, setLangfuseStatus] = useState<LangfuseStatus>({ enabled: false, dashboardUrl: null });
-
   const refreshTables = useCallback(async () => {
     try {
       const response = await fetch('/api/tables');
@@ -338,14 +335,6 @@ export default function App() {
         const response = await fetch('/api/health');
         if (!response.ok) throw new Error('Backend is not available');
         await refreshTables();
-        try {
-          const lfRes = await fetch('/api/langfuse/status');
-          if (lfRes.ok) {
-            setLangfuseStatus(await lfRes.json());
-          }
-        } catch {
-          // Langfuse status fetch is non-critical
-        }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to connect to backend');
       } finally {
@@ -369,7 +358,7 @@ export default function App() {
       <LanguageProvider>
         <ThemeProvider>
           <AgentProvider refreshTables={refreshTables}>
-            <AppContent tables={tables} refreshTables={refreshTables} langfuseStatus={langfuseStatus} />
+            <AppContent tables={tables} refreshTables={refreshTables} />
           </AgentProvider>
         </ThemeProvider>
       </LanguageProvider>
