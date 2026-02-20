@@ -3,7 +3,7 @@
   "checkpoint_id": "e30ead08b383",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "Dockerfile",
     "README.md"
@@ -57,13 +57,20 @@
       "context": "/e3/0ead08b383/6/context.md",
       "content_hash": "/e3/0ead08b383/6/content_hash.txt",
       "prompt": "/e3/0ead08b383/6/prompt.txt"
+    },
+    {
+      "metadata": "/e3/0ead08b383/7/metadata.json",
+      "transcript": "/e3/0ead08b383/7/full.jsonl",
+      "context": "/e3/0ead08b383/7/context.md",
+      "content_hash": "/e3/0ead08b383/7/content_hash.txt",
+      "prompt": "/e3/0ead08b383/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 207,
-    "cache_creation_tokens": 179379,
-    "cache_read_tokens": 5590169,
-    "output_tokens": 7250,
-    "api_call_count": 164
+    "input_tokens": 379,
+    "cache_creation_tokens": 312603,
+    "cache_read_tokens": 21657082,
+    "output_tokens": 25625,
+    "api_call_count": 325
   }
 }
