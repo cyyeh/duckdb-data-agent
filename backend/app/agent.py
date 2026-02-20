@@ -11,8 +11,6 @@ from claude_agent_sdk import (
     ToolUseBlock,
     ToolResultBlock,
 )
-from claude_agent_sdk._errors import MessageParseError
-from claude_agent_sdk._internal.message_parser import parse_message
 from claude_agent_sdk.types import StreamEvent
 from app.tools import create_duckdb_server
 from app.database import db
@@ -111,13 +109,7 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
         sql_result_ids: set[str] = set()
         tool_names: dict[str, str] = {}
 
-        async for raw_data in client._query.receive_messages():
-            try:
-                msg = parse_message(raw_data)
-            except MessageParseError as e:
-                logger.debug("Skipping unrecognized message: %s", e)
-                continue
-
+        async for msg in client.receive_response():
             if isinstance(msg, StreamEvent):
                 event = msg.event
                 if not actual_session_id:
@@ -209,7 +201,6 @@ async def stream_chat(message: str, session_id: str | None = None) -> AsyncItera
                 if msg.is_error and msg.result:
                     yield f"event: error\ndata: {json.dumps({'message': msg.result})}\n\n"
                 yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
-                break
 
     except Exception as e:
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"

@@ -15,10 +15,14 @@ def _init_langfuse():
         logger.info("Langfuse not configured, tracing disabled")
         return
 
-    # Set OTel env vars so langsmith routes traces through Langfuse
-    os.environ.setdefault("LANGSMITH_OTEL_ENABLED", "true")
-    os.environ.setdefault("LANGSMITH_OTEL_ONLY", "true")
-    os.environ.setdefault("LANGSMITH_TRACING", "true")
+    # Set OTel env vars so langsmith routes traces through Langfuse.
+    # Must be set before any langsmith import to avoid LRU cache issues.
+    for key, val in {
+        "LANGSMITH_OTEL_ENABLED": "true",
+        "LANGSMITH_OTEL_ONLY": "true",
+        "LANGSMITH_TRACING": "true",
+    }.items():
+        os.environ.setdefault(key, val)
 
     try:
         from langfuse import get_client
@@ -31,6 +35,22 @@ def _init_langfuse():
             logger.warning("Langfuse auth check failed, tracing disabled")
             _langfuse_client = None
             return
+
+        # Suppress harmless warnings from langsmith/OTel integration BEFORE
+        # creating Client (background thread starts during Client.__init__):
+        # 1. "Run compression is not enabled" — race condition: thread starts
+        #    before otel_exporter is assigned. Batch processing uses env vars.
+        # 2. "Invalid type dict for attribute" — langsmith sets usage_metadata
+        #    as a dict, but OTel only accepts primitive types.
+        logging.getLogger("langsmith.client").setLevel(logging.ERROR)
+        logging.getLogger("opentelemetry.attributes").setLevel(logging.ERROR)
+
+        # Pre-create the global LangSmith Client with otel_enabled=True
+        # so the background tracing thread knows to use OTel-only mode.
+        from langsmith.client import Client
+        from langsmith.run_trees import configure
+
+        configure(client=Client(otel_enabled=True))
 
         # Enable auto-instrumentation for Claude Agent SDK
         from langsmith.integrations.claude_agent_sdk import configure_claude_agent_sdk
