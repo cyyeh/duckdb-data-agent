@@ -41,6 +41,15 @@
   overflow-y: auto;
 }
 
+.app__empty {
+  text-align: center;
+  color: var(--color-text-disabled);
+  font-size: 14px;
+  margin-top: 32px;
+  padding: 0 12px;
+  line-height: 1.5;
+}
+
 .app__title {
   margin: 0;
   font-size: 22px;

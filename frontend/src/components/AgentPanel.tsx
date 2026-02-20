@@ -26,7 +26,7 @@ export function AgentPanel({ langfuseStatus, tables, onUpload, onLoadSample }: A
   return (
     <div className="agent-panel">
       <div className="agent-panel__header">
-        <span className="agent-panel__title">{t('agentHeader')}</span>
+        <span className="agent-panel__title">{t('agentMode')}</span>
         <div className="agent-panel__actions">
           <button
             className={`agent-panel__langfuse ${!langfuseStatus.enabled ? 'agent-panel__langfuse--disabled' : ''}`}

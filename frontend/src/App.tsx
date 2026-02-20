@@ -212,7 +212,11 @@ function AppContent({ tables, refreshTables, langfuseStatus }: { tables: TableIn
             <span className="app__mode-title">{t('editorMode')}</span>
           </div>
           <main className="app__main">
-            <FileUpload onUpload={handleFileUpload} onLoadSample={handleLoadSample} />
+            {tables.length === 0 && (
+              <div className="app__empty">
+                <FileUpload onUpload={handleFileUpload} onLoadSample={handleLoadSample} />
+              </div>
+            )}
             <QueryEditor
               onExecute={handleQueryExecute}
               initialQuery={editorQuery}
