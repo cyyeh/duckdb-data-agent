@@ -7,6 +7,7 @@ import {
 import { AgentContext } from '../hooks/useAgent';
 import { runAgentLoop, runAgentEditLoop } from '../agent/agentService';
 import type { ChatMessage, ContentSegment, ToolCallResult } from '../types';
+import { useSessionId } from '../hooks/useSessionId';
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
@@ -19,6 +20,7 @@ export function AgentProvider({
   children: ReactNode;
   refreshTables: () => Promise<void>;
 }) {
+  const userSessionId = useSessionId();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -197,10 +199,11 @@ export function AgentProvider({
             abortRef.current = null;
           },
         },
-        controller.signal
+        controller.signal,
+        userSessionId,
       );
     },
-    [isStreaming, flushText, refreshTables]
+    [isStreaming, flushText, refreshTables, userSessionId]
   );
 
   const editMessage = useCallback(
@@ -357,10 +360,11 @@ export function AgentProvider({
             abortRef.current = null;
           },
         },
-        controller.signal
+        controller.signal,
+        userSessionId,
       );
     },
-    [isStreaming, messages, flushText, refreshTables]
+    [isStreaming, messages, flushText, refreshTables, userSessionId]
   );
 
   const deleteMessage = useCallback(
