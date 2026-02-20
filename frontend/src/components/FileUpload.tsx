@@ -31,7 +31,7 @@ export function FileUpload({ onUpload, onLoadSample }: FileUploadProps) {
     } finally {
       setUploading(false);
     }
-  }, [onUpload]);
+  }, [onUpload, t]);
 
   const handleLoadSample = useCallback(async () => {
     setLoadingSample(true);
