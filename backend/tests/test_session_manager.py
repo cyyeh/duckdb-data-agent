@@ -1,4 +1,3 @@
-import time
 from app.session_manager import SessionManager
 
 
@@ -57,8 +56,8 @@ def test_cleanup_stale_removes_old_sessions():
     mgr = SessionManager()
     mgr.get_or_create("old")
     # Manually backdate last_seen_at
-    from datetime import datetime, timedelta
-    mgr._sessions["old"].last_seen_at = datetime.utcnow() - timedelta(seconds=400)
+    from datetime import datetime, timedelta, timezone
+    mgr._sessions["old"].last_seen_at = datetime.now(timezone.utc) - timedelta(seconds=400)
     removed = mgr.cleanup_stale(ttl_seconds=300)
     assert removed == 1
     assert "old" not in mgr._sessions
