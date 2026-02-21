@@ -17,7 +17,7 @@ def create_duckdb_server(db: Database):
     async def execute_sql(args: dict[str, Any]) -> dict[str, Any]:
         sql = args["sql"]
         try:
-            result = db.execute_query(sql)
+            result = await db.execute_query_async(sql)
             truncated_rows = result["rows"][:MAX_RESULT_ROWS]
             result_json = {
                 "status": "success",
