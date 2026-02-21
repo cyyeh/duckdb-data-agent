@@ -35,13 +35,20 @@
       "context": "/fb/edac62fed9/3/context.md",
       "content_hash": "/fb/edac62fed9/3/content_hash.txt",
       "prompt": "/fb/edac62fed9/3/prompt.txt"
+    },
+    {
+      "metadata": "/fb/edac62fed9/4/metadata.json",
+      "transcript": "/fb/edac62fed9/4/full.jsonl",
+      "context": "/fb/edac62fed9/4/context.md",
+      "content_hash": "/fb/edac62fed9/4/content_hash.txt",
+      "prompt": "/fb/edac62fed9/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 285,
-    "cache_creation_tokens": 251204,
-    "cache_read_tokens": 5916366,
-    "output_tokens": 6651,
-    "api_call_count": 120
+    "input_tokens": 402,
+    "cache_creation_tokens": 351247,
+    "cache_read_tokens": 12502868,
+    "output_tokens": 14448,
+    "api_call_count": 219
   }
 }
