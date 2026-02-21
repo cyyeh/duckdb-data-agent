@@ -10,7 +10,7 @@ import type { ChatMessage, ContentSegment, ToolCallResult } from '../types';
 import { useSessionId } from '../hooks/useSessionId';
 
 function generateId() {
-  return Math.random().toString(36).slice(2, 10);
+  return crypto.randomUUID();
 }
 
 export function AgentProvider({
