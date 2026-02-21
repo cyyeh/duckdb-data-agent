@@ -123,3 +123,27 @@ class ContainerManager:
         for sid in session_ids:
             self.stop(sid)
         logger.info("Shut down %d sidecar containers", len(session_ids))
+
+
+try:
+    from app.config import (
+        CONTAINER_IMAGE,
+        CONTAINER_RUNTIME,
+        CONTAINER_MEMORY_LIMIT,
+        CONTAINER_CPU_LIMIT,
+        CONTAINER_MAX_LIFETIME_SECONDS,
+        CONTAINER_NETWORK,
+    )
+
+    container_manager = ContainerManager(
+        ContainerConfig(
+            image=CONTAINER_IMAGE,
+            runtime=CONTAINER_RUNTIME,
+            memory_limit=CONTAINER_MEMORY_LIMIT,
+            cpu_limit=CONTAINER_CPU_LIMIT,
+            max_lifetime_seconds=CONTAINER_MAX_LIFETIME_SECONDS,
+            network=CONTAINER_NETWORK,
+        )
+    )
+except Exception:
+    container_manager = None  # type: ignore[assignment]
