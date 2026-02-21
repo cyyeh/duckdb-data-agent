@@ -15,9 +15,8 @@ from claude_agent_sdk.types import StreamEvent, SystemMessage
 from claude_agent_sdk._errors import MessageParseError
 from app.tools import create_duckdb_server
 from app.database import Database
-from app.config import ANTHROPIC_MODEL
+from app.config import ANTHROPIC_MODEL, PROXY_BASE_URL
 from app.proxy import proxy_token_store
-from app.config import PROXY_BASE_URL
 from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
