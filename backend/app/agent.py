@@ -44,7 +44,7 @@ def _safe_parse_message(data):
 _parser.parse_message = _safe_parse_message
 
 
-def build_system_prompt(db: Database, conversation_history: list[dict] | None = None) -> str:
+def build_system_prompt(db: Database) -> str:
     tables = db.list_tables()
     prompt = """You are a helpful data analyst assistant working with a DuckDB database.
 You can execute SQL queries using the execute_sql tool to answer questions about the user's data.
@@ -69,14 +69,23 @@ Identity:
             for col in table["columns"]:
                 prompt += f'  - "{col["name"]}" ({col["type"]})\n'
 
-    if conversation_history:
-        prompt += "\n\nPrevious conversation (for context, the user is now editing a message):\n"
-        for entry in conversation_history:
-            role = entry.get("role", "user").capitalize()
-            content = entry.get("content", "")
-            prompt += f"\n{role}: {content}\n"
-
     return prompt
+
+
+def _build_message_with_history(
+    message: str, conversation_history: list[dict] | None = None
+) -> str:
+    """Prepend conversation history context to the user message when editing."""
+    if not conversation_history:
+        return message
+
+    history_text = "Previous conversation (for context, I am now editing a message):\n"
+    for entry in conversation_history:
+        role = entry.get("role", "user").capitalize()
+        content = entry.get("content", "")
+        history_text += f"\n{role}: {content}\n"
+    history_text += f"\n---\n\nMy updated message:\n{message}"
+    return history_text
 
 
 def _extract_tool_result_text(content: object) -> str:
@@ -115,7 +124,7 @@ async def stream_chat(
     session_token = proxy_token_store.create_token()
     options = ClaudeAgentOptions(
         model=ANTHROPIC_MODEL,
-        system_prompt=build_system_prompt(db, conversation_history),
+        system_prompt=build_system_prompt(db),
         mcp_servers={"duckdb": duckdb_server},
         allowed_tools=["mcp__duckdb__execute_sql"],
         permission_mode="bypassPermissions",
@@ -128,6 +137,10 @@ async def stream_chat(
         },
         **({"resume": session_id} if session_id else {}),
     )
+
+    # When editing, prepend conversation history to the user message
+    # instead of bloating the system prompt
+    query_message = _build_message_with_history(message, conversation_history)
 
     client = ClaudeSDKClient(options=options)
     # Will be set from the CLI's ResultMessage; use the passed-in value until then
@@ -162,7 +175,7 @@ async def stream_chat(
 
     try:
         await client.connect()
-        await client.query(message, session_id=session_id or "default")
+        await client.query(query_message, session_id=session_id or "default")
 
         has_tool_calls = False
         has_thinking = False
