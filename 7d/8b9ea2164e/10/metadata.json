@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "7d8b9ea2164e",
+  "session_id": "7f9449ff-ba3e-470b-a9f8-1ffcb5919227",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-21T08:58:21.272562Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-21-credential-proxy-implementation.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "8744db0909e9",
+  "checkpoint_transcript_start": 364,
+  "transcript_lines_at_start": 364,
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 9188,
+    "cache_read_tokens": 524818,
+    "output_tokens": 6886,
+    "api_call_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-21T08:58:20.978111Z",
+    "agent_lines": 0,
+    "human_added": 422,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 422,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/7f9449ff-ba3e-470b-a9f8-1ffcb5919227.jsonl"
+}
