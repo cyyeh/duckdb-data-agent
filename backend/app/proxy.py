@@ -64,7 +64,13 @@ _http_client: httpx.AsyncClient | None = None
 def get_http_client() -> httpx.AsyncClient:
     global _http_client
     if _http_client is None:
-        _http_client = httpx.AsyncClient(timeout=httpx.Timeout(300.0))
+        # Disable keepalive pooling: streaming responses that are cut short
+        # (e.g. client disconnects) leave connections in a partial read state.
+        # Reusing such connections causes SSLV3_ALERT_BAD_RECORD_MAC errors.
+        _http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(300.0),
+            limits=httpx.Limits(max_keepalive_connections=0, max_connections=100),
+        )
     return _http_client
 
 
