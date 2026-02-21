@@ -134,6 +134,10 @@ async def stream_chat(
         env={
             "ANTHROPIC_API_KEY": session_token,
             "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+            # Scrub Langfuse credentials so the agent subprocess cannot
+            # read them from the inherited environment.
+            "LANGFUSE_PUBLIC_KEY": "",
+            "LANGFUSE_SECRET_KEY": "",
         },
         **({"resume": session_id} if session_id else {}),
     )

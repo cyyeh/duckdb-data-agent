@@ -29,6 +29,12 @@ def _init_langfuse():
 
         _langfuse_client = get_client()
 
+        # Scrub Langfuse credentials from os.environ so they cannot leak
+        # to agent subprocesses via environment inheritance.  The client
+        # object already holds the credentials internally.
+        for _key in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"):
+            os.environ.pop(_key, None)
+
         if _langfuse_client.auth_check():
             logger.info("Langfuse connected successfully")
         else:
