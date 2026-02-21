@@ -27,7 +27,8 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
-- **Privacy-conscious** — Requires an Anthropic API key or Claude Code OAuth token stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
+- **Credential proxy** — The backend runs a built-in Anthropic API reverse proxy; each agent session receives a short-lived UUID token instead of the real API key, so the Claude Code subprocess never has access to `ANTHROPIC_API_KEY`; tokens are revoked immediately when the session ends (see [Security](#security))
+- **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions, with a one-click dashboard link in the UI
 
 ### Editor Mode
@@ -65,7 +66,7 @@ Copy the example environment file and add your credentials:
 cp backend/.env.example backend/.env
 ```
 
-Edit `backend/.env` and set your credentials. You can authenticate with either an Anthropic API key **or** a Claude Code OAuth token:
+Edit `backend/.env` and set your Anthropic API key:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
@@ -132,6 +133,35 @@ A `render.yaml` is included for one-click deployment on [Render](https://render.
 
 Render will build the Docker image and deploy it automatically on every push to `main`.
 
+## Security
+
+### Credential Proxy
+
+When the agent runs, the backend spawns a Claude Code subprocess via the Anthropic Agent SDK. A naive approach would pass `ANTHROPIC_API_KEY` directly into that subprocess's environment — but any tool or shell command the agent executes could then read and exfiltrate the key.
+
+Instead, the backend runs a built-in reverse proxy at `/anthropic` that sits between Claude Code and `api.anthropic.com`:
+
+```
+Claude Code subprocess
+  → ANTHROPIC_BASE_URL=http://127.0.0.1:{PORT}/anthropic
+  → ANTHROPIC_API_KEY=<short-lived UUID token>
+        ↓
+FastAPI proxy (/anthropic/{path})
+  → validates UUID token
+  → swaps it for the real ANTHROPIC_API_KEY
+  → forwards request to api.anthropic.com
+```
+
+**How it works:**
+
+1. Before each agent session, the backend mints a random UUID token with a 10-minute TTL.
+2. The token is injected into the subprocess environment as `ANTHROPIC_API_KEY`; the real key is never exposed.
+3. The proxy validates every inbound request against the token store and substitutes the real key before forwarding upstream.
+4. When the session ends, the token is explicitly revoked in a `finally` block, regardless of success or error.
+5. A background task runs every 60 seconds to sweep any tokens that outlived their TTL.
+
+The subprocess only ever holds a single-session UUID. Even if a tool call reads the environment, all it gets is a temporary token scoped to that conversation.
+
 ## Project Structure
 
 ```
@@ -152,6 +182,7 @@ Render will build the Docker image and deploy it automatically on every push to 
 │       ├── config.py       #   Environment variables (API key, model, upload limits)
 │       ├── database.py     #   DuckDB connection, query execution, and per-user SessionManager
 │       ├── agent.py        #   Agent loop & SSE streaming
+│       ├── proxy.py        #   Credential proxy: token store + /anthropic reverse proxy
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
 │       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
 │       ├── data/           #   Sample datasets (titanic.csv)
