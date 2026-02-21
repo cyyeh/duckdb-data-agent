@@ -126,6 +126,14 @@ async def _stream_chat_container(
         "LANGFUSE_SECRET_KEY": "",
     }
 
+    if "127.0.0.1" in PROXY_BASE_URL or "localhost" in PROXY_BASE_URL:
+        logger.warning(
+            "PROXY_BASE_URL=%s uses localhost which is unreachable from containers. "
+            "Set PROXY_BASE_URL to the host's Docker-accessible address "
+            "(e.g., http://host.docker.internal:10000).",
+            PROXY_BASE_URL,
+        )
+
     try:
         container_session = session_id or "default"
         info = container_manager.create(container_session, env)
@@ -148,7 +156,10 @@ async def _stream_chat_container(
             "session_id": session_id,
             "system_prompt": system_prompt,
             "model": ANTHROPIC_MODEL,
-            "mcp_server_url": f"{PROXY_BASE_URL}/mcp",
+            # TODO: MCP server needs to be exposed as HTTP SSE endpoint
+            # for containerized CLI to reach DuckDB. Currently the tool
+            # is defined in-process via the SDK. This requires implementing
+            # an MCP SSE transport on the backend. See design doc for details.
         }
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -159,11 +170,17 @@ async def _stream_chat_container(
                     elif line.startswith("event: "):
                         yield f"{line}\n"
 
+        # Emit done event after sidecar stream ends
+        yield f"event: done\ndata: {json.dumps({'session_id': session_id})}\n\n"
+
     except Exception as e:
         logger.error("Container agent error: %s", str(e))
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
     finally:
         proxy_token_store.revoke_token(session_token)
+        # Container intentionally kept alive for session resume (--resume flag).
+        # Containers are cleaned up by the background cleanup loop after
+        # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.
 
 
 async def stream_chat(
@@ -176,11 +193,17 @@ async def stream_chat(
     """Stream agent chat responses as SSE events."""
     if CONTAINER_ENABLED:
         from app.container_manager import container_manager
-        async for event in _stream_chat_container(
-            message, session_id, db, conversation_history, container_manager
-        ):
-            yield event
-        return
+        if container_manager is None:
+            logger.error(
+                "CONTAINER_ENABLED=true but Docker is not available. "
+                "Falling back to subprocess mode."
+            )
+        else:
+            async for event in _stream_chat_container(
+                message, session_id, db, conversation_history, container_manager
+            ):
+                yield event
+            return
 
     if db is None:
         raise ValueError("db must be provided")
