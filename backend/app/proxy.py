@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 import httpx
 
-from app.config import CLAUDE_CODE_OAUTH_TOKEN
+from app.config import ANTHROPIC_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ async def proxy_anthropic(path: str, request: Request):
         k: v for k, v in request.headers.items()
         if k.lower() not in _SKIP_REQUEST_HEADERS
     }
-    headers["authorization"] = f"Bearer {CLAUDE_CODE_OAUTH_TOKEN}"
+    headers["authorization"] = f"Bearer {ANTHROPIC_API_KEY}"
 
     body = await request.body()
 

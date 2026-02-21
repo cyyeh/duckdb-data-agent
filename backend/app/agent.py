@@ -123,7 +123,7 @@ async def stream_chat(
         include_partial_messages=True,
         stderr=lambda line: stderr_lines.append(line),
         env={
-            "CLAUDE_CODE_OAUTH_TOKEN": session_token,
+            "ANTHROPIC_API_KEY": session_token,
             "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
         },
         **({"resume": session_id} if session_id else {}),
