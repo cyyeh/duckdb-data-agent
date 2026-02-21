@@ -21,3 +21,12 @@ LANGFUSE_ENABLED = bool(LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY)
 
 PROJECT_DIR = os.getenv("PROJECT_DIR", os.getcwd())
 MAX_TOTAL_SIZE_BYTES = int(os.getenv("MAX_TOTAL_SIZE_BYTES", str(500 * 1024 * 1024)))  # default 500MB
+
+# Container isolation settings
+CONTAINER_ENABLED = os.getenv("CONTAINER_ENABLED", "false").lower() == "true"
+CONTAINER_IMAGE = os.getenv("CONTAINER_IMAGE", "duckdb-agent-sidecar:latest")
+CONTAINER_RUNTIME = os.getenv("CONTAINER_RUNTIME", "runsc")
+CONTAINER_MEMORY_LIMIT = os.getenv("CONTAINER_MEMORY_LIMIT", "256m")
+CONTAINER_CPU_LIMIT = float(os.getenv("CONTAINER_CPU_LIMIT", "0.5"))
+CONTAINER_MAX_LIFETIME_SECONDS = int(os.getenv("CONTAINER_MAX_LIFETIME_SECONDS", "600"))
+CONTAINER_NETWORK = os.getenv("CONTAINER_NETWORK", "agent-sandbox")
