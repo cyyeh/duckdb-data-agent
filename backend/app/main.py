@@ -32,6 +32,7 @@ async def lifespan(app):
     task = asyncio.create_task(_cleanup_loop())
     yield
     task.cancel()
+    await proxy_module.close_http_client()
 
 
 app = FastAPI(title="DuckDB Data Agent API", lifespan=lifespan)

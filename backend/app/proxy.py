@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -6,6 +7,8 @@ from fastapi.responses import StreamingResponse
 import httpx
 
 from app.config import CLAUDE_CODE_OAUTH_TOKEN
+
+logger = logging.getLogger(__name__)
 
 ANTHROPIC_UPSTREAM = "https://api.anthropic.com"
 
@@ -55,6 +58,23 @@ class ProxyTokenStore:
 
 proxy_token_store = ProxyTokenStore()
 
+_http_client: httpx.AsyncClient | None = None
+
+
+def get_http_client() -> httpx.AsyncClient:
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(timeout=httpx.Timeout(300.0))
+    return _http_client
+
+
+async def close_http_client() -> None:
+    global _http_client
+    if _http_client is not None:
+        await _http_client.aclose()
+        _http_client = None
+
+
 router = APIRouter(prefix="/anthropic")
 
 
@@ -76,7 +96,7 @@ async def proxy_anthropic(path: str, request: Request):
 
     body = await request.body()
 
-    client = httpx.AsyncClient(timeout=httpx.Timeout(300.0))
+    client = get_http_client()
     try:
         upstream_req = client.build_request(
             method=request.method,
@@ -98,7 +118,6 @@ async def proxy_anthropic(path: str, request: Request):
                     yield chunk
             finally:
                 await upstream_resp.aclose()
-                await client.aclose()
 
         return StreamingResponse(
             body_generator(),
@@ -106,5 +125,5 @@ async def proxy_anthropic(path: str, request: Request):
             headers=response_headers,
         )
     except Exception:
-        await client.aclose()
+        logger.exception("Proxy request to upstream failed: %s %s", request.method, path)
         raise
