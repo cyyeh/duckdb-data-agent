@@ -15,7 +15,7 @@ from claude_agent_sdk.types import StreamEvent, SystemMessage
 from claude_agent_sdk._errors import MessageParseError
 from app.tools import create_duckdb_server
 from app.database import Database
-from app.config import ANTHROPIC_MODEL, PROXY_BASE_URL
+from app.config import ANTHROPIC_MODEL, PROXY_BASE_URL, CONTAINER_ENABLED
 from app.proxy import proxy_token_store
 from app.tracing import get_langfuse_client
 
@@ -103,6 +103,69 @@ def _extract_tool_result_text(content: object) -> str:
     return str(content)
 
 
+async def _stream_chat_container(
+    message: str,
+    session_id: str | None,
+    db: Database,
+    conversation_history: list[dict] | None,
+    container_manager,
+) -> AsyncIterator[str]:
+    """Stream chat via containerized sidecar instead of local subprocess."""
+    import httpx
+    import asyncio
+
+    query_message = _build_message_with_history(message, conversation_history)
+    system_prompt = build_system_prompt(db)
+
+    session_token = proxy_token_store.create_token()
+
+    env = {
+        "ANTHROPIC_API_KEY": session_token,
+        "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+        "LANGFUSE_PUBLIC_KEY": "",
+        "LANGFUSE_SECRET_KEY": "",
+    }
+
+    try:
+        container_session = session_id or "default"
+        info = container_manager.create(container_session, env)
+
+        # Wait for container to be ready
+        for attempt in range(10):
+            try:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as check_client:
+                    resp = await check_client.get(f"{info.url}/health")
+                    if resp.status_code == 200:
+                        break
+            except Exception:
+                pass
+            await asyncio.sleep(1)
+        else:
+            raise RuntimeError("Sidecar container failed health check after 10 attempts")
+
+        payload = {
+            "message": query_message,
+            "session_id": session_id,
+            "system_prompt": system_prompt,
+            "model": ANTHROPIC_MODEL,
+            "mcp_server_url": f"{PROXY_BASE_URL}/mcp",
+        }
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
+            async with client.stream("POST", f"{info.url}/query", json=payload) as response:
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        yield f"{line}\n\n"
+                    elif line.startswith("event: "):
+                        yield f"{line}\n"
+
+    except Exception as e:
+        logger.error("Container agent error: %s", str(e))
+        yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
+    finally:
+        proxy_token_store.revoke_token(session_token)
+
+
 async def stream_chat(
     message: str,
     session_id: str | None = None,
@@ -111,6 +174,14 @@ async def stream_chat(
     langfuse_session_id: str | None = None,
 ) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events."""
+    if CONTAINER_ENABLED:
+        from app.container_manager import container_manager
+        async for event in _stream_chat_container(
+            message, session_id, db, conversation_history, container_manager
+        ):
+            yield event
+        return
+
     if db is None:
         raise ValueError("db must be provided")
     duckdb_server = create_duckdb_server(db)
