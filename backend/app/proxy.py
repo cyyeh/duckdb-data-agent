@@ -45,6 +45,13 @@ class ProxyTokenStore:
     def revoke_token(self, token: str) -> None:
         self._tokens.pop(token, None)
 
+    def cleanup_expired(self) -> int:
+        now = datetime.now(timezone.utc)
+        expired = [t for t, exp in self._tokens.items() if now > exp]
+        for t in expired:
+            del self._tokens[t]
+        return len(expired)
+
 
 proxy_token_store = ProxyTokenStore()
 
