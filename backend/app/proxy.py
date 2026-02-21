@@ -80,19 +80,21 @@ router = APIRouter(prefix="/anthropic")
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_anthropic(path: str, request: Request):
-    auth_header = request.headers.get("authorization", "")
-    if not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing Bearer token")
-
-    session_token = auth_header[7:]
-    if not proxy_token_store.validate_token(session_token):
+    # Claude Code CLI sends the API key as x-api-key (Anthropic SDK default).
+    # Fall back to Authorization: Bearer for other clients.
+    session_token = (
+        request.headers.get("x-api-key")
+        or request.headers.get("authorization", "")[len("Bearer "):]
+        or None
+    )
+    if not session_token or not proxy_token_store.validate_token(session_token):
         raise HTTPException(status_code=401, detail="Invalid or expired session token")
 
     headers = {
         k: v for k, v in request.headers.items()
         if k.lower() not in _SKIP_REQUEST_HEADERS
     }
-    headers["authorization"] = f"Bearer {ANTHROPIC_API_KEY}"
+    headers["x-api-key"] = ANTHROPIC_API_KEY
 
     body = await request.body()
 

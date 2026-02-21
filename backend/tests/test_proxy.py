@@ -76,12 +76,22 @@ def test_proxy_route_rejects_missing_auth():
     assert response.status_code == 401
 
 
-def test_proxy_route_rejects_invalid_token():
+def test_proxy_route_rejects_invalid_bearer_token():
     client = TestClient(make_proxy_app(), raise_server_exceptions=False)
     response = client.post(
         "/anthropic/v1/messages",
         json={},
         headers={"Authorization": "Bearer not-a-valid-uuid"},
+    )
+    assert response.status_code == 401
+
+
+def test_proxy_route_rejects_invalid_x_api_key():
+    client = TestClient(make_proxy_app(), raise_server_exceptions=False)
+    response = client.post(
+        "/anthropic/v1/messages",
+        json={},
+        headers={"x-api-key": "not-a-valid-uuid"},
     )
     assert response.status_code == 401
 
