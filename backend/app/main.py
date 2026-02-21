@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 
 from app.routes import tables, query, chat, langfuse_status, config, session
 from app import proxy as proxy_module
+from app.config import CONTAINER_ENABLED
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,11 @@ async def _cleanup_loop():
         proxy_removed = proxy_module.proxy_token_store.cleanup_expired()
         if proxy_removed:
             logger.info("Background cleanup: removed %d expired proxy tokens", proxy_removed)
+        if CONTAINER_ENABLED:
+            from app.container_manager import container_manager
+            container_removed = container_manager.cleanup_expired()
+            if container_removed:
+                logger.info("Background cleanup: removed %d expired containers", container_removed)
 
 
 @asynccontextmanager
@@ -32,6 +38,9 @@ async def lifespan(app):
     task = asyncio.create_task(_cleanup_loop())
     yield
     task.cancel()
+    if CONTAINER_ENABLED:
+        from app.container_manager import container_manager
+        container_manager.shutdown_all()
 
 
 app = FastAPI(title="DuckDB Data Agent API", lifespan=lifespan)
