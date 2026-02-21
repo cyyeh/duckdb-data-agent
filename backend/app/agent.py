@@ -16,6 +16,8 @@ from claude_agent_sdk._errors import MessageParseError
 from app.tools import create_duckdb_server
 from app.database import Database
 from app.config import ANTHROPIC_MODEL
+from app.proxy import proxy_token_store
+from app.config import PROXY_BASE_URL
 from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
@@ -111,6 +113,7 @@ async def stream_chat(
     stderr_lines: list[str] = []
 
     # Use the --resume flag to continue an existing session
+    session_token = proxy_token_store.create_token()
     options = ClaudeAgentOptions(
         model=ANTHROPIC_MODEL,
         system_prompt=build_system_prompt(db, conversation_history),
@@ -120,6 +123,10 @@ async def stream_chat(
         max_turns=20,
         include_partial_messages=True,
         stderr=lambda line: stderr_lines.append(line),
+        env={
+            "CLAUDE_CODE_OAUTH_TOKEN": session_token,
+            "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+        },
         **({"resume": session_id} if session_id else {}),
     )
 
@@ -254,6 +261,7 @@ async def stream_chat(
         logger.error("Agent error: %s", error_msg)
         yield f"event: error\ndata: {json.dumps({'message': error_msg})}\n\n"
     finally:
+        proxy_token_store.revoke_token(session_token)
         # Update trace with the CLI's session_id so Langfuse session matches
         if langfuse and observation_ctx:
             try:
