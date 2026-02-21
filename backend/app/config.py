@@ -11,7 +11,6 @@ if not ANTHROPIC_API_KEY:
         RuntimeWarning,
         stacklevel=1,
     )
-CLAUDE_CODE_OAUTH_TOKEN = os.getenv("CLAUDE_CODE_OAUTH_TOKEN", "")
 PROXY_BASE_URL = os.getenv("PROXY_BASE_URL", "http://127.0.0.1:10000")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-4-6")
 

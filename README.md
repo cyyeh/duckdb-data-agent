@@ -68,17 +68,12 @@ cp backend/.env.example backend/.env
 Edit `backend/.env` and set your credentials. You can authenticate with either an Anthropic API key **or** a Claude Code OAuth token:
 
 ```
-# Option A — Anthropic API key
 ANTHROPIC_API_KEY=sk-ant-...
-
-# Option B — Claude Code OAuth token (run `claude set-token` to obtain one)
-CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token-here
-
 ANTHROPIC_MODEL=sonnet              # optional, defaults to sonnet
 MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (default: 500 MB)
 ```
 
-> `ANTHROPIC_API_KEY` (or `CLAUDE_CODE_OAUTH_TOKEN`) and `ANTHROPIC_MODEL` are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
+> `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
 
 #### Langfuse (optional)
 
@@ -118,14 +113,8 @@ The project ships as a single Docker image that bundles the React frontend and F
 ```bash
 docker build -t duckdb-data-agent .
 
-# Using an Anthropic API key
 docker run -p 10000:10000 \
   -e ANTHROPIC_API_KEY=sk-ant-... \
-  duckdb-data-agent
-
-# Or using a Claude Code OAuth token
-docker run -p 10000:10000 \
-  -e CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token-here \
   duckdb-data-agent
 ```
 
@@ -139,7 +128,7 @@ A `render.yaml` is included for one-click deployment on [Render](https://render.
 
 1. Push this repo to GitHub.
 2. In Render, create a new **Blueprint** and connect the repo.
-3. Set either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` in the Render dashboard. Optionally set `ANTHROPIC_MODEL` to override the default model (`sonnet`). To enable Langfuse tracing, also set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`.
+3. Set `ANTHROPIC_API_KEY` in the Render dashboard. Optionally set `ANTHROPIC_MODEL` to override the default model (`sonnet`). To enable Langfuse tracing, also set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`.
 
 Render will build the Docker image and deploy it automatically on every push to `main`.
 
