@@ -26,3 +26,5 @@ frontend/dist-ssr
 .claude/worktrees/
 .env
 .pytest_cache
+sidecar/node_modules/
+sidecar/dist/

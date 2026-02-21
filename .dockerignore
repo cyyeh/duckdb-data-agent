@@ -11,3 +11,5 @@ backend/tests
 docs
 *.md
 LICENSE.txt
+sidecar/node_modules
+sidecar/dist
