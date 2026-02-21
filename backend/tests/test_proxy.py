@@ -1,10 +1,14 @@
 import time
+import uuid as uuid_module
 from datetime import datetime, timedelta, timezone
-from app.proxy import ProxyTokenStore
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from app.proxy import ProxyTokenStore, proxy_token_store, router
 
 
 def test_create_token_returns_uuid_string():
-    import uuid as uuid_module
     store = ProxyTokenStore()
     token = store.create_token()
     parsed = uuid_module.UUID(token)  # raises ValueError if not valid UUID
@@ -33,7 +37,6 @@ def test_expired_token_fails_validation():
     store = ProxyTokenStore()
     token = store.create_token()
     # Backdate expiry directly — no sleep needed
-    from datetime import timedelta, timezone
     store._tokens[token] = datetime.now(timezone.utc) - timedelta(seconds=1)
     assert store.validate_token(token) is False
 
@@ -41,11 +44,6 @@ def test_expired_token_fails_validation():
 def test_revoke_nonexistent_token_is_safe():
     store = ProxyTokenStore()
     store.revoke_token("ghost-token")  # must not raise
-
-
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from app.proxy import router, proxy_token_store
 
 
 def make_proxy_app():
@@ -72,11 +70,14 @@ def test_proxy_route_rejects_invalid_token():
 
 def test_proxy_route_rejects_revoked_token():
     token = proxy_token_store.create_token()
-    proxy_token_store.revoke_token(token)
-    client = TestClient(make_proxy_app(), raise_server_exceptions=False)
-    response = client.post(
-        "/anthropic/v1/messages",
-        json={},
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code == 401
+    try:
+        proxy_token_store.revoke_token(token)
+        client = TestClient(make_proxy_app(), raise_server_exceptions=False)
+        response = client.post(
+            "/anthropic/v1/messages",
+            json={},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 401
+    finally:
+        proxy_token_store.revoke_token(token)  # idempotent; safe to call twice
