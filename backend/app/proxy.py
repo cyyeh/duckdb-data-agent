@@ -101,6 +101,7 @@ async def proxy_anthropic(path: str, request: Request):
         if k.lower() not in _SKIP_REQUEST_HEADERS
     }
     headers["x-api-key"] = ANTHROPIC_API_KEY
+    headers["anthropic-version"] = "2023-06-01"
 
     body = await request.body()
 
