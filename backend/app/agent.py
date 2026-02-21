@@ -156,10 +156,7 @@ async def _stream_chat_container(
             "session_id": session_id,
             "system_prompt": system_prompt,
             "model": ANTHROPIC_MODEL,
-            # TODO: MCP server needs to be exposed as HTTP SSE endpoint
-            # for containerized CLI to reach DuckDB. Currently the tool
-            # is defined in-process via the SDK. This requires implementing
-            # an MCP SSE transport on the backend. See design doc for details.
+            "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={container_session}",
         }
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:

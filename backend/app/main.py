@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from app.routes import tables, query, chat, langfuse_status, config, session
 from app import proxy as proxy_module
 from app.config import CONTAINER_ENABLED
+from app.mcp_sse import mcp_app
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,9 @@ app.include_router(langfuse_status.router)
 app.include_router(config.router)
 app.include_router(session.router)
 app.include_router(proxy_module.router)
+
+
+app.mount("/mcp", mcp_app)
 
 
 @app.get("/api/health")
