@@ -16,7 +16,9 @@ _SKIP_REQUEST_HEADERS = {
     "host", "content-length", "transfer-encoding", "connection",
     "x-api-key",         # client must not override billing identity
     "anthropic-version", # proxy controls API version
-    "anthropic-beta",    # proxy controls beta feature access
+    # anthropic-beta is intentionally NOT blocked: Claude Code sends beta body
+    # fields (e.g. context_management) alongside the matching beta header, and
+    # Anthropic rejects those fields as "extra inputs" if the header is absent.
 }
 _SKIP_RESPONSE_HEADERS = {"transfer-encoding", "content-encoding", "connection"}
 
@@ -58,29 +60,6 @@ class ProxyTokenStore:
 
 proxy_token_store = ProxyTokenStore()
 
-_http_client: httpx.AsyncClient | None = None
-
-
-def get_http_client() -> httpx.AsyncClient:
-    global _http_client
-    if _http_client is None:
-        # Disable keepalive pooling: streaming responses that are cut short
-        # (e.g. client disconnects) leave connections in a partial read state.
-        # Reusing such connections causes SSLV3_ALERT_BAD_RECORD_MAC errors.
-        _http_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(300.0),
-            limits=httpx.Limits(max_keepalive_connections=0, max_connections=100),
-        )
-    return _http_client
-
-
-async def close_http_client() -> None:
-    global _http_client
-    if _http_client is not None:
-        await _http_client.aclose()
-        _http_client = None
-
-
 router = APIRouter(prefix="/anthropic")
 
 
@@ -105,14 +84,19 @@ async def proxy_anthropic(path: str, request: Request):
 
     body = await request.body()
 
-    client = get_http_client()
+    # Use a fresh client per request: streaming responses that are cut short
+    # (e.g. client disconnects) leave connections in a partial read state, and
+    # reusing a shared SSL context across those connections causes
+    # SSLV3_ALERT_BAD_RECORD_MAC / record layer failure errors.
+    # Query params are intentionally NOT forwarded — Claude Code appends
+    # internal params (e.g. ?beta=true) that Anthropic rejects as "extra inputs".
+    client = httpx.AsyncClient(timeout=httpx.Timeout(300.0))
     try:
         upstream_req = client.build_request(
             method=request.method,
             url=f"{ANTHROPIC_UPSTREAM}/{path}",
             headers=headers,
             content=body,
-            params=dict(request.query_params),
         )
         upstream_resp = await client.send(upstream_req, stream=True)
 
@@ -127,6 +111,7 @@ async def proxy_anthropic(path: str, request: Request):
                     yield chunk
             finally:
                 await upstream_resp.aclose()
+                await client.aclose()
 
         return StreamingResponse(
             body_generator(),
@@ -134,5 +119,6 @@ async def proxy_anthropic(path: str, request: Request):
             headers=response_headers,
         )
     except Exception:
+        await client.aclose()
         logger.exception("Proxy request to upstream failed: %s %s", request.method, path)
         raise
