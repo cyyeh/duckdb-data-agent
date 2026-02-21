@@ -1,5 +1,6 @@
 import os
 
+import duckdb
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.config import MAX_TOTAL_SIZE_BYTES
@@ -38,16 +39,15 @@ async def upload_file(
             detail=f"File size exceeds the {MAX_TOTAL_SIZE_BYTES // (1024 * 1024)}MB limit"
         )
     table_name = sanitize_table_name(file.filename)
-    existing_tables = {t["name"] for t in db.list_tables()}
-    if table_name in existing_tables:
-        raise HTTPException(
-            status_code=409,
-            detail=f"A table named \"{table_name}\" already exists. Please remove it or rename the file before uploading."
-        )
     try:
         results = db.load_file(content, file.filename, table_name)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except duckdb.CatalogException:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A table named \"{table_name}\" already exists. Please remove it or rename the file before uploading."
+        )
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Failed to process file: {e}")
     if len(results) == 1:

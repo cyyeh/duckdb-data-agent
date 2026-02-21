@@ -28,7 +28,7 @@ class Database:
             tmp_path = tmp.name
         try:
             self.conn.execute(
-                f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{tmp_path}\')'
+                f'CREATE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{tmp_path}\')'
             )
         finally:
             os.unlink(tmp_path)
@@ -41,7 +41,7 @@ class Database:
             tmp_path = tmp.name
         try:
             self.conn.execute(
-                f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_json_auto(\'{tmp_path}\')'
+                f'CREATE TABLE "{table_name}" AS SELECT * FROM read_json_auto(\'{tmp_path}\')'
             )
         finally:
             os.unlink(tmp_path)
@@ -54,7 +54,7 @@ class Database:
             tmp_path = tmp.name
         try:
             self.conn.execute(
-                f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_parquet(\'{tmp_path}\')'
+                f'CREATE TABLE "{table_name}" AS SELECT * FROM read_parquet(\'{tmp_path}\')'
             )
         finally:
             os.unlink(tmp_path)
@@ -88,7 +88,7 @@ class Database:
                     csv_tmp_path = csv_tmp.name
                 try:
                     self.conn.execute(
-                        f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{csv_tmp_path}\')'
+                        f'CREATE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{csv_tmp_path}\')'
                     )
                     results.append(self.get_table_info(table_name))
                 finally:
