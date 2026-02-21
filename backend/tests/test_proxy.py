@@ -1,12 +1,14 @@
 import time
+from datetime import datetime, timedelta, timezone
 from app.proxy import ProxyTokenStore
 
 
 def test_create_token_returns_uuid_string():
+    import uuid as uuid_module
     store = ProxyTokenStore()
     token = store.create_token()
-    assert isinstance(token, str)
-    assert len(token) == 36  # UUID format
+    parsed = uuid_module.UUID(token)  # raises ValueError if not valid UUID
+    assert parsed.version == 4
 
 
 def test_valid_token_passes_validation():
@@ -28,9 +30,11 @@ def test_revoked_token_fails_validation():
 
 
 def test_expired_token_fails_validation():
-    store = ProxyTokenStore(ttl_seconds=0)
+    store = ProxyTokenStore()
     token = store.create_token()
-    time.sleep(0.01)
+    # Backdate expiry directly — no sleep needed
+    from datetime import timedelta, timezone
+    store._tokens[token] = datetime.now(timezone.utc) - timedelta(seconds=1)
     assert store.validate_token(token) is False
 
 

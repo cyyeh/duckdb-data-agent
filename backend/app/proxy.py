@@ -9,7 +9,12 @@ from app.config import CLAUDE_CODE_OAUTH_TOKEN
 
 ANTHROPIC_UPSTREAM = "https://api.anthropic.com"
 
-_SKIP_REQUEST_HEADERS = {"host", "content-length", "transfer-encoding", "connection"}
+_SKIP_REQUEST_HEADERS = {
+    "host", "content-length", "transfer-encoding", "connection",
+    "x-api-key",         # client must not override billing identity
+    "anthropic-version", # proxy controls API version
+    "anthropic-beta",    # proxy controls beta feature access
+}
 _SKIP_RESPONSE_HEADERS = {"transfer-encoding", "content-encoding", "connection"}
 
 
@@ -24,6 +29,11 @@ class ProxyTokenStore:
         return token
 
     def validate_token(self, token: str) -> bool:
+        # Tokens are intentionally multi-use: Claude Code makes many API calls
+        # per session, all protected by the same UUID. The token is valid for
+        # the session TTL (600s safety net) but is explicitly revoked by
+        # proxy_token_store.revoke_token() in agent.py's finally block when
+        # the Claude Code subprocess exits. Do not make single-use.
         expiry = self._tokens.get(token)
         if expiry is None:
             return False

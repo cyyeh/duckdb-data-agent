@@ -5,6 +5,13 @@ load_dotenv()
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_CODE_OAUTH_TOKEN = os.getenv("CLAUDE_CODE_OAUTH_TOKEN", "")
+if not CLAUDE_CODE_OAUTH_TOKEN:
+    import warnings
+    warnings.warn(
+        "CLAUDE_CODE_OAUTH_TOKEN is not set — proxy will forward empty Bearer tokens to Anthropic",
+        RuntimeWarning,
+        stacklevel=1,
+    )
 PROXY_BASE_URL = os.getenv("PROXY_BASE_URL", "http://127.0.0.1:10000")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-4-6")
 
