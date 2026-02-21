@@ -12,13 +12,26 @@ class Database:
     def __init__(self):
         self.conn = duckdb.connect(":memory:")
 
+    # Maximum rows to materialize from a single query to prevent OOM.
+    MAX_RESULT_ROWS = 10_000
+
     def execute_query(self, sql: str) -> dict[str, Any]:
         """Execute a SQL query and return results as dict with columns, rows, rowCount."""
         result = self.conn.execute(sql)
         if result is None:
             return {"columns": [], "rows": [], "rowCount": 0}
         columns = [desc[0] for desc in result.description] if result.description else []
-        rows = [dict(zip(columns, row)) for row in result.fetchall()] if columns else []
+        if not columns:
+            return {"columns": [], "rows": [], "rowCount": 0}
+        # Fetch in chunks to avoid materializing unbounded result sets
+        rows: list[dict] = []
+        while True:
+            chunk = result.fetchmany(self.MAX_RESULT_ROWS - len(rows))
+            if not chunk:
+                break
+            rows.extend(dict(zip(columns, row)) for row in chunk)
+            if len(rows) >= self.MAX_RESULT_ROWS:
+                break
         return {"columns": columns, "rows": rows, "rowCount": len(rows)}
 
     def load_csv(self, file_bytes: bytes, filename: str, table_name: str) -> dict[str, Any]:
