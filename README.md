@@ -162,6 +162,54 @@ FastAPI proxy (/anthropic/{path})
 
 The subprocess only ever holds a single-session UUID. Even if a tool call reads the environment, all it gets is a temporary token scoped to that conversation.
 
+### Container Isolation (Optional)
+
+For additional defense in depth, the backend can run each Claude Code subprocess inside a gVisor-sandboxed Docker container instead of a bare subprocess. This provides code execution isolation, multi-tenant safety, and a hardened boundary between the agent and the host system.
+
+**Prerequisites:**
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [gVisor (runsc)](https://gvisor.dev/docs/user_guide/install/) runtime installed and registered with Docker
+- The sidecar Docker image (built from `sidecar/`)
+
+**Setup:**
+
+1. Build the sidecar image:
+
+   ```bash
+   cd sidecar && docker build -t duckdb-agent-sidecar:latest .
+   ```
+
+2. Create the Docker network:
+
+   ```bash
+   ./sidecar/setup-network.sh
+   ```
+
+3. Install gVisor by following the [official guide](https://gvisor.dev/docs/user_guide/install/).
+
+4. Enable the feature by setting the environment variable:
+
+   ```
+   CONTAINER_ENABLED=true
+   ```
+
+**Environment variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CONTAINER_ENABLED` | `false` | Enable containerized runtime |
+| `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar Docker image |
+| `CONTAINER_RUNTIME` | `runsc` | Docker runtime (gVisor) |
+| `CONTAINER_MEMORY_LIMIT` | `256m` | Memory limit per container |
+| `CONTAINER_CPU_LIMIT` | `0.5` | CPU limit per container |
+| `CONTAINER_MAX_LIFETIME_SECONDS` | `600` | Max container lifetime |
+| `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
+
+**Deployment note:** The `CONTAINER_ENABLED` feature flag defaults to `false`, allowing the backend to fall back to the subprocess model on PaaS platforms (Render, Railway) that do not support nested Docker. Set it to `true` only on infrastructure where Docker-in-Docker or sibling containers are available.
+
+For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md).
+
 ## Project Structure
 
 ```
