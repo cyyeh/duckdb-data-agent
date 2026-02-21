@@ -46,6 +46,24 @@ def test_revoke_nonexistent_token_is_safe():
     store.revoke_token("ghost-token")  # must not raise
 
 
+def test_cleanup_expired_removes_stale_tokens_and_returns_count():
+    store = ProxyTokenStore()
+    live = store.create_token()
+    stale = store.create_token()
+    store._tokens[stale] = datetime.now(timezone.utc) - timedelta(seconds=1)
+
+    removed = store.cleanup_expired()
+
+    assert removed == 1
+    assert store.validate_token(live) is True
+    assert store.validate_token(stale) is False
+
+
+def test_cleanup_expired_on_empty_store_returns_zero():
+    store = ProxyTokenStore()
+    assert store.cleanup_expired() == 0
+
+
 def make_proxy_app():
     app = FastAPI()
     app.include_router(router)
