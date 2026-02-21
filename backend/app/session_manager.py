@@ -32,13 +32,13 @@ class SessionManager:
         return True
 
     def destroy(self, session_id: str) -> None:
-        if session_id not in self._sessions:
+        entry = self._sessions.pop(session_id, None)
+        if entry is None:
             return
         try:
-            self._sessions[session_id].db.conn.close()
+            entry.db.close()
         except Exception:
             pass
-        del self._sessions[session_id]
         logger.info("Destroyed session: %s", session_id)
 
     def cleanup_stale(self, ttl_seconds: int = 300) -> int:

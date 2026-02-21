@@ -12,6 +12,10 @@ class Database:
     def __init__(self):
         self.conn = duckdb.connect(":memory:")
 
+    def close(self) -> None:
+        """Close the underlying DuckDB connection."""
+        self.conn.close()
+
     def execute_query(self, sql: str) -> dict[str, Any]:
         """Execute a SQL query and return results as dict with columns, rows, rowCount."""
         result = self.conn.execute(sql)
