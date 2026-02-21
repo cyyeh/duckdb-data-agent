@@ -1,0 +1,21 @@
+for answer text(type is text), always show in answer text area and stack them by order
+
+---
+
+problem still exists
+
+---
+
+how about thinking -> text -> thinking -> tool call -> thinking -> tool call -> text?
+
+---
+
+[Request interrupted by user]
+
+---
+
+clear
+
+---
+
+[Request interrupted by user]
