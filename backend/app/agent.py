@@ -136,14 +136,15 @@ async def _stream_chat_container(
             PROXY_BASE_URL,
         )
 
-    # Use the backend session ID (X-Session-ID header) for the MCP SSE URL
-    # so the container queries the same DuckDB instance where data was loaded.
-    # The container_session for Docker lifecycle can use either.
-    mcp_session_id = backend_session_id or session_id or "default"
+    # Use the backend session ID (X-Session-ID header) for both:
+    # 1. MCP SSE URL — so the container queries the correct DuckDB instance
+    # 2. Container lifecycle key — so the same container is reused across
+    #    requests from the same browser tab (the Claude agent session_id
+    #    changes after the first response, which would orphan the container)
+    stable_session = backend_session_id or session_id or "default"
 
     try:
-        container_session = session_id or "default"
-        info = container_manager.create(container_session, env)
+        info = container_manager.create(stable_session, env)
 
         # Send SSE keepalive comments during container startup to prevent
         # proxy buffering / idle-connection timeouts (Vite, nginx, etc.).
@@ -169,7 +170,7 @@ async def _stream_chat_container(
             "session_id": session_id,
             "system_prompt": system_prompt,
             "model": ANTHROPIC_MODEL,
-            "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={mcp_session_id}",
+            "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={stable_session}",
             "env": {
                 "ANTHROPIC_API_KEY": session_token,
                 "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
