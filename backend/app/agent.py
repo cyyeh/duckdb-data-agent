@@ -110,6 +110,7 @@ async def _stream_chat_container(
     db: Database,
     conversation_history: list[dict] | None,
     container_manager,
+    backend_session_id: str | None = None,
 ) -> AsyncIterator[str]:
     """Stream chat via containerized sidecar instead of local subprocess."""
     import httpx
@@ -134,6 +135,11 @@ async def _stream_chat_container(
             "(e.g., http://host.docker.internal:10000).",
             PROXY_BASE_URL,
         )
+
+    # Use the backend session ID (X-Session-ID header) for the MCP SSE URL
+    # so the container queries the same DuckDB instance where data was loaded.
+    # The container_session for Docker lifecycle can use either.
+    mcp_session_id = backend_session_id or session_id or "default"
 
     try:
         container_session = session_id or "default"
@@ -163,7 +169,7 @@ async def _stream_chat_container(
             "session_id": session_id,
             "system_prompt": system_prompt,
             "model": ANTHROPIC_MODEL,
-            "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={container_session}",
+            "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={mcp_session_id}",
             "env": {
                 "ANTHROPIC_API_KEY": session_token,
                 "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
@@ -305,6 +311,7 @@ async def stream_chat(
     db: Database | None = None,
     conversation_history: list[dict] | None = None,
     langfuse_session_id: str | None = None,
+    backend_session_id: str | None = None,
 ) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events."""
     if CONTAINER_ENABLED:
@@ -316,7 +323,8 @@ async def stream_chat(
             )
         else:
             async for event in _stream_chat_container(
-                message, session_id, db, conversation_history, container_manager
+                message, session_id, db, conversation_history, container_manager,
+                backend_session_id=backend_session_id,
             ):
                 yield event
             return
