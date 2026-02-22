@@ -51,11 +51,10 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 make install
 ```
 
-Or install frontend and backend separately:
+To also set up the sidecar for [container isolation](#container-isolation-optional) (requires Docker):
 
 ```bash
-cd frontend && npm install
-cd backend && poetry install
+make install-all
 ```
 
 ### Configuration
@@ -96,11 +95,10 @@ Start both the frontend and backend:
 make dev
 ```
 
-Or run them separately:
+To run with [container isolation](#container-isolation-optional) enabled (requires `make install-all`):
 
 ```bash
-make frontend   # http://localhost:5173
-make backend    # http://localhost:8000
+make dev-all
 ```
 
 Open http://localhost:5173 to use the app. The Vite dev server proxies `/api` requests to the backend automatically.
@@ -133,6 +131,8 @@ A `render.yaml` is included for one-click deployment on [Render](https://render.
 
 Render will build the Docker image and deploy it automatically on every push to `main`.
 
+> **Note:** Render does not support nested Docker or gVisor, so the [Container Isolation](#container-isolation-optional) feature is **not available** on Render. The agent will use the default subprocess model (`CONTAINER_ENABLED=false`). Container isolation requires self-hosted infrastructure or cloud VMs where Docker and gVisor can be installed.
+
 ## Security
 
 ### Credential Proxy
@@ -164,35 +164,81 @@ The subprocess only ever holds a single-session UUID. Even if a tool call reads 
 
 ### Container Isolation (Optional)
 
-For additional defense in depth, the backend can run each Claude Code subprocess inside a gVisor-sandboxed Docker container instead of a bare subprocess. This provides code execution isolation, multi-tenant safety, and a hardened boundary between the agent and the host system.
+For additional defense in depth, the backend can run each Claude Code session inside a **gVisor-sandboxed Docker container** ("sidecar") instead of a bare subprocess. This provides code execution sandboxing, multi-tenant isolation, and a hardened boundary between the agent and the host system.
+
+**Architecture:**
+
+```
+Browser
+  │
+  ▼
+FastAPI Backend (host)
+  ├── Chat route ──► ContainerManager ──► Docker SDK
+  │                       │
+  │                       ▼
+  │               ┌──────────────────────┐
+  │               │  gVisor Sandbox      │
+  │               │                      │
+  │               │  Sidecar Container   │
+  │               │  (Node.js + Claude)  │
+  │               │                      │
+  │               │  POST /query → SSE   │
+  │               └──────┬───────────────┘
+  │                      │
+  ├── /anthropic ◄───────┘  (credential proxy)
+  ├── /mcp/sse   ◄───────┘  (DuckDB MCP bridge)
+  │
+  └── DuckDB (per-user, in-memory)
+```
+
+When `CONTAINER_ENABLED=true`, the data flow for a chat message is:
+
+1. Frontend sends a chat message to the FastAPI backend.
+2. Backend mints a short-lived UUID token via the credential proxy and spins up a gVisor container (or reuses an existing one for the session) via `ContainerManager`.
+3. Backend sends the query to the sidecar's `POST /query` endpoint. The sidecar calls the Claude Agent SDK's `query()` function with `includePartialMessages: true` for token-level streaming, configured with the host's MCP SSE endpoint.
+4. Claude CLI talks to the host credential proxy (`/anthropic`) for Anthropic API access (using the UUID token, never the real key).
+5. Claude CLI's `execute_sql` tool calls reach the host DuckDB via the **MCP SSE bridge** (`/mcp/sse?session_id=...`), which routes each connection to the correct per-user DuckDB instance through the existing `SessionManager`.
+6. The sidecar streams SSE events back to the backend, which forwards them to the frontend in the same format as the subprocess path.
+7. On session end, the container is stopped and removed; the UUID token is revoked.
+
+When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess model is used with no container overhead.
+
+**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, the Agent SDK, and the `@anthropic-ai/claude-code` CLI (required by the SDK internally). Containers run with a read-only root filesystem, all Linux capabilities dropped, no volume mounts, no Docker socket access, and a non-root user.
+
+**MCP SSE bridge:** The backend exposes the DuckDB `execute_sql` tool at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`). Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized Claude CLI reaches DuckDB on the host without any direct database access inside the container.
 
 **Prerequisites:**
 
 - [Docker](https://docs.docker.com/get-docker/)
-- [gVisor (runsc)](https://gvisor.dev/docs/user_guide/install/) runtime installed and registered with Docker
-- The sidecar Docker image (built from `sidecar/`)
+- [gVisor (runsc)](https://gvisor.dev/docs/user_guide/install/) (Optional) runtime installed and registered with Docker
+
+> **Note:** gVisor requires **Linux** (kernel 4.14.77+, x86_64 or ARM64). It is not available on macOS or Windows. On non-Linux hosts (e.g., macOS with Docker Desktop), set `CONTAINER_RUNTIME=runc` to use Docker's default runtime instead. You still get container isolation (filesystem, process, network, capability drop, read-only rootfs) — only gVisor's syscall interception layer is absent. For production multi-tenant deployments, use a Linux host with gVisor for full sandboxing.
 
 **Setup:**
 
-1. Build the sidecar image:
+1. Build the sidecar image and create the Docker network:
 
    ```bash
-   cd sidecar && docker build -t duckdb-agent-sidecar:latest .
+   make sidecar-setup
    ```
 
-2. Create the Docker network:
+   Or run the steps individually: `make sidecar-build` and `make sidecar-network`.
+
+2. Install gVisor by following the [official guide](https://gvisor.dev/docs/user_guide/install/).
+
+3. Set `PROXY_BASE_URL` to an address reachable from containers (not `127.0.0.1`):
+
+   ```
+   PROXY_BASE_URL=http://host.docker.internal:8000
+   ```
+
+4. Start development with container isolation enabled:
 
    ```bash
-   ./sidecar/setup-network.sh
+   make dev-container
    ```
 
-3. Install gVisor by following the [official guide](https://gvisor.dev/docs/user_guide/install/).
-
-4. Enable the feature by setting the environment variable:
-
-   ```
-   CONTAINER_ENABLED=true
-   ```
+   Or enable manually by setting `CONTAINER_ENABLED=true` in your environment.
 
 **Environment variables:**
 
@@ -200,13 +246,22 @@ For additional defense in depth, the backend can run each Claude Code subprocess
 |----------|---------|-------------|
 | `CONTAINER_ENABLED` | `false` | Enable containerized runtime |
 | `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar Docker image |
-| `CONTAINER_RUNTIME` | `runsc` | Docker runtime (gVisor) |
+| `CONTAINER_RUNTIME` | `runc` | Docker runtime (runc for non-gVisor, runsc for gVisor) |
 | `CONTAINER_MEMORY_LIMIT` | `256m` | Memory limit per container |
 | `CONTAINER_CPU_LIMIT` | `0.5` | CPU limit per container |
 | `CONTAINER_MAX_LIFETIME_SECONDS` | `600` | Max container lifetime |
 | `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
 
-**Deployment note:** The `CONTAINER_ENABLED` feature flag defaults to `false`, allowing the backend to fall back to the subprocess model on PaaS platforms (Render, Railway) that do not support nested Docker. Set it to `true` only on infrastructure where Docker-in-Docker or sibling containers are available.
+**Security properties:**
+
+- The subprocess never accesses the host filesystem, processes, or environment
+- gVisor intercepts all syscalls -- even arbitrary bash/python execution is sandboxed
+- No real API keys inside the container (UUID token only, useless outside the host proxy)
+- Per-session isolation -- containers cannot see each other
+- Resource limits (CPU, memory, lifetime) prevent denial-of-service against the host
+- Internal networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) are blocked, preventing cloud metadata and internal service access
+
+**Deployment note:** The `CONTAINER_ENABLED` feature flag defaults to `false`, allowing the backend to fall back to the subprocess model on PaaS platforms (Render, Railway) that do not support nested Docker. Both paths produce identical SSE output -- no frontend changes are required.
 
 For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md).
 
@@ -226,18 +281,26 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 │   └── vite.config.ts      #   Vite bundler config
 ├── backend/                # FastAPI backend
 │   └── app/
-│       ├── main.py         #   App setup, CORS, and background session cleanup loop
-│       ├── config.py       #   Environment variables (API key, model, upload limits)
+│       ├── main.py         #   App setup, CORS, and background session/container cleanup loop
+│       ├── config.py       #   Environment variables (API key, model, upload limits, container settings)
 │       ├── database.py     #   DuckDB connection, query execution, and per-user SessionManager
-│       ├── agent.py        #   Agent loop & SSE streaming
+│       ├── agent.py        #   Agent loop & SSE streaming (subprocess + container paths)
 │       ├── proxy.py        #   Credential proxy: token store + /anthropic reverse proxy
+│       ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB tools over HTTP for containers
+│       ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
 │       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
 │       ├── data/           #   Sample datasets (titanic.csv)
 │       └── routes/         #   API endpoints (tables, query, chat, config, langfuse status, heartbeat)
+├── sidecar/                # Containerized agent sidecar
+│   ├── src/
+│   │   ├── server.ts       #   TypeScript HTTP server using Claude Agent SDK with token-level streaming
+│   │   └── types.ts        #   Request/response type definitions
+│   ├── Dockerfile          #   Sidecar image: Node.js 20 + Python 3.12 + Claude CLI
+│   └── setup-network.sh    #   Docker network setup script
 ├── Dockerfile              # Multi-stage production build
 ├── render.yaml             # Render deployment config
-└── Makefile                # Dev commands (install, dev, clean)
+└── Makefile                # Dev commands (install, dev, dev-container, sidecar-setup, clean)
 ```
 
 ## Tech Stack
@@ -250,7 +313,15 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 - [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/)
 - [DuckDB](https://duckdb.org/) (Python)
 - [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
+- [MCP](https://modelcontextprotocol.io/) SSE transport (DuckDB tool bridge for containers)
+- [Docker SDK for Python](https://docker-py.readthedocs.io/) + [gVisor](https://gvisor.dev/) (optional, for container isolation)
 - [Langfuse](https://langfuse.com/) (optional, for observability)
+
+**Sidecar** (optional, for container isolation)
+- [Node.js](https://nodejs.org/) 20 + [TypeScript](https://www.typescriptlang.org/)
+- [Express](https://expressjs.com/) HTTP server
+- [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript) (`@anthropic-ai/claude-agent-sdk`) with token-level streaming
+- [Claude CLI](https://docs.anthropic.com/en/docs/claude-code) (`@anthropic-ai/claude-code`) — required by the SDK internally
 
 ## License
 

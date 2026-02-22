@@ -8,6 +8,7 @@
     "dev": "tsx src/server.ts"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.50",
     "express": "^4.21.0"
   },
   "devDependencies": {

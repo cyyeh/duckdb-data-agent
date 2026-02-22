@@ -16,7 +16,7 @@ Multi-tenant deployments need stronger isolation between user sessions and betwe
 
 ## Solution
 
-Run each Claude Code session inside a dedicated **gVisor-sandboxed Docker container** (the "sidecar"). The sidecar contains only Node.js, Python 3, and Claude CLI behind a thin TypeScript HTTP server. The host backend manages container lifecycle via Docker SDK for Python and communicates with the sidecar over HTTP.
+Run each Claude Code session inside a dedicated **gVisor-sandboxed Docker container** (the "sidecar"). The sidecar contains Node.js, Python 3, and the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) behind a thin TypeScript HTTP server. The SDK spawns the Claude CLI internally and provides true token-level streaming via `includePartialMessages`. The host backend manages container lifecycle via Docker SDK for Python and communicates with the sidecar over HTTP.
 
 DuckDB stays on the host — the sidecar accesses it via MCP over the host network. No files, secrets, or host mounts enter the container.
 
@@ -54,7 +54,7 @@ A feature flag (`CONTAINER_ENABLED`) allows graceful fallback to the existing su
 │         │  │  Agent Sidecar         │    │                │ │
 │         │  │                        │    │                │ │
 │         │  │  Node.js + Python 3    │    │                │ │
-│         │  │  + Claude CLI          │    │                │ │
+│         │  │  + Claude Agent SDK    │    │                │ │
 │         │  │  + TypeScript HTTP API │    │                │ │
 │         │  │                        │    │                │ │
 │         │  │  POST /query → stream  │    │                │ │
@@ -75,9 +75,9 @@ A feature flag (`CONTAINER_ENABLED`) allows graceful fallback to the existing su
 2. Backend creates a short-lived UUID token via credential proxy
 3. `ContainerManager` spins up a gVisor container (or reuses existing one for the session)
 4. Backend sends query to sidecar via `POST /query` with UUID token and proxy URL
-5. Sidecar runs Claude CLI, which talks to host credential proxy for API access
+5. Sidecar calls the Claude Agent SDK's `query()` function with `includePartialMessages: true`, which spawns Claude CLI internally; the CLI talks to host credential proxy for API access
 6. Claude CLI's MCP tool calls go to host DuckDB via host network
-7. Sidecar streams SSE events back to backend
+7. Sidecar forwards raw SDK messages (including token-level streaming deltas) as SSE events back to backend
 8. Backend forwards SSE events to frontend (unchanged format)
 9. On session end, container is stopped and removed; UUID token is revoked
 
@@ -88,9 +88,9 @@ A feature flag (`CONTAINER_ENABLED`) allows graceful fallback to the existing su
 | File | Purpose |
 |---|---|
 | `sidecar/Dockerfile` | Sidecar container image: Node.js 20 + Python 3.12 + Claude CLI |
-| `sidecar/src/server.ts` | TypeScript HTTP server wrapping Claude Agent SDK |
+| `sidecar/src/server.ts` | TypeScript HTTP server using Claude Agent SDK `query()` with token-level streaming |
 | `sidecar/src/types.ts` | Request/response type definitions |
-| `sidecar/package.json` | Dependencies (express/fastify, claude-agent-sdk, tsx) |
+| `sidecar/package.json` | Dependencies (`@anthropic-ai/claude-agent-sdk`, express, tsx) |
 | `sidecar/tsconfig.json` | TypeScript config |
 | `backend/app/container_manager.py` | Docker SDK container lifecycle management |
 
@@ -98,7 +98,7 @@ A feature flag (`CONTAINER_ENABLED`) allows graceful fallback to the existing su
 
 | File | Change |
 |---|---|
-| `backend/app/agent.py` | Add container path: when `CONTAINER_ENABLED`, call `ContainerManager` instead of spawning subprocess directly |
+| `backend/app/agent.py` | Add container path: when `CONTAINER_ENABLED`, call `ContainerManager` instead of spawning subprocess directly; handle SDK `stream_event` messages for token-level streaming |
 | `backend/app/config.py` | Add container-related env vars |
 | `backend/app/main.py` | Initialize `ContainerManager`, register shutdown cleanup |
 | `backend/pyproject.toml` | Add `docker` Python package dependency |
@@ -108,23 +108,39 @@ A feature flag (`CONTAINER_ENABLED`) allows graceful fallback to the existing su
 ### Sidecar container image
 
 Base image combines Node.js 20 and Python 3.12. Contains:
-- Claude CLI (`@anthropic-ai/claude-code`)
+- Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) — TypeScript SDK that spawns Claude CLI internally
+- Claude CLI (`@anthropic-ai/claude-code`) — installed globally, required by the SDK
 - TypeScript HTTP server compiled at build time
 - Python 3.12 runtime (for Claude Code to execute Python scripts)
 - No application secrets, no data files, no host mounts
 
 ```dockerfile
-FROM python:3.12-slim
-RUN apt-get update && apt-get install -y curl && \
+FROM python:3.12-slim AS build
+# Install Node.js 20
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install -g @anthropic-ai/claude-code
+    apt-get install -y --no-install-recommends nodejs
+# Build the sidecar server (needs devDependencies for tsc)
 WORKDIR /app
-COPY package.json tsconfig.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npx tsc
-USER node
+
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs
+# Install Claude CLI globally (required by the Agent SDK)
+RUN npm install -g @anthropic-ai/claude-code
+WORKDIR /app
+# SDK dependency (@anthropic-ai/claude-agent-sdk) is in package.json
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+RUN useradd --create-home --shell /bin/bash appuser
+USER appuser
 EXPOSE 3000
 CMD ["node", "dist/server.js"]
 ```
@@ -134,13 +150,14 @@ CMD ["node", "dist/server.js"]
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/health` | GET | Readiness probe. Returns 200 when Claude CLI is ready. |
-| `/query` | POST | Accepts `{message, session_id, system_prompt, mcp_servers, model}`. Streams response as SSE with event types: `thinking`, `tool_call`, `tool_result`, `answer`, `done`. |
+| `/query` | POST | Accepts `{message, session_id, system_prompt, model, mcp_server_url, env}`. Uses SDK `query()` with `includePartialMessages: true`. Forwards raw SDK messages as SSE `data:` lines (JSON). Message types: `stream_event` (token-level deltas), `assistant`, `user`, `result`, `system`. |
 | `/stop` | POST | Gracefully stops the current query/session. |
 
-Environment variables passed at container creation:
+Environment variables passed per-request via the `env` field in the POST body (merged with container process env):
 - `ANTHROPIC_API_KEY` — short-lived UUID token
 - `ANTHROPIC_BASE_URL` — `http://host.docker.internal:10000/anthropic`
-- `MCP_SERVER_URL` — host MCP endpoint URL for DuckDB tool
+
+The MCP server URL is passed in the `mcp_server_url` field of the POST body (not as an env var), and the SDK configures it as an SSE-type MCP server.
 
 ### Container manager
 

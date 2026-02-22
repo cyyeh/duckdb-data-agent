@@ -103,6 +103,7 @@ def _extract_tool_result_text(content: object) -> str:
     return str(content)
 
 
+
 async def _stream_chat_container(
     message: str,
     session_id: str | None,
@@ -138,6 +139,11 @@ async def _stream_chat_container(
         container_session = session_id or "default"
         info = container_manager.create(container_session, env)
 
+        # Send SSE keepalive comments during container startup to prevent
+        # proxy buffering / idle-connection timeouts (Vite, nginx, etc.).
+        # SSE comments (lines starting with ':') are ignored by clients.
+        yield ": keepalive\n\n"
+
         # Wait for container to be ready
         for attempt in range(10):
             try:
@@ -147,6 +153,7 @@ async def _stream_chat_container(
                         break
             except Exception:
                 pass
+            yield ": keepalive\n\n"
             await asyncio.sleep(1)
         else:
             raise RuntimeError("Sidecar container failed health check after 10 attempts")
@@ -157,18 +164,130 @@ async def _stream_chat_container(
             "system_prompt": system_prompt,
             "model": ANTHROPIC_MODEL,
             "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={container_session}",
+            "env": {
+                "ANTHROPIC_API_KEY": session_token,
+                "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+            },
         }
+
+        has_tool_calls = False
+        has_thinking = False
+        tool_names: dict[str, str] = {}
+        actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
             async with client.stream("POST", f"{info.url}/query", json=payload) as response:
                 async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        yield f"{line}\n\n"
-                    elif line.startswith("event: "):
-                        yield f"{line}\n"
+                    if not line.startswith("data: "):
+                        continue
+                    raw = line[6:]
+                    try:
+                        msg = json.loads(raw)
+                    except json.JSONDecodeError:
+                        continue
 
-        # Emit done event after sidecar stream ends
-        yield f"event: done\ndata: {json.dumps({'session_id': session_id})}\n\n"
+                    msg_type = msg.get("type")
+
+                    # --- Token-level streaming events from SDK ---
+                    if msg_type == "stream_event":
+                        event = msg.get("event", {})
+                        event_type = event.get("type", "")
+
+                        if event_type == "content_block_delta":
+                            delta = event.get("delta", {})
+                            delta_type = delta.get("type", "")
+                            if delta_type == "thinking_delta":
+                                text = delta.get("thinking", "")
+                                if text:
+                                    yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
+                            elif delta_type == "text_delta":
+                                text = delta.get("text", "")
+                                if text:
+                                    event_name = "answer" if has_tool_calls else "thinking"
+                                    yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
+
+                        elif event_type == "content_block_start":
+                            block = event.get("content_block", {})
+                            block_type = block.get("type")
+                            if block_type == "thinking":
+                                has_thinking = True
+                            elif block_type == "text":
+                                if has_thinking:
+                                    yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
+                            elif block_type == "tool_use":
+                                has_thinking = False
+                                has_tool_calls = True
+
+                    # --- Complete assistant message (contains tool_use blocks) ---
+                    elif msg_type == "assistant":
+                        message_obj = msg.get("message", {})
+                        for block in message_obj.get("content", []):
+                            block_type = block.get("type")
+                            if block_type == "tool_use":
+                                has_tool_calls = True
+                                tool_id = block.get("id", "")
+                                tool_name = block.get("name", "")
+                                tool_input = block.get("input", {})
+                                tool_names[tool_id] = tool_name
+                                sql = tool_input.get("sql", "")
+                                tool_call_data: dict = {"id": tool_id, "name": tool_name}
+                                if sql:
+                                    tool_call_data["sql"] = sql
+                                else:
+                                    tool_call_data["input"] = tool_input
+                                yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
+
+                    # --- Tool results from user messages ---
+                    elif msg_type == "user":
+                        message_obj = msg.get("message", {})
+                        for block in message_obj.get("content", []):
+                            if block.get("type") != "tool_result":
+                                continue
+                            tool_id = block.get("tool_use_id", "")
+                            name = tool_names.get(tool_id, "")
+                            content_parts = block.get("content", [])
+                            text = ""
+                            if isinstance(content_parts, list):
+                                for part in content_parts:
+                                    if isinstance(part, dict) and part.get("type") == "text":
+                                        text = part.get("text", "")
+                            elif isinstance(content_parts, str):
+                                text = content_parts
+
+                            # Try to parse structured MCP result
+                            result_data: dict = {"id": tool_id, "name": name}
+                            try:
+                                parsed = json.loads(text)
+                                if parsed.get("status") == "success":
+                                    result_data["columns"] = parsed.get("columns", [])
+                                    result_data["rows"] = parsed.get("rows", [])[:100]
+                                    result_data["rowCount"] = parsed.get("rowCount", 0)
+                                    if "sql" not in result_data:
+                                        result_data["sql"] = ""
+                                elif parsed.get("status") == "error":
+                                    result_data["error"] = parsed.get("error", "")
+                                else:
+                                    result_data["output"] = text
+                            except (json.JSONDecodeError, AttributeError):
+                                result_data["output"] = text
+                            if block.get("is_error"):
+                                result_data["error"] = text
+                            yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
+
+                    # --- Final result ---
+                    elif msg_type == "result":
+                        actual_session_id = msg.get("session_id") or actual_session_id
+                        if msg.get("is_error"):
+                            errors = msg.get("errors", [])
+                            error_text = msg.get("result") or "; ".join(errors) or "Unknown error"
+                            yield f"event: error\ndata: {json.dumps({'message': error_text})}\n\n"
+                        yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
+
+                    # --- Extract session_id early from system init ---
+                    elif msg_type == "system":
+                        sys_session = msg.get("session_id")
+                        if sys_session:
+                            actual_session_id = sys_session
 
     except Exception as e:
         logger.error("Container agent error: %s", str(e))
@@ -274,6 +393,7 @@ async def stream_chat(
 
         has_tool_calls = False
         has_thinking = False
+        done_sent = False
         sql_result_ids: set[str] = set()
         tool_names: dict[str, str] = {}
 
@@ -360,6 +480,12 @@ async def stream_chat(
                 if msg.is_error and msg.result:
                     yield f"event: error\ndata: {json.dumps({'message': msg.result})}\n\n"
                 yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
+                done_sent = True
+
+        # Guard: always send done even if SDK ended without ResultMessage
+        if not done_sent:
+            logger.warning("SDK stream ended without ResultMessage; sending done event")
+            yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
 
     except Exception as e:
         error_msg = str(e)
@@ -367,6 +493,7 @@ async def stream_chat(
             error_msg += f" | CLI stderr: {' '.join(stderr_lines[-5:])}"
         logger.error("Agent error: %s", error_msg)
         yield f"event: error\ndata: {json.dumps({'message': error_msg})}\n\n"
+        yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
     finally:
         proxy_token_store.revoke_token(session_token)
         # Update trace with the CLI's session_id so Langfuse session matches

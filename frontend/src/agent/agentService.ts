@@ -22,9 +22,23 @@ async function streamSSE(
     return;
   }
 
+  let doneReceived = false;
+  const wrappedCallbacks: AgentCallbacks = {
+    ...callbacks,
+    onDone: (sessionId) => {
+      doneReceived = true;
+      callbacks.onDone(sessionId);
+    },
+    onError: (error) => {
+      doneReceived = true;
+      callbacks.onError(error);
+    },
+  };
+
   try {
     const decoder = new TextDecoder();
     let buffer = '';
+    let eventType = '';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -33,8 +47,6 @@ async function streamSSE(
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() ?? '';
-
-      let eventType = '';
       for (const line of lines) {
         if (line.startsWith('event: ')) {
           eventType = line.slice(7).trim();
@@ -42,13 +54,37 @@ async function streamSSE(
           const data = line.slice(6);
           try {
             const parsed = JSON.parse(data);
-            handleSSEEvent(eventType, parsed, callbacks);
+            handleSSEEvent(eventType, parsed, wrappedCallbacks);
           } catch {
             // Skip malformed JSON
           }
           eventType = '';
         }
       }
+    }
+
+    // Process any remaining data left in buffer after stream ends
+    if (buffer.trim()) {
+      const remainingLines = buffer.split('\n');
+      for (const line of remainingLines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          try {
+            const parsed = JSON.parse(data);
+            handleSSEEvent(eventType, parsed, wrappedCallbacks);
+          } catch {
+            // Skip malformed JSON
+          }
+          eventType = '';
+        }
+      }
+    }
+
+    // Safety net: if stream ended without done/error, force done
+    if (!doneReceived) {
+      callbacks.onDone(null);
     }
   } catch (e: unknown) {
     if (signal?.aborted) return;

@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 
 MAX_RESULT_ROWS = 100
 
-sse_transport = SseServerTransport("/mcp/messages/")
+# The path here is relative to the Starlette app mount point (/mcp), not the
+# full URL.  Starlette sets root_path=/mcp in the ASGI scope, and the MCP SDK
+# prepends root_path when advertising the endpoint URL to clients.  Using
+# "/messages/" avoids a double-prefix (/mcp/mcp/messages/).
+sse_transport = SseServerTransport("/messages/")
 
 
 def _create_mcp_server(db: Database) -> MCPServer:

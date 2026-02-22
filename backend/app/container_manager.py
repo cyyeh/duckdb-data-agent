@@ -53,7 +53,7 @@ class ContainerManager:
             read_only=True,
             cap_drop=["ALL"],
             security_opt=["no-new-privileges"],
-            tmpfs={"/tmp": "size=50m", "/home/appuser/.claude": "size=20m"},
+            tmpfs={"/tmp": "size=50m", "/home/appuser": "size=50m,uid=1000,gid=1000"},
             network=self._config.network,
             environment=env,
             labels={

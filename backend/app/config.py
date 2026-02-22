@@ -11,7 +11,7 @@ if not ANTHROPIC_API_KEY:
         RuntimeWarning,
         stacklevel=1,
     )
-PROXY_BASE_URL = os.getenv("PROXY_BASE_URL", "http://127.0.0.1:10000")
+PROXY_BASE_URL = os.getenv("PROXY_BASE_URL", "http://127.0.0.1:8000")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-4-6")
 
 LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")
@@ -25,8 +25,8 @@ MAX_TOTAL_SIZE_BYTES = int(os.getenv("MAX_TOTAL_SIZE_BYTES", str(500 * 1024 * 10
 # Container isolation settings
 CONTAINER_ENABLED = os.getenv("CONTAINER_ENABLED", "false").lower() == "true"
 CONTAINER_IMAGE = os.getenv("CONTAINER_IMAGE", "duckdb-agent-sidecar:latest")
-CONTAINER_RUNTIME = os.getenv("CONTAINER_RUNTIME", "runsc")
-CONTAINER_MEMORY_LIMIT = os.getenv("CONTAINER_MEMORY_LIMIT", "256m")
+CONTAINER_RUNTIME = os.getenv("CONTAINER_RUNTIME", "runc")
+CONTAINER_MEMORY_LIMIT = os.getenv("CONTAINER_MEMORY_LIMIT", "512m")
 CONTAINER_CPU_LIMIT = float(os.getenv("CONTAINER_CPU_LIMIT", "0.5"))
 CONTAINER_MAX_LIFETIME_SECONDS = int(os.getenv("CONTAINER_MAX_LIFETIME_SECONDS", "600"))
 CONTAINER_NETWORK = os.getenv("CONTAINER_NETWORK", "agent-sandbox")

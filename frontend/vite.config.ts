@@ -12,6 +12,15 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        // Disable proxy response buffering for SSE streaming
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            if (proxyRes.headers['content-type']?.includes('text/event-stream')) {
+              // Ensure chunked transfer for SSE
+              delete proxyRes.headers['content-length'];
+            }
+          });
+        },
       },
     },
   },

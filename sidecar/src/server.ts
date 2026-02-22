@@ -1,23 +1,38 @@
 import express, { Request, Response } from "express";
-import { spawn, ChildProcess } from "child_process";
-import { mkdtempSync, writeFileSync, unlinkSync } from "fs";
-import { tmpdir } from "os";
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import { mkdirSync, writeFileSync, existsSync } from "fs";
+import { homedir } from "os";
 import { join } from "path";
 import type { QueryRequest, HealthResponse } from "./types.js";
+
+// Claude CLI requires certain directories/files under ~/.claude to exist.
+// The container uses a tmpfs mount at ~/.claude which starts empty, so we
+// create the expected structure at startup.
+const claudeDir = join(homedir(), ".claude");
+for (const sub of ["debug", "projects"]) {
+  const dir = join(claudeDir, sub);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+}
+const settingsFile = join(claudeDir, "remote-settings.json");
+if (!existsSync(settingsFile)) {
+  writeFileSync(settingsFile, "{}");
+}
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 
-let activeProcess: ChildProcess | null = null;
+let activeAbort: AbortController | null = null;
 
 app.get("/health", (_req: Request, res: Response) => {
   const response: HealthResponse = { status: "ok" };
   res.json(response);
 });
 
-app.post("/query", (req: Request, res: Response) => {
+app.post("/query", async (req: Request, res: Response) => {
   const body = req.body as QueryRequest;
 
   if (!body.message || !body.system_prompt) {
@@ -32,111 +47,86 @@ app.post("/query", (req: Request, res: Response) => {
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
 
-  // Write MCP config to temp file if mcp_server_url provided
-  let mcpConfigPath: string | null = null;
-  if (body.mcp_server_url) {
-    const tmpDir = mkdtempSync(join(tmpdir(), "sidecar-"));
-    mcpConfigPath = join(tmpDir, "mcp.json");
-    writeFileSync(
-      mcpConfigPath,
-      JSON.stringify({
-        mcpServers: {
-          duckdb: {
-            type: "sse",
-            url: body.mcp_server_url,
-          },
-        },
-      })
-    );
+  const abortController = new AbortController();
+  activeAbort = abortController;
+
+  // Merge per-request env overrides (e.g. fresh proxy tokens) with process env
+  const sdkEnv: Record<string, string> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (v !== undefined) sdkEnv[k] = v;
+  }
+  if (body.env) {
+    Object.assign(sdkEnv, body.env);
   }
 
-  const args = [
-    "--output-format",
-    "stream-json",
-    "--model",
-    body.model || process.env.ANTHROPIC_MODEL || "claude-opus-4-6",
-    "--system-prompt",
-    body.system_prompt,
-    "--allowedTools",
-    "mcp__duckdb__execute_sql",
-    "--permission-mode",
-    "bypassPermissions",
-    "--max-turns",
-    "20",
-    ...(body.session_id ? ["--resume", body.session_id] : []),
-    ...(mcpConfigPath ? ["--mcp-config", mcpConfigPath] : []),
-    "-p",
-    body.message,
-  ];
+  let responseEnded = false;
 
-  const proc = spawn("claude", args, {
-    env: process.env as Record<string, string>,
-    stdio: ["pipe", "pipe", "pipe"],
-  });
-
-  activeProcess = proc;
-
-  let buffer = "";
-
-  proc.stdout!.on("data", (chunk: Buffer) => {
-    buffer += chunk.toString();
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-    for (const line of lines) {
-      if (line.trim()) {
-        res.write(`data: ${line}\n\n`);
-      }
+  // Detect client disconnect
+  res.on("close", () => {
+    if (!responseEnded) {
+      abortController.abort();
     }
   });
 
-  proc.stderr!.on("data", (chunk: Buffer) => {
-    console.error(`[claude stderr] ${chunk.toString()}`);
-  });
+  try {
+    const sdkQuery = query({
+      prompt: body.message,
+      options: {
+        model: body.model || process.env.ANTHROPIC_MODEL || "claude-opus-4-6",
+        systemPrompt: body.system_prompt,
+        allowedTools: ["mcp__duckdb__execute_sql"],
+        permissionMode: "bypassPermissions",
+        allowDangerouslySkipPermissions: true,
+        maxTurns: 20,
+        includePartialMessages: true,
+        abortController,
+        env: sdkEnv,
+        ...(body.mcp_server_url
+          ? {
+              mcpServers: {
+                duckdb: {
+                  type: "sse" as const,
+                  url: body.mcp_server_url,
+                },
+              },
+            }
+          : {}),
+        ...(body.session_id ? { resume: body.session_id } : {}),
+      },
+    });
 
-  proc.on("close", (code) => {
-    // Flush remaining buffer
-    if (buffer.trim()) {
-      res.write(`data: ${buffer}\n\n`);
-    }
-    activeProcess = null;
-
-    // Clean up MCP config temp file
-    if (mcpConfigPath) {
-      try {
-        unlinkSync(mcpConfigPath);
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
-
-    if (code !== 0) {
-      res.write(
-        `event: error\ndata: ${JSON.stringify({ type: "error", message: `Claude CLI exited with code ${code}` })}\n\n`
-      );
-    }
-    res.end();
-  });
-
-  proc.on("error", (err) => {
-    activeProcess = null;
-    res.write(
-      `event: error\ndata: ${JSON.stringify({ type: "error", message: err.message })}\n\n`
+    console.log(
+      `[sidecar] SDK query started model=${body.model || "default"}`
     );
-    res.end();
-  });
 
-  // Handle client disconnect
-  req.on("close", () => {
-    if (proc && !proc.killed) {
-      proc.kill("SIGTERM");
+    for await (const message of sdkQuery) {
+      if (responseEnded) break;
+      // Forward each SDK message as an SSE data line
+      res.write(`data: ${JSON.stringify(message)}\n\n`);
     }
-  });
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    // Don't log abort errors — they are expected on client disconnect
+    if (!(err instanceof Error && err.name === "AbortError")) {
+      console.error(`[sidecar] SDK error: ${errMsg}`);
+      if (!responseEnded) {
+        res.write(
+          `event: error\ndata: ${JSON.stringify({ type: "error", message: errMsg })}\n\n`
+        );
+      }
+    }
+  } finally {
+    activeAbort = null;
+    responseEnded = true;
+    res.end();
+    console.log("[sidecar] SSE stream ended");
+  }
 });
 
 app.post("/stop", (_req: Request, res: Response) => {
-  if (activeProcess && !activeProcess.killed) {
-    activeProcess.kill("SIGTERM");
-    activeProcess = null;
+  if (activeAbort) {
+    activeAbort.abort();
+    activeAbort = null;
     res.json({ status: "stopped" });
   } else {
     res.json({ status: "no_active_session" });

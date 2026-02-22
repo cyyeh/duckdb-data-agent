@@ -4,6 +4,7 @@ export interface QueryRequest {
   system_prompt: string;
   model?: string;
   mcp_server_url?: string;
+  env?: Record<string, string>;
 }
 
 export interface HealthResponse {

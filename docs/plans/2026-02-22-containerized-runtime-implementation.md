@@ -30,8 +30,8 @@
     "dev": "tsx src/server.ts"
   },
   "dependencies": {
-    "express": "^4.21.0",
-    "claude-agent-sdk": "^0.1.38"
+    "@anthropic-ai/claude-agent-sdk": "^0.2.50",
+    "express": "^4.21.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
@@ -70,6 +70,7 @@ export interface QueryRequest {
   system_prompt: string;
   model?: string;
   mcp_server_url?: string;
+  env?: Record<string, string>;
 }
 
 export interface HealthResponse {
@@ -104,24 +105,35 @@ git commit -m "feat(sidecar): scaffold TypeScript project for agent sidecar"
 
 **Step 1: Write `sidecar/src/server.ts`**
 
-This is the thin HTTP wrapper around the Claude Agent SDK. It exposes three endpoints:
+This is the thin HTTP wrapper around the Claude Agent SDK. It uses the SDK's `query()` function (a top-level async generator) with `includePartialMessages: true` for token-level streaming. It exposes three endpoints:
 
 - `GET /health` — readiness probe
-- `POST /query` — accept a query, stream SSE response
-- `POST /stop` — gracefully stop current session
+- `POST /query` — accept a query, forward raw SDK messages as SSE
+- `POST /stop` — abort current query via AbortController
 
 ```typescript
 import express, { Request, Response } from "express";
-import { ClaudeSDKClient, ClaudeAgentOptions } from "claude-agent-sdk";
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import { mkdirSync, writeFileSync, existsSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 import type { QueryRequest, HealthResponse } from "./types.js";
 
+// Claude CLI requires certain directories/files under ~/.claude to exist.
+const claudeDir = join(homedir(), ".claude");
+for (const sub of ["debug", "projects"]) {
+  const dir = join(claudeDir, sub);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+}
+const settingsFile = join(claudeDir, "remote-settings.json");
+if (!existsSync(settingsFile)) writeFileSync(settingsFile, "{}");
+
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 
-// Track active client for /stop endpoint
-let activeClient: ClaudeSDKClient | null = null;
+let activeAbort: AbortController | null = null;
 
 app.get("/health", (_req: Request, res: Response) => {
   const response: HealthResponse = { status: "ok" };
@@ -130,74 +142,73 @@ app.get("/health", (_req: Request, res: Response) => {
 
 app.post("/query", async (req: Request, res: Response) => {
   const body = req.body as QueryRequest;
-
   if (!body.message || !body.system_prompt) {
     res.status(400).json({ error: "message and system_prompt are required" });
     return;
   }
 
-  // Set up SSE headers
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
 
-  const options: any = {
-    model: body.model || process.env.ANTHROPIC_MODEL || "claude-opus-4-6",
-    system_prompt: body.system_prompt,
-    allowed_tools: ["mcp__duckdb__execute_sql"],
-    permission_mode: "bypassPermissions",
-    max_turns: 20,
-    include_partial_messages: true,
-    ...(body.session_id ? { resume: body.session_id } : {}),
-  };
+  const abortController = new AbortController();
+  activeAbort = abortController;
 
-  // Configure MCP server if URL is provided
-  if (body.mcp_server_url) {
-    options.mcp_servers = {
-      duckdb: {
-        type: "sse",
-        url: body.mcp_server_url,
-      },
-    };
+  // Merge per-request env overrides with process env
+  const sdkEnv: Record<string, string> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (v !== undefined) sdkEnv[k] = v;
   }
+  if (body.env) Object.assign(sdkEnv, body.env);
 
-  const client = new ClaudeSDKClient(options);
-  activeClient = client;
+  let responseEnded = false;
+  res.on("close", () => { if (!responseEnded) abortController.abort(); });
 
   try {
-    await client.connect();
-    await client.query(body.message, { session_id: body.session_id || "default" });
+    const sdkQuery = query({
+      prompt: body.message,
+      options: {
+        model: body.model || process.env.ANTHROPIC_MODEL || "claude-opus-4-6",
+        systemPrompt: body.system_prompt,
+        allowedTools: ["mcp__duckdb__execute_sql"],
+        permissionMode: "bypassPermissions",
+        allowDangerouslySkipPermissions: true,
+        maxTurns: 20,
+        includePartialMessages: true,
+        abortController,
+        env: sdkEnv,
+        ...(body.mcp_server_url
+          ? { mcpServers: { duckdb: { type: "sse" as const, url: body.mcp_server_url } } }
+          : {}),
+        ...(body.session_id ? { resume: body.session_id } : {}),
+      },
+    });
 
-    for await (const msg of client.receiveResponse()) {
-      // Forward all messages as JSON SSE events
-      // The host backend will parse and re-emit these
-      const data = JSON.stringify(msg);
-      res.write(`data: ${data}\n\n`);
+    for await (const message of sdkQuery) {
+      if (responseEnded) break;
+      res.write(`data: ${JSON.stringify(message)}\n\n`);
     }
-  } catch (err: any) {
-    const errorData = JSON.stringify({ type: "error", message: err.message || String(err) });
-    res.write(`event: error\ndata: ${errorData}\n\n`);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (!(err instanceof Error && err.name === "AbortError")) {
+      console.error(`[sidecar] SDK error: ${errMsg}`);
+      if (!responseEnded) {
+        res.write(`event: error\ndata: ${JSON.stringify({ type: "error", message: errMsg })}\n\n`);
+      }
+    }
   } finally {
-    activeClient = null;
-    try {
-      await client.disconnect();
-    } catch {
-      // ignore disconnect errors
-    }
+    activeAbort = null;
+    responseEnded = true;
     res.end();
   }
 });
 
-app.post("/stop", async (_req: Request, res: Response) => {
-  if (activeClient) {
-    try {
-      await activeClient.disconnect();
-    } catch {
-      // ignore
-    }
-    activeClient = null;
+app.post("/stop", (_req: Request, res: Response) => {
+  if (activeAbort) {
+    activeAbort.abort();
+    activeAbort = null;
     res.json({ status: "stopped" });
   } else {
     res.json({ status: "no_active_session" });
@@ -209,7 +220,7 @@ app.listen(PORT, "0.0.0.0", () => {
 });
 ```
 
-> **Note:** The exact Claude Agent SDK TypeScript API may differ from the Python SDK. The implementer should check the `claude-agent-sdk` npm package documentation and adjust the import paths, class names, and method signatures accordingly. The core pattern (connect → query → receive stream → disconnect) should be the same. If the npm package doesn't exist or has a different API, use `@anthropic-ai/claude-code` CLI subprocess spawning with `--output-format stream-json` instead.
+The SDK's `query()` function returns an `AsyncGenerator<SDKMessage>`. Each yielded message has a `type` field: `stream_event` (token-level deltas with `includePartialMessages`), `assistant`, `user`, `result`, or `system`. The sidecar forwards all messages as-is; the backend parses and translates them into frontend SSE events.
 
 **Step 2: Verify TypeScript compiles**
 
@@ -241,31 +252,44 @@ dist
 
 **Step 2: Create `sidecar/Dockerfile`**
 
+Multi-stage build: the first stage compiles TypeScript (needs devDependencies); the production stage has only runtime deps. The Claude CLI is installed globally because the SDK spawns it as a subprocess internally.
+
 ```dockerfile
-FROM python:3.12-slim AS base
+FROM python:3.12-slim AS build
 
 # Install Node.js 20
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl ca-certificates && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Claude CLI globally
-RUN npm install -g @anthropic-ai/claude-code
-
-# Build the sidecar server
+# Build the sidecar server (needs devDependencies for tsc)
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npx tsc
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash appuser
+# Production stage
+FROM python:3.12-slim
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl ca-certificates && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Claude CLI globally (required by @anthropic-ai/claude-agent-sdk)
+RUN npm install -g @anthropic-ai/claude-code
+
+WORKDIR /app
+# SDK dependency (@anthropic-ai/claude-agent-sdk) comes from package.json
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+
+RUN useradd --create-home --shell /bin/bash appuser
 USER appuser
 EXPOSE 3000
 
@@ -705,7 +729,14 @@ Add the container-based streaming path. The key change is in `stream_chat()`: wh
 
 1. Creates or reuses a container via `ContainerManager`
 2. Sends a POST request to the sidecar's `/query` endpoint
-3. Streams the SSE response back
+3. Parses raw SDK messages from SSE and translates them into frontend events
+
+The sidecar now forwards raw SDK messages (not pre-formatted SSE events), so `_stream_chat_container` must handle:
+- `stream_event` messages (token-level deltas from `includePartialMessages: true`)
+- `assistant` messages (complete, with tool_use blocks)
+- `user` messages (tool results)
+- `result` messages (session_id, done)
+- `system` messages (init, session_id)
 
 At the top of `agent.py`, add imports:
 
@@ -725,6 +756,7 @@ async def _stream_chat_container(
 ) -> AsyncIterator[str]:
     """Stream chat via containerized sidecar instead of local subprocess."""
     import httpx
+    import asyncio
 
     query_message = _build_message_with_history(message, conversation_history)
     system_prompt = build_system_prompt(db)
@@ -739,12 +771,10 @@ async def _stream_chat_container(
     }
 
     try:
-        # Create or reuse container for this session
         container_session = session_id or "default"
         info = container_manager.create(container_session, env)
 
-        # Wait for container to be ready
-        import asyncio
+        yield ": keepalive\n\n"
         for attempt in range(10):
             try:
                 async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as check_client:
@@ -753,27 +783,106 @@ async def _stream_chat_container(
                         break
             except Exception:
                 pass
+            yield ": keepalive\n\n"
             await asyncio.sleep(1)
         else:
-            raise RuntimeError(f"Sidecar container failed health check after 10 attempts")
+            raise RuntimeError("Sidecar container failed health check after 10 attempts")
 
-        # Send query to sidecar
         payload = {
             "message": query_message,
             "session_id": session_id,
             "system_prompt": system_prompt,
             "model": ANTHROPIC_MODEL,
-            "mcp_server_url": f"{PROXY_BASE_URL}/mcp",
+            "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={container_session}",
+            "env": {
+                "ANTHROPIC_API_KEY": session_token,
+                "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+            },
         }
+
+        has_tool_calls = False
+        has_thinking = False
+        tool_names: dict[str, str] = {}
+        actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
             async with client.stream("POST", f"{info.url}/query", json=payload) as response:
                 async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        # Forward SSE data lines directly
-                        yield f"{line}\n\n"
-                    elif line.startswith("event: "):
-                        yield f"{line}\n"
+                    if not line.startswith("data: "):
+                        continue
+                    raw = line[6:]
+                    try:
+                        msg = json.loads(raw)
+                    except json.JSONDecodeError:
+                        continue
+
+                    msg_type = msg.get("type")
+
+                    # --- Token-level streaming events from SDK ---
+                    if msg_type == "stream_event":
+                        event = msg.get("event", {})
+                        event_type = event.get("type", "")
+
+                        if event_type == "content_block_delta":
+                            delta = event.get("delta", {})
+                            delta_type = delta.get("type", "")
+                            if delta_type == "thinking_delta":
+                                text = delta.get("thinking", "")
+                                if text:
+                                    yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
+                            elif delta_type == "text_delta":
+                                text = delta.get("text", "")
+                                if text:
+                                    event_name = "answer" if has_tool_calls else "thinking"
+                                    yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
+
+                        elif event_type == "content_block_start":
+                            block = event.get("content_block", {})
+                            block_type = block.get("type")
+                            if block_type == "thinking":
+                                has_thinking = True
+                            elif block_type == "text":
+                                if has_thinking:
+                                    yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
+                            elif block_type == "tool_use":
+                                has_thinking = False
+                                has_tool_calls = True
+
+                    # --- Complete assistant message (tool_use blocks) ---
+                    elif msg_type == "assistant":
+                        message_obj = msg.get("message", {})
+                        for block in message_obj.get("content", []):
+                            if block.get("type") == "tool_use":
+                                has_tool_calls = True
+                                tool_id = block.get("id", "")
+                                tool_name = block.get("name", "")
+                                tool_input = block.get("input", {})
+                                tool_names[tool_id] = tool_name
+                                sql = tool_input.get("sql", "")
+                                tool_call_data: dict = {"id": tool_id, "name": tool_name}
+                                if sql:
+                                    tool_call_data["sql"] = sql
+                                else:
+                                    tool_call_data["input"] = tool_input
+                                yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
+
+                    # --- Tool results ---
+                    elif msg_type == "user":
+                        # ... (parse tool_result blocks, try JSON for structured MCP results)
+
+                    # --- Final result ---
+                    elif msg_type == "result":
+                        actual_session_id = msg.get("session_id") or actual_session_id
+                        if msg.get("is_error"):
+                            errors = msg.get("errors", [])
+                            error_text = msg.get("result") or "; ".join(errors) or "Unknown error"
+                            yield f"event: error\ndata: {json.dumps({'message': error_text})}\n\n"
+                        yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
+
+                    elif msg_type == "system":
+                        sys_session = msg.get("session_id")
+                        if sys_session:
+                            actual_session_id = sys_session
 
     except Exception as e:
         logger.error("Container agent error: %s", str(e))
