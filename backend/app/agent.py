@@ -180,6 +180,7 @@ async def _stream_chat_container(
         has_tool_calls = False
         has_thinking = False
         tool_names: dict[str, str] = {}
+        tool_sqls: dict[str, str] = {}
         actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -237,6 +238,8 @@ async def _stream_chat_container(
                                 tool_input = block.get("input", {})
                                 tool_names[tool_id] = tool_name
                                 sql = tool_input.get("sql", "")
+                                if sql:
+                                    tool_sqls[tool_id] = sql
                                 tool_call_data: dict = {"id": tool_id, "name": tool_name}
                                 if sql:
                                     tool_call_data["sql"] = sql
@@ -263,14 +266,16 @@ async def _stream_chat_container(
 
                             # Try to parse structured MCP result
                             result_data: dict = {"id": tool_id, "name": name}
+                            # Include the SQL from the original tool_call
+                            original_sql = tool_sqls.get(tool_id, "")
+                            if original_sql:
+                                result_data["sql"] = original_sql
                             try:
                                 parsed = json.loads(text)
                                 if parsed.get("status") == "success":
                                     result_data["columns"] = parsed.get("columns", [])
                                     result_data["rows"] = parsed.get("rows", [])[:100]
                                     result_data["rowCount"] = parsed.get("rowCount", 0)
-                                    if "sql" not in result_data:
-                                        result_data["sql"] = ""
                                 elif parsed.get("status") == "error":
                                     result_data["error"] = parsed.get("error", "")
                                 else:

@@ -149,6 +149,7 @@ export function AgentProvider({
                 toolResult: {
                   ...pending,
                   ...result,
+                  sql: result.sql || pending.sql,
                   toolName: result.toolName || pending.toolName,
                   command: result.command || pending.command,
                   toolInput: result.toolInput || pending.toolInput,
@@ -314,6 +315,7 @@ export function AgentProvider({
                 toolResult: {
                   ...pending,
                   ...result,
+                  sql: result.sql || pending.sql,
                   toolName: result.toolName || pending.toolName,
                   command: result.command || pending.command,
                   toolInput: result.toolInput || pending.toolInput,
