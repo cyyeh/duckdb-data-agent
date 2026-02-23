@@ -31,12 +31,29 @@ async def upload_file(
             status_code=400,
             detail=f"Unsupported file format. Supported: {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
         )
-    content = await file.read()
-    if len(content) > MAX_TOTAL_SIZE_BYTES:
+    # Check Content-Length header first to reject obviously oversized uploads
+    # before reading the body into memory.
+    if file.size is not None and file.size > MAX_TOTAL_SIZE_BYTES:
         raise HTTPException(
             status_code=413,
-            detail=f"File size exceeds the {MAX_TOTAL_SIZE_BYTES // (1024 * 1024)}MB limit"
+            detail=f"File size exceeds the {MAX_TOTAL_SIZE_BYTES // (1024 * 1024)}MB limit",
         )
+    # Stream-read in chunks to enforce the limit without materializing the
+    # entire file if it exceeds the cap.
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)  # 1 MB at a time
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_TOTAL_SIZE_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File size exceeds the {MAX_TOTAL_SIZE_BYTES // (1024 * 1024)}MB limit",
+            )
+        chunks.append(chunk)
+    content = b"".join(chunks)
     table_name = sanitize_table_name(file.filename)
     existing_tables = {t["name"] for t in db.list_tables()}
     if table_name in existing_tables:
