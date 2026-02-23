@@ -145,5 +145,6 @@ try:
             network=CONTAINER_NETWORK,
         )
     )
-except Exception:
+except Exception as e:
+    logger.error("Failed to create container manager: %s", e)
     container_manager = None  # type: ignore[assignment]
