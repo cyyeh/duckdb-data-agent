@@ -15,10 +15,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }).catch(() => {});
     }, 30_000);
 
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      navigator.sendBeacon(`/api/session/cleanup?session_id=${sessionId}`);
-      e.preventDefault();
-      e.returnValue = '';
+    const handleBeforeUnload = () => {
+      // Send session ID in the request body instead of URL to avoid leaking it in logs
+      const body = new Blob(
+        [JSON.stringify({ session_id: sessionId })],
+        { type: 'application/json' },
+      );
+      navigator.sendBeacon('/api/session/cleanup', body);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

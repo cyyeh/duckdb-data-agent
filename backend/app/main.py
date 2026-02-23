@@ -12,6 +12,7 @@ from app.routes import tables, query, chat, langfuse_status, config, session
 from app import proxy as proxy_module
 from app.config import CONTAINER_ENABLED
 from app.mcp_sse import mcp_app
+from app.config import CORS_ALLOWED_ORIGINS
 
 logger = logging.getLogger(__name__)
 
@@ -21,17 +22,20 @@ from app.session_manager import session_manager
 async def _cleanup_loop():
     while True:
         await asyncio.sleep(60)
-        removed = session_manager.cleanup_stale(ttl_seconds=300)
-        if removed:
-            logger.info("Background cleanup: removed %d stale sessions", removed)
-        proxy_removed = proxy_module.proxy_token_store.cleanup_expired()
-        if proxy_removed:
-            logger.info("Background cleanup: removed %d expired proxy tokens", proxy_removed)
-        if CONTAINER_ENABLED:
-            from app.container_manager import container_manager
-            container_removed = container_manager.cleanup_expired()
-            if container_removed:
-                logger.info("Background cleanup: removed %d expired containers", container_removed)
+        try:
+            removed = session_manager.cleanup_stale(ttl_seconds=300)
+            if removed:
+                logger.info("Background cleanup: removed %d stale sessions", removed)
+            proxy_removed = proxy_module.proxy_token_store.cleanup_expired()
+            if proxy_removed:
+                logger.info("Background cleanup: removed %d expired proxy tokens", proxy_removed)
+            if CONTAINER_ENABLED:
+                from app.container_manager import container_manager
+                container_removed = container_manager.cleanup_expired()
+                if container_removed:
+                    logger.info("Background cleanup: removed %d expired containers", container_removed)
+        except Exception:
+            logger.exception("Error in background cleanup loop")
 
 
 @asynccontextmanager
@@ -48,7 +52,7 @@ app = FastAPI(title="DuckDB Data Agent API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,7 +84,8 @@ if STATIC_DIR.is_dir():
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
         """Serve frontend for any non-API route (SPA fallback)."""
-        file_path = STATIC_DIR / full_path
-        if full_path and file_path.is_file():
+        file_path = (STATIC_DIR / full_path).resolve()
+        # Prevent path traversal: ensure resolved path is inside STATIC_DIR
+        if full_path and file_path.is_file() and file_path.is_relative_to(STATIC_DIR.resolve()):
             return FileResponse(file_path)
         return FileResponse(STATIC_DIR / "index.html")

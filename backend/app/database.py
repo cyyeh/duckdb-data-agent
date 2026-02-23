@@ -10,9 +10,18 @@ from typing import Any
 SUPPORTED_EXTENSIONS = {".csv", ".json", ".parquet", ".xlsx"}
 
 
+def _escape_identifier(name: str) -> str:
+    """Escape a SQL identifier by doubling any embedded double quotes."""
+    return '"' + name.replace('"', '""') + '"'
+
+
 class Database:
     def __init__(self):
         self.conn = duckdb.connect(":memory:")
+
+    def close(self) -> None:
+        """Close the underlying DuckDB connection."""
+        self.conn.close()
 
     def execute_query(self, sql: str) -> dict[str, Any]:
         """Execute a SQL query and return results as dict with columns, rows, rowCount."""
@@ -25,12 +34,14 @@ class Database:
 
     def load_csv(self, file_bytes: bytes, filename: str, table_name: str) -> dict[str, Any]:
         """Load a CSV file into a DuckDB table. Returns table info."""
+        ident = _escape_identifier(table_name)
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
             tmp.write(file_bytes)
             tmp_path = tmp.name
         try:
             self.conn.execute(
-                f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{tmp_path}\')'
+                f"CREATE OR REPLACE TABLE {ident} AS SELECT * FROM read_csv_auto($1)",
+                [tmp_path],
             )
         finally:
             os.unlink(tmp_path)
@@ -38,12 +49,14 @@ class Database:
 
     def load_json(self, file_bytes: bytes, filename: str, table_name: str) -> dict[str, Any]:
         """Load a JSON file (array of objects) into a DuckDB table. Returns table info."""
+        ident = _escape_identifier(table_name)
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
             tmp.write(file_bytes)
             tmp_path = tmp.name
         try:
             self.conn.execute(
-                f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_json_auto(\'{tmp_path}\')'
+                f"CREATE OR REPLACE TABLE {ident} AS SELECT * FROM read_json_auto($1)",
+                [tmp_path],
             )
         finally:
             os.unlink(tmp_path)
@@ -51,12 +64,14 @@ class Database:
 
     def load_parquet(self, file_bytes: bytes, filename: str, table_name: str) -> dict[str, Any]:
         """Load a Parquet file into a DuckDB table. Returns table info."""
+        ident = _escape_identifier(table_name)
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp:
             tmp.write(file_bytes)
             tmp_path = tmp.name
         try:
             self.conn.execute(
-                f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_parquet(\'{tmp_path}\')'
+                f"CREATE OR REPLACE TABLE {ident} AS SELECT * FROM read_parquet($1)",
+                [tmp_path],
             )
         finally:
             os.unlink(tmp_path)
@@ -90,7 +105,8 @@ class Database:
                     csv_tmp_path = csv_tmp.name
                 try:
                     self.conn.execute(
-                        f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{csv_tmp_path}\')'
+                        f"CREATE OR REPLACE TABLE {_escape_identifier(table_name)} AS SELECT * FROM read_csv_auto($1)",
+                        [csv_tmp_path],
                     )
                     results.append(self.get_table_info(table_name))
                 finally:
@@ -118,12 +134,13 @@ class Database:
 
     def get_table_info(self, table_name: str) -> dict[str, Any]:
         """Get info about a specific table."""
-        cols_result = self.conn.execute(f'DESCRIBE "{table_name}"')
+        ident = _escape_identifier(table_name)
+        cols_result = self.conn.execute(f"DESCRIBE {ident}")
         columns = [
             {"name": row[0], "type": row[1]}
             for row in cols_result.fetchall()
         ]
-        count_result = self.conn.execute(f'SELECT COUNT(*) FROM "{table_name}"')
+        count_result = self.conn.execute(f"SELECT COUNT(*) FROM {ident}")
         row_count = count_result.fetchone()[0]
         return {"name": table_name, "columns": columns, "rowCount": row_count}
 
@@ -135,12 +152,14 @@ class Database:
 
     def drop_table(self, table_name: str) -> None:
         """Drop a table."""
-        self.conn.execute(f'DROP TABLE IF EXISTS "{table_name}"')
+        self.conn.execute(f"DROP TABLE IF EXISTS {_escape_identifier(table_name)}")
 
     def load_sample_data(self, csv_path: str, table_name: str) -> dict[str, Any]:
         """Load sample CSV from a file path."""
+        ident = _escape_identifier(table_name)
         self.conn.execute(
-            f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{csv_path}\')'
+            f"CREATE OR REPLACE TABLE {ident} AS SELECT * FROM read_csv_auto($1)",
+            [csv_path],
         )
         return self.get_table_info(table_name)
 

@@ -30,3 +30,10 @@ CONTAINER_MEMORY_LIMIT = os.getenv("CONTAINER_MEMORY_LIMIT", "512m")
 CONTAINER_CPU_LIMIT = float(os.getenv("CONTAINER_CPU_LIMIT", "0.5"))
 CONTAINER_MAX_LIFETIME_SECONDS = int(os.getenv("CONTAINER_MAX_LIFETIME_SECONDS", "600"))
 CONTAINER_NETWORK = os.getenv("CONTAINER_NETWORK", "agent-sandbox")
+# CORS: comma-separated list of allowed origins, or "*" for all (no credentials).
+# In production set to your actual frontend origin, e.g. "https://myapp.example.com".
+CORS_ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:8000").split(",")
+    if o.strip()
+]
