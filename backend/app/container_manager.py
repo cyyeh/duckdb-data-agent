@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
 import docker
 
@@ -39,10 +40,39 @@ class ContainerManager:
         self._client = docker.from_env()
         self._containers: dict[str, ContainerInfo] = {}
 
+    def _resolve_network_hosts(self) -> dict[str, str]:
+        """Resolve container hostnames to IPs on the sidecar network.
+
+        gVisor's netstack doesn't use Docker's embedded DNS (127.0.0.11),
+        so DNS resolution fails inside runsc containers. We build an
+        extra_hosts mapping from container names to their IPs on the
+        shared network so /etc/hosts provides the resolution instead.
+        """
+        hosts: dict[str, str] = {}
+        try:
+            network = self._client.networks.get(self._config.network)
+            network.reload()
+            containers = network.attrs.get("Containers", {})
+            for _cid, info in containers.items():
+                name = info.get("Name", "")
+                ipv4 = info.get("IPv4Address", "")
+                if name and ipv4:
+                    # Strip CIDR suffix (e.g. "172.20.0.2/16" -> "172.20.0.2")
+                    ip = ipv4.split("/")[0]
+                    hosts[name] = ip
+        except Exception as e:
+            logger.warning("Failed to resolve network hosts: %s", e)
+        return hosts
+
     def create(self, session_id: str, env: dict[str, str]) -> ContainerInfo:
         """Spin up a new sidecar container for a session."""
         if session_id in self._containers:
             return self._containers[session_id]
+
+        # Resolve container hostnames to IPs for gVisor DNS compatibility
+        extra_hosts = self._resolve_network_hosts()
+        if extra_hosts:
+            logger.info("Sidecar extra_hosts: %s", extra_hosts)
 
         container = self._client.containers.run(
             image=self._config.image,
@@ -56,6 +86,10 @@ class ContainerManager:
             tmpfs={"/tmp": "size=50m", "/home/appuser": "size=50m,uid=1000,gid=1000"},
             network=self._config.network,
             environment=env,
+            extra_hosts=extra_hosts or None,
+            # Use public DNS so gVisor's netstack can resolve external hosts
+            # (Docker's embedded DNS at 127.0.0.11 doesn't work under runsc)
+            dns=["8.8.8.8", "8.8.4.4"],
             labels={
                 "app": "duckdb-agent-sidecar",
                 "session_id": session_id,

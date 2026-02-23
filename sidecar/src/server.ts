@@ -108,6 +108,9 @@ app.post("/query", async (req: Request, res: Response) => {
     { role: "user", content: body.message },
   ];
 
+  // Collect stderr from the CLI subprocess for debugging
+  const stderrLines: string[] = [];
+
   try {
     const sdkQuery = query({
       prompt: body.message,
@@ -121,6 +124,10 @@ app.post("/query", async (req: Request, res: Response) => {
         includePartialMessages: true,
         abortController,
         env: sdkEnv,
+        stderr: (line: string) => {
+          stderrLines.push(line);
+          console.error(`[sidecar:cli] ${line}`);
+        },
         ...(body.mcp_server_url
           ? {
               mcpServers: {
@@ -215,13 +222,17 @@ app.post("/query", async (req: Request, res: Response) => {
       }
     }
   } catch (err: unknown) {
-    const errMsg = err instanceof Error ? err.message : String(err);
+    let errMsg = err instanceof Error ? err.message : String(err);
+    // Append CLI stderr for context when the process crashes
+    if (stderrLines.length > 0) {
+      errMsg += ` | CLI stderr: ${stderrLines.slice(-5).join(" ")}`;
+    }
     // Don't log abort errors — they are expected on client disconnect
     if (!(err instanceof Error && err.name === "AbortError")) {
       console.error(`[sidecar] SDK error: ${errMsg}`);
       if (!responseEnded) {
         res.write(
-          `event: error\ndata: ${JSON.stringify({ type: "error", message: errMsg })}\n\n`
+          `data: ${JSON.stringify({ type: "error", message: errMsg })}\n\n`
         );
       }
       if (trace) {

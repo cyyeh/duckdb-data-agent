@@ -192,6 +192,7 @@ async def _stream_chat_container(
 
         has_tool_calls = False
         has_thinking = False
+        done_sent = False
         tool_names: dict[str, str] = {}
         tool_sqls: dict[str, str] = {}
         actual_session_id = session_id
@@ -307,12 +308,24 @@ async def _stream_chat_container(
                             error_text = msg.get("result") or "; ".join(errors) or "Unknown error"
                             yield f"event: error\ndata: {json.dumps({'message': error_text})}\n\n"
                         yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
+                        done_sent = True
+
+                    # --- Sidecar error (e.g. SDK/CLI crash inside container) ---
+                    elif msg_type == "error":
+                        error_text = msg.get("message") or "Sidecar error"
+                        logger.error("Sidecar reported error: %s", error_text)
+                        yield f"event: error\ndata: {json.dumps({'message': error_text})}\n\n"
 
                     # --- Extract session_id early from system init ---
                     elif msg_type == "system":
                         sys_session = msg.get("session_id")
                         if sys_session:
                             actual_session_id = sys_session
+
+        # Guard: always send done even if sidecar ended without result message
+        if not done_sent:
+            logger.warning("Sidecar stream ended without result message; sending done event")
+            yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
 
     except Exception as e:
         logger.error("Container agent error: %s", str(e))
