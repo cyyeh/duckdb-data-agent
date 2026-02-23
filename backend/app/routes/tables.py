@@ -10,7 +10,16 @@ router = APIRouter(prefix="/api", tags=["tables"])
 
 
 def sanitize_table_name(filename: str) -> str:
-    return filename
+    """Sanitize a filename into a safe SQL table name.
+
+    Strips the extension, replaces non-alphanumeric characters with underscores,
+    collapses consecutive underscores, and strips leading/trailing underscores.
+    """
+    import re
+    name = os.path.splitext(filename)[0]
+    name = re.sub(r"[^a-zA-Z0-9_]", "_", name)
+    name = re.sub(r"_+", "_", name).strip("_")
+    return name or "table"
 
 
 @router.get("/tables")
