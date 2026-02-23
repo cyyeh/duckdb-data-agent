@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8deb714b6af5",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "Makefile",
+    "README.md",
+    "docker-compose.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8d/eb714b6af5/0/metadata.json",
+      "transcript": "/8d/eb714b6af5/0/full.jsonl",
+      "context": "/8d/eb714b6af5/0/context.md",
+      "content_hash": "/8d/eb714b6af5/0/content_hash.txt",
+      "prompt": "/8d/eb714b6af5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 406,
+    "cache_creation_tokens": 179229,
+    "cache_read_tokens": 10750857,
+    "output_tokens": 7946,
+    "api_call_count": 124
+  }
+}
