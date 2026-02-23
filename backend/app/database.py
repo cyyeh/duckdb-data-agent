@@ -1,5 +1,7 @@
+import asyncio
 import csv
 import duckdb
+import functools
 import os
 import re
 import tempfile
@@ -160,3 +162,25 @@ class Database:
             [csv_path],
         )
         return self.get_table_info(table_name)
+
+    # -- Async wrappers that offload sync DuckDB work to a thread pool --
+
+    async def _run_sync(self, func, *args, **kwargs):
+        """Run a sync method in the default executor to avoid blocking the event loop."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, functools.partial(func, *args, **kwargs))
+
+    async def execute_query_async(self, sql: str) -> dict[str, Any]:
+        return await self._run_sync(self.execute_query, sql)
+
+    async def list_tables_async(self) -> list[dict[str, Any]]:
+        return await self._run_sync(self.list_tables)
+
+    async def load_file_async(self, file_bytes: bytes, filename: str, table_name: str) -> list[dict[str, Any]]:
+        return await self._run_sync(self.load_file, file_bytes, filename, table_name)
+
+    async def load_sample_data_async(self, csv_path: str, table_name: str) -> dict[str, Any]:
+        return await self._run_sync(self.load_sample_data, csv_path, table_name)
+
+    async def drop_table_async(self, table_name: str) -> None:
+        return await self._run_sync(self.drop_table, table_name)

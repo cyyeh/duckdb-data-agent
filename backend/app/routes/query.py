@@ -17,7 +17,7 @@ async def execute_query(
     db: Database = Depends(get_session_db),
 ):
     try:
-        result = db.execute_query(request.sql)
+        result = await db.execute_query_async(request.sql)
         sql_lower = request.sql.strip().lower()
         result_type = "markdown" if sql_lower.startswith("explain") else "table"
         return {**result, "resultType": result_type}

@@ -25,7 +25,7 @@ def sanitize_table_name(filename: str) -> str:
 
 @router.get("/tables")
 async def list_tables(db: Database = Depends(get_session_db)):
-    return db.list_tables()
+    return await db.list_tables_async()
 
 
 @router.post("/upload")
@@ -65,8 +65,14 @@ async def upload_file(
         chunks.append(chunk)
     content = b"".join(chunks)
     table_name = sanitize_table_name(file.filename)
+    existing_tables = {t["name"] for t in await db.list_tables_async()}
+    if table_name in existing_tables:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A table named \"{table_name}\" already exists. Please remove it or rename the file before uploading."
+        )
     try:
-        results = db.load_file(content, file.filename, table_name)
+        results = await db.load_file_async(content, file.filename, table_name)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except duckdb.CatalogException:
@@ -89,10 +95,10 @@ async def load_sample(db: Database = Depends(get_session_db)):
     csv_path = Path(__file__).resolve().parent.parent / "data" / "titanic.csv"
     if not csv_path.exists():
         raise HTTPException(status_code=404, detail="Sample dataset not found")
-    return db.load_sample_data(str(csv_path), "titanic")
+    return await db.load_sample_data_async(str(csv_path), "titanic")
 
 
 @router.delete("/tables/{table_name:path}")
 async def drop_table(table_name: str, db: Database = Depends(get_session_db)):
-    db.drop_table(table_name)
+    await db.drop_table_async(table_name)
     return {"ok": True}
