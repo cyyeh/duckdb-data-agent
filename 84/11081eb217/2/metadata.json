@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8411081eb217",
+  "session_id": "3a2deddf-a8bc-4ff7-8de0-30d62adf6969",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-20T11:16:16.715339Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-20-dark-light-mode-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "0ed094dbb518",
+  "token_usage": {
+    "input_tokens": 29,
+    "cache_creation_tokens": 23332,
+    "cache_read_tokens": 733226,
+    "output_tokens": 1564,
+    "api_call_count": 26
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-20T11:16:16.63703Z",
+    "agent_lines": 0,
+    "human_added": 80,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 80,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/3a2deddf-a8bc-4ff7-8de0-30d62adf6969.jsonl"
+}

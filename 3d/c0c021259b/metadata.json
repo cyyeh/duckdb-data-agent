@@ -1,0 +1,70 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "3dc0c021259b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/agent.py",
+    "backend/app/config.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3d/c0c021259b/0/metadata.json",
+      "transcript": "/3d/c0c021259b/0/full.jsonl",
+      "context": "/3d/c0c021259b/0/context.md",
+      "content_hash": "/3d/c0c021259b/0/content_hash.txt",
+      "prompt": "/3d/c0c021259b/0/prompt.txt"
+    },
+    {
+      "metadata": "/3d/c0c021259b/1/metadata.json",
+      "transcript": "/3d/c0c021259b/1/full.jsonl",
+      "context": "/3d/c0c021259b/1/context.md",
+      "content_hash": "/3d/c0c021259b/1/content_hash.txt",
+      "prompt": "/3d/c0c021259b/1/prompt.txt"
+    },
+    {
+      "metadata": "/3d/c0c021259b/2/metadata.json",
+      "transcript": "/3d/c0c021259b/2/full.jsonl",
+      "context": "/3d/c0c021259b/2/context.md",
+      "content_hash": "/3d/c0c021259b/2/content_hash.txt",
+      "prompt": "/3d/c0c021259b/2/prompt.txt"
+    },
+    {
+      "metadata": "/3d/c0c021259b/3/metadata.json",
+      "transcript": "/3d/c0c021259b/3/full.jsonl",
+      "context": "/3d/c0c021259b/3/context.md",
+      "content_hash": "/3d/c0c021259b/3/content_hash.txt",
+      "prompt": "/3d/c0c021259b/3/prompt.txt"
+    },
+    {
+      "metadata": "/3d/c0c021259b/4/metadata.json",
+      "transcript": "/3d/c0c021259b/4/full.jsonl",
+      "context": "/3d/c0c021259b/4/context.md",
+      "content_hash": "/3d/c0c021259b/4/content_hash.txt",
+      "prompt": "/3d/c0c021259b/4/prompt.txt"
+    },
+    {
+      "metadata": "/3d/c0c021259b/5/metadata.json",
+      "transcript": "/3d/c0c021259b/5/full.jsonl",
+      "context": "/3d/c0c021259b/5/context.md",
+      "content_hash": "/3d/c0c021259b/5/content_hash.txt",
+      "prompt": "/3d/c0c021259b/5/prompt.txt"
+    },
+    {
+      "metadata": "/3d/c0c021259b/6/metadata.json",
+      "transcript": "/3d/c0c021259b/6/full.jsonl",
+      "context": "/3d/c0c021259b/6/context.md",
+      "content_hash": "/3d/c0c021259b/6/content_hash.txt",
+      "prompt": "/3d/c0c021259b/6/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 203939,
+    "cache_read_tokens": 6324860,
+    "output_tokens": 7549,
+    "api_call_count": 181
+  }
+}

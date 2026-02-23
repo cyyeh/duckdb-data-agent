@@ -1,0 +1,21 @@
+make editor mode header position, mode transition button position the same as agent mode, also add editor mode text under the site title with the same layout with agent mode
+
+---
+
+right padding should be the same as left padding
+
+---
+
+still not fixed:
+
+---
+
+for editor mode, if table list is expanded, the main content should not be scrollable in x-axis also
+
+---
+
+still not fixed
+
+---
+
+commit this

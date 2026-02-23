@@ -1,0 +1,13 @@
+change langfuse traces icon to svg in frontend/public folder
+
+---
+
+commit this
+
+---
+
+update readme based on new functionality of langfuse integration
+
+---
+
+commit this

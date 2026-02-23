@@ -1,0 +1,106 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "5f95c2a35e60",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "Dockerfile",
+    "frontend/public/langfuse-color.svg",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AgentPanel.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/5f/95c2a35e60/0/metadata.json",
+      "transcript": "/5f/95c2a35e60/0/full.jsonl",
+      "context": "/5f/95c2a35e60/0/context.md",
+      "content_hash": "/5f/95c2a35e60/0/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/0/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/1/metadata.json",
+      "transcript": "/5f/95c2a35e60/1/full.jsonl",
+      "context": "/5f/95c2a35e60/1/context.md",
+      "content_hash": "/5f/95c2a35e60/1/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/1/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/2/metadata.json",
+      "transcript": "/5f/95c2a35e60/2/full.jsonl",
+      "context": "/5f/95c2a35e60/2/context.md",
+      "content_hash": "/5f/95c2a35e60/2/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/2/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/3/metadata.json",
+      "transcript": "/5f/95c2a35e60/3/full.jsonl",
+      "context": "/5f/95c2a35e60/3/context.md",
+      "content_hash": "/5f/95c2a35e60/3/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/3/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/4/metadata.json",
+      "transcript": "/5f/95c2a35e60/4/full.jsonl",
+      "context": "/5f/95c2a35e60/4/context.md",
+      "content_hash": "/5f/95c2a35e60/4/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/4/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/5/metadata.json",
+      "transcript": "/5f/95c2a35e60/5/full.jsonl",
+      "context": "/5f/95c2a35e60/5/context.md",
+      "content_hash": "/5f/95c2a35e60/5/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/5/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/6/metadata.json",
+      "transcript": "/5f/95c2a35e60/6/full.jsonl",
+      "context": "/5f/95c2a35e60/6/context.md",
+      "content_hash": "/5f/95c2a35e60/6/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/6/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/7/metadata.json",
+      "transcript": "/5f/95c2a35e60/7/full.jsonl",
+      "context": "/5f/95c2a35e60/7/context.md",
+      "content_hash": "/5f/95c2a35e60/7/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/7/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/8/metadata.json",
+      "transcript": "/5f/95c2a35e60/8/full.jsonl",
+      "context": "/5f/95c2a35e60/8/context.md",
+      "content_hash": "/5f/95c2a35e60/8/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/8/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/9/metadata.json",
+      "transcript": "/5f/95c2a35e60/9/full.jsonl",
+      "context": "/5f/95c2a35e60/9/context.md",
+      "content_hash": "/5f/95c2a35e60/9/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/9/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/10/metadata.json",
+      "transcript": "/5f/95c2a35e60/10/full.jsonl",
+      "context": "/5f/95c2a35e60/10/context.md",
+      "content_hash": "/5f/95c2a35e60/10/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/10/prompt.txt"
+    },
+    {
+      "metadata": "/5f/95c2a35e60/11/metadata.json",
+      "transcript": "/5f/95c2a35e60/11/full.jsonl",
+      "context": "/5f/95c2a35e60/11/context.md",
+      "content_hash": "/5f/95c2a35e60/11/content_hash.txt",
+      "prompt": "/5f/95c2a35e60/11/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1790,
+    "cache_creation_tokens": 1142936,
+    "cache_read_tokens": 61542443,
+    "output_tokens": 79569,
+    "api_call_count": 855
+  }
+}

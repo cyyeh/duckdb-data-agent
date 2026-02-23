@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "fabfda4c2493",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/routes/chat.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fa/bfda4c2493/0/metadata.json",
+      "transcript": "/fa/bfda4c2493/0/full.jsonl",
+      "context": "/fa/bfda4c2493/0/context.md",
+      "content_hash": "/fa/bfda4c2493/0/content_hash.txt",
+      "prompt": "/fa/bfda4c2493/0/prompt.txt"
+    },
+    {
+      "metadata": "/fa/bfda4c2493/1/metadata.json",
+      "transcript": "/fa/bfda4c2493/1/full.jsonl",
+      "context": "/fa/bfda4c2493/1/context.md",
+      "content_hash": "/fa/bfda4c2493/1/content_hash.txt",
+      "prompt": "/fa/bfda4c2493/1/prompt.txt"
+    },
+    {
+      "metadata": "/fa/bfda4c2493/2/metadata.json",
+      "transcript": "/fa/bfda4c2493/2/full.jsonl",
+      "context": "/fa/bfda4c2493/2/context.md",
+      "content_hash": "/fa/bfda4c2493/2/content_hash.txt",
+      "prompt": "/fa/bfda4c2493/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 140,
+    "cache_creation_tokens": 163660,
+    "cache_read_tokens": 10444685,
+    "output_tokens": 6580,
+    "api_call_count": 123
+  }
+}

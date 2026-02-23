@@ -1,0 +1,5 @@
+fix bug of directly sending request to ai in agent mode while typing enter of chinese
+
+---
+
+commit this and push

@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e6b10a938943",
+  "session_id": "f8cae20b-4b77-4236-85b9-7a5a527e0b78",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-20T06:17:40.677767Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/tracing.py",
+    "backend/poetry.lock",
+    "backend/pyproject.toml",
+    "docs/plans/2026-02-20-langfuse-integration-design.md",
+    "docs/plans/2026-02-20-langfuse-integration-plan.md",
+    "backend/.env.example"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "5781b11df8cc",
+  "transcript_identifier_at_start": "d723cbf9-6904-420d-be31-ed4470bcd5db",
+  "checkpoint_transcript_start": 189,
+  "transcript_lines_at_start": 189,
+  "token_usage": {
+    "input_tokens": 44,
+    "cache_creation_tokens": 35510,
+    "cache_read_tokens": 1269956,
+    "output_tokens": 945,
+    "api_call_count": 32
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-20T06:17:40.608463Z",
+    "agent_lines": 0,
+    "human_added": 329,
+    "human_modified": 164,
+    "human_removed": 0,
+    "total_committed": 331,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/f8cae20b-4b77-4236-85b9-7a5a527e0b78.jsonl"
+}

@@ -1,0 +1,5 @@
+I see list of strange objects in todo write tool in thinking in agent mode
+
+---
+
+commit this and push

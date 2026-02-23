@@ -1,0 +1,118 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "86b707fa9523",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "frontend/src/components/InlineQueryResult.tsx",
+    "frontend/src/components/MessageBubble.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/86/b707fa9523/0/metadata.json",
+      "transcript": "/86/b707fa9523/0/full.jsonl",
+      "context": "/86/b707fa9523/0/context.md",
+      "content_hash": "/86/b707fa9523/0/content_hash.txt",
+      "prompt": "/86/b707fa9523/0/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/1/metadata.json",
+      "transcript": "/86/b707fa9523/1/full.jsonl",
+      "context": "/86/b707fa9523/1/context.md",
+      "content_hash": "/86/b707fa9523/1/content_hash.txt",
+      "prompt": "/86/b707fa9523/1/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/2/metadata.json",
+      "transcript": "/86/b707fa9523/2/full.jsonl",
+      "context": "/86/b707fa9523/2/context.md",
+      "content_hash": "/86/b707fa9523/2/content_hash.txt",
+      "prompt": "/86/b707fa9523/2/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/3/metadata.json",
+      "transcript": "/86/b707fa9523/3/full.jsonl",
+      "context": "/86/b707fa9523/3/context.md",
+      "content_hash": "/86/b707fa9523/3/content_hash.txt",
+      "prompt": "/86/b707fa9523/3/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/4/metadata.json",
+      "transcript": "/86/b707fa9523/4/full.jsonl",
+      "context": "/86/b707fa9523/4/context.md",
+      "content_hash": "/86/b707fa9523/4/content_hash.txt",
+      "prompt": "/86/b707fa9523/4/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/5/metadata.json",
+      "transcript": "/86/b707fa9523/5/full.jsonl",
+      "context": "/86/b707fa9523/5/context.md",
+      "content_hash": "/86/b707fa9523/5/content_hash.txt",
+      "prompt": "/86/b707fa9523/5/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/6/metadata.json",
+      "transcript": "/86/b707fa9523/6/full.jsonl",
+      "context": "/86/b707fa9523/6/context.md",
+      "content_hash": "/86/b707fa9523/6/content_hash.txt",
+      "prompt": "/86/b707fa9523/6/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/7/metadata.json",
+      "transcript": "/86/b707fa9523/7/full.jsonl",
+      "context": "/86/b707fa9523/7/context.md",
+      "content_hash": "/86/b707fa9523/7/content_hash.txt",
+      "prompt": "/86/b707fa9523/7/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/8/metadata.json",
+      "transcript": "/86/b707fa9523/8/full.jsonl",
+      "context": "/86/b707fa9523/8/context.md",
+      "content_hash": "/86/b707fa9523/8/content_hash.txt",
+      "prompt": "/86/b707fa9523/8/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/9/metadata.json",
+      "transcript": "/86/b707fa9523/9/full.jsonl",
+      "context": "/86/b707fa9523/9/context.md",
+      "content_hash": "/86/b707fa9523/9/content_hash.txt",
+      "prompt": "/86/b707fa9523/9/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/10/metadata.json",
+      "transcript": "/86/b707fa9523/10/full.jsonl",
+      "context": "/86/b707fa9523/10/context.md",
+      "content_hash": "/86/b707fa9523/10/content_hash.txt",
+      "prompt": "/86/b707fa9523/10/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/11/metadata.json",
+      "transcript": "/86/b707fa9523/11/full.jsonl",
+      "context": "/86/b707fa9523/11/context.md",
+      "content_hash": "/86/b707fa9523/11/content_hash.txt",
+      "prompt": "/86/b707fa9523/11/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/12/metadata.json",
+      "transcript": "/86/b707fa9523/12/full.jsonl",
+      "context": "/86/b707fa9523/12/context.md",
+      "content_hash": "/86/b707fa9523/12/content_hash.txt",
+      "prompt": "/86/b707fa9523/12/prompt.txt"
+    },
+    {
+      "metadata": "/86/b707fa9523/13/metadata.json",
+      "transcript": "/86/b707fa9523/13/full.jsonl",
+      "context": "/86/b707fa9523/13/context.md",
+      "content_hash": "/86/b707fa9523/13/content_hash.txt",
+      "prompt": "/86/b707fa9523/13/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2679,
+    "cache_creation_tokens": 1178563,
+    "cache_read_tokens": 66435813,
+    "output_tokens": 82146,
+    "api_call_count": 922
+  }
+}

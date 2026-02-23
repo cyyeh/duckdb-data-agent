@@ -1,0 +1,82 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "1286b6ede137",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/2026-02-20-langfuse-integration-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/12/86b6ede137/0/metadata.json",
+      "transcript": "/12/86b6ede137/0/full.jsonl",
+      "context": "/12/86b6ede137/0/context.md",
+      "content_hash": "/12/86b6ede137/0/content_hash.txt",
+      "prompt": "/12/86b6ede137/0/prompt.txt"
+    },
+    {
+      "metadata": "/12/86b6ede137/1/metadata.json",
+      "transcript": "/12/86b6ede137/1/full.jsonl",
+      "context": "/12/86b6ede137/1/context.md",
+      "content_hash": "/12/86b6ede137/1/content_hash.txt",
+      "prompt": "/12/86b6ede137/1/prompt.txt"
+    },
+    {
+      "metadata": "/12/86b6ede137/2/metadata.json",
+      "transcript": "/12/86b6ede137/2/full.jsonl",
+      "context": "/12/86b6ede137/2/context.md",
+      "content_hash": "/12/86b6ede137/2/content_hash.txt",
+      "prompt": "/12/86b6ede137/2/prompt.txt"
+    },
+    {
+      "metadata": "/12/86b6ede137/3/metadata.json",
+      "transcript": "/12/86b6ede137/3/full.jsonl",
+      "context": "/12/86b6ede137/3/context.md",
+      "content_hash": "/12/86b6ede137/3/content_hash.txt",
+      "prompt": "/12/86b6ede137/3/prompt.txt"
+    },
+    {
+      "metadata": "/12/86b6ede137/4/metadata.json",
+      "transcript": "/12/86b6ede137/4/full.jsonl",
+      "context": "/12/86b6ede137/4/context.md",
+      "content_hash": "/12/86b6ede137/4/content_hash.txt",
+      "prompt": "/12/86b6ede137/4/prompt.txt"
+    },
+    {
+      "metadata": "/12/86b6ede137/5/metadata.json",
+      "transcript": "/12/86b6ede137/5/full.jsonl",
+      "context": "/12/86b6ede137/5/context.md",
+      "content_hash": "/12/86b6ede137/5/content_hash.txt",
+      "prompt": "/12/86b6ede137/5/prompt.txt"
+    },
+    {
+      "metadata": "/12/86b6ede137/6/metadata.json",
+      "transcript": "/12/86b6ede137/6/full.jsonl",
+      "context": "/12/86b6ede137/6/context.md",
+      "content_hash": "/12/86b6ede137/6/content_hash.txt",
+      "prompt": "/12/86b6ede137/6/prompt.txt"
+    },
+    {
+      "metadata": "/12/86b6ede137/7/metadata.json",
+      "transcript": "/12/86b6ede137/7/full.jsonl",
+      "context": "/12/86b6ede137/7/context.md",
+      "content_hash": "/12/86b6ede137/7/content_hash.txt",
+      "prompt": "/12/86b6ede137/7/prompt.txt"
+    },
+    {
+      "metadata": "/12/86b6ede137/8/metadata.json",
+      "transcript": "/12/86b6ede137/8/full.jsonl",
+      "context": "/12/86b6ede137/8/context.md",
+      "content_hash": "/12/86b6ede137/8/content_hash.txt",
+      "prompt": "/12/86b6ede137/8/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 270,
+    "cache_creation_tokens": 246043,
+    "cache_read_tokens": 7349976,
+    "output_tokens": 10698,
+    "api_call_count": 210
+  }
+}

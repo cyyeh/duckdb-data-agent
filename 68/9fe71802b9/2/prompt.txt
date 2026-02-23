@@ -1,0 +1,5 @@
+update credential proxy functionality so that langfuse public key and secret key is also safe from being accessed by claude agent
+
+---
+
+commit this and push
