@@ -83,7 +83,8 @@ if STATIC_DIR.is_dir():
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
         """Serve frontend for any non-API route (SPA fallback)."""
-        file_path = STATIC_DIR / full_path
-        if full_path and file_path.is_file():
+        file_path = (STATIC_DIR / full_path).resolve()
+        # Prevent path traversal: ensure resolved path is inside STATIC_DIR
+        if full_path and file_path.is_file() and file_path.is_relative_to(STATIC_DIR.resolve()):
             return FileResponse(file_path)
         return FileResponse(STATIC_DIR / "index.html")
