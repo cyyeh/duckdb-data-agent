@@ -21,17 +21,20 @@ from app.session_manager import session_manager
 async def _cleanup_loop():
     while True:
         await asyncio.sleep(60)
-        removed = session_manager.cleanup_stale(ttl_seconds=300)
-        if removed:
-            logger.info("Background cleanup: removed %d stale sessions", removed)
-        proxy_removed = proxy_module.proxy_token_store.cleanup_expired()
-        if proxy_removed:
-            logger.info("Background cleanup: removed %d expired proxy tokens", proxy_removed)
-        if CONTAINER_ENABLED:
-            from app.container_manager import container_manager
-            container_removed = container_manager.cleanup_expired()
-            if container_removed:
-                logger.info("Background cleanup: removed %d expired containers", container_removed)
+        try:
+            removed = session_manager.cleanup_stale(ttl_seconds=300)
+            if removed:
+                logger.info("Background cleanup: removed %d stale sessions", removed)
+            proxy_removed = proxy_module.proxy_token_store.cleanup_expired()
+            if proxy_removed:
+                logger.info("Background cleanup: removed %d expired proxy tokens", proxy_removed)
+            if CONTAINER_ENABLED:
+                from app.container_manager import container_manager
+                container_removed = container_manager.cleanup_expired()
+                if container_removed:
+                    logger.info("Background cleanup: removed %d expired containers", container_removed)
+        except Exception:
+            logger.exception("Error in background cleanup loop")
 
 
 @asynccontextmanager
