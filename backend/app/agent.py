@@ -15,7 +15,10 @@ from claude_agent_sdk.types import StreamEvent, SystemMessage
 from claude_agent_sdk._errors import MessageParseError
 from app.tools import create_duckdb_server
 from app.database import Database
-from app.config import ANTHROPIC_MODEL, PROXY_BASE_URL, CONTAINER_ENABLED
+from app.config import (
+    ANTHROPIC_MODEL, PROXY_BASE_URL, CONTAINER_ENABLED,
+    LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
+)
 from app.proxy import proxy_token_store
 from app.tracing import get_langfuse_client
 
@@ -103,7 +106,6 @@ def _extract_tool_result_text(content: object) -> str:
     return str(content)
 
 
-
 async def _stream_chat_container(
     message: str,
     session_id: str | None,
@@ -111,6 +113,7 @@ async def _stream_chat_container(
     conversation_history: list[dict] | None,
     container_manager,
     backend_session_id: str | None = None,
+    langfuse_session_id: str | None = None,
 ) -> AsyncIterator[str]:
     """Stream chat via containerized sidecar instead of local subprocess."""
     import httpx
@@ -121,12 +124,16 @@ async def _stream_chat_container(
 
     session_token = proxy_token_store.create_token()
 
-    env = {
+    # Pass Langfuse credentials to the container so the sidecar's
+    # TypeScript Langfuse SDK can create traces directly.
+    env: dict[str, str] = {
         "ANTHROPIC_API_KEY": session_token,
         "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
-        "LANGFUSE_PUBLIC_KEY": "",
-        "LANGFUSE_SECRET_KEY": "",
     }
+    if LANGFUSE_ENABLED:
+        env["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
+        env["LANGFUSE_SECRET_KEY"] = LANGFUSE_SECRET_KEY
+        env["LANGFUSE_BASE_URL"] = LANGFUSE_BASE_URL
 
     if "127.0.0.1" in PROXY_BASE_URL or "localhost" in PROXY_BASE_URL:
         logger.warning(
@@ -165,7 +172,7 @@ async def _stream_chat_container(
         else:
             raise RuntimeError("Sidecar container failed health check after 10 attempts")
 
-        payload = {
+        payload: dict = {
             "message": query_message,
             "session_id": session_id,
             "system_prompt": system_prompt,
@@ -176,6 +183,12 @@ async def _stream_chat_container(
                 "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
             },
         }
+        if langfuse_session_id:
+            payload["langfuse_session_id"] = langfuse_session_id
+        # Pass original message & history separately for Langfuse trace metadata
+        if conversation_history:
+            payload["original_message"] = message
+            payload["conversation_history"] = conversation_history
 
         has_tool_calls = False
         has_thinking = False
@@ -331,6 +344,7 @@ async def stream_chat(
             async for event in _stream_chat_container(
                 message, session_id, db, conversation_history, container_manager,
                 backend_session_id=backend_session_id,
+                langfuse_session_id=langfuse_session_id,
             ):
                 yield event
             return

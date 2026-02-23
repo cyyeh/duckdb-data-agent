@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { Langfuse } from "langfuse";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
@@ -18,6 +19,14 @@ for (const sub of ["debug", "projects"]) {
 const settingsFile = join(claudeDir, "remote-settings.json");
 if (!existsSync(settingsFile)) {
   writeFileSync(settingsFile, "{}");
+}
+
+// Initialize Langfuse if credentials are available (reads from env vars
+// LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL automatically)
+let langfuse: Langfuse | null = null;
+if (process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY) {
+  langfuse = new Langfuse();
+  console.log("[sidecar] Langfuse tracing enabled");
 }
 
 const app = express();
@@ -68,11 +77,37 @@ app.post("/query", async (req: Request, res: Response) => {
     }
   });
 
+  // --- Langfuse tracing setup ---
+  // Mirror the backend's session ID handling:
+  //   - langfuse_session_id (from frontend for edit/delete) takes priority
+  //   - session_id (CLI session from previous turn) as fallback
+  const modelName = body.model || process.env.ANTHROPIC_MODEL || "claude-opus-4-6";
+  const traceMessage = body.original_message || body.message;
+  const traceInput: Record<string, unknown> = {
+    message: traceMessage.substring(0, 500),
+  };
+  if (body.conversation_history && body.conversation_history.length > 0) {
+    traceInput.conversation_history = body.conversation_history;
+  }
+  const trace = langfuse?.trace({
+    name: "agent-chat",
+    sessionId: body.langfuse_session_id || body.session_id || undefined,
+    input: traceInput,
+    metadata: { model: modelName, mode: "container" },
+  });
+
+  // Per-turn usage tracking from stream events
+  let currentGenUsage: { input?: number; output?: number } = {};
+  // Accumulated messages for generation input context
+  const accumulatedMessages: Array<{ role: string; content: unknown }> = [
+    { role: "user", content: body.message },
+  ];
+
   try {
     const sdkQuery = query({
       prompt: body.message,
       options: {
-        model: body.model || process.env.ANTHROPIC_MODEL || "claude-opus-4-6",
+        model: modelName,
         systemPrompt: body.system_prompt,
         allowedTools: ["mcp__duckdb__execute_sql"],
         permissionMode: "bypassPermissions",
@@ -96,13 +131,83 @@ app.post("/query", async (req: Request, res: Response) => {
     });
 
     console.log(
-      `[sidecar] SDK query started model=${body.model || "default"}`
+      `[sidecar] SDK query started model=${modelName}`
     );
 
     for await (const message of sdkQuery) {
       if (responseEnded) break;
       // Forward each SDK message as an SSE data line
       res.write(`data: ${JSON.stringify(message)}\n\n`);
+
+      // --- Create Langfuse observations from SDK messages ---
+      if (!trace) continue;
+      const msg = message as Record<string, unknown>;
+
+      if (msg.type === "stream_event") {
+        // Capture per-turn token usage from API stream events
+        const event = (msg.event as Record<string, unknown>) || {};
+        const eventType = event.type as string;
+        if (eventType === "message_start") {
+          const msgData = (event.message as Record<string, unknown>) || {};
+          const usage = (msgData.usage as Record<string, number>) || {};
+          currentGenUsage = { input: usage.input_tokens || 0 };
+        } else if (eventType === "message_delta") {
+          const usage = (event.usage as Record<string, number>) || {};
+          currentGenUsage.output = usage.output_tokens || 0;
+        }
+      } else if (msg.type === "assistant") {
+        // Create a generation observation for each assistant turn
+        const msgObj = (msg.message as Record<string, unknown>) || {};
+        const content = msgObj.content as unknown[];
+
+        const usage =
+          currentGenUsage.input !== undefined
+            ? {
+                input: currentGenUsage.input || 0,
+                output: currentGenUsage.output || 0,
+                total:
+                  (currentGenUsage.input || 0) +
+                  (currentGenUsage.output || 0),
+                unit: "TOKENS" as const,
+              }
+            : undefined;
+
+        const gen = trace.generation({
+          name: "claude.assistant.turn",
+          model: (msgObj.model as string) || modelName,
+          input: { messages: accumulatedMessages.slice(-6) },
+          output: { content, role: "assistant" },
+          usage,
+        });
+        gen.end();
+        currentGenUsage = {};
+
+        // Accumulate for next turn's input context
+        accumulatedMessages.push({ role: "assistant", content });
+      } else if (msg.type === "user") {
+        // Accumulate tool results for next turn's input context
+        const msgObj = (msg.message as Record<string, unknown>) || {};
+        accumulatedMessages.push({
+          role: "user",
+          content: msgObj.content,
+        });
+      } else if (msg.type === "result") {
+        // Finalize trace — mirrors backend's finally block:
+        //   trace_session_id = langfuse_session_id or actual_session_id
+        const actualSessionId = (msg.session_id as string | undefined) || body.session_id;
+        const traceSessionId = body.langfuse_session_id || actualSessionId;
+        trace.update({
+          ...(traceSessionId ? { sessionId: traceSessionId } : {}),
+          output: { session_id: actualSessionId },
+        });
+      } else if (msg.type === "system") {
+        // Capture session_id early — only when no langfuse_session_id override
+        // (matches backend's propagate_attributes(session_id=langfuse_session_id or session_id))
+        const sessionId = msg.session_id as string | undefined;
+        if (sessionId && !body.langfuse_session_id) {
+          trace.update({ sessionId });
+        }
+      }
     }
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -114,11 +219,18 @@ app.post("/query", async (req: Request, res: Response) => {
           `event: error\ndata: ${JSON.stringify({ type: "error", message: errMsg })}\n\n`
         );
       }
+      if (trace) {
+        trace.update({ output: { error: errMsg } });
+      }
     }
   } finally {
     activeAbort = null;
     responseEnded = true;
     res.end();
+    // Flush Langfuse events before the response is fully closed
+    if (langfuse) {
+      await langfuse.flushAsync().catch(() => {});
+    }
     console.log("[sidecar] SSE stream ended");
   }
 });

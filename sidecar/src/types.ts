@@ -5,6 +5,9 @@ export interface QueryRequest {
   model?: string;
   mcp_server_url?: string;
   env?: Record<string, string>;
+  langfuse_session_id?: string;
+  original_message?: string;
+  conversation_history?: Array<{ role: string; content: string }>;
 }
 
 export interface HealthResponse {
