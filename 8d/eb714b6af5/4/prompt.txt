@@ -1,0 +1,9 @@
+fix in sidecar, claude code agent could see langfuse_public_key and langfuse_secret_key from env vars, should be empty, the same as agent in backend. but this change should not affect original langfuse behavior
+
+---
+
+commit this and push
+
+---
+
+also add container isolation in readme in agent mode
