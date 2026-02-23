@@ -1,5 +1,6 @@
 .PHONY: dev backend frontend install install-all install-backend install-frontend \
-       sidecar-build sidecar-network sidecar-setup dev-all clean
+       sidecar-build sidecar-network sidecar-setup dev-all clean \
+       compose-build compose-up compose-down
 
 # Run both backend and frontend concurrently
 dev:
@@ -41,6 +42,16 @@ sidecar-network:
 	./sidecar/setup-network.sh
 
 sidecar-setup: sidecar-build sidecar-network
+
+# Docker Compose
+compose-build:
+	docker compose build
+
+compose-up: sidecar-network
+	docker compose up
+
+compose-down:
+	docker compose down
 
 clean:
 	rm -rf backend/.venv backend/__pycache__ backend/app/__pycache__ backend/app/routes/__pycache__

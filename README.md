@@ -122,6 +122,42 @@ Add `-e LANGFUSE_PUBLIC_KEY=pk-lf-... -e LANGFUSE_SECRET_KEY=sk-lf-...` to eithe
 
 Open http://localhost:10000 to use the app.
 
+### Docker Compose
+
+Docker Compose builds both images (app + sidecar) and runs the app with [container isolation](#container-isolation-optional) enabled. The sidecar image is built but not started as a service — the app spawns sidecar containers on-demand via the Docker SDK.
+
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop).
+
+**Build all images:**
+
+```bash
+make compose-build
+```
+
+**Start the app:**
+
+```bash
+make compose-up
+```
+
+Open http://localhost:10000 to use the app.
+
+**Stop the app:**
+
+```bash
+make compose-down
+```
+
+**Notes:**
+
+- **Linux users:** Set `DOCKER_GID` to your host's docker group GID so the app container can access the Docker socket:
+  ```bash
+  DOCKER_GID=$(getent group docker | cut -d: -f3) make compose-up
+  ```
+  On macOS with Docker Desktop, the default (`0`) works out of the box.
+- **Custom port:** Set `APP_PORT` to expose the app on a different host port (e.g., `APP_PORT=8080 make compose-up`).
+- **Disable container isolation:** Remove the `CONTAINER_ENABLED` override from the `environment` block in `docker-compose.yml` (or set it to `"false"`) to fall back to subprocess mode.
+
 ### Deploy to Render
 
 A `render.yaml` is included for one-click deployment on [Render](https://render.com/):
@@ -300,8 +336,9 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 │   ├── Dockerfile          #   Sidecar image: Node.js 20 + Python 3.12 + Claude CLI
 │   └── setup-network.sh    #   Docker network setup script
 ├── Dockerfile              # Multi-stage production build
+├── docker-compose.yml      # Compose orchestration (app + sidecar build)
 ├── render.yaml             # Render deployment config
-└── Makefile                # Dev commands (install, dev, dev-container, sidecar-setup, clean)
+└── Makefile                # Dev commands (install, dev, compose-build/up/down, sidecar-setup, clean)
 ```
 
 ## Tech Stack
