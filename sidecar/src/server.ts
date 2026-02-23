@@ -67,6 +67,11 @@ app.post("/query", async (req: Request, res: Response) => {
   if (body.env) {
     Object.assign(sdkEnv, body.env);
   }
+  // Scrub Langfuse credentials so the agent subprocess cannot read them from
+  // the inherited environment — matches backend subprocess behaviour.
+  // The sidecar's own Langfuse client already holds the credentials internally.
+  sdkEnv["LANGFUSE_PUBLIC_KEY"] = "";
+  sdkEnv["LANGFUSE_SECRET_KEY"] = "";
 
   let responseEnded = false;
 
