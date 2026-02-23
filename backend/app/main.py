@@ -12,6 +12,7 @@ from app.routes import tables, query, chat, langfuse_status, config, session
 from app import proxy as proxy_module
 from app.config import CONTAINER_ENABLED
 from app.mcp_sse import mcp_app
+from app.config import CORS_ALLOWED_ORIGINS
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ app = FastAPI(title="DuckDB Data Agent API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
