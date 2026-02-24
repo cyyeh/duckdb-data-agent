@@ -570,7 +570,8 @@ async def stream_chat(
 
     if db is None:
         raise ValueError("db must be provided")
-    duckdb_server = create_duckdb_server(db)
+    stable_session = backend_session_id or "default"
+    duckdb_server = create_duckdb_server(db, session_id=stable_session)
 
     logger.info("Using model: %s", ANTHROPIC_MODEL)
 
@@ -583,7 +584,7 @@ async def stream_chat(
         model=ANTHROPIC_MODEL,
         system_prompt=build_system_prompt(db),
         mcp_servers={"duckdb": duckdb_server},
-        allowed_tools=["Task", "mcp__duckdb__execute_sql"],
+        allowed_tools=["Task", "mcp__duckdb__execute_sql", "mcp__duckdb__ask_user_question"],
         agents=build_subagent_definitions(db),
         permission_mode="bypassPermissions",
         max_turns=20,
