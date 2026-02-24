@@ -1,0 +1,17 @@
+using CONTAINER_RUNTIME: runsc doesn't show agent response in ui
+
+---
+
+still don't see agent response using runsc container_runtime, stuck in thinking text in ui
+
+---
+
+how could I check if  gvisor is being used in sidecar
+
+---
+
+what container runtime is being used now in sidecar container
+
+---
+
+commit changes and push
