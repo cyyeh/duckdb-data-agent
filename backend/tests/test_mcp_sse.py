@@ -21,7 +21,7 @@ def db():
 async def test_create_mcp_server_registers_tools_handlers(db):
     import mcp.types as types
 
-    server = _create_mcp_server(db)
+    server = _create_mcp_server(db, "test-session")
     assert types.ListToolsRequest in server.request_handlers
     assert types.CallToolRequest in server.request_handlers
 
@@ -37,7 +37,7 @@ async def test_call_tool_executes_sql_successfully(db):
 @pytest.mark.asyncio
 async def test_call_tool_returns_success_json(db):
     """Verify the MCP tool produces the expected JSON structure."""
-    server = _create_mcp_server(db)
+    server = _create_mcp_server(db, "test-session")
 
     # Simulate what call_tool does internally
     sql = "SELECT * FROM test_tbl ORDER BY id"

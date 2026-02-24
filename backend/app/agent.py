@@ -327,6 +327,7 @@ async def _stream_chat_container(
         has_tool_calls = False
         has_thinking = False
         done_sent = False
+        waiting_for_user = False
         tool_names: dict[str, str] = {}
         tool_sqls: dict[str, str] = {}
         # Track subagent text output from intermediate assistant messages.
@@ -338,10 +339,24 @@ async def _stream_chat_container(
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
             async with client.stream("POST", f"{info.url}/query", json=payload) as response:
-                async for line in response.aiter_lines():
+                line_iter = response.aiter_lines().__aiter__()
+                while True:
+                    try:
+                        if waiting_for_user:
+                            try:
+                                line = await asyncio.wait_for(line_iter.__anext__(), timeout=5.0)
+                            except asyncio.TimeoutError:
+                                yield ": keepalive\n\n"
+                                continue
+                        else:
+                            line = await line_iter.__anext__()
+                    except StopAsyncIteration:
+                        break
+
                     if not line.startswith("data: "):
                         continue
                     raw = line[6:]
+                    waiting_for_user = False
                     try:
                         msg = json.loads(raw)
                     except json.JSONDecodeError:
@@ -428,6 +443,18 @@ async def _stream_chat_container(
                                     subagent_prompt = tool_input.get("prompt", "")
                                     tool_names[tool_id] = subagent_name
                                     yield f"event: subagent_start\ndata: {json.dumps({'id': tool_id, 'name': subagent_name, 'prompt': subagent_prompt})}\n\n"
+
+                                # Detect ask_user_question tool
+                                if "ask_user_question" in tool_name:
+                                    from app.pending_questions import pending_question_store
+                                    import asyncio as _asyncio
+                                    for _ in range(50):
+                                        pending = pending_question_store.get_pending(stable_session)
+                                        if pending:
+                                            yield f"event: user_question\ndata: {json.dumps({'question_id': pending['question_id'], **pending['data']})}\n\n"
+                                            waiting_for_user = True
+                                            break
+                                        await _asyncio.sleep(0.1)
 
                     # --- Tool results from user messages ---
                     elif msg_type == "user":
