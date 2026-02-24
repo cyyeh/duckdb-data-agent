@@ -28,6 +28,7 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 - **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
+- **Chart generation** — Ask for a chart or visualization and the agent generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Credential proxy** — The backend runs a built-in Anthropic API reverse proxy; each agent session receives a short-lived UUID token instead of the real API key, so the Claude Code subprocess never has access to `ANTHROPIC_API_KEY`; tokens are revoked immediately when the session ends (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
