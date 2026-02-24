@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0cfa3b910d40",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/ChartWidget.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0c/fa3b910d40/0/metadata.json",
+      "transcript": "/0c/fa3b910d40/0/full.jsonl",
+      "context": "/0c/fa3b910d40/0/context.md",
+      "content_hash": "/0c/fa3b910d40/0/content_hash.txt",
+      "prompt": "/0c/fa3b910d40/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 99,
+    "cache_creation_tokens": 95352,
+    "cache_read_tokens": 5003720,
+    "output_tokens": 13718,
+    "api_call_count": 78
+  }
+}
