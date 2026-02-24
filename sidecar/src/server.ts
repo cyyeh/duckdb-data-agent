@@ -34,7 +34,15 @@ app.use(express.json({ limit: "10mb" }));
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 
-let activeAbort: AbortController | null = null;
+// Per-request abort tracking — avoids a global variable whose cleanup in one
+// request's `finally` block can clobber a concurrently-started request.
+let nextRequestId = 0;
+const activeAborts = new Map<number, AbortController>();
+
+// How long (ms) to wait for the SDK iterator to yield the first message
+// before aborting.  Covers cases where the CLI subprocess hangs on startup
+// (e.g. broken session resume, unreachable MCP server).
+const SDK_IDLE_TIMEOUT_MS = 120_000; // 2 minutes
 
 app.get("/health", (_req: Request, res: Response) => {
   const response: HealthResponse = { status: "ok" };
@@ -57,7 +65,8 @@ app.post("/query", async (req: Request, res: Response) => {
   res.flushHeaders();
 
   const abortController = new AbortController();
-  activeAbort = abortController;
+  const requestId = nextRequestId++;
+  activeAborts.set(requestId, abortController);
 
   // Merge per-request env overrides (e.g. fresh proxy tokens) with process env
   const sdkEnv: Record<string, string> = {};
@@ -111,6 +120,9 @@ app.post("/query", async (req: Request, res: Response) => {
   // Collect stderr from the CLI subprocess for debugging
   const stderrLines: string[] = [];
 
+  // Declared here so `finally` can clear it even if `try` throws early
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
   try {
     const sdkQuery = query({
       prompt: body.message,
@@ -143,10 +155,25 @@ app.post("/query", async (req: Request, res: Response) => {
     });
 
     console.log(
-      `[sidecar] SDK query started model=${modelName}`
+      `[sidecar] SDK query started model=${modelName} reqId=${requestId}`
     );
 
+    // Idle-timeout: abort if no message arrives within SDK_IDLE_TIMEOUT_MS.
+    // The timer resets on every message so long-running multi-turn queries
+    // that are making progress are not interrupted.
+    idleTimer = setTimeout(() => {
+      console.error(`[sidecar] SDK idle timeout (${SDK_IDLE_TIMEOUT_MS}ms) reached, aborting reqId=${requestId}`);
+      abortController.abort();
+    }, SDK_IDLE_TIMEOUT_MS);
+
     for await (const message of sdkQuery) {
+      // Reset idle timer on every message
+      if (idleTimer) { clearTimeout(idleTimer); }
+      idleTimer = setTimeout(() => {
+        console.error(`[sidecar] SDK idle timeout (${SDK_IDLE_TIMEOUT_MS}ms) reached, aborting reqId=${requestId}`);
+        abortController.abort();
+      }, SDK_IDLE_TIMEOUT_MS);
+
       if (responseEnded) break;
       // Forward each SDK message as an SSE data line
       res.write(`data: ${JSON.stringify(message)}\n\n`);
@@ -240,21 +267,24 @@ app.post("/query", async (req: Request, res: Response) => {
       }
     }
   } finally {
-    activeAbort = null;
+    if (idleTimer) { clearTimeout(idleTimer); }
+    activeAborts.delete(requestId);
     responseEnded = true;
     res.end();
     // Flush Langfuse events before the response is fully closed
     if (langfuse) {
       await langfuse.flushAsync().catch(() => {});
     }
-    console.log("[sidecar] SSE stream ended");
+    console.log(`[sidecar] SSE stream ended reqId=${requestId}`);
   }
 });
 
 app.post("/stop", (_req: Request, res: Response) => {
-  if (activeAbort) {
-    activeAbort.abort();
-    activeAbort = null;
+  if (activeAborts.size > 0) {
+    for (const [id, controller] of activeAborts) {
+      controller.abort();
+      activeAborts.delete(id);
+    }
     res.json({ status: "stopped" });
   } else {
     res.json({ status: "no_active_session" });
