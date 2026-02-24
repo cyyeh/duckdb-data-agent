@@ -3,7 +3,7 @@
   "checkpoint_id": "53a034c02b25",
   "strategy": "manual-commit",
   "branch": "feat/subagent-sql-chart",
-  "checkpoints_count": 13,
+  "checkpoints_count": 14,
   "files_touched": [
     "backend/app/agent.py",
     "backend/app/database.py",
@@ -81,13 +81,20 @@
       "context": "/53/a034c02b25/9/context.md",
       "content_hash": "/53/a034c02b25/9/content_hash.txt",
       "prompt": "/53/a034c02b25/9/prompt.txt"
+    },
+    {
+      "metadata": "/53/a034c02b25/10/metadata.json",
+      "transcript": "/53/a034c02b25/10/full.jsonl",
+      "context": "/53/a034c02b25/10/context.md",
+      "content_hash": "/53/a034c02b25/10/content_hash.txt",
+      "prompt": "/53/a034c02b25/10/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8624,
-    "cache_creation_tokens": 1198990,
-    "cache_read_tokens": 42398553,
-    "output_tokens": 40926,
-    "api_call_count": 503
+    "input_tokens": 8653,
+    "cache_creation_tokens": 1258271,
+    "cache_read_tokens": 43820340,
+    "output_tokens": 41466,
+    "api_call_count": 529
   }
 }
