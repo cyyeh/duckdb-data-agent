@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "7a37bcabf9f7",
+  "session_id": "f58aff3f-0ef2-4ddb-b32d-957027ec35ff",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-24T13:34:25.21972994Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-24-chart-tool-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "4da8f27e0664",
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 23996,
+    "cache_read_tokens": 768211,
+    "output_tokens": 1423,
+    "api_call_count": 26
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-24T13:34:25.057362691Z",
+    "agent_lines": 207,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 207,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-home-cyyeh-repos-duckdb-data-agent/f58aff3f-0ef2-4ddb-b32d-957027ec35ff.jsonl"
+}
