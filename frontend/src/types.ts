@@ -35,8 +35,20 @@ export interface ToolCallResult {
   };
 }
 
+export interface UserQuestionOption {
+  label: string;
+  description?: string;
+}
+
+export interface UserQuestionData {
+  questionId: string;
+  question: string;
+  options: UserQuestionOption[];
+  multiSelect: boolean;
+}
+
 export interface ContentSegment {
-  type: 'thinking' | 'tool' | 'answer' | 'subagent_start' | 'subagent_end';
+  type: 'thinking' | 'tool' | 'answer' | 'subagent_start' | 'subagent_end' | 'user_question';
   text?: string;
   toolResult?: ToolCallResult;
   subagentId?: string;
@@ -45,6 +57,8 @@ export interface ContentSegment {
     data: unknown[];
     layout?: Record<string, unknown>;
   };
+  questionData?: UserQuestionData;
+  userAnswer?: string[];
 }
 
 export interface ChatMessage {

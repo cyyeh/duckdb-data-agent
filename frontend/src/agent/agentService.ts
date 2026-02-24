@@ -1,4 +1,4 @@
-import type { ToolCallResult } from '../types';
+import type { ToolCallResult, UserQuestionData, UserQuestionOption } from '../types';
 
 interface AgentCallbacks {
   onTextChunk: (text: string) => void;
@@ -9,6 +9,7 @@ interface AgentCallbacks {
   onSubagentEnd?: (data: { id: string; name: string; result?: string; chart_spec?: { data: unknown[]; layout?: Record<string, unknown> } }) => void;
   onDone: (sessionId: string | null) => void;
   onError: (error: string) => void;
+  onUserQuestion?: (data: UserQuestionData) => void;
 }
 
 export type { AgentCallbacks };
@@ -225,6 +226,14 @@ function handleSSEEvent(
         name: data.name as string,
         result: (data.result as string) ?? undefined,
         chart_spec: (data.chart_spec as { data: unknown[]; layout?: Record<string, unknown> }) ?? undefined,
+      });
+      break;
+    case 'user_question':
+      callbacks.onUserQuestion?.({
+        questionId: data.question_id as string,
+        question: data.question as string,
+        options: (data.options as UserQuestionOption[]) ?? [],
+        multiSelect: (data.multi_select as boolean) ?? false,
       });
       break;
     case 'done':
