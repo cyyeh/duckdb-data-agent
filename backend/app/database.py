@@ -5,6 +5,7 @@ import functools
 import os
 import re
 import tempfile
+import threading
 from typing import Any
 
 SUPPORTED_EXTENSIONS = {".csv", ".json", ".parquet", ".xlsx"}
@@ -18,6 +19,7 @@ def _escape_identifier(name: str) -> str:
 class Database:
     def __init__(self):
         self.conn = duckdb.connect(":memory:")
+        self._lock = threading.Lock()
 
     def close(self) -> None:
         """Close the underlying DuckDB connection."""
@@ -167,8 +169,11 @@ class Database:
 
     async def _run_sync(self, func, *args, **kwargs):
         """Run a sync method in the default executor to avoid blocking the event loop."""
+        def _locked_call():
+            with self._lock:
+                return func(*args, **kwargs)
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, functools.partial(func, *args, **kwargs))
+        return await loop.run_in_executor(None, _locked_call)
 
     async def execute_query_async(self, sql: str) -> dict[str, Any]:
         return await self._run_sync(self.execute_query, sql)

@@ -158,7 +158,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
   let streamingRemainder: string | undefined;
   if (hasSegments && message.isStreaming && message.content) {
     const segmentedText = message.segments!
-      .filter((s) => s.type !== 'tool')
+      .filter((s) => s.type === 'thinking' || s.type === 'answer')
       .map((s) => s.text || '')
       .join('');
     const remaining = message.content.slice(segmentedText.length);

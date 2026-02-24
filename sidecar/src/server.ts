@@ -1,10 +1,10 @@
 import express, { Request, Response } from "express";
-import { query } from "@anthropic-ai/claude-agent-sdk";
+import { query, AgentDefinition } from "@anthropic-ai/claude-agent-sdk";
 import { Langfuse } from "langfuse";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
-import type { QueryRequest, HealthResponse } from "./types.js";
+import type { QueryRequest, HealthResponse, AgentDefinitionPayload } from "./types.js";
 
 // Claude CLI requires certain directories/files under ~/.claude to exist.
 // The container uses a tmpfs mount at ~/.claude which starts empty, so we
@@ -173,12 +173,26 @@ app.post("/query", async (req: Request, res: Response) => {
       }
     }
 
+    // Convert agents payload from the backend into SDK AgentDefinition objects
+    let sdkAgents: Record<string, AgentDefinition> | undefined;
+    if (body.agents) {
+      sdkAgents = {};
+      for (const [name, def] of Object.entries(body.agents)) {
+        sdkAgents[name] = {
+          description: def.description,
+          prompt: def.prompt,
+          ...(def.tools ? { tools: def.tools } : {}),
+          ...(def.model ? { model: def.model as AgentDefinition["model"] } : {}),
+        };
+      }
+    }
+
     const sdkQuery = query({
       prompt: body.message,
       options: {
         model: modelName,
         systemPrompt: body.system_prompt,
-        allowedTools: ["mcp__duckdb__execute_sql", "mcp__duckdb__generate_chart"],
+        allowedTools: ["Task", "mcp__duckdb__execute_sql"],
         permissionMode: "bypassPermissions",
         allowDangerouslySkipPermissions: true,
         maxTurns: 20,
@@ -189,6 +203,7 @@ app.post("/query", async (req: Request, res: Response) => {
           stderrLines.push(line);
           console.error(`[sidecar:cli] ${line}`);
         },
+        ...(sdkAgents ? { agents: sdkAgents } : {}),
         ...(body.mcp_server_url
           ? {
               mcpServers: {
