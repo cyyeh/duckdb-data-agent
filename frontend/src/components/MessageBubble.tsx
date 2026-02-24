@@ -5,6 +5,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import type { ChatMessage, ContentSegment } from '../types';
 import { useAgent } from '../hooks/useAgent';
 import { InlineQueryResult } from './InlineQueryResult';
+import { ChartWidget } from './ChartWidget';
 import './MessageBubble.css';
 
 function getLastThinkingLine(segments: ContentSegment[], streamingRemainder: string | undefined, t: (key: string) => string): string {
@@ -34,10 +35,10 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
   const { t } = useTranslation();
   // All non-answer, non-chart segments go inside the thinking block
   const thinkingSegments = segments.filter(
-    (s) => s.type !== 'answer' && !(s.type === 'tool' && s.toolResult?.chart_spec)
+    (s) => s.type !== 'answer' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && s.chart_spec)
   );
   const hasContent = thinkingSegments.some(
-    (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult)
+    (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start'
   ) || streamingRemainder?.trim();
 
   if (!hasContent) return null;
@@ -64,6 +65,18 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
             return (
               <div key={i} className="message-bubble__tool-segment">
                 <InlineQueryResult result={seg.toolResult} />
+              </div>
+            );
+          }
+          if (seg.type === 'subagent_start') {
+            const displayName = seg.subagentName === 'sql-analyst'
+              ? 'SQL Analyst working...'
+              : seg.subagentName === 'chart-builder'
+              ? 'Chart Builder working...'
+              : `${seg.subagentName} working...`;
+            return (
+              <div key={i} className="message-bubble__subagent-indicator">
+                <span className="message-bubble__subagent-label">{displayName}</span>
               </div>
             );
           }
@@ -153,7 +166,11 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
     : [];
 
   const chartSegments = hasSegments
-    ? message.segments!.filter((s) => s.type === 'tool' && s.toolResult?.chart_spec)
+    ? message.segments!.filter(
+        (s) =>
+          (s.type === 'tool' && s.toolResult?.chart_spec) ||
+          (s.type === 'subagent_end' && s.chart_spec)
+      )
     : [];
 
   return (
@@ -235,7 +252,11 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
           />
           {chartSegments.map((seg, i) => (
             <div key={`chart-${i}`} className="message-bubble__segment message-bubble__segment--answer">
-              <InlineQueryResult result={seg.toolResult!} />
+              {seg.type === 'tool' && seg.toolResult ? (
+                <InlineQueryResult result={seg.toolResult!} />
+              ) : seg.chart_spec ? (
+                <ChartWidget data={seg.chart_spec.data} layout={seg.chart_spec.layout} />
+              ) : null}
             </div>
           ))}
           {answerSegments.map((seg, i) => (

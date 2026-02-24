@@ -35,10 +35,27 @@ export interface ToolCallResult {
   };
 }
 
+export interface SubagentEvent {
+  id: string;
+  name: string;
+  prompt?: string;
+  result?: string;
+  chart_spec?: {
+    data: unknown[];
+    layout?: Record<string, unknown>;
+  };
+}
+
 export interface ContentSegment {
-  type: 'thinking' | 'tool' | 'answer';
+  type: 'thinking' | 'tool' | 'answer' | 'subagent_start' | 'subagent_end';
   text?: string;
   toolResult?: ToolCallResult;
+  subagentId?: string;
+  subagentName?: string;
+  chart_spec?: {
+    data: unknown[];
+    layout?: Record<string, unknown>;
+  };
 }
 
 export interface ChatMessage {

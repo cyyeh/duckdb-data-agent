@@ -5,6 +5,8 @@ interface AgentCallbacks {
   onThinkingDone: () => void;
   onToolCall: (pending: ToolCallResult) => void;
   onToolResult: (result: ToolCallResult) => void;
+  onSubagentStart?: (data: { id: string; name: string; prompt: string }) => void;
+  onSubagentEnd?: (data: { id: string; name: string; result?: string; chart_spec?: { data: unknown[]; layout?: Record<string, unknown> } }) => void;
   onDone: (sessionId: string | null) => void;
   onError: (error: string) => void;
 }
@@ -210,6 +212,21 @@ function handleSSEEvent(
       callbacks.onToolResult(result);
       break;
     }
+    case 'subagent_start':
+      callbacks.onSubagentStart?.({
+        id: data.id as string,
+        name: data.name as string,
+        prompt: (data.prompt as string) ?? '',
+      });
+      break;
+    case 'subagent_end':
+      callbacks.onSubagentEnd?.({
+        id: data.id as string,
+        name: data.name as string,
+        result: (data.result as string) ?? undefined,
+        chart_spec: (data.chart_spec as { data: unknown[]; layout?: Record<string, unknown> }) ?? undefined,
+      });
+      break;
     case 'done':
       callbacks.onDone((data.session_id as string) ?? null);
       break;
