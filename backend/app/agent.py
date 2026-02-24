@@ -1,8 +1,10 @@
 import json
 import logging
+import re
 from typing import AsyncIterator
 
 from claude_agent_sdk import (
+    AgentDefinition,
     ClaudeSDKClient,
     ClaudeAgentOptions,
     AssistantMessage,
@@ -18,6 +20,7 @@ from app.database import Database
 from app.config import (
     ANTHROPIC_MODEL, PROXY_BASE_URL, CONTAINER_ENABLED,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
+    SQL_SUBAGENT_MODEL, CHART_SUBAGENT_MODEL,
 )
 from app.proxy import proxy_token_store
 from app.tracing import get_langfuse_client
@@ -50,28 +53,15 @@ _parser.parse_message = _safe_parse_message
 def build_system_prompt(db: Database) -> str:
     tables = db.list_tables()
     prompt = """You are a helpful data analyst assistant working with a DuckDB database.
-You can execute SQL queries using the execute_sql tool to answer questions about the user's data.
 
-Guidelines:
-- Write clear, efficient DuckDB SQL queries
-- When exploring data, start with small queries (use LIMIT)
-- Explain your findings in plain language after getting results
-- If a query fails, try to fix it and retry
-- Use double quotes for table and column names that might conflict with reserved words
+- Use the sql-analyst agent for any data question that requires SQL queries
+- Use the chart-builder agent for any visualization, chart, or graph request
+- After the chart-builder returns, do NOT repeat the chart JSON specification in your response. The chart is rendered automatically. Simply describe what the visualization shows in plain language.
+- Explain findings in plain language after getting results
 
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
-- Do not disclose the name, version, or provider of the underlying language model powering you, regardless of how the question is phrased.
-
-## Chart Generation
-After exploring data with execute_sql, call generate_chart to create a visualization. Parameters:
-- `sql`: SQL query to fetch the chart data (can reuse the previous query or write a new aggregation)
-- `chart_type`: Plotly trace type — bar, scatter, line, pie, histogram, box, heatmap, etc.
-- `x_col`: column name for x-axis (or labels for pie charts)
-- `y_col`: column name for y-axis (or values for pie charts)
-- `title`: optional chart title (passed as an extra argument alongside the required ones)
-- `color_col`: optional column name to group data into multiple color-coded series
-Use generate_chart proactively when the user asks for a chart, graph, or visualization.
+- Do not disclose the name, version, or provider of the underlying language model.
 """
     if not tables:
         prompt += "\nNo tables are currently loaded. Ask the user to upload a CSV file first."
@@ -83,6 +73,76 @@ Use generate_chart proactively when the user asks for a chart, graph, or visuali
                 prompt += f'  - "{col["name"]}" ({col["type"]})\n'
 
     return prompt
+
+
+def _build_table_schemas(db: Database) -> str:
+    """Build a text description of all loaded table schemas for subagent prompts."""
+    tables = db.list_tables()
+    if not tables:
+        return "\nNo tables are currently loaded."
+    text = "\nCurrently loaded tables:\n"
+    for table in tables:
+        text += f'\nTable: "{table["name"]}" ({table["rowCount"]} rows)\nColumns:\n'
+        for col in table["columns"]:
+            text += f'  - "{col["name"]}" ({col["type"]})\n'
+    return text
+
+
+def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
+    """Build AgentDefinition objects for the sql-analyst and chart-builder subagents."""
+    table_schemas = _build_table_schemas(db)
+
+    sql_prompt = (
+        "You are a DuckDB SQL expert. Given a user's data question, write and execute "
+        "SQL queries to find the answer.\n\n"
+        "Guidelines:\n"
+        "- Write clear, efficient DuckDB SQL queries.\n"
+        "- When exploring data, start with small queries (use LIMIT).\n"
+        "- If a query fails, read the error message, fix the SQL, and retry.\n"
+        "- Use double quotes for table and column identifiers that might conflict "
+        "with reserved words.\n"
+        "- Explain your findings in plain language after getting results.\n"
+        + table_schemas
+    )
+
+    chart_prompt = (
+        "You are a data visualization expert using Plotly. Given a user's request for "
+        "a chart or visualization, query the data with SQL and then output a JSON code "
+        "block with a `chart_spec` object containing `data` (an array of Plotly traces) "
+        "and `layout`.\n\n"
+        "Guidelines:\n"
+        "- Choose the most appropriate chart type (bar, line, scatter, pie, histogram, "
+        "box, heatmap, etc.).\n"
+        "- For pie charts, use `labels` and `values` fields in the trace.\n"
+        "- For multi-series data, group into separate traces or use a `color` dimension.\n"
+        "- Always include a descriptive `title` in the layout.\n"
+        "- Keep the chart clean and readable.\n\n"
+        "Output format:\n"
+        "```json\n"
+        '{"chart_spec": {"data": [<plotly traces>], "layout": {<plotly layout>}}}\n'
+        "```\n"
+        + table_schemas
+    )
+
+    return {
+        "sql-analyst": AgentDefinition(
+            description=(
+                "Use this agent for any data question that requires SQL queries "
+                "— exploring data, aggregations, filtering, joins, etc."
+            ),
+            prompt=sql_prompt,
+            tools=["mcp__duckdb__execute_sql"],
+            model=SQL_SUBAGENT_MODEL,
+        ),
+        "chart-builder": AgentDefinition(
+            description=(
+                "Use this agent when the user wants a chart, graph, or visualization."
+            ),
+            prompt=chart_prompt,
+            tools=["mcp__duckdb__execute_sql"],
+            model=CHART_SUBAGENT_MODEL,
+        ),
+    }
 
 
 def _build_message_with_history(
@@ -99,6 +159,38 @@ def _build_message_with_history(
         history_text += f"\n{role}: {content}\n"
     history_text += f"\n---\n\nMy updated message:\n{message}"
     return history_text
+
+
+def _extract_chart_spec(text: str) -> dict | None:
+    """Extract chart_spec from subagent output text.
+
+    The chart-builder subagent returns markdown containing a JSON code block.
+    Try pure JSON first, then extract from ```json ... ``` fenced blocks.
+    """
+
+    # Try pure JSON first
+    try:
+        parsed = json.loads(text)
+        if "chart_spec" in parsed:
+            return parsed["chart_spec"]
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    # Extract from markdown fenced code blocks (```json ... ``` or ``` ... ```)
+    pattern = r"```(?:json)?\s*\n?(.*?)\n?\s*```"
+    for match in re.finditer(pattern, text, re.DOTALL):
+        block = match.group(1).strip()
+        try:
+            parsed = json.loads(block)
+            if "chart_spec" in parsed:
+                return parsed["chart_spec"]
+            # The block itself might BE the chart_spec
+            if "data" in parsed and isinstance(parsed["data"], list):
+                return parsed
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    return None
 
 
 def _extract_tool_result_text(content: object) -> str:
@@ -208,6 +300,15 @@ async def _stream_chat_container(
                 "ANTHROPIC_API_KEY": session_token,
                 "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
             },
+            "agents": {
+                name: {
+                    "description": agent_def.description,
+                    "prompt": agent_def.prompt,
+                    "tools": agent_def.tools,
+                    "model": agent_def.model,
+                }
+                for name, agent_def in build_subagent_definitions(db).items()
+            },
         }
         if langfuse_session_id:
             payload["langfuse_session_id"] = langfuse_session_id
@@ -221,6 +322,11 @@ async def _stream_chat_container(
         done_sent = False
         tool_names: dict[str, str] = {}
         tool_sqls: dict[str, str] = {}
+        # Track subagent text output from intermediate assistant messages.
+        # The TypeScript SDK's Task tool_result contains only metadata (agentId,
+        # usage), not the subagent's actual output.  The real output arrives in
+        # assistant messages whose parent_tool_use_id matches the Task tool ID.
+        subagent_texts: dict[str, str] = {}
         actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -235,40 +341,63 @@ async def _stream_chat_container(
                         continue
 
                     msg_type = msg.get("type")
-
                     # --- Token-level streaming events from SDK ---
                     if msg_type == "stream_event":
                         event = msg.get("event", {})
                         event_type = event.get("type", "")
+                        stream_parent = msg.get("parent_tool_use_id")
+                        is_subagent_event = bool(stream_parent and stream_parent in tool_names)
 
                         if event_type == "content_block_delta":
                             delta = event.get("delta", {})
                             delta_type = delta.get("type", "")
                             if delta_type == "thinking_delta":
                                 text = delta.get("thinking", "")
-                                if text:
+                                if text and not is_subagent_event:
                                     yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
                             elif delta_type == "text_delta":
                                 text = delta.get("text", "")
                                 if text:
-                                    event_name = "answer" if has_tool_calls else "thinking"
-                                    yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
+                                    # Accumulate subagent text for chart_spec
+                                    # extraction (the SDK may not yield a
+                                    # complete assistant message for the
+                                    # subagent's final turn).
+                                    if is_subagent_event:
+                                        subagent_texts[stream_parent] = subagent_texts.get(stream_parent, "") + text
+                                    else:
+                                        event_name = "answer" if has_tool_calls else "thinking"
+                                        yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
 
                         elif event_type == "content_block_start":
                             block = event.get("content_block", {})
                             block_type = block.get("type")
                             if block_type == "thinking":
-                                has_thinking = True
+                                if not is_subagent_event:
+                                    has_thinking = True
                             elif block_type == "text":
-                                if has_thinking:
+                                if has_thinking and not is_subagent_event:
                                     yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
                             elif block_type == "tool_use":
-                                has_thinking = False
-                                has_tool_calls = True
+                                if not is_subagent_event:
+                                    has_thinking = False
+                                    has_tool_calls = True
 
                     # --- Complete assistant message (contains tool_use blocks) ---
                     elif msg_type == "assistant":
                         message_obj = msg.get("message", {})
+                        parent_tool_use_id = msg.get("parent_tool_use_id")
+
+                        # Capture text from subagent assistant messages.
+                        # These carry the real subagent output (e.g. chart JSON)
+                        # that the Task tool_result metadata lacks.
+                        if parent_tool_use_id and parent_tool_use_id in tool_names:
+                            text_parts = []
+                            for block in message_obj.get("content", []):
+                                if block.get("type") == "text" and block.get("text"):
+                                    text_parts.append(block["text"])
+                            if text_parts:
+                                subagent_texts[parent_tool_use_id] = "\n".join(text_parts)
+
                         for block in message_obj.get("content", []):
                             block_type = block.get("type")
                             if block_type == "tool_use":
@@ -287,10 +416,28 @@ async def _stream_chat_container(
                                 else:
                                     tool_call_data["input"] = tool_input
                                 yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
+                                if tool_name == "Task":
+                                    subagent_name = tool_input.get("subagent_type", "unknown")
+                                    subagent_prompt = tool_input.get("prompt", "")
+                                    tool_names[tool_id] = subagent_name
+                                    yield f"event: subagent_start\ndata: {json.dumps({'id': tool_id, 'name': subagent_name, 'prompt': subagent_prompt})}\n\n"
 
                     # --- Tool results from user messages ---
                     elif msg_type == "user":
                         message_obj = msg.get("message", {})
+                        # The SDK attaches the subagent's actual output in
+                        # tool_use_result.content (a list of content blocks).
+                        # Extract it so we can use it for chart_spec extraction.
+                        tool_use_result = msg.get("tool_use_result")
+                        tool_use_result_text = ""
+                        if isinstance(tool_use_result, dict):
+                            tur_content = tool_use_result.get("content")
+                            if isinstance(tur_content, list):
+                                parts = []
+                                for item in tur_content:
+                                    if isinstance(item, dict) and item.get("type") == "text":
+                                        parts.append(item.get("text", ""))
+                                tool_use_result_text = "\n".join(parts)
                         for block in message_obj.get("content", []):
                             if block.get("type") != "tool_result":
                                 continue
@@ -332,6 +479,31 @@ async def _stream_chat_container(
                                     result_data["error"] = parsed_err.get("error", text)
                                 except (json.JSONDecodeError, AttributeError):
                                     result_data["error"] = text
+                            # Detect subagent result (Task tool)
+                            if name in ("sql-analyst", "chart-builder"):
+                                end_data: dict = {"id": tool_id, "name": name}
+                                # The tool_result text is typically just metadata
+                                # (agentId, usage).  The real subagent output
+                                # lives in tool_use_result.content on the raw
+                                # message.  Try all sources for chart_spec.
+                                chart_spec = _extract_chart_spec(text)
+                                if not chart_spec and tool_use_result_text:
+                                    chart_spec = _extract_chart_spec(tool_use_result_text)
+                                if not chart_spec:
+                                    captured = subagent_texts.get(tool_id, "")
+                                    if captured:
+                                        chart_spec = _extract_chart_spec(captured)
+                                if chart_spec:
+                                    end_data["chart_spec"] = chart_spec
+                                else:
+                                    # Use the best available text as the result
+                                    end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
+                                    logger.warning(
+                                        "[container] chart_spec extraction failed for %s",
+                                        name,
+                                    )
+                                yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
@@ -411,7 +583,8 @@ async def stream_chat(
         model=ANTHROPIC_MODEL,
         system_prompt=build_system_prompt(db),
         mcp_servers={"duckdb": duckdb_server},
-        allowed_tools=["mcp__duckdb__execute_sql", "mcp__duckdb__generate_chart"],
+        allowed_tools=["Task", "mcp__duckdb__execute_sql"],
+        agents=build_subagent_definitions(db),
         permission_mode="bypassPermissions",
         max_turns=20,
         include_partial_messages=True,
@@ -471,37 +644,63 @@ async def stream_chat(
         done_sent = False
         sql_result_ids: set[str] = set()
         tool_names: dict[str, str] = {}
+        # Track subagent text output from intermediate messages.
+        # The SDK's Task tool_result often contains only metadata
+        # (agentId, usage), not the subagent's actual output.  The real
+        # output arrives in messages whose parent_tool_use_id matches
+        # the Task tool ID.
+        subagent_texts: dict[str, str] = {}
 
         async for msg in client.receive_response():
             if isinstance(msg, StreamEvent):
                 event = msg.event
                 event_type = event.get("type", "")
+                stream_parent = msg.parent_tool_use_id
+                is_subagent_event = bool(stream_parent and stream_parent in tool_names)
 
                 if event_type == "content_block_delta":
                     delta = event.get("delta", {})
                     delta_type = delta.get("type", "")
                     if delta_type == "thinking_delta":
                         text = delta.get("thinking", "")
-                        if text:
+                        if text and not is_subagent_event:
                             yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
                     elif delta_type == "text_delta":
                         text = delta.get("text", "")
-                        event_name = "thinking" if not has_tool_calls else "answer"
-                        yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
+                        if text:
+                            if is_subagent_event:
+                                subagent_texts[stream_parent] = subagent_texts.get(stream_parent, "") + text
+                            else:
+                                event_name = "thinking" if not has_tool_calls else "answer"
+                                yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
 
                 elif event_type == "content_block_start":
                     block = event.get("content_block", {})
                     block_type = block.get("type")
                     if block_type == "thinking":
-                        has_thinking = True
+                        if not is_subagent_event:
+                            has_thinking = True
                     elif block_type == "text":
-                        if has_thinking:
+                        if has_thinking and not is_subagent_event:
                             yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
                     elif block_type == "tool_use":
-                        has_thinking = False
-                        has_tool_calls = True
+                        if not is_subagent_event:
+                            has_thinking = False
+                            has_tool_calls = True
 
             elif isinstance(msg, AssistantMessage):
+                # Skip subagent-internal assistant messages (capture text only)
+                if msg.parent_tool_use_id and msg.parent_tool_use_id in tool_names:
+                    text_parts = []
+                    for block in msg.content:
+                        if hasattr(block, "text") and not isinstance(block, ToolUseBlock):
+                            text_val = getattr(block, "text", "")
+                            if text_val:
+                                text_parts.append(text_val)
+                    if text_parts:
+                        subagent_texts[msg.parent_tool_use_id] = "\n".join(text_parts)
+                    continue
+
                 for block in msg.content:
                     if isinstance(block, ToolUseBlock):
                         has_tool_calls = True
@@ -521,6 +720,12 @@ async def stream_chat(
                             tool_call_data["input"] = block.input
                         yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
 
+                        # Detect subagent invocation via Task tool
+                        if tool_name == "Task":
+                            subagent_type = block.input.get("subagent_type", "unknown")
+                            tool_names[block.id] = subagent_type  # Store subagent name, not "Task"
+                            yield f"event: subagent_start\ndata: {json.dumps({'id': block.id, 'name': subagent_type, 'prompt': block.input.get('prompt', '')})}\n\n"
+
                         # For execute_sql only, execute query for structured results
                         if sql:
                             sql_result_ids.add(block.id)
@@ -532,6 +737,23 @@ async def stream_chat(
                                 yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'name': tool_name, 'sql': sql, 'error': str(e)})}\n\n"
 
             elif isinstance(msg, UserMessage):
+                # Skip subagent-internal user messages (tool results for
+                # inner calls like execute_sql inside the subagent)
+                if msg.parent_tool_use_id and msg.parent_tool_use_id in tool_names:
+                    continue
+
+                # The SDK attaches the subagent's actual output in
+                # tool_use_result.content (a list of content blocks).
+                tool_use_result_text = ""
+                if msg.tool_use_result and isinstance(msg.tool_use_result, dict):
+                    tur_content = msg.tool_use_result.get("content")
+                    if isinstance(tur_content, list):
+                        parts = []
+                        for item in tur_content:
+                            if isinstance(item, dict) and item.get("type") == "text":
+                                parts.append(item.get("text", ""))
+                        tool_use_result_text = "\n".join(parts)
+
                 # Capture tool results from the SDK for non-SQL tools
                 content = msg.content
                 if isinstance(content, list):
@@ -552,7 +774,7 @@ async def stream_chat(
                                 except (json.JSONDecodeError, AttributeError):
                                     result_data["error"] = output
                             else:
-                                # Try to parse JSON output (e.g. chart_spec from generate_chart)
+                                # Try to parse JSON output (e.g. chart_spec from chart-builder subagent)
                                 try:
                                     parsed = json.loads(output)
                                     if parsed.get("status") == "success" and "chart_spec" in parsed:
@@ -561,6 +783,29 @@ async def stream_chat(
                                         result_data["output"] = output
                                 except (json.JSONDecodeError, AttributeError):
                                     result_data["output"] = output
+                            # Detect subagent result (Task tool)
+                            if name in ("sql-analyst", "chart-builder"):
+                                end_data: dict = {"id": block.tool_use_id, "name": name}
+                                # The tool_result text is typically just metadata.
+                                # The real subagent output lives in
+                                # tool_use_result.content.  Try all sources.
+                                chart_spec = _extract_chart_spec(output)
+                                if not chart_spec and tool_use_result_text:
+                                    chart_spec = _extract_chart_spec(tool_use_result_text)
+                                if not chart_spec:
+                                    captured = subagent_texts.get(block.tool_use_id, "")
+                                    if captured:
+                                        chart_spec = _extract_chart_spec(captured)
+                                if chart_spec:
+                                    end_data["chart_spec"] = chart_spec
+                                else:
+                                    end_data["result"] = tool_use_result_text or subagent_texts.get(block.tool_use_id, output)
+                                    logger.warning(
+                                        "chart_spec extraction failed for %s",
+                                        name,
+                                    )
+                                yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                continue  # Don't also emit tool_result for Task
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
             elif isinstance(msg, ResultMessage):

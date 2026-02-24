@@ -132,7 +132,7 @@ export function AgentProvider({
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
                   : m
               )
             );
@@ -166,6 +166,46 @@ export function AgentProvider({
               )
             );
             refreshTables();
+          },
+          onSubagentStart: (data) => {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            if (currentTextRef.current.trim()) {
+              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            segmentsRef.current.push({
+              type: 'subagent_start',
+              subagentId: data.id,
+              subagentName: data.name,
+              text: data.prompt,
+            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
+          onSubagentEnd: (data) => {
+            segmentsRef.current.push({
+              type: 'subagent_end',
+              subagentId: data.id,
+              subagentName: data.name,
+              chart_spec: data.chart_spec,
+              text: data.result,
+            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
           },
           onDone: (newSessionId) => {
             if (newSessionId) sessionIdRef.current = newSessionId;
@@ -299,7 +339,7 @@ export function AgentProvider({
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
                   : m
               )
             );
@@ -332,6 +372,46 @@ export function AgentProvider({
               )
             );
             refreshTables();
+          },
+          onSubagentStart: (data) => {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            if (currentTextRef.current.trim()) {
+              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            segmentsRef.current.push({
+              type: 'subagent_start',
+              subagentId: data.id,
+              subagentName: data.name,
+              text: data.prompt,
+            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
+          onSubagentEnd: (data) => {
+            segmentsRef.current.push({
+              type: 'subagent_end',
+              subagentId: data.id,
+              subagentName: data.name,
+              chart_spec: data.chart_spec,
+              text: data.result,
+            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
           },
           onDone: (newSessionId) => {
             if (newSessionId) sessionIdRef.current = newSessionId;
