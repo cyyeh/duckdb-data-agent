@@ -1,0 +1,17 @@
+also add chart title and why you generate this chart and observations in the answer text along with generated chart
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+still no showing chart title, why this chart and observations in answer text
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+commit and push
