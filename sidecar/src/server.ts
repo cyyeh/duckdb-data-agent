@@ -178,7 +178,7 @@ app.post("/query", async (req: Request, res: Response) => {
       options: {
         model: modelName,
         systemPrompt: body.system_prompt,
-        allowedTools: ["mcp__duckdb__execute_sql"],
+        allowedTools: ["mcp__duckdb__execute_sql", "mcp__duckdb__generate_chart"],
         permissionMode: "bypassPermissions",
         allowDangerouslySkipPermissions: true,
         maxTurns: 20,
