@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "1f745397cceb",
+  "strategy": "manual-commit",
+  "branch": "feat/chart-rendering",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/mcp_sse.py",
+    "backend/app/tools.py",
+    "backend/tests/test_tools.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/1f/745397cceb/0/metadata.json",
+      "transcript": "/1f/745397cceb/0/full.jsonl",
+      "context": "/1f/745397cceb/0/context.md",
+      "content_hash": "/1f/745397cceb/0/content_hash.txt",
+      "prompt": "/1f/745397cceb/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 406,
+    "cache_creation_tokens": 179229,
+    "cache_read_tokens": 10750857,
+    "output_tokens": 7946,
+    "api_call_count": 124
+  }
+}
