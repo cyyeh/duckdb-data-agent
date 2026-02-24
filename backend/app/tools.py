@@ -6,6 +6,14 @@ from app.database import Database
 MAX_RESULT_ROWS = 100
 
 
+class DuckDBServer(dict):
+    """Wraps McpSdkServerConfig (a TypedDict/dict) and exposes _tools for testing."""
+
+    def __init__(self, config: dict, tools: list) -> None:
+        super().__init__(config)
+        self._tools = tools
+
+
 def create_duckdb_server(db: Database):
     @tool(
         "execute_sql",
@@ -34,8 +42,31 @@ def create_duckdb_server(db: Database):
                 "is_error": True,
             }
 
-    return create_sdk_mcp_server(
+    @tool(
+        "generate_chart",
+        "Generate an interactive Plotly chart to visualize data. Call this after execute_sql "
+        "when a chart would help the user understand the data. Pass a complete Plotly figure "
+        "spec: 'data' is a required array of Plotly trace objects (bar, scatter, pie, heatmap, "
+        "box, violin, histogram, etc.), 'layout' is an optional object for title, axis labels, etc.",
+        {"data": list, "layout": dict},
+    )
+    async def generate_chart(args: dict[str, Any]) -> dict[str, Any]:
+        if not args.get("data"):
+            error_json = {"status": "error", "error": "Missing required field: data"}
+            return {"content": [{"type": "text", "text": json.dumps(error_json)}], "is_error": True}
+        result_json = {
+            "status": "success",
+            "chart_spec": {
+                "data": args["data"],
+                "layout": args.get("layout", {}),
+            },
+        }
+        return {"content": [{"type": "text", "text": json.dumps(result_json)}]}
+
+    tools = [execute_sql, generate_chart]
+    config = create_sdk_mcp_server(
         name="duckdb",
         version="1.0.0",
-        tools=[execute_sql],
+        tools=tools,
     )
+    return DuckDBServer(config, tools)
