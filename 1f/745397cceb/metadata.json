@@ -3,7 +3,7 @@
   "checkpoint_id": "1f745397cceb",
   "strategy": "manual-commit",
   "branch": "feat/chart-rendering",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     "backend/app/agent.py",
     "backend/app/mcp_sse.py",
@@ -31,13 +31,20 @@
       "context": "/1f/745397cceb/2/context.md",
       "content_hash": "/1f/745397cceb/2/content_hash.txt",
       "prompt": "/1f/745397cceb/2/prompt.txt"
+    },
+    {
+      "metadata": "/1f/745397cceb/3/metadata.json",
+      "transcript": "/1f/745397cceb/3/full.jsonl",
+      "context": "/1f/745397cceb/3/context.md",
+      "content_hash": "/1f/745397cceb/3/content_hash.txt",
+      "prompt": "/1f/745397cceb/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 453,
-    "cache_creation_tokens": 232547,
-    "cache_read_tokens": 12142043,
-    "output_tokens": 10119,
-    "api_call_count": 161
+    "input_tokens": 518,
+    "cache_creation_tokens": 479120,
+    "cache_read_tokens": 16671571,
+    "output_tokens": 48898,
+    "api_call_count": 218
   }
 }
