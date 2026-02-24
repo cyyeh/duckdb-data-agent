@@ -56,6 +56,7 @@ def build_system_prompt(db: Database) -> str:
 
 - Use the sql-analyst agent for any data question that requires SQL queries
 - Use the chart-builder agent for any visualization, chart, or graph request
+- After the chart-builder returns, do NOT repeat the chart JSON specification in your response. The chart is rendered automatically. Simply describe what the visualization shows in plain language.
 - Explain findings in plain language after getting results
 
 Identity:
