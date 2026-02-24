@@ -3,6 +3,7 @@ import logging
 from typing import AsyncIterator
 
 from claude_agent_sdk import (
+    AgentDefinition,
     ClaudeSDKClient,
     ClaudeAgentOptions,
     AssistantMessage,
@@ -18,6 +19,7 @@ from app.database import Database
 from app.config import (
     ANTHROPIC_MODEL, PROXY_BASE_URL, CONTAINER_ENABLED,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
+    SQL_SUBAGENT_MODEL, CHART_SUBAGENT_MODEL,
 )
 from app.proxy import proxy_token_store
 from app.tracing import get_langfuse_client
@@ -83,6 +85,76 @@ Use generate_chart proactively when the user asks for a chart, graph, or visuali
                 prompt += f'  - "{col["name"]}" ({col["type"]})\n'
 
     return prompt
+
+
+def _build_table_schemas(db: Database) -> str:
+    """Build a text description of all loaded table schemas for subagent prompts."""
+    tables = db.list_tables()
+    if not tables:
+        return "\nNo tables are currently loaded."
+    text = "\nCurrently loaded tables:\n"
+    for table in tables:
+        text += f'\nTable: "{table["name"]}" ({table["rowCount"]} rows)\nColumns:\n'
+        for col in table["columns"]:
+            text += f'  - "{col["name"]}" ({col["type"]})\n'
+    return text
+
+
+def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
+    """Build AgentDefinition objects for the sql-analyst and chart-builder subagents."""
+    table_schemas = _build_table_schemas(db)
+
+    sql_prompt = (
+        "You are a DuckDB SQL expert. Given a user's data question, write and execute "
+        "SQL queries to find the answer.\n\n"
+        "Guidelines:\n"
+        "- Write clear, efficient DuckDB SQL queries.\n"
+        "- When exploring data, start with small queries (use LIMIT).\n"
+        "- If a query fails, read the error message, fix the SQL, and retry.\n"
+        "- Use double quotes for table and column identifiers that might conflict "
+        "with reserved words.\n"
+        "- Explain your findings in plain language after getting results.\n"
+        + table_schemas
+    )
+
+    chart_prompt = (
+        "You are a data visualization expert using Plotly. Given a user's request for "
+        "a chart or visualization, query the data with SQL and then output a JSON code "
+        "block with a `chart_spec` object containing `data` (an array of Plotly traces) "
+        "and `layout`.\n\n"
+        "Guidelines:\n"
+        "- Choose the most appropriate chart type (bar, line, scatter, pie, histogram, "
+        "box, heatmap, etc.).\n"
+        "- For pie charts, use `labels` and `values` fields in the trace.\n"
+        "- For multi-series data, group into separate traces or use a `color` dimension.\n"
+        "- Always include a descriptive `title` in the layout.\n"
+        "- Keep the chart clean and readable.\n\n"
+        "Output format:\n"
+        "```json\n"
+        '{"chart_spec": {"data": [<plotly traces>], "layout": {<plotly layout>}}}\n'
+        "```\n"
+        + table_schemas
+    )
+
+    return {
+        "sql-analyst": AgentDefinition(
+            description=(
+                "Use this agent for any data question that requires SQL queries "
+                "— exploring data, aggregations, filtering, joins, etc."
+            ),
+            prompt=sql_prompt,
+            tools=["mcp__duckdb__execute_sql"],
+            model=SQL_SUBAGENT_MODEL,
+        ),
+        "chart-builder": AgentDefinition(
+            description=(
+                "Use this agent when the user wants a chart, graph, or visualization."
+            ),
+            prompt=chart_prompt,
+            tools=["mcp__duckdb__execute_sql"],
+            model=CHART_SUBAGENT_MODEL,
+        ),
+    }
 
 
 def _build_message_with_history(
