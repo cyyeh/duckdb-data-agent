@@ -72,7 +72,7 @@ Edit `backend/.env` and set your Anthropic API key:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=sonnet              # optional, defaults to sonnet
+ANTHROPIC_MODEL=claude-sonnet-4-6              # optional, defaults to sonnet
 MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (default: 500 MB)
 ```
 

@@ -39,10 +39,14 @@ const PORT = parseInt(process.env.PORT || "3000", 10);
 let nextRequestId = 0;
 const activeAborts = new Map<number, AbortController>();
 
-// How long (ms) to wait for the SDK iterator to yield the first message
-// before aborting.  Covers cases where the CLI subprocess hangs on startup
+// How long (ms) to wait for the SDK iterator to yield a message before
+// aborting.  Resets on every message so active multi-turn queries are not
+// interrupted.  Covers cases where the CLI subprocess hangs on startup
 // (e.g. broken session resume, unreachable MCP server).
-const SDK_IDLE_TIMEOUT_MS = 120_000; // 2 minutes
+const SDK_IDLE_TIMEOUT_MS = 60_000; // 1 minute
+
+// Timeout (ms) for pre-flight reachability checks against MCP / API URLs.
+const PREFLIGHT_TIMEOUT_MS = 10_000; // 10 seconds
 
 app.get("/health", (_req: Request, res: Response) => {
   const response: HealthResponse = { status: "ok" };
@@ -95,7 +99,7 @@ app.post("/query", async (req: Request, res: Response) => {
   // Mirror the backend's session ID handling:
   //   - langfuse_session_id (from frontend for edit/delete) takes priority
   //   - session_id (CLI session from previous turn) as fallback
-  const modelName = body.model || process.env.ANTHROPIC_MODEL || "claude-opus-4-6";
+  const modelName = body.model || process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
   const traceMessage = body.original_message || body.message;
   const traceInput: Record<string, unknown> = {
     message: traceMessage.substring(0, 500),
@@ -124,6 +128,51 @@ app.post("/query", async (req: Request, res: Response) => {
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   try {
+    // --- Pre-flight reachability checks ---
+    // The CLI subprocess will hang silently if it can't reach the MCP SSE
+    // server or the Anthropic API proxy.  Test connectivity first so we can
+    // fail fast with a useful error message.
+    const apiBase = sdkEnv["ANTHROPIC_BASE_URL"] || "";
+    console.log(
+      `[sidecar] reqId=${requestId} mcp_url=${body.mcp_server_url || "(none)"} api_base=${apiBase} session_id=${body.session_id || "(none)"}`
+    );
+
+    if (body.mcp_server_url) {
+      try {
+        const mcpResp = await fetch(body.mcp_server_url, {
+          signal: AbortSignal.timeout(PREFLIGHT_TIMEOUT_MS),
+        });
+        // SSE endpoints normally return 200 with text/event-stream; any
+        // non-error status is fine — we just need to know the host is up.
+        mcpResp.body?.cancel(); // don't consume the stream
+        console.log(`[sidecar] MCP reachability OK (status=${mcpResp.status})`);
+      } catch (e: unknown) {
+        const reason = e instanceof Error ? e.message : String(e);
+        throw new Error(
+          `MCP server unreachable at ${body.mcp_server_url}: ${reason}. ` +
+          `Check that PROXY_BASE_URL is reachable from inside the container.`
+        );
+      }
+    }
+
+    if (apiBase) {
+      try {
+        // Just a quick TCP-level check — the proxy will return 4xx without
+        // a real API key but that still proves reachability.
+        const apiResp = await fetch(`${apiBase}/v1/models`, {
+          signal: AbortSignal.timeout(PREFLIGHT_TIMEOUT_MS),
+        });
+        apiResp.body?.cancel();
+        console.log(`[sidecar] API proxy reachability OK (status=${apiResp.status})`);
+      } catch (e: unknown) {
+        const reason = e instanceof Error ? e.message : String(e);
+        throw new Error(
+          `Anthropic API proxy unreachable at ${apiBase}: ${reason}. ` +
+          `Check that PROXY_BASE_URL is reachable from inside the container.`
+        );
+      }
+    }
+
     const sdkQuery = query({
       prompt: body.message,
       options: {

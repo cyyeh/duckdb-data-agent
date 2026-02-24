@@ -71,6 +71,11 @@ class ContainerManager:
 
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
+        # gVisor's netstack + public DNS (8.8.8.8) can't resolve
+        # host.docker.internal.  The special "host-gateway" value (Docker
+        # 20.10+) tells Docker to substitute the real host IP in /etc/hosts
+        # so the sidecar can reach the backend running on the host.
+        extra_hosts["host.docker.internal"] = "host-gateway"
         if extra_hosts:
             logger.info("Sidecar extra_hosts: %s", extra_hosts)
 
