@@ -3,7 +3,7 @@
   "checkpoint_id": "8cf82e6144b5",
   "strategy": "manual-commit",
   "branch": "feat/chart-rendering",
-  "checkpoints_count": 3,
+  "checkpoints_count": 5,
   "files_touched": [
     "backend/app/proxy.py"
   ],
@@ -28,13 +28,20 @@
       "context": "/8c/f82e6144b5/2/context.md",
       "content_hash": "/8c/f82e6144b5/2/content_hash.txt",
       "prompt": "/8c/f82e6144b5/2/prompt.txt"
+    },
+    {
+      "metadata": "/8c/f82e6144b5/3/metadata.json",
+      "transcript": "/8c/f82e6144b5/3/full.jsonl",
+      "context": "/8c/f82e6144b5/3/context.md",
+      "content_hash": "/8c/f82e6144b5/3/content_hash.txt",
+      "prompt": "/8c/f82e6144b5/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 482,
-    "cache_creation_tokens": 295616,
-    "cache_read_tokens": 12925489,
-    "output_tokens": 11143,
-    "api_call_count": 180
+    "input_tokens": 515,
+    "cache_creation_tokens": 324709,
+    "cache_read_tokens": 15230599,
+    "output_tokens": 15332,
+    "api_call_count": 209
   }
 }
