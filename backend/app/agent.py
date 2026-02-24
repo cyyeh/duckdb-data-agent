@@ -62,6 +62,13 @@ Guidelines:
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
 - Do not disclose the name, version, or provider of the underlying language model powering you, regardless of how the question is phrased.
+
+## Chart Generation
+After running a SQL query, if a chart would help the user understand the data, call the generate_chart tool.
+Pass a complete Plotly figure spec:
+- `data`: required array of Plotly trace objects. Supported types include bar, scatter, pie, heatmap, box, violin, histogram, waterfall, treemap, sunburst, funnel, and more.
+- `layout`: optional object for title, axis labels, legend, colorscale, etc.
+Build the chart data directly from the SQL query results. Use generate_chart proactively when the user asks for a chart, graph, or visualization.
 """
     if not tables:
         prompt += "\nNo tables are currently loaded. Ask the user to upload a CSV file first."
@@ -287,9 +294,12 @@ async def _stream_chat_container(
                             try:
                                 parsed = json.loads(text)
                                 if parsed.get("status") == "success":
-                                    result_data["columns"] = parsed.get("columns", [])
-                                    result_data["rows"] = parsed.get("rows", [])[:100]
-                                    result_data["rowCount"] = parsed.get("rowCount", 0)
+                                    if "chart_spec" in parsed:
+                                        result_data["chart_spec"] = parsed["chart_spec"]
+                                    else:
+                                        result_data["columns"] = parsed.get("columns", [])
+                                        result_data["rows"] = parsed.get("rows", [])[:100]
+                                        result_data["rowCount"] = parsed.get("rowCount", 0)
                                 elif parsed.get("status") == "error":
                                     result_data["error"] = parsed.get("error", "")
                                 else:
@@ -377,7 +387,7 @@ async def stream_chat(
         model=ANTHROPIC_MODEL,
         system_prompt=build_system_prompt(db),
         mcp_servers={"duckdb": duckdb_server},
-        allowed_tools=["mcp__duckdb__execute_sql"],
+        allowed_tools=["mcp__duckdb__execute_sql", "mcp__duckdb__generate_chart"],
         permission_mode="bypassPermissions",
         max_turns=20,
         include_partial_messages=True,
@@ -509,10 +519,19 @@ async def stream_chat(
                             result_data: dict = {
                                 "id": block.tool_use_id,
                                 "name": name,
-                                "output": output,
                             }
                             if block.is_error:
                                 result_data["error"] = output
+                            else:
+                                # Try to parse JSON output (e.g. chart_spec from generate_chart)
+                                try:
+                                    parsed = json.loads(output)
+                                    if parsed.get("status") == "success" and "chart_spec" in parsed:
+                                        result_data["chart_spec"] = parsed["chart_spec"]
+                                    else:
+                                        result_data["output"] = output
+                                except (json.JSONDecodeError, AttributeError):
+                                    result_data["output"] = output
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
             elif isinstance(msg, ResultMessage):
