@@ -1,0 +1,9 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+fix this issue: duckdb-data-agent  | Failed to create container manager: Error while fetching server API version: ('Connection aborted.', PermissionError(13, 'Permission denied'))
+duckdb-data-agent  | CONTAINER_ENABLED=true but Docker is not available. Falling back to subprocess mode.
+
