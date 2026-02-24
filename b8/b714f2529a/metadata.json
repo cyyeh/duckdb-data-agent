@@ -3,7 +3,7 @@
   "checkpoint_id": "b8b714f2529a",
   "strategy": "manual-commit",
   "branch": "feat/subagent-sql-chart",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "backend/app/agent.py",
     "frontend/src/components/MessageBubble.tsx"
@@ -22,13 +22,20 @@
       "context": "/b8/b714f2529a/1/context.md",
       "content_hash": "/b8/b714f2529a/1/content_hash.txt",
       "prompt": "/b8/b714f2529a/1/prompt.txt"
+    },
+    {
+      "metadata": "/b8/b714f2529a/2/metadata.json",
+      "transcript": "/b8/b714f2529a/2/full.jsonl",
+      "context": "/b8/b714f2529a/2/context.md",
+      "content_hash": "/b8/b714f2529a/2/content_hash.txt",
+      "prompt": "/b8/b714f2529a/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7321,
-    "cache_creation_tokens": 157803,
-    "cache_read_tokens": 3877349,
-    "output_tokens": 3297,
-    "api_call_count": 61
+    "input_tokens": 7727,
+    "cache_creation_tokens": 337032,
+    "cache_read_tokens": 14628206,
+    "output_tokens": 11243,
+    "api_call_count": 185
   }
 }
