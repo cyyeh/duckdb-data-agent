@@ -469,7 +469,8 @@ async def stream_chat(
         model=ANTHROPIC_MODEL,
         system_prompt=build_system_prompt(db),
         mcp_servers={"duckdb": duckdb_server},
-        allowed_tools=["mcp__duckdb__execute_sql", "mcp__duckdb__generate_chart"],
+        allowed_tools=["Task", "mcp__duckdb__execute_sql"],
+        agents=build_subagent_definitions(db),
         permission_mode="bypassPermissions",
         max_turns=20,
         include_partial_messages=True,
@@ -579,6 +580,12 @@ async def stream_chat(
                             tool_call_data["input"] = block.input
                         yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
 
+                        # Detect subagent invocation via Task tool
+                        if tool_name == "Task":
+                            subagent_type = block.input.get("subagent_type", "unknown")
+                            tool_names[block.id] = subagent_type  # Store subagent name, not "Task"
+                            yield f"event: subagent_start\ndata: {json.dumps({'id': block.id, 'name': subagent_type, 'prompt': block.input.get('prompt', '')})}\n\n"
+
                         # For execute_sql only, execute query for structured results
                         if sql:
                             sql_result_ids.add(block.id)
@@ -619,6 +626,19 @@ async def stream_chat(
                                         result_data["output"] = output
                                 except (json.JSONDecodeError, AttributeError):
                                     result_data["output"] = output
+                            # Detect subagent result (Task tool)
+                            if name in ("sql-analyst", "chart-builder"):
+                                end_data: dict = {"id": block.tool_use_id, "name": name}
+                                try:
+                                    parsed_sub = json.loads(output)
+                                    if "chart_spec" in parsed_sub:
+                                        end_data["chart_spec"] = parsed_sub["chart_spec"]
+                                    else:
+                                        end_data["result"] = output
+                                except (json.JSONDecodeError, TypeError):
+                                    end_data["result"] = output
+                                yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                continue  # Don't also emit tool_result for Task
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
             elif isinstance(msg, ResultMessage):
