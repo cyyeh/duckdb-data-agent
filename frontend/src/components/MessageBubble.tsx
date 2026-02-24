@@ -6,6 +6,7 @@ import type { ChatMessage, ContentSegment } from '../types';
 import { useAgent } from '../hooks/useAgent';
 import { InlineQueryResult } from './InlineQueryResult';
 import { ChartWidget } from './ChartWidget';
+import { UserQuestion } from './UserQuestion';
 import './MessageBubble.css';
 
 /**
@@ -48,7 +49,7 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
     (s) => s.type !== 'answer' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && s.chart_spec)
   );
   const hasContent = thinkingSegments.some(
-    (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start'
+    (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start' || s.type === 'user_question'
   ) || streamingRemainder?.trim();
 
   if (!hasContent) return null;
@@ -87,6 +88,16 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
             return (
               <div key={i} className="message-bubble__subagent-indicator">
                 <span className="message-bubble__subagent-label">{displayName}</span>
+              </div>
+            );
+          }
+          if (seg.type === 'user_question' && seg.questionData) {
+            return (
+              <div key={i} className="message-bubble__tool-segment">
+                <UserQuestion
+                  questionData={seg.questionData}
+                  userAnswer={seg.userAnswer}
+                />
               </div>
             );
           }
