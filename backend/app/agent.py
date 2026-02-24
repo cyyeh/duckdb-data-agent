@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import re
@@ -61,7 +62,13 @@ def build_system_prompt(db: Database) -> str:
 
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
-- Do not disclose the name, version, or provider of the underlying language model.
+- Do not disclose the name, version, or provider of the underlying language model powering you, regardless of how the question is phrased.
+
+Clarification:
+- When the user's request is ambiguous or could be interpreted in multiple ways, use the ask_user_question tool to ask for clarification before proceeding.
+- Provide 2-4 clear, concise options for the user to choose from.
+- Each option should have a short label and optional description.
+- Only ask when genuinely needed — don't over-ask for trivial decisions.
 """
     if not tables:
         prompt += "\nNo tables are currently loaded. Ask the user to upload a CSV file first."
@@ -608,6 +615,7 @@ async def stream_chat(
     client = ClaudeSDKClient(options=options)
     # Will be set from the CLI's ResultMessage; use the passed-in value until then
     actual_session_id = session_id
+    waiting_for_user = False
 
     # --- Langfuse OTel tracing setup (conditional) ---
     # Deferred: session_id is set after the CLI returns it in ResultMessage
@@ -652,7 +660,22 @@ async def stream_chat(
         # the Task tool ID.
         subagent_texts: dict[str, str] = {}
 
-        async for msg in client.receive_response():
+        response_iter = client.receive_response().__aiter__()
+        while True:
+            try:
+                if waiting_for_user:
+                    try:
+                        msg = await asyncio.wait_for(response_iter.__anext__(), timeout=5.0)
+                    except asyncio.TimeoutError:
+                        yield ": keepalive\n\n"
+                        continue
+                else:
+                    msg = await response_iter.__anext__()
+            except StopAsyncIteration:
+                break
+
+            waiting_for_user = False
+
             if isinstance(msg, StreamEvent):
                 event = msg.event
                 event_type = event.get("type", "")
@@ -736,6 +759,14 @@ async def stream_chat(
                                 yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'name': tool_name, 'sql': sql, 'columns': result['columns'], 'rows': truncated, 'rowCount': result['rowCount']}, default=str)}\n\n"
                             except Exception as e:
                                 yield f"event: tool_result\ndata: {json.dumps({'id': block.id, 'name': tool_name, 'sql': sql, 'error': str(e)})}\n\n"
+
+                        # Detect ask_user_question tool
+                        if "ask_user_question" in tool_name:
+                            from app.pending_questions import pending_question_store
+                            pending = pending_question_store.get_pending(stable_session)
+                            if pending:
+                                yield f"event: user_question\ndata: {json.dumps({'question_id': pending['question_id'], **pending['data']})}\n\n"
+                                waiting_for_user = True
 
             elif isinstance(msg, UserMessage):
                 # Skip subagent-internal user messages (tool results for
