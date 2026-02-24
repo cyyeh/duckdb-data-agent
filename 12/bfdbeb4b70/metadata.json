@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "12bfdbeb4b70",
+  "strategy": "manual-commit",
+  "branch": "feat/subagent-sql-chart",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json",
+    "frontend/src/types.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/12/bfdbeb4b70/0/metadata.json",
+      "transcript": "/12/bfdbeb4b70/0/full.jsonl",
+      "context": "/12/bfdbeb4b70/0/context.md",
+      "content_hash": "/12/bfdbeb4b70/0/content_hash.txt",
+      "prompt": "/12/bfdbeb4b70/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7287,
+    "cache_creation_tokens": 70967,
+    "cache_read_tokens": 2999450,
+    "output_tokens": 1957,
+    "api_call_count": 39
+  }
+}
