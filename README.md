@@ -55,12 +55,6 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 make install
 ```
 
-To also set up the sidecar for [container isolation](#container-isolation-optional) (requires Docker):
-
-```bash
-make install-all
-```
-
 ### Configuration
 
 Copy the example environment file and add your credentials:
@@ -253,10 +247,9 @@ When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess mod
 1. Build the sidecar image and create the Docker network:
 
    ```bash
-   make sidecar-setup
+   docker compose build
+   make sidecar-network
    ```
-
-   Or run the steps individually: `make sidecar-build` and `make sidecar-network`.
 
 2. Install gVisor by following the [official guide](https://gvisor.dev/docs/user_guide/install/).
 
@@ -269,7 +262,7 @@ When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess mod
 4. Start development with container isolation enabled:
 
    ```bash
-   make dev-container
+   make compose-up
    ```
 
    Or enable manually by setting `CONTAINER_ENABLED=true` in your environment.
@@ -335,7 +328,7 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 ├── Dockerfile              # Multi-stage production build
 ├── docker-compose.yml      # Compose orchestration (app + sidecar build)
 ├── render.yaml             # Render deployment config
-└── Makefile                # Dev commands (install, dev, compose-build/up/down, sidecar-setup, clean)
+└── Makefile                # Dev commands (install, dev, compose-build/up/down, sidecar-network, clean)
 ```
 
 ## Tech Stack

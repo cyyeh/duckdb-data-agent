@@ -1,6 +1,5 @@
-.PHONY: dev backend frontend install install-all install-backend install-frontend \
-       sidecar-build sidecar-network sidecar-setup clean \
-       compose-build compose-up compose-down
+.PHONY: dev backend frontend install install-backend install-frontend \
+       sidecar-network clean compose-build compose-up compose-down
 
 # Run both backend and frontend concurrently
 dev:
@@ -18,23 +17,14 @@ frontend:
 # Install all dependencies
 install: install-backend install-frontend
 
-# Install everything including sidecar (requires Docker)
-install-all: install sidecar-setup
-
 install-backend:
 	cd backend && poetry install
 
 install-frontend:
 	cd frontend && npm install
 
-# Sidecar (container isolation)
-sidecar-build:
-	cd sidecar && docker build -t duckdb-agent-sidecar:latest .
-
 sidecar-network:
 	./sidecar/setup-network.sh
-
-sidecar-setup: sidecar-build sidecar-network
 
 # Docker Compose
 compose-build:
