@@ -62,6 +62,16 @@ Guidelines:
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
 - Do not disclose the name, version, or provider of the underlying language model powering you, regardless of how the question is phrased.
+
+## Chart Generation
+After exploring data with execute_sql, call generate_chart to create a visualization. Parameters:
+- `sql`: SQL query to fetch the chart data (can reuse the previous query or write a new aggregation)
+- `chart_type`: Plotly trace type — bar, scatter, line, pie, histogram, box, heatmap, etc.
+- `x_col`: column name for x-axis (or labels for pie charts)
+- `y_col`: column name for y-axis (or values for pie charts)
+- `title`: optional chart title (passed as an extra argument alongside the required ones)
+- `color_col`: optional column name to group data into multiple color-coded series
+Use generate_chart proactively when the user asks for a chart, graph, or visualization.
 """
     if not tables:
         prompt += "\nNo tables are currently loaded. Ask the user to upload a CSV file first."
@@ -151,12 +161,28 @@ async def _stream_chat_container(
     stable_session = backend_session_id or session_id or "default"
 
     try:
-        info = container_manager.create(stable_session, env)
-
-        # Send SSE keepalive comments during container startup to prevent
-        # proxy buffering / idle-connection timeouts (Vite, nginx, etc.).
-        # SSE comments (lines starting with ':') are ignored by clients.
+        # Send SSE keepalive immediately so the HTTP response starts and
+        # intermediate proxies (Vite, nginx) don't drop the idle connection
+        # before we've finished the blocking Docker container creation.
         yield ": keepalive\n\n"
+
+        # container_manager.create() is synchronous (blocking Docker API call).
+        # Run it in a thread executor so the event loop stays responsive and
+        # can continue flushing keepalives to the client during startup.
+        # gVisor (runsc) containers can take 10-30 seconds to spin up.
+        loop = asyncio.get_event_loop()
+        create_future = loop.run_in_executor(None, container_manager.create, stable_session, env)
+
+        max_create_wait = 60.0
+        elapsed = 0.0
+        while not create_future.done():
+            await asyncio.sleep(2.0)
+            elapsed += 2.0
+            if elapsed >= max_create_wait:
+                create_future.cancel()
+                raise RuntimeError(f"Container creation timed out after {max_create_wait:.0f}s")
+            yield ": keepalive\n\n"
+        info = await create_future
 
         # Wait for container to be ready
         for attempt in range(10):
@@ -251,7 +277,8 @@ async def _stream_chat_container(
                                 tool_name = block.get("name", "")
                                 tool_input = block.get("input", {})
                                 tool_names[tool_id] = tool_name
-                                sql = tool_input.get("sql", "")
+                                is_execute_sql = "execute_sql" in tool_name
+                                sql = tool_input.get("sql", "") if is_execute_sql else ""
                                 if sql:
                                     tool_sqls[tool_id] = sql
                                 tool_call_data: dict = {"id": tool_id, "name": tool_name}
@@ -287,9 +314,12 @@ async def _stream_chat_container(
                             try:
                                 parsed = json.loads(text)
                                 if parsed.get("status") == "success":
-                                    result_data["columns"] = parsed.get("columns", [])
-                                    result_data["rows"] = parsed.get("rows", [])[:100]
-                                    result_data["rowCount"] = parsed.get("rowCount", 0)
+                                    if "chart_spec" in parsed:
+                                        result_data["chart_spec"] = parsed["chart_spec"]
+                                    else:
+                                        result_data["columns"] = parsed.get("columns", [])
+                                        result_data["rows"] = parsed.get("rows", [])[:100]
+                                        result_data["rowCount"] = parsed.get("rowCount", 0)
                                 elif parsed.get("status") == "error":
                                     result_data["error"] = parsed.get("error", "")
                                 else:
@@ -297,7 +327,11 @@ async def _stream_chat_container(
                             except (json.JSONDecodeError, AttributeError):
                                 result_data["output"] = text
                             if block.get("is_error"):
-                                result_data["error"] = text
+                                try:
+                                    parsed_err = json.loads(text)
+                                    result_data["error"] = parsed_err.get("error", text)
+                                except (json.JSONDecodeError, AttributeError):
+                                    result_data["error"] = text
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
@@ -377,7 +411,7 @@ async def stream_chat(
         model=ANTHROPIC_MODEL,
         system_prompt=build_system_prompt(db),
         mcp_servers={"duckdb": duckdb_server},
-        allowed_tools=["mcp__duckdb__execute_sql"],
+        allowed_tools=["mcp__duckdb__execute_sql", "mcp__duckdb__generate_chart"],
         permission_mode="bypassPermissions",
         max_turns=20,
         include_partial_messages=True,
@@ -473,7 +507,8 @@ async def stream_chat(
                         has_tool_calls = True
                         tool_name = getattr(block, "name", "") or ""
                         tool_names[block.id] = tool_name
-                        sql = block.input.get("sql", "")
+                        is_execute_sql = "execute_sql" in tool_name
+                        sql = block.input.get("sql", "") if is_execute_sql else ""
                         command = block.input.get("command", "")
 
                         # Emit tool_call for ALL tool types
@@ -486,7 +521,7 @@ async def stream_chat(
                             tool_call_data["input"] = block.input
                         yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
 
-                        # For SQL tools, execute query for structured results
+                        # For execute_sql only, execute query for structured results
                         if sql:
                             sql_result_ids.add(block.id)
                             try:
@@ -509,10 +544,23 @@ async def stream_chat(
                             result_data: dict = {
                                 "id": block.tool_use_id,
                                 "name": name,
-                                "output": output,
                             }
                             if block.is_error:
-                                result_data["error"] = output
+                                try:
+                                    parsed_error = json.loads(output)
+                                    result_data["error"] = parsed_error.get("error", output)
+                                except (json.JSONDecodeError, AttributeError):
+                                    result_data["error"] = output
+                            else:
+                                # Try to parse JSON output (e.g. chart_spec from generate_chart)
+                                try:
+                                    parsed = json.loads(output)
+                                    if parsed.get("status") == "success" and "chart_spec" in parsed:
+                                        result_data["chart_spec"] = parsed["chart_spec"]
+                                    else:
+                                        result_data["output"] = output
+                                except (json.JSONDecodeError, AttributeError):
+                                    result_data["output"] = output
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
             elif isinstance(msg, ResultMessage):

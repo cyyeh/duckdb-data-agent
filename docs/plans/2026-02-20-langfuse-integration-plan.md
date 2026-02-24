@@ -60,7 +60,7 @@ In `backend/.env.example`, add Langfuse vars:
 
 ```
 ANTHROPIC_API_KEY=your-api-key-here
-ANTHROPIC_MODEL=sonnet
+ANTHROPIC_MODEL=claude-sonnet-4-6
 LANGFUSE_PUBLIC_KEY=
 LANGFUSE_SECRET_KEY=
 LANGFUSE_BASE_URL=https://cloud.langfuse.com

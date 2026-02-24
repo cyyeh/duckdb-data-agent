@@ -32,8 +32,10 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
   isAgentStreaming: boolean;
 }) {
   const { t } = useTranslation();
-  // All non-answer segments go inside the thinking block
-  const thinkingSegments = segments.filter((s) => s.type !== 'answer');
+  // All non-answer, non-chart segments go inside the thinking block
+  const thinkingSegments = segments.filter(
+    (s) => s.type !== 'answer' && !(s.type === 'tool' && s.toolResult?.chart_spec)
+  );
   const hasContent = thinkingSegments.some(
     (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult)
   ) || streamingRemainder?.trim();
@@ -150,6 +152,10 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
     ? message.segments!.filter((s) => s.type === 'answer' && s.text?.trim())
     : [];
 
+  const chartSegments = hasSegments
+    ? message.segments!.filter((s) => s.type === 'tool' && s.toolResult?.chart_spec)
+    : [];
+
   return (
     <div className={`message-bubble message-bubble--${message.role}`}>
       <div className="message-bubble__header">
@@ -227,6 +233,11 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
             isThinkingPhase={isThinkingPhase}
             isAgentStreaming={!!message.isStreaming}
           />
+          {chartSegments.map((seg, i) => (
+            <div key={`chart-${i}`} className="message-bubble__segment message-bubble__segment--answer">
+              <InlineQueryResult result={seg.toolResult!} />
+            </div>
+          ))}
           {answerSegments.map((seg, i) => (
             <div key={i} className="message-bubble__segment message-bubble__segment--answer">
               <div className="message-bubble__segment-label message-bubble__segment-label--answer">{t('answer')}</div>

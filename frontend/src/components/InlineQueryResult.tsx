@@ -1,6 +1,7 @@
 import { useTranslation } from '../hooks/useTranslation';
 import type { ToolCallResult } from '../types';
 import './InlineQueryResult.css';
+import { ChartWidget } from './ChartWidget';
 
 const MAX_DISPLAY_ROWS = 20;
 
@@ -47,6 +48,21 @@ export function InlineQueryResult({ result }: { result: ToolCallResult }) {
   const isSQLTool = isSQL(result);
   const hasStructuredData = result.columns.length > 0;
   const displayRows = result.rows.slice(0, MAX_DISPLAY_ROWS);
+
+  // Render chart if chart_spec is present
+  if (result.chart_spec) {
+    return (
+      <div className="inline-query inline-query--chart">
+        <div className="inline-query__label inline-query__label--generic">
+          {getToolDisplayName(result, t)}
+        </div>
+        <ChartWidget
+          data={result.chart_spec.data}
+          layout={result.chart_spec.layout}
+        />
+      </div>
+    );
+  }
 
   // Determine border color class
   let variantClass = '';

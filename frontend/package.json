@@ -10,15 +10,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "plotly.js-dist-min": "^3.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
+    "react-plotly.js": "^2.6.0",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@types/plotly.js-dist-min": "^2.3.4",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/react-plotly.js": "^2.6.4",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "eslint": "^9.13.0",
     "eslint-plugin-react-hooks": "^5.0.0",

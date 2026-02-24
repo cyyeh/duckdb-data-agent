@@ -63,17 +63,27 @@ proxy_token_store = ProxyTokenStore()
 router = APIRouter(prefix="/anthropic")
 
 
+# Read-only discovery endpoints that the Claude Code SDK calls during startup
+# (e.g. GET /v1/models to resolve short model aliases like "sonnet").
+# These carry no session-specific data, so we forward them with the real API
+# key without requiring a registered session token.
+_UNAUTHENTICATED_PASSTHROUGH = {"v1/models"}
+
+
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_anthropic(path: str, request: Request):
-    # Claude Code CLI sends the API key as x-api-key (Anthropic SDK default).
-    # Fall back to Authorization: Bearer for other clients.
-    session_token = (
-        request.headers.get("x-api-key")
-        or request.headers.get("authorization", "")[len("Bearer "):]
-        or None
-    )
-    if not session_token or not proxy_token_store.validate_token(session_token):
-        raise HTTPException(status_code=401, detail="Invalid or expired session token")
+    # Allow a small set of read-only discovery endpoints to pass through
+    # without a session token so the SDK can resolve short model names.
+    if path not in _UNAUTHENTICATED_PASSTHROUGH:
+        # Claude Code CLI sends the API key as x-api-key (Anthropic SDK default).
+        # Fall back to Authorization: Bearer for other clients.
+        session_token = (
+            request.headers.get("x-api-key")
+            or request.headers.get("authorization", "")[len("Bearer "):]
+            or None
+        )
+        if not session_token or not proxy_token_store.validate_token(session_token):
+            raise HTTPException(status_code=401, detail="Invalid or expired session token")
 
     headers = {
         k: v for k, v in request.headers.items()

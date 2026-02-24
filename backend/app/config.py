@@ -12,7 +12,7 @@ if not ANTHROPIC_API_KEY:
         stacklevel=1,
     )
 PROXY_BASE_URL = os.getenv("PROXY_BASE_URL", "http://127.0.0.1:8000")
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-4-6")
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
 LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")
 LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "")

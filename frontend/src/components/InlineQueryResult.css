@@ -18,6 +18,10 @@
   border-color: var(--color-tool-generic-border);
 }
 
+.inline-query--chart {
+  overflow: visible;
+}
+
 /* Tool label */
 .inline-query__label {
   padding: 3px 10px;

@@ -34,7 +34,19 @@ app.use(express.json({ limit: "10mb" }));
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 
-let activeAbort: AbortController | null = null;
+// Per-request abort tracking — avoids a global variable whose cleanup in one
+// request's `finally` block can clobber a concurrently-started request.
+let nextRequestId = 0;
+const activeAborts = new Map<number, AbortController>();
+
+// How long (ms) to wait for the SDK iterator to yield a message before
+// aborting.  Resets on every message so active multi-turn queries are not
+// interrupted.  Covers cases where the CLI subprocess hangs on startup
+// (e.g. broken session resume, unreachable MCP server).
+const SDK_IDLE_TIMEOUT_MS = 60_000; // 1 minute
+
+// Timeout (ms) for pre-flight reachability checks against MCP / API URLs.
+const PREFLIGHT_TIMEOUT_MS = 10_000; // 10 seconds
 
 app.get("/health", (_req: Request, res: Response) => {
   const response: HealthResponse = { status: "ok" };
@@ -57,7 +69,8 @@ app.post("/query", async (req: Request, res: Response) => {
   res.flushHeaders();
 
   const abortController = new AbortController();
-  activeAbort = abortController;
+  const requestId = nextRequestId++;
+  activeAborts.set(requestId, abortController);
 
   // Merge per-request env overrides (e.g. fresh proxy tokens) with process env
   const sdkEnv: Record<string, string> = {};
@@ -86,7 +99,7 @@ app.post("/query", async (req: Request, res: Response) => {
   // Mirror the backend's session ID handling:
   //   - langfuse_session_id (from frontend for edit/delete) takes priority
   //   - session_id (CLI session from previous turn) as fallback
-  const modelName = body.model || process.env.ANTHROPIC_MODEL || "claude-opus-4-6";
+  const modelName = body.model || process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
   const traceMessage = body.original_message || body.message;
   const traceInput: Record<string, unknown> = {
     message: traceMessage.substring(0, 500),
@@ -111,13 +124,61 @@ app.post("/query", async (req: Request, res: Response) => {
   // Collect stderr from the CLI subprocess for debugging
   const stderrLines: string[] = [];
 
+  // Declared here so `finally` can clear it even if `try` throws early
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
   try {
+    // --- Pre-flight reachability checks ---
+    // The CLI subprocess will hang silently if it can't reach the MCP SSE
+    // server or the Anthropic API proxy.  Test connectivity first so we can
+    // fail fast with a useful error message.
+    const apiBase = sdkEnv["ANTHROPIC_BASE_URL"] || "";
+    console.log(
+      `[sidecar] reqId=${requestId} mcp_url=${body.mcp_server_url || "(none)"} api_base=${apiBase} session_id=${body.session_id || "(none)"}`
+    );
+
+    if (body.mcp_server_url) {
+      try {
+        const mcpResp = await fetch(body.mcp_server_url, {
+          signal: AbortSignal.timeout(PREFLIGHT_TIMEOUT_MS),
+        });
+        // SSE endpoints normally return 200 with text/event-stream; any
+        // non-error status is fine — we just need to know the host is up.
+        mcpResp.body?.cancel(); // don't consume the stream
+        console.log(`[sidecar] MCP reachability OK (status=${mcpResp.status})`);
+      } catch (e: unknown) {
+        const reason = e instanceof Error ? e.message : String(e);
+        throw new Error(
+          `MCP server unreachable at ${body.mcp_server_url}: ${reason}. ` +
+          `Check that PROXY_BASE_URL is reachable from inside the container.`
+        );
+      }
+    }
+
+    if (apiBase) {
+      try {
+        // Just a quick TCP-level check — the proxy will return 4xx without
+        // a real API key but that still proves reachability.
+        const apiResp = await fetch(`${apiBase}/v1/models`, {
+          signal: AbortSignal.timeout(PREFLIGHT_TIMEOUT_MS),
+        });
+        apiResp.body?.cancel();
+        console.log(`[sidecar] API proxy reachability OK (status=${apiResp.status})`);
+      } catch (e: unknown) {
+        const reason = e instanceof Error ? e.message : String(e);
+        throw new Error(
+          `Anthropic API proxy unreachable at ${apiBase}: ${reason}. ` +
+          `Check that PROXY_BASE_URL is reachable from inside the container.`
+        );
+      }
+    }
+
     const sdkQuery = query({
       prompt: body.message,
       options: {
         model: modelName,
         systemPrompt: body.system_prompt,
-        allowedTools: ["mcp__duckdb__execute_sql"],
+        allowedTools: ["mcp__duckdb__execute_sql", "mcp__duckdb__generate_chart"],
         permissionMode: "bypassPermissions",
         allowDangerouslySkipPermissions: true,
         maxTurns: 20,
@@ -143,10 +204,25 @@ app.post("/query", async (req: Request, res: Response) => {
     });
 
     console.log(
-      `[sidecar] SDK query started model=${modelName}`
+      `[sidecar] SDK query started model=${modelName} reqId=${requestId}`
     );
 
+    // Idle-timeout: abort if no message arrives within SDK_IDLE_TIMEOUT_MS.
+    // The timer resets on every message so long-running multi-turn queries
+    // that are making progress are not interrupted.
+    idleTimer = setTimeout(() => {
+      console.error(`[sidecar] SDK idle timeout (${SDK_IDLE_TIMEOUT_MS}ms) reached, aborting reqId=${requestId}`);
+      abortController.abort();
+    }, SDK_IDLE_TIMEOUT_MS);
+
     for await (const message of sdkQuery) {
+      // Reset idle timer on every message
+      if (idleTimer) { clearTimeout(idleTimer); }
+      idleTimer = setTimeout(() => {
+        console.error(`[sidecar] SDK idle timeout (${SDK_IDLE_TIMEOUT_MS}ms) reached, aborting reqId=${requestId}`);
+        abortController.abort();
+      }, SDK_IDLE_TIMEOUT_MS);
+
       if (responseEnded) break;
       // Forward each SDK message as an SSE data line
       res.write(`data: ${JSON.stringify(message)}\n\n`);
@@ -240,21 +316,24 @@ app.post("/query", async (req: Request, res: Response) => {
       }
     }
   } finally {
-    activeAbort = null;
+    if (idleTimer) { clearTimeout(idleTimer); }
+    activeAborts.delete(requestId);
     responseEnded = true;
     res.end();
     // Flush Langfuse events before the response is fully closed
     if (langfuse) {
       await langfuse.flushAsync().catch(() => {});
     }
-    console.log("[sidecar] SSE stream ended");
+    console.log(`[sidecar] SSE stream ended reqId=${requestId}`);
   }
 });
 
 app.post("/stop", (_req: Request, res: Response) => {
-  if (activeAbort) {
-    activeAbort.abort();
-    activeAbort = null;
+  if (activeAborts.size > 0) {
+    for (const [id, controller] of activeAborts) {
+      controller.abort();
+      activeAborts.delete(id);
+    }
     res.json({ status: "stopped" });
   } else {
     res.json({ status: "no_active_session" });

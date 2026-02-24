@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/ca411183-b936-4919-a410-e4f81878e4fa
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English, or switch to the SQL editor for direct queries — powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
+An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English — the agent writes SQL, executes it, and can generate interactive charts — or switch to the SQL editor for direct queries. Powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
 Each browser tab gets its own isolated, in-memory DuckDB session — uploaded data and query state are fully isolated between users and tabs, with idle sessions automatically cleaned up after 5 minutes of inactivity.
 
@@ -28,6 +28,7 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 - **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
+- **Chart generation** — Ask for a chart or visualization and the agent generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Credential proxy** — The backend runs a built-in Anthropic API reverse proxy; each agent session receives a short-lived UUID token instead of the real API key, so the Claude Code subprocess never has access to `ANTHROPIC_API_KEY`; tokens are revoked immediately when the session ends (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
@@ -54,12 +55,6 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 make install
 ```
 
-To also set up the sidecar for [container isolation](#container-isolation-optional) (requires Docker):
-
-```bash
-make install-all
-```
-
 ### Configuration
 
 Copy the example environment file and add your credentials:
@@ -72,7 +67,7 @@ Edit `backend/.env` and set your Anthropic API key:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=sonnet              # optional, defaults to sonnet
+ANTHROPIC_MODEL=claude-sonnet-4-6              # optional, defaults to sonnet
 MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (default: 500 MB)
 ```
 
@@ -96,12 +91,6 @@ Start both the frontend and backend:
 
 ```bash
 make dev
-```
-
-To run with [container isolation](#container-isolation-optional) enabled (requires `make install-all`):
-
-```bash
-make dev-all
 ```
 
 Open http://localhost:5173 to use the app. The Vite dev server proxies `/api` requests to the backend automatically.
@@ -244,7 +233,7 @@ When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess mod
 
 **Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, the Agent SDK, and the `@anthropic-ai/claude-code` CLI (required by the SDK internally). Containers run with a read-only root filesystem, all Linux capabilities dropped, no volume mounts, no Docker socket access, and a non-root user.
 
-**MCP SSE bridge:** The backend exposes the DuckDB `execute_sql` tool at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`). Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized Claude CLI reaches DuckDB on the host without any direct database access inside the container.
+**MCP SSE bridge:** The backend exposes the DuckDB `execute_sql` and `generate_chart` tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`). Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized Claude CLI reaches DuckDB on the host without any direct database access inside the container.
 
 **Prerequisites:**
 
@@ -258,10 +247,9 @@ When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess mod
 1. Build the sidecar image and create the Docker network:
 
    ```bash
-   make sidecar-setup
+   docker compose build
+   make sidecar-network
    ```
-
-   Or run the steps individually: `make sidecar-build` and `make sidecar-network`.
 
 2. Install gVisor by following the [official guide](https://gvisor.dev/docs/user_guide/install/).
 
@@ -274,7 +262,7 @@ When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess mod
 4. Start development with container isolation enabled:
 
    ```bash
-   make dev-container
+   make compose-up
    ```
 
    Or enable manually by setting `CONTAINER_ENABLED=true` in your environment.
@@ -325,10 +313,10 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 │       ├── database.py     #   DuckDB connection, query execution, and per-user SessionManager
 │       ├── agent.py        #   Agent loop & SSE streaming (subprocess + container paths)
 │       ├── proxy.py        #   Credential proxy: token store + /anthropic reverse proxy
-│       ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB tools over HTTP for containers
+│       ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB and chart tools over HTTP for containers
 │       ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
-│       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
+│       ├── tools.py        #   Agent SDK tool definitions (execute_sql, generate_chart)
 │       ├── data/           #   Sample datasets (titanic.csv)
 │       └── routes/         #   API endpoints (tables, query, chat, config, langfuse status, heartbeat)
 ├── sidecar/                # Containerized agent sidecar
@@ -340,7 +328,7 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 ├── Dockerfile              # Multi-stage production build
 ├── docker-compose.yml      # Compose orchestration (app + sidecar build)
 ├── render.yaml             # Render deployment config
-└── Makefile                # Dev commands (install, dev, compose-build/up/down, sidecar-setup, clean)
+└── Makefile                # Dev commands (install, dev, compose-build/up/down, sidecar-network, clean)
 ```
 
 ## Tech Stack
@@ -348,6 +336,7 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 **Frontend**
 - [React](https://react.dev/) 18 + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vite.dev/)
+- [Plotly](https://plotly.com/javascript/) via [react-plotly.js](https://github.com/plotly/react-plotly.js) (chart rendering)
 
 **Backend**
 - [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/)
