@@ -71,7 +71,7 @@ def _create_mcp_server(db: Database) -> MCPServer:
         if name == "execute_sql":
             sql = arguments.get("sql", "")
             try:
-                result = db.execute_query(sql)
+                result = await db.execute_query_async(sql)
                 truncated_rows = result["rows"][:MAX_RESULT_ROWS]
                 result_json = {
                     "status": "success",
@@ -96,7 +96,7 @@ def _create_mcp_server(db: Database) -> MCPServer:
                 return [types.TextContent(type="text", text=json.dumps(error_json))]
 
             try:
-                result = db.execute_query(sql)
+                result = await db.execute_query_async(sql)
             except Exception as e:
                 error_json = {"status": "error", "error": str(e)}
                 return [types.TextContent(type="text", text=json.dumps(error_json))]
