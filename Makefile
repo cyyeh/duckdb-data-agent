@@ -12,7 +12,7 @@ dev:
 # Run with containerized runtime (requires: make sidecar-setup)
 dev-all:
 	@trap 'kill 0' EXIT; \
-	cd backend && CONTAINER_ENABLED=true PROXY_BASE_URL=http://host.docker.internal:8000 poetry run uvicorn app.main:app --reload --port 8000 & \
+	cd backend && CONTAINER_ENABLED=true PROXY_BASE_URL=http://host.docker.internal:8000 poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 & \
 	cd frontend && npm run dev & \
 	wait
 
