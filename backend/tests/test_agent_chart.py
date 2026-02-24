@@ -1,5 +1,5 @@
 import json
-from app.agent import build_system_prompt, _extract_tool_result_text
+from app.agent import build_system_prompt
 from unittest.mock import MagicMock
 from app.database import Database
 
