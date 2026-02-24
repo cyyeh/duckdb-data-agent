@@ -29,6 +29,10 @@ export interface ToolCallResult {
   error?: string;
   output?: string;
   rawContent?: string;
+  chart_spec?: {
+    data: unknown[];
+    layout?: Record<string, unknown>;
+  };
 }
 
 export interface ContentSegment {
