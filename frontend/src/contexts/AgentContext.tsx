@@ -132,7 +132,7 @@ export function AgentProvider({
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
                   : m
               )
             );
@@ -339,7 +339,7 @@ export function AgentProvider({
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
                   : m
               )
             );

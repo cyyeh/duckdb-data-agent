@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/ca411183-b936-4919-a410-e4f81878e4fa
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English — the agent writes SQL, executes it, and can generate interactive charts — or switch to the SQL editor for direct queries. Powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
+An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English — the agent delegates to specialized subagents for SQL queries and chart generation — or switch to the SQL editor for direct queries. Powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
 Each browser tab gets its own isolated, in-memory DuckDB session — uploaded data and query state are fully isolated between users and tabs, with idle sessions automatically cleaned up after 5 minutes of inactivity.
 
@@ -24,11 +24,12 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 
 ### Agent Mode (default mode)
 
-- **Natural language queries** — Ask questions about your data in plain English; the agent writes and executes SQL for you
-- **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
+- **Natural language queries** — Ask questions about your data in plain English; the orchestrator delegates to specialized subagents that write and execute SQL for you
+- **Subagent architecture** — An orchestrator agent delegates to a **sql-analyst** subagent for data queries and a **chart-builder** subagent for visualizations, each with focused prompts and configurable models (via `SQL_SUBAGENT_MODEL` and `CHART_SUBAGENT_MODEL` env vars, defaulting to `haiku`)
+- **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python); subagent internal reasoning is filtered from the main stream
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
-- **Chart generation** — Ask for a chart or visualization and the agent generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly
+- **Chart generation** — Ask for a chart or visualization and the chart-builder subagent generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Credential proxy** — The backend runs a built-in Anthropic API reverse proxy; each agent session receives a short-lived UUID token instead of the real API key, so the Claude Code subprocess never has access to `ANTHROPIC_API_KEY`; tokens are revoked immediately when the session ends (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
@@ -68,6 +69,8 @@ Edit `backend/.env` and set your Anthropic API key:
 ```
 ANTHROPIC_API_KEY=sk-ant-...
 ANTHROPIC_MODEL=claude-sonnet-4-6              # optional, defaults to sonnet
+SQL_SUBAGENT_MODEL=haiku           # optional, model for SQL analyst subagent (default: haiku)
+CHART_SUBAGENT_MODEL=haiku         # optional, model for chart builder subagent (default: haiku)
 MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (default: 500 MB)
 ```
 
@@ -233,7 +236,7 @@ When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess mod
 
 **Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, the Agent SDK, and the `@anthropic-ai/claude-code` CLI (required by the SDK internally). Containers run with a read-only root filesystem, all Linux capabilities dropped, no volume mounts, no Docker socket access, and a non-root user.
 
-**MCP SSE bridge:** The backend exposes the DuckDB `execute_sql` and `generate_chart` tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`). Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized Claude CLI reaches DuckDB on the host without any direct database access inside the container.
+**MCP SSE bridge:** The backend exposes the DuckDB `execute_sql` tool at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`). Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized Claude CLI reaches DuckDB on the host without any direct database access inside the container.
 
 **Prerequisites:**
 
@@ -311,12 +314,12 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 │       ├── main.py         #   App setup, CORS, and background session/container cleanup loop
 │       ├── config.py       #   Environment variables (API key, model, upload limits, container settings)
 │       ├── database.py     #   DuckDB connection, query execution, and per-user SessionManager
-│       ├── agent.py        #   Agent loop & SSE streaming (subprocess + container paths)
+│       ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming (subprocess + container paths)
 │       ├── proxy.py        #   Credential proxy: token store + /anthropic reverse proxy
 │       ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB and chart tools over HTTP for containers
 │       ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
-│       ├── tools.py        #   Agent SDK tool definitions (execute_sql, generate_chart)
+│       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
 │       ├── data/           #   Sample datasets (titanic.csv)
 │       └── routes/         #   API endpoints (tables, query, chat, config, langfuse status, heartbeat)
 ├── sidecar/                # Containerized agent sidecar
@@ -343,6 +346,7 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 - [DuckDB](https://duckdb.org/) (Python)
 - [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
 - [MCP](https://modelcontextprotocol.io/) SSE transport (DuckDB tool bridge for containers)
+- Subagent architecture via Claude Agent SDK `AgentDefinition` API (sql-analyst + chart-builder)
 - [Docker SDK for Python](https://docker-py.readthedocs.io/) + [gVisor](https://gvisor.dev/) (optional, for container isolation)
 - [Langfuse](https://langfuse.com/) (optional, for observability)
 

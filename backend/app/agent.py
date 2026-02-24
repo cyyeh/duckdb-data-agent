@@ -372,13 +372,15 @@ async def _stream_chat_container(
                             block = event.get("content_block", {})
                             block_type = block.get("type")
                             if block_type == "thinking":
-                                has_thinking = True
+                                if not is_subagent_event:
+                                    has_thinking = True
                             elif block_type == "text":
                                 if has_thinking and not is_subagent_event:
                                     yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
                             elif block_type == "tool_use":
-                                has_thinking = False
-                                has_tool_calls = True
+                                if not is_subagent_event:
+                                    has_thinking = False
+                                    has_tool_calls = True
 
                     # --- Complete assistant message (contains tool_use blocks) ---
                     elif msg_type == "assistant":
