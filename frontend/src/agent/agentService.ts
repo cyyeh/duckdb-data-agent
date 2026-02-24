@@ -205,6 +205,7 @@ function handleSSEEvent(
         error: (data.error as string) ?? undefined,
         output: (data.output as string) ?? undefined,
         rawContent: (data.content as string) ?? undefined,
+        chart_spec: (data.chart_spec as { data: unknown[]; layout?: Record<string, unknown> }) ?? undefined,
       };
       callbacks.onToolResult(result);
       break;
