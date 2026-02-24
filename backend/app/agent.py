@@ -266,6 +266,15 @@ async def _stream_chat_container(
                 "ANTHROPIC_API_KEY": session_token,
                 "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
             },
+            "agents": {
+                name: {
+                    "description": agent_def.description,
+                    "prompt": agent_def.prompt,
+                    "tools": agent_def.tools,
+                    "model": agent_def.model,
+                }
+                for name, agent_def in build_subagent_definitions(db).items()
+            },
         }
         if langfuse_session_id:
             payload["langfuse_session_id"] = langfuse_session_id
@@ -345,6 +354,11 @@ async def _stream_chat_container(
                                 else:
                                     tool_call_data["input"] = tool_input
                                 yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
+                                if tool_name == "Task":
+                                    subagent_name = tool_input.get("subagent_type", "unknown")
+                                    subagent_prompt = tool_input.get("prompt", "")
+                                    tool_names[tool_id] = subagent_name
+                                    yield f"event: subagent_start\ndata: {json.dumps({'id': tool_id, 'name': subagent_name, 'prompt': subagent_prompt})}\n\n"
 
                     # --- Tool results from user messages ---
                     elif msg_type == "user":
@@ -390,6 +404,19 @@ async def _stream_chat_container(
                                     result_data["error"] = parsed_err.get("error", text)
                                 except (json.JSONDecodeError, AttributeError):
                                     result_data["error"] = text
+                            # Detect subagent result (Task tool)
+                            if name in ("sql-analyst", "chart-builder"):
+                                end_data: dict = {"id": tool_id, "name": name}
+                                try:
+                                    parsed_sub = json.loads(text)
+                                    if "chart_spec" in parsed_sub:
+                                        end_data["chart_spec"] = parsed_sub["chart_spec"]
+                                    else:
+                                        end_data["result"] = text
+                                except (json.JSONDecodeError, TypeError):
+                                    end_data["result"] = text
+                                yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
