@@ -11,10 +11,10 @@ class DuckDBServer(dict):
 
     def __init__(self, config: dict, tools: list) -> None:
         super().__init__(config)
-        self._tools = tools
+        self._tools = tools  # test-only: used by tests to introspect registered tools
 
 
-def create_duckdb_server(db: Database):
+def create_duckdb_server(db: Database) -> "DuckDBServer":
     @tool(
         "execute_sql",
         "Execute a SQL query against the DuckDB database. Use this to query loaded tables, "
