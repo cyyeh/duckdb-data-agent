@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import AsyncIterator
 
 from claude_agent_sdk import (
@@ -157,6 +158,38 @@ def _build_message_with_history(
         history_text += f"\n{role}: {content}\n"
     history_text += f"\n---\n\nMy updated message:\n{message}"
     return history_text
+
+
+def _extract_chart_spec(text: str) -> dict | None:
+    """Extract chart_spec from subagent output text.
+
+    The chart-builder subagent returns markdown containing a JSON code block.
+    Try pure JSON first, then extract from ```json ... ``` fenced blocks.
+    """
+
+    # Try pure JSON first
+    try:
+        parsed = json.loads(text)
+        if "chart_spec" in parsed:
+            return parsed["chart_spec"]
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    # Extract from markdown fenced code blocks (```json ... ``` or ``` ... ```)
+    pattern = r"```(?:json)?\s*\n?(.*?)\n?\s*```"
+    for match in re.finditer(pattern, text, re.DOTALL):
+        block = match.group(1).strip()
+        try:
+            parsed = json.loads(block)
+            if "chart_spec" in parsed:
+                return parsed["chart_spec"]
+            # The block itself might BE the chart_spec
+            if "data" in parsed and isinstance(parsed["data"], list):
+                return parsed
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    return None
 
 
 def _extract_tool_result_text(content: object) -> str:
@@ -407,13 +440,10 @@ async def _stream_chat_container(
                             # Detect subagent result (Task tool)
                             if name in ("sql-analyst", "chart-builder"):
                                 end_data: dict = {"id": tool_id, "name": name}
-                                try:
-                                    parsed_sub = json.loads(text)
-                                    if "chart_spec" in parsed_sub:
-                                        end_data["chart_spec"] = parsed_sub["chart_spec"]
-                                    else:
-                                        end_data["result"] = text
-                                except (json.JSONDecodeError, TypeError):
+                                chart_spec = _extract_chart_spec(text)
+                                if chart_spec:
+                                    end_data["chart_spec"] = chart_spec
+                                else:
                                     end_data["result"] = text
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue
@@ -656,13 +686,10 @@ async def stream_chat(
                             # Detect subagent result (Task tool)
                             if name in ("sql-analyst", "chart-builder"):
                                 end_data: dict = {"id": block.tool_use_id, "name": name}
-                                try:
-                                    parsed_sub = json.loads(output)
-                                    if "chart_spec" in parsed_sub:
-                                        end_data["chart_spec"] = parsed_sub["chart_spec"]
-                                    else:
-                                        end_data["result"] = output
-                                except (json.JSONDecodeError, TypeError):
+                                chart_spec = _extract_chart_spec(output)
+                                if chart_spec:
+                                    end_data["chart_spec"] = chart_spec
+                                else:
                                     end_data["result"] = output
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue  # Don't also emit tool_result for Task
