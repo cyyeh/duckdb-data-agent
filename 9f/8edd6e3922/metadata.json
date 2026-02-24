@@ -3,7 +3,7 @@
   "checkpoint_id": "9f8edd6e3922",
   "strategy": "manual-commit",
   "branch": "feat/chart-rendering",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "Makefile",
     "README.md"
@@ -22,13 +22,20 @@
       "context": "/9f/8edd6e3922/1/context.md",
       "content_hash": "/9f/8edd6e3922/1/content_hash.txt",
       "prompt": "/9f/8edd6e3922/1/prompt.txt"
+    },
+    {
+      "metadata": "/9f/8edd6e3922/2/metadata.json",
+      "transcript": "/9f/8edd6e3922/2/full.jsonl",
+      "context": "/9f/8edd6e3922/2/context.md",
+      "content_hash": "/9f/8edd6e3922/2/content_hash.txt",
+      "prompt": "/9f/8edd6e3922/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 440,
-    "cache_creation_tokens": 266065,
-    "cache_read_tokens": 11628756,
-    "output_tokens": 9286,
-    "api_call_count": 146
+    "input_tokens": 452,
+    "cache_creation_tokens": 281477,
+    "cache_read_tokens": 11890109,
+    "output_tokens": 9398,
+    "api_call_count": 154
   }
 }
