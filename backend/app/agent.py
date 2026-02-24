@@ -644,7 +644,7 @@ async def stream_chat(
                                 except (json.JSONDecodeError, AttributeError):
                                     result_data["error"] = output
                             else:
-                                # Try to parse JSON output (e.g. chart_spec from generate_chart)
+                                # Try to parse JSON output (e.g. chart_spec from chart-builder subagent)
                                 try:
                                     parsed = json.loads(output)
                                     if parsed.get("status") == "success" and "chart_spec" in parsed:

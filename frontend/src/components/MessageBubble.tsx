@@ -70,9 +70,9 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
           }
           if (seg.type === 'subagent_start') {
             const displayName = seg.subagentName === 'sql-analyst'
-              ? 'SQL Analyst working...'
+              ? t('sqlAnalystWorking')
               : seg.subagentName === 'chart-builder'
-              ? 'Chart Builder working...'
+              ? t('chartBuilderWorking')
               : `${seg.subagentName} working...`;
             return (
               <div key={i} className="message-bubble__subagent-indicator">
