@@ -3,7 +3,7 @@
   "checkpoint_id": "d8f9c550f407",
   "strategy": "manual-commit",
   "branch": "feat/chart-rendering",
-  "checkpoints_count": 2,
+  "checkpoints_count": 4,
   "files_touched": [
     "README.md"
   ],
@@ -21,13 +21,20 @@
       "context": "/d8/f9c550f407/1/context.md",
       "content_hash": "/d8/f9c550f407/1/content_hash.txt",
       "prompt": "/d8/f9c550f407/1/prompt.txt"
+    },
+    {
+      "metadata": "/d8/f9c550f407/2/metadata.json",
+      "transcript": "/d8/f9c550f407/2/full.jsonl",
+      "context": "/d8/f9c550f407/2/context.md",
+      "content_hash": "/d8/f9c550f407/2/content_hash.txt",
+      "prompt": "/d8/f9c550f407/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 440,
-    "cache_creation_tokens": 266065,
-    "cache_read_tokens": 11628756,
-    "output_tokens": 9286,
-    "api_call_count": 146
+    "input_tokens": 455,
+    "cache_creation_tokens": 275900,
+    "cache_read_tokens": 11907629,
+    "output_tokens": 9474,
+    "api_call_count": 153
   }
 }

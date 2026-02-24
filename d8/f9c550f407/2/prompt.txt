@@ -1,0 +1,21 @@
+commit and push
+
+---
+
+add chart genreration to agent mode in readme
+
+---
+
+yes
+
+---
+
+also add plotly to tech stack in readme
+
+---
+
+update readme according to the chart generation feature
+
+---
+
+yes
