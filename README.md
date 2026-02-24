@@ -98,12 +98,6 @@ Start both the frontend and backend:
 make dev
 ```
 
-To run with [container isolation](#container-isolation-optional) enabled (requires `make install-all`):
-
-```bash
-make dev-all
-```
-
 Open http://localhost:5173 to use the app. The Vite dev server proxies `/api` requests to the backend automatically.
 
 ## Production Build and Deployment
