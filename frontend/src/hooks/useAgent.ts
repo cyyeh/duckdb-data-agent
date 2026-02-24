@@ -8,6 +8,7 @@ interface AgentContextValue {
   editMessage: (messageIndex: number, newContent: string) => void;
   deleteMessage: (messageIndex: number) => void;
   clearMessages: () => void;
+  respondToQuestion: (questionId: string, answers: string[], freeText?: string) => void;
 }
 
 export const AgentContext = createContext<AgentContextValue>({
@@ -17,6 +18,7 @@ export const AgentContext = createContext<AgentContextValue>({
   editMessage: () => {},
   deleteMessage: () => {},
   clearMessages: () => {},
+  respondToQuestion: () => {},
 });
 
 export function useAgent() {
