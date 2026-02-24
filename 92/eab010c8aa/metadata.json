@@ -3,7 +3,7 @@
   "checkpoint_id": "92eab010c8aa",
   "strategy": "manual-commit",
   "branch": "feat/chart-rendering",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "Makefile",
     "backend/app/container_manager.py"
@@ -15,13 +15,20 @@
       "context": "/92/eab010c8aa/0/context.md",
       "content_hash": "/92/eab010c8aa/0/content_hash.txt",
       "prompt": "/92/eab010c8aa/0/prompt.txt"
+    },
+    {
+      "metadata": "/92/eab010c8aa/1/metadata.json",
+      "transcript": "/92/eab010c8aa/1/full.jsonl",
+      "context": "/92/eab010c8aa/1/context.md",
+      "content_hash": "/92/eab010c8aa/1/content_hash.txt",
+      "prompt": "/92/eab010c8aa/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 921,
-    "cache_creation_tokens": 37846,
-    "cache_read_tokens": 999056,
-    "output_tokens": 2229,
-    "api_call_count": 25
+    "input_tokens": 1046,
+    "cache_creation_tokens": 159703,
+    "cache_read_tokens": 8666416,
+    "output_tokens": 17563,
+    "api_call_count": 125
   }
 }
