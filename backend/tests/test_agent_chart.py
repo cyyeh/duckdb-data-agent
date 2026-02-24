@@ -1,4 +1,3 @@
-import json
 from app.agent import build_system_prompt
 from unittest.mock import MagicMock
 from app.database import Database

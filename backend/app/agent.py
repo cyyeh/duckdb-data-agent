@@ -307,7 +307,11 @@ async def _stream_chat_container(
                             except (json.JSONDecodeError, AttributeError):
                                 result_data["output"] = text
                             if block.get("is_error"):
-                                result_data["error"] = text
+                                try:
+                                    parsed_err = json.loads(text)
+                                    result_data["error"] = parsed_err.get("error", text)
+                                except (json.JSONDecodeError, AttributeError):
+                                    result_data["error"] = text
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
