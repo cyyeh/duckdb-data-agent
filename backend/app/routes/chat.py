@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Header
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from app.agent import stream_chat
 from app.database import Database
 from app.dependencies import get_session_db
+from app.pending_questions import pending_question_store
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
@@ -20,6 +21,12 @@ class ChatEditRequest(BaseModel):
     new_message: str
     conversation_history: list[dict] = []
     langfuse_session_id: str | None = None
+
+
+class QuestionResponseRequest(BaseModel):
+    question_id: str
+    answers: list[str] = []
+    free_text: str | None = None
 
 
 @router.post("/chat")
@@ -69,3 +76,20 @@ async def chat_edit(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.post("/chat/respond")
+async def respond_to_question(
+    request: QuestionResponseRequest,
+    x_session_id: str = Header(...),
+):
+    """Respond to a pending user question from the agent."""
+    pending = pending_question_store.get_pending(x_session_id)
+    if pending is None or pending["question_id"] != request.question_id:
+        return JSONResponse(status_code=404, content={"error": "No pending question found"})
+
+    answer = {"answers": request.answers}
+    if request.free_text:
+        answer["free_text"] = request.free_text
+    pending_question_store.respond(x_session_id, request.question_id, answer)
+    return {"status": "ok"}
