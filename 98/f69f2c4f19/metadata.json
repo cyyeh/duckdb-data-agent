@@ -3,7 +3,7 @@
   "checkpoint_id": "98f69f2c4f19",
   "strategy": "manual-commit",
   "branch": "feat/subagent-sql-chart",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "docs/plans/2026-02-25-subagent-sql-chart-design.md"
   ],
@@ -21,13 +21,20 @@
       "context": "/98/f69f2c4f19/1/context.md",
       "content_hash": "/98/f69f2c4f19/1/content_hash.txt",
       "prompt": "/98/f69f2c4f19/1/prompt.txt"
+    },
+    {
+      "metadata": "/98/f69f2c4f19/2/metadata.json",
+      "transcript": "/98/f69f2c4f19/2/full.jsonl",
+      "context": "/98/f69f2c4f19/2/context.md",
+      "content_hash": "/98/f69f2c4f19/2/content_hash.txt",
+      "prompt": "/98/f69f2c4f19/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7321,
-    "cache_creation_tokens": 157803,
-    "cache_read_tokens": 3877349,
-    "output_tokens": 3297,
-    "api_call_count": 61
+    "input_tokens": 7727,
+    "cache_creation_tokens": 337032,
+    "cache_read_tokens": 14628206,
+    "output_tokens": 11243,
+    "api_call_count": 185
   }
 }
