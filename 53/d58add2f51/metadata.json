@@ -3,7 +3,7 @@
   "checkpoint_id": "53d58add2f51",
   "strategy": "manual-commit",
   "branch": "feat/e2e-playwright-tests",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "docs/plans/2026-02-26-e2e-playwright-tests.md"
   ],
@@ -14,13 +14,20 @@
       "context": "/53/d58add2f51/0/context.md",
       "content_hash": "/53/d58add2f51/0/content_hash.txt",
       "prompt": "/53/d58add2f51/0/prompt.txt"
+    },
+    {
+      "metadata": "/53/d58add2f51/1/metadata.json",
+      "transcript": "/53/d58add2f51/1/full.jsonl",
+      "context": "/53/d58add2f51/1/context.md",
+      "content_hash": "/53/d58add2f51/1/content_hash.txt",
+      "prompt": "/53/d58add2f51/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 43,
-    "cache_creation_tokens": 29992,
-    "cache_read_tokens": 1353546,
-    "output_tokens": 1859,
-    "api_call_count": 35
+    "input_tokens": 423,
+    "cache_creation_tokens": 296443,
+    "cache_read_tokens": 8026745,
+    "output_tokens": 11450,
+    "api_call_count": 125
   }
 }
