@@ -319,6 +319,9 @@ async def stream_chat(
                         continue
 
                     msg_type = msg.get("type")
+                    parent_id = msg.get("parent_tool_use_id")
+                    if parent_id and parent_id in tool_names:
+                        logger.debug("[subagent] type=%s parent=%s name=%s", msg_type, parent_id, tool_names.get(parent_id))
                     # --- Token-level streaming events from SDK ---
                     if msg_type == "stream_event":
                         event = msg.get("event", {})
@@ -519,6 +522,8 @@ async def stream_chat(
                         error_text = msg.get("message") or "Sidecar error"
                         logger.error("Sidecar reported error: %s", error_text)
                         yield f"event: error\ndata: {json.dumps({'message': error_text})}\n\n"
+                        yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
+                        done_sent = True
 
                     # --- Extract session_id early from system init ---
                     elif msg_type == "system":
@@ -535,7 +540,12 @@ async def stream_chat(
         logger.error("Container agent error: %s", str(e))
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
     finally:
-        proxy_token_store.revoke_token(session_token)
-        # Container intentionally kept alive for session resume (--resume flag).
-        # Containers are cleaned up by the background cleanup loop after
+        # Delay token revocation so the container's CLI subprocess can finish
+        # any in-flight API calls after the stream ends.  The container is
+        # intentionally kept alive for session resume (--resume flag) and is
+        # cleaned up by the background cleanup loop after
         # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.
+        async def _delayed_revoke(token: str, delay: float = 10.0) -> None:
+            await asyncio.sleep(delay)
+            proxy_token_store.revoke_token(token)
+        asyncio.create_task(_delayed_revoke(session_token))
