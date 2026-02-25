@@ -3,7 +3,7 @@
   "checkpoint_id": "f1f2b993e217",
   "strategy": "manual-commit",
   "branch": "chore/minor-updates",
-  "checkpoints_count": 3,
+  "checkpoints_count": 5,
   "files_touched": [
     ".claude/CLAUDE.md",
     "backend/app/agent.py",
@@ -75,13 +75,20 @@
       "context": "/f1/f2b993e217/8/context.md",
       "content_hash": "/f1/f2b993e217/8/content_hash.txt",
       "prompt": "/f1/f2b993e217/8/prompt.txt"
+    },
+    {
+      "metadata": "/f1/f2b993e217/9/metadata.json",
+      "transcript": "/f1/f2b993e217/9/full.jsonl",
+      "context": "/f1/f2b993e217/9/context.md",
+      "content_hash": "/f1/f2b993e217/9/content_hash.txt",
+      "prompt": "/f1/f2b993e217/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9051,
-    "cache_creation_tokens": 956440,
-    "cache_read_tokens": 49361279,
-    "output_tokens": 47155,
-    "api_call_count": 620
+    "input_tokens": 10003,
+    "cache_creation_tokens": 1164872,
+    "cache_read_tokens": 62041335,
+    "output_tokens": 58241,
+    "api_call_count": 741
   }
 }
