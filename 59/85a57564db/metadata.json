@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "5985a57564db",
+  "strategy": "manual-commit",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/59/85a57564db/0/metadata.json",
+      "transcript": "/59/85a57564db/0/full.jsonl",
+      "context": "/59/85a57564db/0/context.md",
+      "content_hash": "/59/85a57564db/0/content_hash.txt",
+      "prompt": "/59/85a57564db/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7287,
+    "cache_creation_tokens": 70967,
+    "cache_read_tokens": 2999450,
+    "output_tokens": 1957,
+    "api_call_count": 39
+  }
+}
