@@ -6,13 +6,13 @@ https://github.com/user-attachments/assets/8e2419ae-f723-42a6-879c-f1c2f6fa8949
 
 An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English — the agent delegates to specialized subagents for SQL queries and chart generation — or switch to the SQL editor for direct queries. Powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
-Each browser tab gets its own isolated, in-memory DuckDB session — uploaded data and query state are fully isolated between users and tabs, with idle sessions automatically cleaned up after 5 minutes of inactivity.
+Each browser tab gets its own isolated DuckDB session — uploaded data and query state are fully isolated between users and tabs. Sessions are persisted to disk so your tables survive idle timeouts; the session file is only deleted when you close the tab explicitly.
 
 ## Features
 
 ### General
 
-- **Per-user DuckDB sessions** — Each browser tab gets its own isolated in-memory DuckDB instance, identified by a `X-Session-ID` header generated client-side; data and state are never shared between users or tabs; idle sessions are automatically cleaned up after 5 minutes
+- **Per-user DuckDB sessions** — Each browser tab gets its own isolated DuckDB instance, identified by a `X-Session-ID` header generated client-side; data and state are never shared between users or tabs; sessions are persisted to disk (`/tmp/duckdb-data-agent-{session_id}.duckdb`) so tables survive idle timeouts and reconnections; the session file is deleted only on explicit tab close
 - **DuckDB SQL engine** — Fast, in-process analytical database on the backend
 - **Multi-format file upload** — Drag-and-drop or click to import CSV, JSON, Parquet, and Excel (.xlsx) files (default limit: 500 MB, configurable via `MAX_TOTAL_SIZE_BYTES` env var) with automatic schema detection; Excel workbooks with multiple sheets create one table per sheet; duplicate filename detection prevents accidental overwrites; the upload UI appears when no tables are loaded, and files can also be added via the sidebar upload button
 - **Sample dataset** — One-click load of the Titanic dataset to get started quickly
@@ -200,7 +200,7 @@ FastAPI Backend (host)
   ├── /anthropic ◄───────┘  (credential proxy)
   ├── /mcp/sse   ◄───────┘  (DuckDB MCP bridge)
   │
-  └── DuckDB (per-user, in-memory)
+  └── DuckDB (per-user, disk-persisted)
 ```
 
 The data flow for a chat message is:
