@@ -287,6 +287,10 @@ async def stream_chat(
         # assistant messages whose parent_tool_use_id matches the Task tool ID.
         subagent_texts: dict[str, str] = {}
         subagent_chart_specs: dict[str, dict] = {}
+        # Track whether text_delta stream events were received for the
+        # current subagent turn so we can fall back to emitting text from
+        # complete assistant messages when the SDK doesn't yield deltas.
+        subagent_turn_streamed: dict[str, bool] = {}
         actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -339,6 +343,7 @@ async def stream_chat(
                                     if is_subagent_event:
                                         subagent_texts[stream_parent] = subagent_texts.get(stream_parent, "") + text
                                         yield f"event: subagent_text\ndata: {json.dumps({'id': stream_parent, 'name': tool_names.get(stream_parent, ''), 'text': text})}\n\n"
+                                        subagent_turn_streamed[stream_parent] = True
                                     else:
                                         event_name = "answer" if has_tool_calls else "thinking"
                                         yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
@@ -371,7 +376,15 @@ async def stream_chat(
                                 if block.get("type") == "text" and block.get("text"):
                                     text_parts.append(block["text"])
                             if text_parts:
-                                subagent_texts[parent_tool_use_id] = "\n".join(text_parts)
+                                combined = "\n".join(text_parts)
+                                subagent_texts[parent_tool_use_id] = combined
+                                # Emit subagent_text if text_delta stream events
+                                # were not received for this turn (SDK may not
+                                # yield deltas for subagent turns).
+                                if not subagent_turn_streamed.get(parent_tool_use_id, False):
+                                    yield f"event: subagent_text\ndata: {json.dumps({'id': parent_tool_use_id, 'name': tool_names.get(parent_tool_use_id, ''), 'text': combined})}\n\n"
+                                # Reset for next turn
+                                subagent_turn_streamed[parent_tool_use_id] = False
                         _build_chart_spec_from_stream_messages(msg, tool_names, subagent_chart_specs)
 
                         for block in message_obj.get("content", []):
