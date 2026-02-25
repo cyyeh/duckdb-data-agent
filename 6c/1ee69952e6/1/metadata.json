@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "6c1ee69952e6",
+  "session_id": "86db2b69-d714-4d09-b85c-c1ea5d180f5f",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T03:50:04.081582765Z",
+  "branch": "fix/container-health-check-macos",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/container_manager.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "d63dd9716b03",
+  "transcript_identifier_at_start": "6e7675e4-853c-48c8-ab94-9d0cd6cddbec",
+  "token_usage": {
+    "input_tokens": 19,
+    "cache_creation_tokens": 36357,
+    "cache_read_tokens": 479087,
+    "output_tokens": 739,
+    "api_call_count": 15
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T03:50:04.021452727Z",
+    "agent_lines": 47,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 47,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-home-cyyeh-repos-duckdb-data-agent/86db2b69-d714-4d09-b85c-c1ea5d180f5f.jsonl"
+}
