@@ -3,7 +3,7 @@
   "checkpoint_id": "b038d5bbd891",
   "strategy": "manual-commit",
   "branch": "chore/minor-updates",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "frontend/src/components/MessageBubble.tsx"
   ],
@@ -63,13 +63,20 @@
       "context": "/b0/38d5bbd891/7/context.md",
       "content_hash": "/b0/38d5bbd891/7/content_hash.txt",
       "prompt": "/b0/38d5bbd891/7/prompt.txt"
+    },
+    {
+      "metadata": "/b0/38d5bbd891/8/metadata.json",
+      "transcript": "/b0/38d5bbd891/8/full.jsonl",
+      "context": "/b0/38d5bbd891/8/context.md",
+      "content_hash": "/b0/38d5bbd891/8/content_hash.txt",
+      "prompt": "/b0/38d5bbd891/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9033,
-    "cache_creation_tokens": 908104,
-    "cache_read_tokens": 48464507,
-    "output_tokens": 43404,
-    "api_call_count": 605
+    "input_tokens": 9049,
+    "cache_creation_tokens": 936886,
+    "cache_read_tokens": 48897439,
+    "output_tokens": 43529,
+    "api_call_count": 615
   }
 }
