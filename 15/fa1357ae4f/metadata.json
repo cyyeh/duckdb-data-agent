@@ -3,7 +3,7 @@
   "checkpoint_id": "15fa1357ae4f",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "Dockerfile",
     "backend/app/tools.py",
@@ -18,13 +18,20 @@
       "context": "/15/fa1357ae4f/0/context.md",
       "content_hash": "/15/fa1357ae4f/0/content_hash.txt",
       "prompt": "/15/fa1357ae4f/0/prompt.txt"
+    },
+    {
+      "metadata": "/15/fa1357ae4f/1/metadata.json",
+      "transcript": "/15/fa1357ae4f/1/full.jsonl",
+      "context": "/15/fa1357ae4f/1/context.md",
+      "content_hash": "/15/fa1357ae4f/1/content_hash.txt",
+      "prompt": "/15/fa1357ae4f/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7287,
-    "cache_creation_tokens": 70967,
-    "cache_read_tokens": 2999450,
-    "output_tokens": 1957,
-    "api_call_count": 39
+    "input_tokens": 7693,
+    "cache_creation_tokens": 250196,
+    "cache_read_tokens": 13750307,
+    "output_tokens": 9903,
+    "api_call_count": 163
   }
 }
