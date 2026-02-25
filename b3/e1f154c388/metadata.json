@@ -3,7 +3,7 @@
   "checkpoint_id": "b3e1f154c388",
   "strategy": "manual-commit",
   "branch": "feat/animated-chart-support",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "frontend/src/components/ChartWidget.tsx"
   ],
@@ -56,13 +56,20 @@
       "context": "/b3/e1f154c388/6/context.md",
       "content_hash": "/b3/e1f154c388/6/content_hash.txt",
       "prompt": "/b3/e1f154c388/6/prompt.txt"
+    },
+    {
+      "metadata": "/b3/e1f154c388/7/metadata.json",
+      "transcript": "/b3/e1f154c388/7/full.jsonl",
+      "context": "/b3/e1f154c388/7/context.md",
+      "content_hash": "/b3/e1f154c388/7/content_hash.txt",
+      "prompt": "/b3/e1f154c388/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1332,
-    "cache_creation_tokens": 611302,
-    "cache_read_tokens": 33814022,
-    "output_tokens": 35109,
-    "api_call_count": 432
+    "input_tokens": 1349,
+    "cache_creation_tokens": 619719,
+    "cache_read_tokens": 34627416,
+    "output_tokens": 37855,
+    "api_call_count": 443
   }
 }
