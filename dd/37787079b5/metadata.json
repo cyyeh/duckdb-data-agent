@@ -3,7 +3,7 @@
   "checkpoint_id": "dd37787079b5",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "litellm_config.yaml"
   ],
@@ -21,13 +21,20 @@
       "context": "/dd/37787079b5/1/context.md",
       "content_hash": "/dd/37787079b5/1/content_hash.txt",
       "prompt": "/dd/37787079b5/1/prompt.txt"
+    },
+    {
+      "metadata": "/dd/37787079b5/2/metadata.json",
+      "transcript": "/dd/37787079b5/2/full.jsonl",
+      "context": "/dd/37787079b5/2/context.md",
+      "content_hash": "/dd/37787079b5/2/content_hash.txt",
+      "prompt": "/dd/37787079b5/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 426,
-    "cache_creation_tokens": 296514,
-    "cache_read_tokens": 8166611,
-    "output_tokens": 11452,
-    "api_call_count": 126
+    "input_tokens": 1234,
+    "cache_creation_tokens": 364939,
+    "cache_read_tokens": 10759879,
+    "output_tokens": 13267,
+    "api_call_count": 169
   }
 }
