@@ -1,0 +1,5 @@
+update readme based on duckdb persisted to disk
+
+---
+
+commit this and push
