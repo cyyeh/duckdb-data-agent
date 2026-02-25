@@ -1,5 +1,6 @@
 .PHONY: dev backend frontend install install-backend install-frontend \
-       sidecar-build sidecar-network clean compose-build compose-up compose-down
+       sidecar-build sidecar-network clean compose-build compose-up compose-down \
+       install-e2e e2e-test e2e-report
 
 # Run both backend and frontend concurrently (requires sidecar image built)
 dev:
@@ -15,7 +16,7 @@ frontend:
 	cd frontend && npm run dev
 
 # Install all dependencies and set up sidecar
-install: install-backend install-frontend sidecar-build sidecar-network
+install: install-backend install-frontend sidecar-build sidecar-network install-e2e
 
 install-backend:
 	cd backend && poetry install
@@ -43,4 +44,15 @@ clean:
 	rm -rf backend/.venv backend/__pycache__ backend/app/__pycache__ backend/app/routes/__pycache__
 	rm -rf frontend/node_modules frontend/dist
 	rm -rf sidecar/node_modules sidecar/dist
+	rm -rf e2e/node_modules e2e/dist
 	rm -f /tmp/duckdb-data-agent-*.duckdb /tmp/duckdb-data-agent-*.duckdb.wal
+
+# E2E tests
+install-e2e:
+	cd e2e && npm install && npx playwright install chromium
+
+e2e-test:
+	cd e2e && npx playwright test
+
+e2e-report:
+	cd e2e && npx playwright show-report results
