@@ -294,7 +294,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
                   {seg.type === 'tool' && seg.toolResult ? (
                     <InlineQueryResult result={seg.toolResult!} />
                   ) : seg.chart_spec ? (
-                    <ChartWidget data={seg.chart_spec.data} layout={seg.chart_spec.layout} />
+                    <ChartWidget data={seg.chart_spec.data} layout={seg.chart_spec.layout} frames={seg.chart_spec.frames} />
                   ) : null}
                 </div>
               ))}

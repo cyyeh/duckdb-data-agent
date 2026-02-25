@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plotly JSON Renderer</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-3.4.0.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; padding: 20px; }
@@ -57,7 +57,14 @@
 
       const data = spec.data || [];
       const layout = spec.layout || {};
-      Plotly.newPlot(chartEl, data, layout, { responsive: true });
+      // frames can live at spec.frames (standard) or spec.layout.frames (common variant)
+      const frames = spec.frames || layout.frames || [];
+      delete layout.frames;
+      Plotly.newPlot(chartEl, data, layout, { responsive: true }).then(function () {
+        if (frames.length) {
+          Plotly.addFrames(chartEl, frames);
+        }
+      });
     }
   </script>
 </body>

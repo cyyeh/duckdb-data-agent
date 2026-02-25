@@ -32,6 +32,7 @@ export interface ToolCallResult {
   chart_spec?: {
     data: unknown[];
     layout?: Record<string, unknown>;
+    frames?: unknown[];
   };
 }
 
@@ -56,6 +57,7 @@ export interface ContentSegment {
   chart_spec?: {
     data: unknown[];
     layout?: Record<string, unknown>;
+    frames?: unknown[];
   };
   questionData?: UserQuestionData;
   userAnswer?: string[];
