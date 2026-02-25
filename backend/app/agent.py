@@ -516,26 +516,26 @@ async def _stream_chat_container(
                             # Detect subagent result (Task tool)
                             if name in ("sql-analyst", "chart-builder"):
                                 end_data: dict = {"id": tool_id, "name": name}
-                                # The tool_result text is typically just metadata
-                                # (agentId, usage).  The real subagent output
-                                # lives in tool_use_result.content on the raw
-                                # message.  Try all sources for chart_spec.
-                                chart_spec = _extract_chart_spec(text)
-                                if not chart_spec and tool_use_result_text:
-                                    chart_spec = _extract_chart_spec(tool_use_result_text)
-                                if not chart_spec:
-                                    captured = subagent_texts.get(tool_id, "")
-                                    if captured:
-                                        chart_spec = _extract_chart_spec(captured)
-                                if chart_spec:
-                                    end_data["chart_spec"] = chart_spec
+                                # Only chart-builder produces chart_spec JSON.
+                                # sql-analyst returns plain text results.
+                                if name == "chart-builder":
+                                    chart_spec = _extract_chart_spec(text)
+                                    if not chart_spec and tool_use_result_text:
+                                        chart_spec = _extract_chart_spec(tool_use_result_text)
+                                    if not chart_spec:
+                                        captured = subagent_texts.get(tool_id, "")
+                                        if captured:
+                                            chart_spec = _extract_chart_spec(captured)
+                                    if chart_spec:
+                                        end_data["chart_spec"] = chart_spec
+                                    else:
+                                        end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
+                                        logger.warning(
+                                            "[container] chart_spec extraction failed for %s",
+                                            name,
+                                        )
                                 else:
-                                    # Use the best available text as the result
                                     end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
-                                    logger.warning(
-                                        "[container] chart_spec extraction failed for %s",
-                                        name,
-                                    )
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
@@ -845,24 +845,26 @@ async def stream_chat(
                             # Detect subagent result (Task tool)
                             if name in ("sql-analyst", "chart-builder"):
                                 end_data: dict = {"id": block.tool_use_id, "name": name}
-                                # The tool_result text is typically just metadata.
-                                # The real subagent output lives in
-                                # tool_use_result.content.  Try all sources.
-                                chart_spec = _extract_chart_spec(output)
-                                if not chart_spec and tool_use_result_text:
-                                    chart_spec = _extract_chart_spec(tool_use_result_text)
-                                if not chart_spec:
-                                    captured = subagent_texts.get(block.tool_use_id, "")
-                                    if captured:
-                                        chart_spec = _extract_chart_spec(captured)
-                                if chart_spec:
-                                    end_data["chart_spec"] = chart_spec
+                                # Only chart-builder produces chart_spec JSON.
+                                # sql-analyst returns plain text results.
+                                if name == "chart-builder":
+                                    chart_spec = _extract_chart_spec(output)
+                                    if not chart_spec and tool_use_result_text:
+                                        chart_spec = _extract_chart_spec(tool_use_result_text)
+                                    if not chart_spec:
+                                        captured = subagent_texts.get(block.tool_use_id, "")
+                                        if captured:
+                                            chart_spec = _extract_chart_spec(captured)
+                                    if chart_spec:
+                                        end_data["chart_spec"] = chart_spec
+                                    else:
+                                        end_data["result"] = tool_use_result_text or subagent_texts.get(block.tool_use_id, output)
+                                        logger.warning(
+                                            "chart_spec extraction failed for %s",
+                                            name,
+                                        )
                                 else:
                                     end_data["result"] = tool_use_result_text or subagent_texts.get(block.tool_use_id, output)
-                                    logger.warning(
-                                        "chart_spec extraction failed for %s",
-                                        name,
-                                    )
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue  # Don't also emit tool_result for Task
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
