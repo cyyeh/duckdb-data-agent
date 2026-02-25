@@ -15,18 +15,22 @@ export function ChartWidget({ data, layout, frames }: ChartWidgetProps) {
     normalizedLayout.title = { text: normalizedLayout.title };
   }
 
+  // frames can live at the top level or inside layout (common variant)
+  const resolvedFrames = frames || (normalizedLayout.frames as unknown[]) || [];
+  delete normalizedLayout.frames;
+
   const framesAdded = useRef(false);
 
   // react-plotly.js v2.6 doesn't properly register frames with Plotly.js v3.
   // Manually add frames via Plotly.addFrames() after the plot initializes.
   const handleInitialized = useCallback(
     (_figure: unknown, graphDiv: HTMLElement) => {
-      if (frames?.length && !framesAdded.current) {
+      if (resolvedFrames.length && !framesAdded.current) {
         framesAdded.current = true;
-        Plotly.addFrames(graphDiv, frames as Plotly.Frame[]);
+        Plotly.addFrames(graphDiv, resolvedFrames as Plotly.Frame[]);
       }
     },
-    [frames],
+    [resolvedFrames],
   );
 
   return (
