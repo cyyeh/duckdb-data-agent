@@ -127,6 +127,11 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                 result = answer
             return [types.TextContent(type="text", text=json.dumps(result))]
         elif name == "render_chart":
+            data = arguments.get("data")
+            layout = arguments.get("layout", {})
+            if not isinstance(data, list) or not layout.get("title"):
+                logger.warning("render_chart called with missing data or layout.title: %s", arguments)
+                return [types.TextContent(type="text", text=json.dumps({"status": "error", "error": "data and layout.title are required"}))]
             return [types.TextContent(type="text", text=json.dumps({"status": "rendered"}))]
         else:
             raise ValueError(f"Unknown tool: {name}")
