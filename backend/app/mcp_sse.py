@@ -1,5 +1,6 @@
 import json
 import logging
+import anyio
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import Response
@@ -67,6 +68,31 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                     "required": ["question", "options"],
                 },
             ),
+            types.Tool(
+                name="render_chart",
+                description=(
+                    "Render a Plotly chart. Call this as the final step after querying data. "
+                    "Pass all Plotly traces in `data` and a layout object with a descriptive `title`."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "data": {
+                            "type": "array",
+                            "description": "Array of Plotly trace objects (bar, line, scatter, pie, etc.)",
+                        },
+                        "layout": {
+                            "type": "object",
+                            "description": "Plotly layout object",
+                            "properties": {
+                                "title": {"type": "string"},
+                            },
+                            "required": ["title"],
+                        },
+                    },
+                    "required": ["data", "layout"],
+                },
+            ),
         ]
 
     @server.call_tool()
@@ -101,6 +127,16 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
             else:
                 result = answer
             return [types.TextContent(type="text", text=json.dumps(result))]
+        elif name == "render_chart":
+            data = arguments.get("data")
+            layout = arguments.get("layout", {})
+            if not isinstance(data, list) or not layout.get("title"):
+                logger.warning("render_chart called with missing data or layout.title: %s", arguments)
+                return [types.TextContent(type="text", text=json.dumps({"status": "error", "error": "data and layout.title are required"}))]
+            # Return a minimal acknowledgement. The chart spec (data + layout) is captured
+            # upstream from the tool_use input block in the backend stream handler — not from
+            # this response — so we don't need to echo the payload here.
+            return [types.TextContent(type="text", text=json.dumps({"status": "rendered"}))]
         else:
             raise ValueError(f"Unknown tool: {name}")
 
@@ -116,14 +152,25 @@ async def handle_sse(request: Request) -> Response:
     db = session_manager.get_or_create(session_id)
     server = _create_mcp_server(db, session_id)
 
-    async with sse_transport.connect_sse(
-        request.scope, request.receive, request._send
-    ) as streams:
-        await server.run(
-            streams[0],
-            streams[1],
-            server.create_initialization_options(),
-        )
+    try:
+        async with sse_transport.connect_sse(
+            request.scope, request.receive, request._send
+        ) as streams:
+            await server.run(
+                streams[0],
+                streams[1],
+                server.create_initialization_options(),
+            )
+    except anyio.ClosedResourceError:
+        logger.debug("MCP SSE client disconnected (session %s)", session_id)
+    except BaseExceptionGroup as eg:
+        # The MCP library uses anyio task groups which wrap errors in
+        # ExceptionGroups.  Filter out ClosedResourceError (normal client
+        # disconnect) and re-raise anything else.
+        _, rest = eg.split(anyio.ClosedResourceError)
+        if rest:
+            raise rest from None
+        logger.debug("MCP SSE client disconnected (session %s)", session_id)
 
     return Response()
 

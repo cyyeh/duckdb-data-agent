@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import re
 from typing import AsyncIterator
 
 from claude_agent_sdk import AgentDefinition
@@ -80,20 +79,28 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
 
     chart_prompt = (
         "You are a data visualization expert using Plotly. Given a user's request for "
-        "a chart or visualization, query the data with SQL and then output a JSON code "
-        "block with a `chart_spec` object containing `data` (an array of Plotly traces) "
-        "and `layout`.\n\n"
+        "a chart or visualization, query the data with SQL and then call the "
+        "`render_chart` tool with the Plotly spec.\n\n"
         "Guidelines:\n"
         "- Choose the most appropriate chart type (bar, line, scatter, pie, histogram, "
         "box, heatmap, etc.).\n"
         "- For pie charts, use `labels` and `values` fields in the trace.\n"
-        "- For multi-series data, group into separate traces or use a `color` dimension.\n"
-        "- Always include a descriptive `title` in the layout.\n"
+        "- For multi-series data, group into separate traces.\n"
+        "- `layout.title` is required — always provide a descriptive title.\n"
         "- Keep the chart clean and readable.\n\n"
-        "Output format:\n"
-        "```json\n"
-        '{"chart_spec": {"data": [<plotly traces>], "layout": {<plotly layout>}}}\n'
-        "```\n"
+        "IMPORTANT — keep data small. Pre-aggregate in SQL instead of passing raw rows:\n"
+        "- Box plots: compute lowerfence, q1, median, q3, upperfence per group in SQL. "
+        "Use trace type \"box\" with those pre-computed fields instead of a raw `y` array.\n"
+        "- Histograms: compute bin counts with width_bucket() or CASE in SQL, then "
+        "render as a bar chart with the bin edges as `x` and counts as `y`.\n"
+        "- Scatter / line with many rows: sample (ORDER BY random() LIMIT 200) or "
+        "aggregate (e.g. average per time bucket) so each trace has at most ~200 points.\n"
+        "- General rule: each trace should have at most ~200 data points. "
+        "Large tool-call inputs cause malformed JSON and validation errors.\n\n"
+        "When ready to render, call `render_chart` with:\n"
+        "- `data`: array of Plotly trace objects\n"
+        "- `layout`: object containing at minimum {\"title\": \"<descriptive title>\"}\n\n"
+        "Do NOT output a JSON code block. Use the tool.\n"
         + table_schemas
     )
 
@@ -112,7 +119,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
                 "Use this agent when the user wants a chart, graph, or visualization."
             ),
             prompt=chart_prompt,
-            tools=["mcp__duckdb__execute_sql"],
+            tools=["mcp__duckdb__execute_sql", "mcp__duckdb__render_chart"],
             model=CHART_SUBAGENT_MODEL,
         ),
     }
@@ -134,36 +141,24 @@ def _build_message_with_history(
     return history_text
 
 
-def _extract_chart_spec(text: str) -> dict | None:
-    """Extract chart_spec from subagent output text.
 
-    The chart-builder subagent returns markdown containing a JSON code block.
-    Try pure JSON first, then extract from ```json ... ``` fenced blocks.
+def _build_chart_spec_from_stream_messages(
+    msg: dict, tool_names: dict[str, str], subagent_chart_specs: dict
+) -> None:
+    """Inspect an assistant message and capture render_chart input as chart_spec.
+
+    When the chart-builder subagent calls render_chart, the tool_use block
+    appears in an assistant message whose parent_tool_use_id is the Task
+    tool_use_id for the chart-builder.  We extract input directly so we never
+    need to parse free-text JSON.
     """
-
-    # Try pure JSON first
-    try:
-        parsed = json.loads(text)
-        if "chart_spec" in parsed:
-            return parsed["chart_spec"]
-    except (json.JSONDecodeError, TypeError):
-        pass
-
-    # Extract from markdown fenced code blocks (```json ... ``` or ``` ... ```)
-    pattern = r"```(?:json)?\s*\n?(.*?)\n?\s*```"
-    for match in re.finditer(pattern, text, re.DOTALL):
-        block = match.group(1).strip()
-        try:
-            parsed = json.loads(block)
-            if "chart_spec" in parsed:
-                return parsed["chart_spec"]
-            # The block itself might BE the chart_spec
-            if "data" in parsed and isinstance(parsed["data"], list):
-                return parsed
-        except (json.JSONDecodeError, TypeError):
-            continue
-
-    return None
+    parent_id = msg.get("parent_tool_use_id")
+    if not parent_id or tool_names.get(parent_id) != "chart-builder":
+        return
+    for block in msg.get("message", {}).get("content", []):
+        if block.get("type") == "tool_use" and "render_chart" in block.get("name", ""):
+            subagent_chart_specs[parent_id] = block.get("input", {})
+            return
 
 
 async def stream_chat(
@@ -291,6 +286,7 @@ async def stream_chat(
         # usage), not the subagent's actual output.  The real output arrives in
         # assistant messages whose parent_tool_use_id matches the Task tool ID.
         subagent_texts: dict[str, str] = {}
+        subagent_chart_specs: dict[str, dict] = {}
         actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -375,6 +371,7 @@ async def stream_chat(
                                     text_parts.append(block["text"])
                             if text_parts:
                                 subagent_texts[parent_tool_use_id] = "\n".join(text_parts)
+                        _build_chart_spec_from_stream_messages(msg, tool_names, subagent_chart_specs)
 
                         for block in message_obj.get("content", []):
                             block_type = block.get("type")
@@ -471,29 +468,26 @@ async def stream_chat(
                                     result_data["error"] = text
                             # Detect subagent result (Task tool)
                             if name in ("sql-analyst", "chart-builder"):
-                                end_data: dict = {"id": tool_id, "name": name}
                                 # Only chart-builder produces chart_spec JSON.
                                 # sql-analyst returns plain text results.
                                 if name == "chart-builder":
-                                    chart_spec = _extract_chart_spec(text)
-                                    if not chart_spec and tool_use_result_text:
-                                        chart_spec = _extract_chart_spec(tool_use_result_text)
-                                    if not chart_spec:
-                                        captured = subagent_texts.get(tool_id, "")
-                                        if captured:
-                                            chart_spec = _extract_chart_spec(captured)
+                                    chart_spec = subagent_chart_specs.get(tool_id)
+                                    end_data: dict = {"id": tool_id, "name": name}
                                     if chart_spec:
                                         end_data["chart_spec"] = chart_spec
                                     else:
                                         end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
                                         logger.warning(
-                                            "[container] chart_spec extraction failed for %s",
-                                            name,
+                                            "[container] render_chart tool_use not found for chart-builder %s",
+                                            tool_id,
                                         )
+                                    yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                    continue
                                 else:
+                                    end_data: dict = {"id": tool_id, "name": name}
                                     end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
-                                yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
-                                continue
+                                    yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                    continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
@@ -511,6 +505,8 @@ async def stream_chat(
                         error_text = msg.get("message") or "Sidecar error"
                         logger.error("Sidecar reported error: %s", error_text)
                         yield f"event: error\ndata: {json.dumps({'message': error_text})}\n\n"
+                        yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
+                        done_sent = True
 
                     # --- Extract session_id early from system init ---
                     elif msg_type == "system":
@@ -527,7 +523,12 @@ async def stream_chat(
         logger.error("Container agent error: %s", str(e))
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
     finally:
-        proxy_token_store.revoke_token(session_token)
-        # Container intentionally kept alive for session resume (--resume flag).
-        # Containers are cleaned up by the background cleanup loop after
+        # Delay token revocation so the container's CLI subprocess can finish
+        # any in-flight API calls after the stream ends.  The container is
+        # intentionally kept alive for session resume (--resume flag) and is
+        # cleaned up by the background cleanup loop after
         # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.
+        async def _delayed_revoke(token: str, delay: float = 10.0) -> None:
+            await asyncio.sleep(delay)
+            proxy_token_store.revoke_token(token)
+        asyncio.create_task(_delayed_revoke(session_token))

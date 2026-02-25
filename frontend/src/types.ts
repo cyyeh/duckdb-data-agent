@@ -59,6 +59,7 @@ export interface ContentSegment {
   };
   questionData?: UserQuestionData;
   userAnswer?: string[];
+  userFreeText?: string;
 }
 
 export interface ChatMessage {

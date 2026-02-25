@@ -46,7 +46,7 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
   const { t } = useTranslation();
   // All non-answer, non-chart, non-user_question segments go inside the thinking block
   const thinkingSegments = segments.filter(
-    (s) => s.type !== 'answer' && s.type !== 'user_question' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && s.chart_spec)
+    (s) => s.type !== 'answer' && s.type !== 'user_question' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && (s.chart_spec || s.text?.trim()))
   );
   const hasContent = thinkingSegments.some(
     (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start'
@@ -178,7 +178,10 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
 
   const answerSegments = hasSegments
     ? message.segments!
-        .filter((s) => s.type === 'answer' && s.text?.trim())
+        .filter((s) =>
+          (s.type === 'answer' && s.text?.trim()) ||
+          (s.type === 'subagent_end' && !s.chart_spec && s.text?.trim())
+        )
         .map((s) => hasCharts ? { ...s, text: stripChartSpecBlocks(s.text!) } : s)
         .filter((s) => s.text?.trim())
     : [];
@@ -279,6 +282,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               <UserQuestion
                 questionData={seg.questionData!}
                 userAnswer={seg.userAnswer}
+                userFreeText={seg.userFreeText}
               />
             </div>
           ))}
@@ -301,7 +305,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               ))}
             </div>
           )}
-          {isInAnswerPhase && !hasAnswer && streamingRemainder?.trim() && (() => {
+          {isInAnswerPhase && streamingRemainder?.trim() && (() => {
             const displayText = hasCharts ? stripChartSpecBlocks(streamingRemainder) : streamingRemainder;
             return displayText?.trim() ? (
               <div className="message-bubble__segment message-bubble__segment--answer">

@@ -29,6 +29,7 @@ export function AgentProvider({
   const assistantIdRef = useRef('');
   const segmentsRef = useRef<ContentSegment[]>([]);
   const currentTextRef = useRef('');
+  const phaseRef = useRef<'thinking' | 'answer'>('thinking');
   const sessionIdRef = useRef<string | null>(null);
   const pendingHistoryRef = useRef<{ role: string; content: string }[] | null>(null);
 
@@ -70,6 +71,7 @@ export function AgentProvider({
       textBufferRef.current = '';
       segmentsRef.current = [];
       currentTextRef.current = '';
+      phaseRef.current = 'thinking';
 
       // If there's pending history from a delete, start a new Langfuse session with that context
       const pendingHistory = pendingHistoryRef.current;
@@ -106,6 +108,7 @@ export function AgentProvider({
               segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
               currentTextRef.current = '';
             }
+            phaseRef.current = 'answer';
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
@@ -121,7 +124,8 @@ export function AgentProvider({
             }
             flushText();
             if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
               currentTextRef.current = '';
             }
             // Add a pending tool segment so the input is shown immediately
@@ -174,7 +178,8 @@ export function AgentProvider({
             }
             flushText();
             if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
               currentTextRef.current = '';
             }
             segmentsRef.current.push({
@@ -254,7 +259,8 @@ export function AgentProvider({
             }
             flushText();
             if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
               currentTextRef.current = '';
             }
             segmentsRef.current.push({
@@ -311,6 +317,7 @@ export function AgentProvider({
       textBufferRef.current = '';
       segmentsRef.current = [];
       currentTextRef.current = '';
+      phaseRef.current = 'thinking';
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -339,6 +346,7 @@ export function AgentProvider({
               segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
               currentTextRef.current = '';
             }
+            phaseRef.current = 'answer';
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
@@ -354,7 +362,8 @@ export function AgentProvider({
             }
             flushText();
             if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
               currentTextRef.current = '';
             }
             segmentsRef.current.push({ type: 'tool', toolResult: pending });
@@ -402,7 +411,8 @@ export function AgentProvider({
             }
             flushText();
             if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
               currentTextRef.current = '';
             }
             segmentsRef.current.push({
@@ -479,7 +489,8 @@ export function AgentProvider({
             }
             flushText();
             if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
               currentTextRef.current = '';
             }
             segmentsRef.current.push({
@@ -531,6 +542,7 @@ export function AgentProvider({
         segmentsRef.current[segIdx] = {
           ...segmentsRef.current[segIdx],
           userAnswer: answers,
+          userFreeText: freeText,
         };
         setMessages((prev) =>
           prev.map((m) =>
