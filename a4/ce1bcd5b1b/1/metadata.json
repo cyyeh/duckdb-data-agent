@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a4ce1bcd5b1b",
+  "session_id": "3ec9e0fe-3271-445a-be49-0a9ef97e0c04",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T12:30:13.261205167Z",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/2026-02-25-render-chart-mcp-structured-output-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "dc2bba0960ea",
+  "transcript_identifier_at_start": "f21fab24-e232-4ba2-95ca-848b0a2ffab9",
+  "token_usage": {
+    "input_tokens": 51,
+    "cache_creation_tokens": 42360,
+    "cache_read_tokens": 1323481,
+    "output_tokens": 3715,
+    "api_call_count": 34
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T12:30:13.184360128Z",
+    "agent_lines": 0,
+    "human_added": 122,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 122,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-home-cyyeh-repos-duckdb-data-agent/3ec9e0fe-3271-445a-be49-0a9ef97e0c04.jsonl"
+}
