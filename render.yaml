@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: duckdb-data-agent
-    runtime: docker
-    plan: free
-    envVars:
-      - key: ANTHROPIC_API_KEY
-        sync: false
