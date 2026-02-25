@@ -269,6 +269,58 @@ The data flow for a chat message is:
 
 For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md).
 
+## E2E Testing
+
+Browser-based end-to-end tests are driven by YAML scenario files using [Playwright](https://playwright.dev/). Define test scenarios declaratively — the runner handles browser automation, structural DOM assertions, and LLM-as-judge semantic verification.
+
+**Install:**
+
+```bash
+make install-e2e
+```
+
+**Run tests** (requires `make dev` running in another terminal):
+
+```bash
+make e2e-test
+```
+
+**View HTML report:**
+
+```bash
+make e2e-report
+```
+
+**Configure target environment** via `BASE_URL` (defaults to `http://localhost:5173`):
+
+```bash
+BASE_URL=http://localhost:10000 make e2e-test
+```
+
+**Writing scenarios:** Add YAML files to `e2e/scenarios/`. Each file contains a list of scenarios with sequential steps:
+
+```yaml
+scenarios:
+  - name: "Upload CSV and query"
+    steps:
+      - action: upload_file
+        file: ./test-data/sales.csv
+      - action: send_message
+        input: "Show total sales by region"
+      - action: wait_for_response
+      - action: verify
+        expected:
+          contains: ["north", "south"]
+          has_chart: true
+      - action: verify_llm
+        criteria: "Response shows sales by region with numeric values"
+        pass_threshold: 0.7
+```
+
+**Available actions:** `upload_file`, `send_message`, `wait_for_response`, `click`, `navigate`, `verify` (structural DOM checks), `verify_llm` (LLM-as-judge with Anthropic API — requires `ANTHROPIC_API_KEY`).
+
+**Structural verifiers:** `contains`, `not_contains`, `has_chart`, `has_table`, `table_row_count_min`, `element_exists`, `element_not_exists`, `css_property`.
+
 ## Project Structure
 
 ```
@@ -302,8 +354,14 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 │   │   └── types.ts        #   Request/response type definitions
 │   ├── Dockerfile          #   Sidecar image: Node.js 20 + Python 3.12 + Claude CLI
 │   └── setup-network.sh    #   Docker network setup script
+├── e2e/                    # Playwright E2E tests
+│   ├── scenarios/          #   YAML test scenario files
+│   ├── test-data/          #   Test fixture files (CSV, etc.)
+│   ├── tests/              #   Dynamic test generator (scenario-runner.spec.ts)
+│   ├── lib/                #   YAML loader, actions, verifiers, LLM judge
+│   └── playwright.config.ts
 ├── docker-compose.yml      # Compose orchestration (app + sidecar build)
-└── Makefile                # Dev commands (install, dev, compose-build/up/down, sidecar-network, clean)
+└── Makefile                # Dev commands (install, dev, compose-build/up/down, e2e-test, clean)
 ```
 
 ## Tech Stack
