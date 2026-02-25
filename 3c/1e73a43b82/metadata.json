@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "3c1e73a43b82",
+  "strategy": "manual-commit",
+  "branch": "worktree-ask-user-question",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/tools.py",
+    "frontend/src/agent/agentService.ts",
+    "frontend/src/components/MessageBubble.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3c/1e73a43b82/0/metadata.json",
+      "transcript": "/3c/1e73a43b82/0/full.jsonl",
+      "context": "/3c/1e73a43b82/0/context.md",
+      "content_hash": "/3c/1e73a43b82/0/content_hash.txt",
+      "prompt": "/3c/1e73a43b82/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7287,
+    "cache_creation_tokens": 70967,
+    "cache_read_tokens": 2999450,
+    "output_tokens": 1957,
+    "api_call_count": 39
+  }
+}
