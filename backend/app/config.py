@@ -25,7 +25,6 @@ PROJECT_DIR = os.getenv("PROJECT_DIR", os.getcwd())
 MAX_TOTAL_SIZE_BYTES = int(os.getenv("MAX_TOTAL_SIZE_BYTES", str(500 * 1024 * 1024)))  # default 500MB
 
 # Container isolation settings
-CONTAINER_ENABLED = os.getenv("CONTAINER_ENABLED", "false").lower() == "true"
 CONTAINER_IMAGE = os.getenv("CONTAINER_IMAGE", "duckdb-agent-sidecar:latest")
 CONTAINER_RUNTIME = os.getenv("CONTAINER_RUNTIME", "runc")
 CONTAINER_MEMORY_LIMIT = os.getenv("CONTAINER_MEMORY_LIMIT", "512m")
