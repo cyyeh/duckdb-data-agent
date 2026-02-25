@@ -3,7 +3,7 @@
   "checkpoint_id": "3c1e73a43b82",
   "strategy": "manual-commit",
   "branch": "worktree-ask-user-question",
-  "checkpoints_count": 4,
+  "checkpoints_count": 10,
   "files_touched": [
     "backend/app/agent.py",
     "backend/app/tools.py",
@@ -66,13 +66,20 @@
       "context": "/3c/1e73a43b82/7/context.md",
       "content_hash": "/3c/1e73a43b82/7/content_hash.txt",
       "prompt": "/3c/1e73a43b82/7/prompt.txt"
+    },
+    {
+      "metadata": "/3c/1e73a43b82/8/metadata.json",
+      "transcript": "/3c/1e73a43b82/8/full.jsonl",
+      "context": "/3c/1e73a43b82/8/context.md",
+      "content_hash": "/3c/1e73a43b82/8/content_hash.txt",
+      "prompt": "/3c/1e73a43b82/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8665,
-    "cache_creation_tokens": 838200,
-    "cache_read_tokens": 42692462,
-    "output_tokens": 38440,
-    "api_call_count": 528
+    "input_tokens": 8717,
+    "cache_creation_tokens": 893269,
+    "cache_read_tokens": 44574243,
+    "output_tokens": 43364,
+    "api_call_count": 565
   }
 }
