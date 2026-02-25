@@ -3,7 +3,7 @@
   "checkpoint_id": "e1c3dfb0cc1c",
   "strategy": "manual-commit",
   "branch": "fix/container-health-check-macos",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "backend/app/container_manager.py"
   ],
@@ -70,13 +70,20 @@
       "context": "/e1/c3dfb0cc1c/8/context.md",
       "content_hash": "/e1/c3dfb0cc1c/8/content_hash.txt",
       "prompt": "/e1/c3dfb0cc1c/8/prompt.txt"
+    },
+    {
+      "metadata": "/e1/c3dfb0cc1c/9/metadata.json",
+      "transcript": "/e1/c3dfb0cc1c/9/full.jsonl",
+      "context": "/e1/c3dfb0cc1c/9/context.md",
+      "content_hash": "/e1/c3dfb0cc1c/9/content_hash.txt",
+      "prompt": "/e1/c3dfb0cc1c/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9043,
-    "cache_creation_tokens": 911878,
-    "cache_read_tokens": 49497484,
-    "output_tokens": 43579,
-    "api_call_count": 613
+    "input_tokens": 9051,
+    "cache_creation_tokens": 943601,
+    "cache_read_tokens": 49732538,
+    "output_tokens": 44553,
+    "api_call_count": 619
   }
 }
