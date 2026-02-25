@@ -80,6 +80,56 @@ async def test_call_tool_truncates_large_results(db):
     assert result["rowCount"] == 200
 
 
+@pytest.mark.asyncio
+async def test_list_tools_includes_render_chart(db):
+    """render_chart must appear in the MCP tool list."""
+    import mcp.types as types
+
+    server = _create_mcp_server(db, "test-session")
+    handler = server.request_handlers[types.ListToolsRequest]
+    result = await handler(types.ListToolsRequest(method="tools/list"))
+    tool_names = [t.name for t in result.root.tools]
+    assert "render_chart" in tool_names
+
+
+@pytest.mark.asyncio
+async def test_render_chart_schema_requires_title(db):
+    """render_chart inputSchema must require layout.title."""
+    import mcp.types as types
+
+    server = _create_mcp_server(db, "test-session")
+    handler = server.request_handlers[types.ListToolsRequest]
+    result = await handler(types.ListToolsRequest(method="tools/list"))
+    tool = next(t for t in result.root.tools if t.name == "render_chart")
+    schema = tool.inputSchema
+    assert "layout" in schema["required"]
+    assert "title" in schema["properties"]["layout"]["required"]
+
+
+@pytest.mark.asyncio
+async def test_call_render_chart_returns_rendered(db):
+    """Calling render_chart returns status=rendered."""
+    import mcp.types as types
+
+    server = _create_mcp_server(db, "test-session")
+    handler = server.request_handlers[types.CallToolRequest]
+    request = types.CallToolRequest(
+        method="tools/call",
+        params=types.CallToolRequestParams(
+            name="render_chart",
+            arguments={
+                "data": [{"type": "bar", "x": ["A"], "y": [1]}],
+                "layout": {"title": "My Chart"},
+            },
+        ),
+    )
+    result = await handler(request)
+    content = result.root.content[0]
+    assert content.type == "text"
+    parsed = json.loads(content.text)
+    assert parsed["status"] == "rendered"
+
+
 # --- handle_sse tests ---
 
 

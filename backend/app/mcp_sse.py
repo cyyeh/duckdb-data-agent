@@ -67,6 +67,31 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                     "required": ["question", "options"],
                 },
             ),
+            types.Tool(
+                name="render_chart",
+                description=(
+                    "Render a Plotly chart. Call this as the final step after querying data. "
+                    "Pass all Plotly traces in `data` and a layout object with a descriptive `title`."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "data": {
+                            "type": "array",
+                            "description": "Array of Plotly trace objects (bar, line, scatter, pie, etc.)",
+                        },
+                        "layout": {
+                            "type": "object",
+                            "description": "Plotly layout object",
+                            "properties": {
+                                "title": {"type": "string"},
+                            },
+                            "required": ["title"],
+                        },
+                    },
+                    "required": ["data", "layout"],
+                },
+            ),
         ]
 
     @server.call_tool()
@@ -101,6 +126,8 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
             else:
                 result = answer
             return [types.TextContent(type="text", text=json.dumps(result))]
+        elif name == "render_chart":
+            return [types.TextContent(type="text", text=json.dumps({"status": "rendered"}))]
         else:
             raise ValueError(f"Unknown tool: {name}")
 
