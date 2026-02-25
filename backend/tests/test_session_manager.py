@@ -1,3 +1,5 @@
+import os
+
 from app.session_manager import SessionManager
 
 
@@ -30,6 +32,8 @@ def test_different_sessions_are_isolated():
     tables2 = [t["name"] for t in db2.list_tables()]
     assert "t1" in tables1
     assert "t1" not in tables2
+    mgr.destroy("user1", delete_file=True)
+    mgr.destroy("user2", delete_file=True)
 
 
 def test_touch_returns_true_for_existing_session():
@@ -69,3 +73,36 @@ def test_cleanup_stale_keeps_recent_sessions():
     removed = mgr.cleanup_stale(ttl_seconds=300)
     assert removed == 0
     assert "recent" in mgr._sessions
+
+
+def test_cleanup_stale_keeps_file_on_disk():
+    mgr = SessionManager()
+    db = mgr.get_or_create("idle")
+    db.execute_query("CREATE TABLE t_idle (x INT)")
+    db_path = db.db_path
+
+    from datetime import datetime, timedelta, timezone
+    mgr._sessions["idle"].last_seen_at = datetime.now(timezone.utc) - timedelta(seconds=400)
+    mgr.cleanup_stale(ttl_seconds=300)
+
+    # Session evicted from memory but file still exists on disk
+    assert "idle" not in mgr._sessions
+    assert os.path.exists(db_path)
+
+    # Reconnecting restores the table
+    db2 = mgr.get_or_create("idle")
+    tables = [t["name"] for t in db2.list_tables()]
+    assert "t_idle" in tables
+
+    mgr.destroy("idle", delete_file=True)
+
+
+def test_explicit_destroy_deletes_file():
+    mgr = SessionManager()
+    db = mgr.get_or_create("gone")
+    db_path = db.db_path
+
+    mgr.destroy("gone", delete_file=True)
+
+    assert "gone" not in mgr._sessions
+    assert not os.path.exists(db_path)

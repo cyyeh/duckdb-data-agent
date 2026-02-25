@@ -17,8 +17,9 @@ def _escape_identifier(name: str) -> str:
 
 
 class Database:
-    def __init__(self):
-        self.conn = duckdb.connect(":memory:")
+    def __init__(self, db_path: str = ":memory:"):
+        self.db_path = db_path
+        self.conn = duckdb.connect(db_path)
         self._lock = threading.Lock()
 
     def close(self) -> None:

@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -23,7 +24,8 @@ class SessionManager:
         with self._lock:
             if session_id not in self._sessions:
                 logger.info("Creating new session: %s", session_id)
-                self._sessions[session_id] = SessionEntry(db=Database())
+                db_path = f"/tmp/{session_id}.duckdb"
+                self._sessions[session_id] = SessionEntry(db=Database(db_path))
             else:
                 self._sessions[session_id].last_seen_at = datetime.now(timezone.utc)
             return self._sessions[session_id].db
@@ -35,16 +37,23 @@ class SessionManager:
             self._sessions[session_id].last_seen_at = datetime.now(timezone.utc)
             return True
 
-    def destroy(self, session_id: str) -> None:
+    def destroy(self, session_id: str, delete_file: bool = True) -> None:
         with self._lock:
             entry = self._sessions.pop(session_id, None)
         if entry is None:
             return
+        db_path = entry.db.db_path
         try:
             entry.db.conn.close()
         except Exception:
             pass
-        logger.info("Destroyed session: %s", session_id)
+        if delete_file and db_path != ":memory:":
+            for path in [db_path, db_path + ".wal"]:
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
+        logger.info("Destroyed session: %s (delete_file=%s)", session_id, delete_file)
 
     def cleanup_stale(self, ttl_seconds: int = 300) -> int:
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=ttl_seconds)
@@ -54,7 +63,7 @@ class SessionManager:
                 if entry.last_seen_at < cutoff
             ]
         for sid in stale:
-            self.destroy(sid)
+            self.destroy(sid, delete_file=False)
         return len(stale)
 
 
