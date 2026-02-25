@@ -27,7 +27,7 @@ services:
       dockerfile: Dockerfile
     image: duckdb-agent-sidecar:latest
     profiles:
-      - build
+      - sidecar
     # Never started directly — exists only so `docker compose build`
     # produces the sidecar image. The app spawns sidecar containers
     # on-demand via Docker SDK.

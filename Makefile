@@ -31,7 +31,7 @@ sidecar-network:
 
 # Docker Compose
 compose-build:
-	docker compose build
+	docker compose --profile sidecar build
 
 compose-up: sidecar-network
 	docker compose up
