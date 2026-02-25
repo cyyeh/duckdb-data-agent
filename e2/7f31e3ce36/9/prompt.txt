@@ -1,0 +1,31 @@
+TypeError: crypto.randomUUID is not a function
+
+what does this mean
+
+---
+
+is it related to dockerfile in backend?
+
+---
+
+but I found this when I build a docker-compose service in another linux machine
+
+---
+
+I don't have node installed in linux machine
+
+---
+
+browser console when you open the app
+
+---
+
+but I am using the same browser
+
+---
+
+yes, apply the fix and create new branch
+
+---
+
+commit this and push

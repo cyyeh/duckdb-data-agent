@@ -3,7 +3,7 @@
   "checkpoint_id": "e27f31e3ce36",
   "strategy": "manual-commit",
   "branch": "fix/crypto-random-uuid-polyfill",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "frontend/src/contexts/AgentContext.tsx",
     "frontend/src/contexts/SessionContext.tsx",
@@ -72,13 +72,20 @@
       "context": "/e2/7f31e3ce36/8/context.md",
       "content_hash": "/e2/7f31e3ce36/8/content_hash.txt",
       "prompt": "/e2/7f31e3ce36/8/prompt.txt"
+    },
+    {
+      "metadata": "/e2/7f31e3ce36/9/metadata.json",
+      "transcript": "/e2/7f31e3ce36/9/full.jsonl",
+      "context": "/e2/7f31e3ce36/9/context.md",
+      "content_hash": "/e2/7f31e3ce36/9/content_hash.txt",
+      "prompt": "/e2/7f31e3ce36/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9999,
-    "cache_creation_tokens": 1137581,
-    "cache_read_tokens": 62039220,
-    "output_tokens": 55345,
-    "api_call_count": 738
+    "input_tokens": 10035,
+    "cache_creation_tokens": 1157313,
+    "cache_read_tokens": 62790932,
+    "output_tokens": 56492,
+    "api_call_count": 758
   }
 }
