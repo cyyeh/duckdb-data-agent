@@ -3,7 +3,7 @@
   "checkpoint_id": "a97dd944ca61",
   "strategy": "manual-commit",
   "branch": "fix/sidecar-host-connectivity",
-  "checkpoints_count": 3,
+  "checkpoints_count": 5,
   "files_touched": [
     "Makefile",
     "README.md",
@@ -73,13 +73,20 @@
       "context": "/a9/7dd944ca61/8/context.md",
       "content_hash": "/a9/7dd944ca61/8/content_hash.txt",
       "prompt": "/a9/7dd944ca61/8/prompt.txt"
+    },
+    {
+      "metadata": "/a9/7dd944ca61/9/metadata.json",
+      "transcript": "/a9/7dd944ca61/9/full.jsonl",
+      "context": "/a9/7dd944ca61/9/context.md",
+      "content_hash": "/a9/7dd944ca61/9/content_hash.txt",
+      "prompt": "/a9/7dd944ca61/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9096,
-    "cache_creation_tokens": 976264,
-    "cache_read_tokens": 51032363,
-    "output_tokens": 48776,
-    "api_call_count": 651
+    "input_tokens": 9131,
+    "cache_creation_tokens": 1032012,
+    "cache_read_tokens": 52502112,
+    "output_tokens": 52471,
+    "api_call_count": 679
   }
 }
