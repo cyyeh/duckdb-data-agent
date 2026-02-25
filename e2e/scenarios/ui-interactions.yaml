@@ -1,0 +1,33 @@
+scenarios:
+  - name: "Toggle dark mode"
+    tags: [ui, theme]
+    steps:
+      - action: click
+        selector: ".app__theme-toggle"
+
+      - action: verify
+        expected:
+          css_property:
+            selector: "html"
+            property: "data-theme"
+            matches: "dark"
+
+  - name: "Toggle language to Chinese"
+    tags: [ui, i18n]
+    steps:
+      - action: click
+        selector: ".app__lang-toggle"
+
+      - action: verify
+        expected:
+          element_exists: "html[lang='zh-Hant']"
+
+  - name: "Load sample data"
+    tags: [ui, upload]
+    steps:
+      - action: click
+        selector: ".file-upload-sample-btn"
+
+      - action: verify
+        expected:
+          element_exists: ".sidebar__table-name"

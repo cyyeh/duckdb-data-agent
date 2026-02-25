@@ -1,0 +1,38 @@
+scenarios:
+  - name: "Upload CSV and query total sales by region"
+    tags: [data, upload, query]
+    steps:
+      - action: upload_file
+        file: ./test-data/sales.csv
+
+      - action: send_message
+        input: "What is the total sales amount for each region?"
+
+      - action: wait_for_response
+        timeout: 120000
+
+      - action: verify
+        expected:
+          contains: ["north", "south", "east", "west"]
+          not_contains: ["error"]
+
+      - action: verify_llm
+        criteria: "The response should show total sales broken down by the four regions (North, South, East, West) with numeric values"
+        pass_threshold: 0.7
+
+  - name: "Ask for a chart"
+    tags: [data, chart]
+    steps:
+      - action: upload_file
+        file: ./test-data/sales.csv
+
+      - action: send_message
+        input: "Create a bar chart showing total sales by region"
+
+      - action: wait_for_response
+        timeout: 120000
+
+      - action: verify
+        expected:
+          has_chart: true
+          not_contains: ["error"]
