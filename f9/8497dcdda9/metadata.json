@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f98497dcdda9",
+  "strategy": "manual-commit",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/2026-02-25-render-chart-mcp-implementation.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f9/8497dcdda9/0/metadata.json",
+      "transcript": "/f9/8497dcdda9/0/full.jsonl",
+      "context": "/f9/8497dcdda9/0/context.md",
+      "content_hash": "/f9/8497dcdda9/0/content_hash.txt",
+      "prompt": "/f9/8497dcdda9/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 79,
+    "cache_creation_tokens": 64558,
+    "cache_read_tokens": 2567441,
+    "output_tokens": 1453,
+    "api_call_count": 53
+  }
+}
