@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f1f2b993e217",
+  "strategy": "manual-commit",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".claude/CLAUDE.md",
+    "backend/app/agent.py",
+    "backend/app/mcp_sse.py",
+    "frontend/src/agent/agentService.ts",
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/contexts/AgentContext.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f1/f2b993e217/0/metadata.json",
+      "transcript": "/f1/f2b993e217/0/full.jsonl",
+      "context": "/f1/f2b993e217/0/context.md",
+      "content_hash": "/f1/f2b993e217/0/content_hash.txt",
+      "prompt": "/f1/f2b993e217/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7287,
+    "cache_creation_tokens": 70967,
+    "cache_read_tokens": 2999450,
+    "output_tokens": 1957,
+    "api_call_count": 39
+  }
+}
