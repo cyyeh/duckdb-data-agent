@@ -52,7 +52,12 @@ Respond in exactly this JSON format:
     return { pass: false, score: 0, reasoning: `Failed to parse LLM judge response: ${text}` };
   }
 
-  const parsed = JSON.parse(jsonMatch[0]) as { score: number; reasoning: string };
+  let parsed: { score: number; reasoning: string };
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch {
+    return { pass: false, score: 0, reasoning: `Invalid JSON in LLM judge response: ${jsonMatch[0]}` };
+  }
 
   return {
     pass: parsed.score >= threshold,
