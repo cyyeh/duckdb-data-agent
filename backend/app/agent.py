@@ -80,20 +80,19 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
 
     chart_prompt = (
         "You are a data visualization expert using Plotly. Given a user's request for "
-        "a chart or visualization, query the data with SQL and then output a JSON code "
-        "block with a `chart_spec` object containing `data` (an array of Plotly traces) "
-        "and `layout`.\n\n"
+        "a chart or visualization, query the data with SQL and then call the "
+        "`render_chart` tool with the Plotly spec.\n\n"
         "Guidelines:\n"
         "- Choose the most appropriate chart type (bar, line, scatter, pie, histogram, "
         "box, heatmap, etc.).\n"
         "- For pie charts, use `labels` and `values` fields in the trace.\n"
-        "- For multi-series data, group into separate traces or use a `color` dimension.\n"
-        "- Always include a descriptive `title` in the layout.\n"
+        "- For multi-series data, group into separate traces.\n"
+        "- `layout.title` is required — always provide a descriptive title.\n"
         "- Keep the chart clean and readable.\n\n"
-        "Output format:\n"
-        "```json\n"
-        '{"chart_spec": {"data": [<plotly traces>], "layout": {<plotly layout>}}}\n'
-        "```\n"
+        "When ready to render, call `render_chart` with:\n"
+        "- `data`: array of Plotly trace objects\n"
+        "- `layout`: object containing at minimum {\"title\": \"<descriptive title>\"}\n\n"
+        "Do NOT output a JSON code block. Use the tool.\n"
         + table_schemas
     )
 
@@ -112,7 +111,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
                 "Use this agent when the user wants a chart, graph, or visualization."
             ),
             prompt=chart_prompt,
-            tools=["mcp__duckdb__execute_sql"],
+            tools=["mcp__duckdb__execute_sql", "mcp__duckdb__render_chart"],
             model=CHART_SUBAGENT_MODEL,
         ),
     }
