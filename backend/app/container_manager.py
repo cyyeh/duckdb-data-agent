@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
@@ -31,7 +33,15 @@ class ContainerInfo:
 
     @property
     def url(self) -> str:
-        if self.host_port:
+        # Use the published host port only when running natively on macOS.
+        # On macOS, Docker containers are in a VM and their bridge IPs are
+        # not routable from the host, so we must go via the published port.
+        # When the backend itself runs inside a container (docker-compose) or
+        # on Linux, both containers share the same network and the direct
+        # container IP is reachable — 127.0.0.1 would point at the backend
+        # container itself, not the host.
+        _on_macos_host = sys.platform == "darwin" and not os.path.exists("/.dockerenv")
+        if self.host_port and _on_macos_host:
             return f"http://127.0.0.1:{self.host_port}"
         return f"http://{self.ip_address}:{self.port}"
 
@@ -51,12 +61,6 @@ class ContainerManager:
         so DNS resolution fails inside runsc containers. We build an
         extra_hosts mapping from container names to their IPs on the
         shared network so /etc/hosts provides the resolution instead.
-
-        For host.docker.internal we use Docker's "host-gateway" magic
-        value (which resolves to the correct host-forwarding IP, e.g.
-        0.250.250.254 on Docker Desktop).  Under gVisor the magic value
-        isn't honoured directly, so we resolve the actual IP via a
-        throwaway container.
         """
         hosts: dict[str, str] = {}
         try:
@@ -74,6 +78,27 @@ class ContainerManager:
             logger.warning("Failed to resolve network hosts: %s", e)
         return hosts
 
+    def _resolve_host_gateway_ip(self) -> str | None:
+        """Get the host IP reachable from sidecar containers.
+
+        Docker's "host-gateway" magic value resolves to the docker0 bridge IP,
+        not to the gateway of our custom network. Under gVisor the value may
+        also not be honoured at all. Instead we read the gateway IP directly
+        from the sidecar network's IPAM config — this is the host-side bridge
+        address that containers on that network can actually route to.
+        """
+        try:
+            network = self._client.networks.get(self._config.network)
+            network.reload()
+            for cfg in network.attrs.get("IPAM", {}).get("Config", []):
+                gateway = cfg.get("Gateway")
+                if gateway:
+                    logger.info("Resolved host.docker.internal gateway to %s", gateway)
+                    return gateway
+        except Exception as e:
+            logger.warning("Failed to resolve host gateway IP: %s", e)
+        return None
+
     def create(self, session_id: str, env: dict[str, str]) -> ContainerInfo:
         """Spin up a new sidecar container for a session."""
         if session_id in self._containers:
@@ -81,10 +106,21 @@ class ContainerManager:
 
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
-        # Use Docker's "host-gateway" magic value for host.docker.internal.
-        # This resolves to the correct host-forwarding IP (e.g. 0.250.250.254
-        # on Docker Desktop) so the sidecar can reach the host-side backend.
-        extra_hosts["host.docker.internal"] = "host-gateway"
+        # Resolve the actual gateway IP of the sidecar network so that
+        # host.docker.internal points to the correct host-side bridge address.
+        # Using "host-gateway" is unreliable under gVisor: it resolves to the
+        # docker0 bridge IP which is on a different subnet from agent-sandbox,
+        # so there is no route to it from inside the sidecar container.
+        host_gateway_ip = self._resolve_host_gateway_ip()
+        if host_gateway_ip:
+            extra_hosts["host.docker.internal"] = host_gateway_ip
+        else:
+            # Fall back to Docker's magic value for non-Linux or Docker Desktop
+            extra_hosts["host.docker.internal"] = "host-gateway"
+            logger.warning(
+                "Could not resolve host gateway IP from IPAM; falling back to "
+                "host-gateway magic value (may not work under gVisor on Linux)"
+            )
         if extra_hosts:
             logger.info("Sidecar extra_hosts: %s", extra_hosts)
 
