@@ -1,7 +1,7 @@
 .PHONY: dev backend frontend install install-backend install-frontend \
-       sidecar-network clean compose-build compose-up compose-down
+       sidecar-build sidecar-network clean compose-build compose-up compose-down
 
-# Run both backend and frontend concurrently
+# Run both backend and frontend concurrently (requires sidecar image built)
 dev:
 	@trap 'kill 0' EXIT; \
 	cd backend && poetry run uvicorn app.main:app --reload --port 8000 & \
@@ -22,6 +22,9 @@ install-backend:
 
 install-frontend:
 	cd frontend && npm install
+
+sidecar-build:
+	docker build -t duckdb-agent-sidecar:latest ./sidecar
 
 sidecar-network:
 	./sidecar/setup-network.sh
