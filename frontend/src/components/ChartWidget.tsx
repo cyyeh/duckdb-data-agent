@@ -1,5 +1,3 @@
-import Plotly from 'plotly.js-dist-min';
-import { useCallback, useRef } from 'react';
 import Plot from 'react-plotly.js';
 
 interface ChartWidgetProps {
@@ -15,32 +13,19 @@ export function ChartWidget({ data, layout, frames }: ChartWidgetProps) {
     normalizedLayout.title = { text: normalizedLayout.title };
   }
 
-  // frames can live at the top level or inside layout (common variant)
-  const resolvedFrames = frames || (normalizedLayout.frames as unknown[]) || [];
+  // frames can live at the top level or inside layout (common variant);
+  // extract from layout so Plotly receives them as a dedicated prop.
+  const resolvedFrames = frames || (normalizedLayout.frames as unknown[]);
   delete normalizedLayout.frames;
-
-  const framesAdded = useRef(false);
-
-  // react-plotly.js v2.6 doesn't properly register frames with Plotly.js v3.
-  // Manually add frames via Plotly.addFrames() after the plot initializes.
-  const handleInitialized = useCallback(
-    (_figure: unknown, graphDiv: HTMLElement) => {
-      if (resolvedFrames.length && !framesAdded.current) {
-        framesAdded.current = true;
-        Plotly.addFrames(graphDiv, resolvedFrames as Plotly.Frame[]);
-      }
-    },
-    [resolvedFrames],
-  );
 
   return (
     <Plot
       data={data as Plotly.Data[]}
       layout={{ autosize: true, height: 400, ...normalizedLayout } as Partial<Plotly.Layout>}
+      frames={resolvedFrames as Plotly.Frame[] | undefined}
       useResizeHandler
       style={{ width: '100%' }}
       config={{ responsive: true, displayModeBar: true }}
-      onInitialized={handleInitialized}
     />
   );
 }
