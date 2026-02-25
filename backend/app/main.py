@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 
 from app.routes import tables, query, chat, langfuse_status, config, session
 from app import proxy as proxy_module
-from app.config import CONTAINER_ENABLED
+from app.container_manager import container_manager
 from app.mcp_sse import mcp_app
 from app.config import CORS_ALLOWED_ORIGINS
 
@@ -29,8 +29,7 @@ async def _cleanup_loop():
             proxy_removed = proxy_module.proxy_token_store.cleanup_expired()
             if proxy_removed:
                 logger.info("Background cleanup: removed %d expired proxy tokens", proxy_removed)
-            if CONTAINER_ENABLED:
-                from app.container_manager import container_manager
+            if container_manager is not None:
                 container_removed = container_manager.cleanup_expired()
                 if container_removed:
                     logger.info("Background cleanup: removed %d expired containers", container_removed)
@@ -43,8 +42,7 @@ async def lifespan(app):
     task = asyncio.create_task(_cleanup_loop())
     yield
     task.cancel()
-    if CONTAINER_ENABLED:
-        from app.container_manager import container_manager
+    if container_manager is not None:
         container_manager.shutdown_all()
 
 

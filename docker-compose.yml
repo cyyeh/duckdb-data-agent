@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
     image: duckdb-data-agent:latest
     container_name: duckdb-data-agent
     ports:
@@ -10,7 +10,6 @@ services:
     env_file:
       - backend/.env
     environment:
-      CONTAINER_ENABLED: "true"
       CONTAINER_IMAGE: duckdb-agent-sidecar:latest
       CONTAINER_NETWORK: agent-sandbox
       PROXY_BASE_URL: http://duckdb-data-agent:10000
