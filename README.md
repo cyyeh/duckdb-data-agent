@@ -93,7 +93,7 @@ When configured, every agent conversation is traced (LLM turns, tool calls, SQL 
 First-time setup — install dependencies, build the sidecar image, and create the Docker network:
 
 ```bash
-make install && make sidecar-build && make sidecar-network
+make install
 ```
 
 Add `PROXY_BASE_URL` to `backend/.env` so the sidecar container can reach the local backend:

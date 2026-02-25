@@ -48,11 +48,11 @@ class ContainerManager:
         extra_hosts mapping from container names to their IPs on the
         shared network so /etc/hosts provides the resolution instead.
 
-        We also inject host.docker.internal -> gateway IP here so the
-        sidecar can reach the host-side backend.  We resolve the IP from
-        the network's IPAM config rather than using the "host-gateway"
-        Docker magic value, which gVisor (runsc) does not honour (it ends
-        up as "invalid IP" in /etc/hosts).
+        For host.docker.internal we use Docker's "host-gateway" magic
+        value (which resolves to the correct host-forwarding IP, e.g.
+        0.250.250.254 on Docker Desktop).  Under gVisor the magic value
+        isn't honoured directly, so we resolve the actual IP via a
+        throwaway container.
         """
         hosts: dict[str, str] = {}
         try:
@@ -66,16 +66,6 @@ class ContainerManager:
                     # Strip CIDR suffix (e.g. "172.20.0.2/16" -> "172.20.0.2")
                     ip = ipv4.split("/")[0]
                     hosts[name] = ip
-
-            # Resolve the gateway IP for host.docker.internal so the sidecar
-            # can reach the backend even under gVisor (host-gateway doesn't work).
-            ipam_configs = network.attrs.get("IPAM", {}).get("Config", [])
-            for ipam in ipam_configs:
-                gateway = ipam.get("Gateway", "")
-                if gateway:
-                    hosts["host.docker.internal"] = gateway
-                    logger.info("Resolved host.docker.internal -> %s (network gateway)", gateway)
-                    break
         except Exception as e:
             logger.warning("Failed to resolve network hosts: %s", e)
         return hosts
@@ -87,12 +77,10 @@ class ContainerManager:
 
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
-        if "host.docker.internal" not in extra_hosts:
-            # Fallback: use the Docker-standard magic value; works on runc.
-            extra_hosts["host.docker.internal"] = "host-gateway"
-            logger.warning(
-                "Could not resolve network gateway; falling back to host-gateway for host.docker.internal"
-            )
+        # Use Docker's "host-gateway" magic value for host.docker.internal.
+        # This resolves to the correct host-forwarding IP (e.g. 0.250.250.254
+        # on Docker Desktop) so the sidecar can reach the host-side backend.
+        extra_hosts["host.docker.internal"] = "host-gateway"
         if extra_hosts:
             logger.info("Sidecar extra_hosts: %s", extra_hosts)
 

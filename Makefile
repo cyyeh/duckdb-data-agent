@@ -4,12 +4,12 @@
 # Run both backend and frontend concurrently (requires sidecar image built)
 dev:
 	@trap 'kill 0' EXIT; \
-	cd backend && poetry run uvicorn app.main:app --reload --port 8000 & \
+	cd backend && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 & \
 	cd frontend && npm run dev & \
 	wait
 
 backend:
-	cd backend && poetry run uvicorn app.main:app --reload --port 8000
+	cd backend && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 frontend:
 	cd frontend && npm run dev
