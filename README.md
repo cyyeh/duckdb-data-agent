@@ -4,8 +4,6 @@
 
 https://github.com/user-attachments/assets/ca411183-b936-4919-a410-e4f81878e4fa
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
-
 An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English — the agent delegates to specialized subagents for SQL queries and chart generation — or switch to the SQL editor for direct queries. Powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
 Each browser tab gets its own isolated, in-memory DuckDB session — uploaded data and query state are fully isolated between users and tabs, with idle sessions automatically cleaned up after 5 minutes of inactivity.
@@ -32,9 +30,9 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 - **Inline results** — Query results rendered inline within the conversation
 - **Chart generation** — Ask for a chart or visualization and the chart-builder subagent generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
-- **Credential proxy** — The backend runs a built-in Anthropic API reverse proxy; each agent session receives a short-lived UUID token instead of the real API key, so the Claude Code subprocess never has access to `ANTHROPIC_API_KEY`; tokens are revoked immediately when the session ends (see [Security](#security))
+- **Credential proxy** — The backend runs a built-in Anthropic API reverse proxy; each agent session receives a short-lived UUID token instead of the real API key, so the sidecar container never has access to `ANTHROPIC_API_KEY`; tokens are revoked immediately when the session ends (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
-- **Container isolation** (optional) — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access; falls back to subprocess mode when disabled (see [Container Isolation](#container-isolation-optional))
+- **Container isolation** — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
 
 ### Editor Mode
@@ -50,6 +48,7 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 - [Node.js](https://nodejs.org/) 20+
 - [Python](https://www.python.org/) 3.12+
 - [Poetry](https://python-poetry.org/)
+- [Docker](https://docs.docker.com/get-docker/)
 
 ### Installation
 
@@ -91,6 +90,18 @@ When configured, every agent conversation is traced (LLM turns, tool calls, SQL 
 
 ### Development
 
+First-time setup — install dependencies, build the sidecar image, and create the Docker network:
+
+```bash
+make install && make sidecar-build && make sidecar-network
+```
+
+Add `PROXY_BASE_URL` to `backend/.env` so the sidecar container can reach the local backend:
+
+```
+PROXY_BASE_URL=http://host.docker.internal:8000
+```
+
 Start both the frontend and backend:
 
 ```bash
@@ -101,25 +112,7 @@ Open http://localhost:5173 to use the app. The Vite dev server proxies `/api` re
 
 ## Production Build and Deployment
 
-The project ships as a single Docker image that bundles the React frontend and FastAPI backend. A multi-stage `Dockerfile` builds the frontend, then copies the output into the backend's static directory.
-
-### Build and run locally
-
-```bash
-docker build -t duckdb-data-agent .
-
-docker run -p 10000:10000 \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
-  duckdb-data-agent
-```
-
-Add `-e LANGFUSE_PUBLIC_KEY=pk-lf-... -e LANGFUSE_SECRET_KEY=sk-lf-...` to either command to enable Langfuse tracing.
-
-Open http://localhost:10000 to use the app.
-
-### Docker Compose
-
-Docker Compose builds both images (app + sidecar) and runs the app with [container isolation](#container-isolation-optional) enabled. The sidecar image is built but not started as a service — the app spawns sidecar containers on-demand via the Docker SDK.
+Docker Compose builds both images (app + sidecar) and runs the app with [container isolation](#container-isolation) enabled. The sidecar image is built but not started as a service — the app spawns sidecar containers on-demand via the Docker SDK.
 
 **Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop).
 
@@ -151,31 +144,18 @@ make compose-down
   ```
   On macOS with Docker Desktop, the default (`0`) works out of the box.
 - **Custom port:** Set `APP_PORT` to expose the app on a different host port (e.g., `APP_PORT=8080 make compose-up`).
-- **Disable container isolation:** Remove the `CONTAINER_ENABLED` override from the `environment` block in `docker-compose.yml` (or set it to `"false"`) to fall back to subprocess mode.
-
-### Deploy to Render
-
-A `render.yaml` is included for one-click deployment on [Render](https://render.com/):
-
-1. Push this repo to GitHub.
-2. In Render, create a new **Blueprint** and connect the repo.
-3. Set `ANTHROPIC_API_KEY` in the Render dashboard. Optionally set `ANTHROPIC_MODEL` to override the default model (`sonnet`). To enable Langfuse tracing, also set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`.
-
-Render will build the Docker image and deploy it automatically on every push to `main`.
-
-> **Note:** Render does not support nested Docker or gVisor, so the [Container Isolation](#container-isolation-optional) feature is **not available** on Render. The agent will use the default subprocess model (`CONTAINER_ENABLED=false`). Container isolation requires self-hosted infrastructure or cloud VMs where Docker and gVisor can be installed.
 
 ## Security
 
 ### Credential Proxy
 
-When the agent runs, the backend spawns a Claude Code subprocess via the Anthropic Agent SDK. A naive approach would pass `ANTHROPIC_API_KEY` directly into that subprocess's environment — but any tool or shell command the agent executes could then read and exfiltrate the key.
+When the agent runs, the backend spawns a sidecar container via the Docker SDK. A naive approach would pass `ANTHROPIC_API_KEY` directly into that container's environment — but any tool or shell command the agent executes could then read and exfiltrate the key.
 
 Instead, the backend runs a built-in reverse proxy at `/anthropic` that sits between Claude Code and `api.anthropic.com`:
 
 ```
-Claude Code subprocess
-  → ANTHROPIC_BASE_URL=http://127.0.0.1:{PORT}/anthropic
+Sidecar Container
+  → ANTHROPIC_BASE_URL=http://host:8000/anthropic
   → ANTHROPIC_API_KEY=<short-lived UUID token>
         ↓
 FastAPI proxy (/anthropic/{path})
@@ -187,16 +167,16 @@ FastAPI proxy (/anthropic/{path})
 **How it works:**
 
 1. Before each agent session, the backend mints a random UUID token with a 10-minute TTL.
-2. The token is injected into the subprocess environment as `ANTHROPIC_API_KEY`; the real key is never exposed.
+2. The token is injected into the sidecar container environment as `ANTHROPIC_API_KEY`; the real key is never exposed.
 3. The proxy validates every inbound request against the token store and substitutes the real key before forwarding upstream.
 4. When the session ends, the token is explicitly revoked in a `finally` block, regardless of success or error.
 5. A background task runs every 60 seconds to sweep any tokens that outlived their TTL.
 
-The subprocess only ever holds a single-session UUID. Even if a tool call reads the environment, all it gets is a temporary token scoped to that conversation.
+The sidecar container only ever holds a single-session UUID. Even if a tool call reads the environment, all it gets is a temporary token scoped to that conversation.
 
-### Container Isolation (Optional)
+### Container Isolation
 
-For additional defense in depth, the backend can run each Claude Code session inside a **gVisor-sandboxed Docker container** ("sidecar") instead of a bare subprocess. This provides code execution sandboxing, multi-tenant isolation, and a hardened boundary between the agent and the host system.
+The backend runs each Claude Code session inside a **gVisor-sandboxed Docker container** ("sidecar"). This provides code execution sandboxing, multi-tenant isolation, and a hardened boundary between the agent and the host system.
 
 **Architecture:**
 
@@ -223,17 +203,15 @@ FastAPI Backend (host)
   └── DuckDB (per-user, in-memory)
 ```
 
-When `CONTAINER_ENABLED=true`, the data flow for a chat message is:
+The data flow for a chat message is:
 
 1. Frontend sends a chat message to the FastAPI backend.
 2. Backend mints a short-lived UUID token via the credential proxy and spins up a gVisor container (or reuses an existing one for the session) via `ContainerManager`.
 3. Backend sends the query to the sidecar's `POST /query` endpoint. The sidecar calls the Claude Agent SDK's `query()` function with `includePartialMessages: true` for token-level streaming, configured with the host's MCP SSE endpoint.
 4. Claude CLI talks to the host credential proxy (`/anthropic`) for Anthropic API access (using the UUID token, never the real key).
 5. Claude CLI's `execute_sql` tool calls reach the host DuckDB via the **MCP SSE bridge** (`/mcp/sse?session_id=...`), which routes each connection to the correct per-user DuckDB instance through the existing `SessionManager`.
-6. The sidecar streams SSE events back to the backend, which forwards them to the frontend in the same format as the subprocess path.
+6. The sidecar streams SSE events back to the backend, which forwards them to the frontend.
 7. On session end, the container is stopped and removed; the UUID token is revoked.
-
-When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess model is used with no container overhead.
 
 **Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, the Agent SDK, and the `@anthropic-ai/claude-code` CLI (required by the SDK internally). Containers run with a read-only root filesystem, all Linux capabilities dropped, no volume mounts, no Docker socket access, and a non-root user.
 
@@ -263,19 +241,16 @@ When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess mod
    PROXY_BASE_URL=http://host.docker.internal:8000
    ```
 
-4. Start development with container isolation enabled:
+4. Start the app:
 
    ```bash
    make compose-up
    ```
 
-   Or enable manually by setting `CONTAINER_ENABLED=true` in your environment.
-
 **Environment variables:**
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CONTAINER_ENABLED` | `false` | Enable containerized runtime |
 | `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar Docker image |
 | `CONTAINER_RUNTIME` | `runc` | Docker runtime (runc for non-gVisor, runsc for gVisor) |
 | `CONTAINER_MEMORY_LIMIT` | `256m` | Memory limit per container |
@@ -285,14 +260,12 @@ When `CONTAINER_ENABLED=false` (default), the existing in-process subprocess mod
 
 **Security properties:**
 
-- The subprocess never accesses the host filesystem, processes, or environment
+- The container never accesses the host filesystem, processes, or environment
 - gVisor intercepts all syscalls -- even arbitrary bash/python execution is sandboxed
 - No real API keys inside the container (UUID token only, useless outside the host proxy)
 - Per-session isolation -- containers cannot see each other
 - Resource limits (CPU, memory, lifetime) prevent denial-of-service against the host
 - Internal networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) are blocked, preventing cloud metadata and internal service access
-
-**Deployment note:** The `CONTAINER_ENABLED` feature flag defaults to `false`, allowing the backend to fall back to the subprocess model on PaaS platforms (Render, Railway) that do not support nested Docker. Both paths produce identical SSE output -- no frontend changes are required.
 
 For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md).
 
@@ -311,16 +284,16 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 │   ├── package.json        #   npm config
 │   └── vite.config.ts      #   Vite bundler config
 ├── backend/                # FastAPI backend
+│   ├── Dockerfile          #   Production image: Python 3.12 + React frontend bundle
 │   └── app/
 │       ├── main.py         #   App setup, CORS, and background session/container cleanup loop
 │       ├── config.py       #   Environment variables (API key, model, upload limits, container settings)
 │       ├── database.py     #   DuckDB connection, query execution, and per-user SessionManager
-│       ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming (subprocess + container paths)
+│       ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming via container sidecar
 │       ├── proxy.py        #   Credential proxy: token store + /anthropic reverse proxy
 │       ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB and chart tools over HTTP for containers
 │       ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
-│       ├── tools.py        #   Agent SDK tool definitions (execute_sql)
 │       ├── data/           #   Sample datasets (titanic.csv)
 │       └── routes/         #   API endpoints (tables, query, chat, config, langfuse status, heartbeat)
 ├── sidecar/                # Containerized agent sidecar
@@ -329,9 +302,7 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 │   │   └── types.ts        #   Request/response type definitions
 │   ├── Dockerfile          #   Sidecar image: Node.js 20 + Python 3.12 + Claude CLI
 │   └── setup-network.sh    #   Docker network setup script
-├── Dockerfile              # Multi-stage production build
 ├── docker-compose.yml      # Compose orchestration (app + sidecar build)
-├── render.yaml             # Render deployment config
 └── Makefile                # Dev commands (install, dev, compose-build/up/down, sidecar-network, clean)
 ```
 
@@ -348,10 +319,10 @@ For full design details, see [`docs/plans/2026-02-22-containerized-runtime-desig
 - [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
 - [MCP](https://modelcontextprotocol.io/) SSE transport (DuckDB tool bridge for containers)
 - Subagent architecture via Claude Agent SDK `AgentDefinition` API (sql-analyst + chart-builder)
-- [Docker SDK for Python](https://docker-py.readthedocs.io/) + [gVisor](https://gvisor.dev/) (optional, for container isolation)
+- [Docker SDK for Python](https://docker-py.readthedocs.io/) + [gVisor](https://gvisor.dev/) (container isolation)
 - [Langfuse](https://langfuse.com/) (optional, for observability)
 
-**Sidecar** (optional, for container isolation)
+**Sidecar**
 - [Node.js](https://nodejs.org/) 20 + [TypeScript](https://www.typescriptlang.org/)
 - [Express](https://expressjs.com/) HTTP server
 - [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript) (`@anthropic-ai/claude-agent-sdk`) with token-level streaming
