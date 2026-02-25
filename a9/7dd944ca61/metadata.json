@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a97dd944ca61",
+  "strategy": "manual-commit",
+  "branch": "fix/sidecar-host-connectivity",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "Makefile",
+    "README.md",
+    "backend/.env.example",
+    "backend/app/container_manager.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a9/7dd944ca61/0/metadata.json",
+      "transcript": "/a9/7dd944ca61/0/full.jsonl",
+      "context": "/a9/7dd944ca61/0/context.md",
+      "content_hash": "/a9/7dd944ca61/0/content_hash.txt",
+      "prompt": "/a9/7dd944ca61/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7287,
+    "cache_creation_tokens": 70967,
+    "cache_read_tokens": 2999450,
+    "output_tokens": 1957,
+    "api_call_count": 39
+  }
+}
