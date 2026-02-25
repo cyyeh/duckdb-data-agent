@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
@@ -27,8 +29,20 @@ class ContainerInfo:
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     _container: object = field(default=None, repr=False)
 
+    host_port: int | None = None
+
     @property
     def url(self) -> str:
+        # Use the published host port only when running natively on macOS.
+        # On macOS, Docker containers are in a VM and their bridge IPs are
+        # not routable from the host, so we must go via the published port.
+        # When the backend itself runs inside a container (docker-compose) or
+        # on Linux, both containers share the same network and the direct
+        # container IP is reachable — 127.0.0.1 would point at the backend
+        # container itself, not the host.
+        _on_macos_host = sys.platform == "darwin" and not os.path.exists("/.dockerenv")
+        if self.host_port and _on_macos_host:
+            return f"http://127.0.0.1:{self.host_port}"
         return f"http://{self.ip_address}:{self.port}"
 
 
@@ -47,12 +61,6 @@ class ContainerManager:
         so DNS resolution fails inside runsc containers. We build an
         extra_hosts mapping from container names to their IPs on the
         shared network so /etc/hosts provides the resolution instead.
-
-        For host.docker.internal we use Docker's "host-gateway" magic
-        value (which resolves to the correct host-forwarding IP, e.g.
-        0.250.250.254 on Docker Desktop).  Under gVisor the magic value
-        isn't honoured directly, so we resolve the actual IP via a
-        throwaway container.
         """
         hosts: dict[str, str] = {}
         try:
@@ -70,6 +78,27 @@ class ContainerManager:
             logger.warning("Failed to resolve network hosts: %s", e)
         return hosts
 
+    def _resolve_host_gateway_ip(self) -> str | None:
+        """Get the host IP reachable from sidecar containers.
+
+        Docker's "host-gateway" magic value resolves to the docker0 bridge IP,
+        not to the gateway of our custom network. Under gVisor the value may
+        also not be honoured at all. Instead we read the gateway IP directly
+        from the sidecar network's IPAM config — this is the host-side bridge
+        address that containers on that network can actually route to.
+        """
+        try:
+            network = self._client.networks.get(self._config.network)
+            network.reload()
+            for cfg in network.attrs.get("IPAM", {}).get("Config", []):
+                gateway = cfg.get("Gateway")
+                if gateway:
+                    logger.info("Resolved host.docker.internal gateway to %s", gateway)
+                    return gateway
+        except Exception as e:
+            logger.warning("Failed to resolve host gateway IP: %s", e)
+        return None
+
     def create(self, session_id: str, env: dict[str, str]) -> ContainerInfo:
         """Spin up a new sidecar container for a session."""
         if session_id in self._containers:
@@ -77,10 +106,34 @@ class ContainerManager:
 
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
-        # Use Docker's "host-gateway" magic value for host.docker.internal.
-        # This resolves to the correct host-forwarding IP (e.g. 0.250.250.254
-        # on Docker Desktop) so the sidecar can reach the host-side backend.
-        extra_hosts["host.docker.internal"] = "host-gateway"
+        # Resolve host.docker.internal so the sidecar can reach the host.
+        # Strategy depends on platform and runtime:
+        #
+        # - macOS Docker Desktop (any runtime): "host-gateway" works correctly
+        #   and resolves to the Mac host.  The IPAM gateway IP points to the
+        #   bridge gateway *inside* the Linux VM, which is NOT the Mac host,
+        #   so we must NOT use it here.
+        #
+        # - Linux + runc: "host-gateway" resolves to the docker0 bridge IP
+        #   which is routable from the container.
+        #
+        # - Linux + runsc (gVisor): "host-gateway" may not be honoured.
+        #   Read the actual gateway IP from the network's IPAM config instead.
+        _on_macos_host = sys.platform == "darwin" and not os.path.exists("/.dockerenv")
+        _using_gvisor = self._config.runtime == "runsc"
+
+        if _using_gvisor and not _on_macos_host:
+            host_gateway_ip = self._resolve_host_gateway_ip()
+            if host_gateway_ip:
+                extra_hosts["host.docker.internal"] = host_gateway_ip
+            else:
+                extra_hosts["host.docker.internal"] = "host-gateway"
+                logger.warning(
+                    "Could not resolve host gateway IP from IPAM; falling back to "
+                    "host-gateway magic value (may not work under gVisor on Linux)"
+                )
+        else:
+            extra_hosts["host.docker.internal"] = "host-gateway"
         if extra_hosts:
             logger.info("Sidecar extra_hosts: %s", extra_hosts)
 
@@ -100,6 +153,9 @@ class ContainerManager:
             # Use public DNS so gVisor's netstack can resolve external hosts
             # (Docker's embedded DNS at 127.0.0.11 doesn't work under runsc)
             dns=["8.8.8.8", "8.8.4.4"],
+            # Publish port to a random host port so the host-side backend
+            # can reach the sidecar (macOS cannot route to bridge IPs)
+            ports={"3000/tcp": None},
             labels={
                 "app": "duckdb-agent-sidecar",
                 "session_id": session_id,
@@ -112,10 +168,18 @@ class ContainerManager:
         network_info = networks.get(self._config.network, {})
         ip_address = network_info.get("IPAddress", "127.0.0.1")
 
+        # Extract the dynamically assigned host port
+        port_bindings = container.attrs.get("NetworkSettings", {}).get("Ports", {})
+        host_port = None
+        tcp_bindings = port_bindings.get("3000/tcp")
+        if tcp_bindings and len(tcp_bindings) > 0:
+            host_port = int(tcp_bindings[0].get("HostPort", 0)) or None
+
         info = ContainerInfo(
             container_id=container.id,
             session_id=session_id,
             ip_address=ip_address,
+            host_port=host_port,
             _container=container,
         )
         self._containers[session_id] = info
