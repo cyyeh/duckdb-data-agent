@@ -56,13 +56,20 @@
       "context": "/44/d944fb7833/6/context.md",
       "content_hash": "/44/d944fb7833/6/content_hash.txt",
       "prompt": "/44/d944fb7833/6/prompt.txt"
+    },
+    {
+      "metadata": "/44/d944fb7833/7/metadata.json",
+      "transcript": "/44/d944fb7833/7/full.jsonl",
+      "context": "/44/d944fb7833/7/context.md",
+      "content_hash": "/44/d944fb7833/7/content_hash.txt",
+      "prompt": "/44/d944fb7833/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8417,
-    "cache_creation_tokens": 829319,
-    "cache_read_tokens": 45179203,
-    "output_tokens": 36202,
-    "api_call_count": 554
+    "input_tokens": 9033,
+    "cache_creation_tokens": 908104,
+    "cache_read_tokens": 48464507,
+    "output_tokens": 43404,
+    "api_call_count": 605
   }
 }
