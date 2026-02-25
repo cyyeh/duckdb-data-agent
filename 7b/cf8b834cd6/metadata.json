@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "7bcf8b834cd6",
+  "strategy": "manual-commit",
+  "branch": "worktree-e2e-playwright",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "Makefile",
+    "README.md",
+    "e2e/lib/actions.ts",
+    "e2e/lib/verifiers.ts",
+    "e2e/playwright.config.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/7b/cf8b834cd6/0/metadata.json",
+      "transcript": "/7b/cf8b834cd6/0/full.jsonl",
+      "context": "/7b/cf8b834cd6/0/context.md",
+      "content_hash": "/7b/cf8b834cd6/0/content_hash.txt",
+      "prompt": "/7b/cf8b834cd6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 65,
+    "cache_creation_tokens": 64487,
+    "cache_read_tokens": 2115883,
+    "output_tokens": 5948,
+    "api_call_count": 43
+  }
+}
