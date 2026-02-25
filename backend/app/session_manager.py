@@ -24,7 +24,7 @@ class SessionManager:
         with self._lock:
             if session_id not in self._sessions:
                 logger.info("Creating new session: %s", session_id)
-                db_path = f"/tmp/{session_id}.duckdb"
+                db_path = f"/tmp/duckdb-data-agent-{session_id}.duckdb"
                 self._sessions[session_id] = SessionEntry(db=Database(db_path))
             else:
                 self._sessions[session_id].last_seen_at = datetime.now(timezone.utc)

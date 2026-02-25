@@ -43,3 +43,4 @@ clean:
 	rm -rf backend/.venv backend/__pycache__ backend/app/__pycache__ backend/app/routes/__pycache__
 	rm -rf frontend/node_modules frontend/dist
 	rm -rf sidecar/node_modules sidecar/dist
+	rm -f /tmp/duckdb-data-agent-*.duckdb /tmp/duckdb-data-agent-*.duckdb.wal
