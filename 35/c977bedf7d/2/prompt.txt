@@ -1,0 +1,5 @@
+for clarifying questions for answering "ask_user_question" tool, put them outside thinking section in ui
+
+---
+
+commit this and push

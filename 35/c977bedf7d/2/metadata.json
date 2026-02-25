@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "35c977bedf7d",
+  "session_id": "32aa15c8-4674-4be3-8dc6-dbb004faeb06",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T01:23:11.106444Z",
+  "branch": "worktree-ask-user-question",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/MessageBubble.css",
+    "frontend/src/components/MessageBubble.tsx"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "5721eee25173",
+  "transcript_identifier_at_start": "b381cf47-97c1-498d-8e19-3dbbb53978cc",
+  "token_usage": {
+    "input_tokens": 19,
+    "cache_creation_tokens": 44330,
+    "cache_read_tokens": 605918,
+    "output_tokens": 1146,
+    "api_call_count": 15
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T01:23:10.966302Z",
+    "agent_lines": 19,
+    "human_added": 36,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 55,
+    "agent_percentage": 34.54545454545455
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/32aa15c8-4674-4be3-8dc6-dbb004faeb06.jsonl"
+}
