@@ -28,56 +28,94 @@ async def test_create_mcp_server_registers_tools_handlers(db):
 
 @pytest.mark.asyncio
 async def test_call_tool_executes_sql_successfully(db):
-    result = db.execute_query("SELECT * FROM test_tbl ORDER BY id")
-    assert result["columns"] == ["id", "name"]
-    assert len(result["rows"]) == 2
-    assert result["rows"][0]["name"] == "alice"
+    """execute_sql tool returns correct columns and rows via the MCP handler."""
+    import mcp.types as types
+
+    server = _create_mcp_server(db, "test-session")
+    handler = server.request_handlers[types.CallToolRequest]
+    request = types.CallToolRequest(
+        method="tools/call",
+        params=types.CallToolRequestParams(
+            name="execute_sql",
+            arguments={"sql": "SELECT * FROM test_tbl ORDER BY id"},
+        ),
+    )
+    result = await handler(request)
+    content = result.root.content[0]
+    parsed = json.loads(content.text)
+    assert parsed["status"] == "success"
+    assert parsed["columns"] == ["id", "name"]
+    assert len(parsed["rows"]) == 2
+    assert parsed["rows"][0]["name"] == "alice"
 
 
 @pytest.mark.asyncio
 async def test_call_tool_returns_success_json(db):
-    """Verify the MCP tool produces the expected JSON structure."""
-    server = _create_mcp_server(db, "test-session")
+    """execute_sql tool response has status, columns, rows, and rowCount fields."""
+    import mcp.types as types
 
-    # Simulate what call_tool does internally
-    sql = "SELECT * FROM test_tbl ORDER BY id"
-    result = db.execute_query(sql)
-    truncated_rows = result["rows"][:100]
-    result_json = {
-        "status": "success",
-        "columns": result["columns"],
-        "rows": truncated_rows,
-        "rowCount": result["rowCount"],
-    }
-    parsed = json.loads(json.dumps(result_json, default=str))
+    server = _create_mcp_server(db, "test-session")
+    handler = server.request_handlers[types.CallToolRequest]
+    request = types.CallToolRequest(
+        method="tools/call",
+        params=types.CallToolRequestParams(
+            name="execute_sql",
+            arguments={"sql": "SELECT * FROM test_tbl ORDER BY id"},
+        ),
+    )
+    result = await handler(request)
+    content = result.root.content[0]
+    parsed = json.loads(content.text)
     assert parsed["status"] == "success"
-    assert parsed["columns"] == ["id", "name"]
+    assert "columns" in parsed
+    assert "rows" in parsed
+    assert "rowCount" in parsed
     assert parsed["rowCount"] == 2
-    assert len(parsed["rows"]) == 2
 
 
 @pytest.mark.asyncio
 async def test_call_tool_handles_sql_error(db):
-    """Verify that SQL errors produce an error JSON response."""
-    try:
-        db.execute_query("SELECT * FROM nonexistent_table")
-        assert False, "Should have raised"
-    except Exception as e:
-        error_json = {"status": "error", "error": str(e)}
-        parsed = json.loads(json.dumps(error_json))
-        assert parsed["status"] == "error"
-        assert "nonexistent_table" in parsed["error"]
+    """execute_sql tool returns error JSON for invalid SQL via the MCP handler."""
+    import mcp.types as types
+
+    server = _create_mcp_server(db, "test-session")
+    handler = server.request_handlers[types.CallToolRequest]
+    request = types.CallToolRequest(
+        method="tools/call",
+        params=types.CallToolRequestParams(
+            name="execute_sql",
+            arguments={"sql": "SELECT * FROM nonexistent_table"},
+        ),
+    )
+    result = await handler(request)
+    content = result.root.content[0]
+    parsed = json.loads(content.text)
+    assert parsed["status"] == "error"
+    assert "nonexistent_table" in parsed["error"]
 
 
 @pytest.mark.asyncio
 async def test_call_tool_truncates_large_results(db):
-    """Verify results are truncated to MAX_RESULT_ROWS."""
-    # Create a table with more than 100 rows
+    """execute_sql tool truncates results to MAX_RESULT_ROWS via the MCP handler."""
+    import mcp.types as types
+    from app.mcp_sse import MAX_RESULT_ROWS
+
     db.execute_query("CREATE TABLE big_tbl AS SELECT range AS id FROM range(200)")
-    result = db.execute_query("SELECT * FROM big_tbl")
-    truncated = result["rows"][:100]
-    assert len(truncated) == 100
-    assert result["rowCount"] == 200
+    server = _create_mcp_server(db, "test-session")
+    handler = server.request_handlers[types.CallToolRequest]
+    request = types.CallToolRequest(
+        method="tools/call",
+        params=types.CallToolRequestParams(
+            name="execute_sql",
+            arguments={"sql": "SELECT * FROM big_tbl"},
+        ),
+    )
+    result = await handler(request)
+    content = result.root.content[0]
+    parsed = json.loads(content.text)
+    assert parsed["status"] == "success"
+    assert len(parsed["rows"]) == MAX_RESULT_ROWS
+    assert parsed["rowCount"] == 200
 
 
 @pytest.mark.asyncio
