@@ -305,7 +305,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               ))}
             </div>
           )}
-          {isInAnswerPhase && !hasAnswer && streamingRemainder?.trim() && (() => {
+          {isInAnswerPhase && streamingRemainder?.trim() && (() => {
             const displayText = hasCharts ? stripChartSpecBlocks(streamingRemainder) : streamingRemainder;
             return displayText?.trim() ? (
               <div className="message-bubble__segment message-bubble__segment--answer">
