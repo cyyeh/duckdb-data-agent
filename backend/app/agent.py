@@ -165,6 +165,25 @@ def _extract_chart_spec(text: str) -> dict | None:
     return None
 
 
+def _build_chart_spec_from_stream_messages(
+    msg: dict, tool_names: dict[str, str], subagent_chart_specs: dict
+) -> None:
+    """Inspect an assistant message and capture render_chart input as chart_spec.
+
+    When the chart-builder subagent calls render_chart, the tool_use block
+    appears in an assistant message whose parent_tool_use_id is the Task
+    tool_use_id for the chart-builder.  We extract input directly so we never
+    need to parse free-text JSON.
+    """
+    parent_id = msg.get("parent_tool_use_id")
+    if not parent_id or tool_names.get(parent_id) != "chart-builder":
+        return
+    for block in msg.get("message", {}).get("content", []):
+        if block.get("type") == "tool_use" and "render_chart" in block.get("name", ""):
+            subagent_chart_specs[parent_id] = block.get("input", {})
+            return
+
+
 async def stream_chat(
     message: str,
     session_id: str | None = None,
@@ -290,6 +309,7 @@ async def stream_chat(
         # usage), not the subagent's actual output.  The real output arrives in
         # assistant messages whose parent_tool_use_id matches the Task tool ID.
         subagent_texts: dict[str, str] = {}
+        subagent_chart_specs: dict[str, dict] = {}
         actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -374,6 +394,7 @@ async def stream_chat(
                                     text_parts.append(block["text"])
                             if text_parts:
                                 subagent_texts[parent_tool_use_id] = "\n".join(text_parts)
+                        _build_chart_spec_from_stream_messages(msg, tool_names, subagent_chart_specs)
 
                         for block in message_obj.get("content", []):
                             block_type = block.get("type")
@@ -470,29 +491,26 @@ async def stream_chat(
                                     result_data["error"] = text
                             # Detect subagent result (Task tool)
                             if name in ("sql-analyst", "chart-builder"):
-                                end_data: dict = {"id": tool_id, "name": name}
                                 # Only chart-builder produces chart_spec JSON.
                                 # sql-analyst returns plain text results.
                                 if name == "chart-builder":
-                                    chart_spec = _extract_chart_spec(text)
-                                    if not chart_spec and tool_use_result_text:
-                                        chart_spec = _extract_chart_spec(tool_use_result_text)
-                                    if not chart_spec:
-                                        captured = subagent_texts.get(tool_id, "")
-                                        if captured:
-                                            chart_spec = _extract_chart_spec(captured)
+                                    chart_spec = subagent_chart_specs.get(tool_id)
+                                    end_data: dict = {"id": tool_id, "name": name}
                                     if chart_spec:
                                         end_data["chart_spec"] = chart_spec
                                     else:
                                         end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
                                         logger.warning(
-                                            "[container] chart_spec extraction failed for %s",
-                                            name,
+                                            "[container] render_chart tool_use not found for chart-builder %s",
+                                            tool_id,
                                         )
+                                    yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                    continue
                                 else:
+                                    end_data: dict = {"id": tool_id, "name": name}
                                     end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
-                                yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
-                                continue
+                                    yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                    continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
