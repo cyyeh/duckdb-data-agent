@@ -7,10 +7,7 @@ scenarios:
 
       - action: verify
         expected:
-          css_property:
-            selector: "html"
-            property: "data-theme"
-            matches: "dark"
+          element_exists: "html[data-theme='dark']"
 
   - name: "Toggle language to Chinese"
     tags: [ui, i18n]
