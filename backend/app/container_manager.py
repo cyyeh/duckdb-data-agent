@@ -106,21 +106,34 @@ class ContainerManager:
 
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
-        # Resolve the actual gateway IP of the sidecar network so that
-        # host.docker.internal points to the correct host-side bridge address.
-        # Using "host-gateway" is unreliable under gVisor: it resolves to the
-        # docker0 bridge IP which is on a different subnet from agent-sandbox,
-        # so there is no route to it from inside the sidecar container.
-        host_gateway_ip = self._resolve_host_gateway_ip()
-        if host_gateway_ip:
-            extra_hosts["host.docker.internal"] = host_gateway_ip
+        # Resolve host.docker.internal so the sidecar can reach the host.
+        # Strategy depends on platform and runtime:
+        #
+        # - macOS Docker Desktop (any runtime): "host-gateway" works correctly
+        #   and resolves to the Mac host.  The IPAM gateway IP points to the
+        #   bridge gateway *inside* the Linux VM, which is NOT the Mac host,
+        #   so we must NOT use it here.
+        #
+        # - Linux + runc: "host-gateway" resolves to the docker0 bridge IP
+        #   which is routable from the container.
+        #
+        # - Linux + runsc (gVisor): "host-gateway" may not be honoured.
+        #   Read the actual gateway IP from the network's IPAM config instead.
+        _on_macos_host = sys.platform == "darwin" and not os.path.exists("/.dockerenv")
+        _using_gvisor = self._config.runtime == "runsc"
+
+        if _using_gvisor and not _on_macos_host:
+            host_gateway_ip = self._resolve_host_gateway_ip()
+            if host_gateway_ip:
+                extra_hosts["host.docker.internal"] = host_gateway_ip
+            else:
+                extra_hosts["host.docker.internal"] = "host-gateway"
+                logger.warning(
+                    "Could not resolve host gateway IP from IPAM; falling back to "
+                    "host-gateway magic value (may not work under gVisor on Linux)"
+                )
         else:
-            # Fall back to Docker's magic value for non-Linux or Docker Desktop
             extra_hosts["host.docker.internal"] = "host-gateway"
-            logger.warning(
-                "Could not resolve host gateway IP from IPAM; falling back to "
-                "host-gateway magic value (may not work under gVisor on Linux)"
-            )
         if extra_hosts:
             logger.info("Sidecar extra_hosts: %s", extra_hosts)
 
