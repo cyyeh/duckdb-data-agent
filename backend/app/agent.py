@@ -88,6 +88,15 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
         "- For multi-series data, group into separate traces.\n"
         "- `layout.title` is required — always provide a descriptive title.\n"
         "- Keep the chart clean and readable.\n\n"
+        "IMPORTANT — keep data small. Pre-aggregate in SQL instead of passing raw rows:\n"
+        "- Box plots: compute lowerfence, q1, median, q3, upperfence per group in SQL. "
+        "Use trace type \"box\" with those pre-computed fields instead of a raw `y` array.\n"
+        "- Histograms: compute bin counts with width_bucket() or CASE in SQL, then "
+        "render as a bar chart with the bin edges as `x` and counts as `y`.\n"
+        "- Scatter / line with many rows: sample (ORDER BY random() LIMIT 200) or "
+        "aggregate (e.g. average per time bucket) so each trace has at most ~200 points.\n"
+        "- General rule: each trace should have at most ~200 data points. "
+        "Large tool-call inputs cause malformed JSON and validation errors.\n\n"
         "When ready to render, call `render_chart` with:\n"
         "- `data`: array of Plotly trace objects\n"
         "- `layout`: object containing at minimum {\"title\": \"<descriptive title>\"}\n\n"
@@ -329,6 +338,7 @@ async def stream_chat(
                                     # subagent's final turn).
                                     if is_subagent_event:
                                         subagent_texts[stream_parent] = subagent_texts.get(stream_parent, "") + text
+                                        yield f"event: subagent_text\ndata: {json.dumps({'id': stream_parent, 'name': tool_names.get(stream_parent, ''), 'text': text})}\n\n"
                                     else:
                                         event_name = "answer" if has_tool_calls else "thinking"
                                         yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"

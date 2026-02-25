@@ -26,6 +26,8 @@ export function AgentProvider({
   const abortRef = useRef<AbortController | null>(null);
   const textBufferRef = useRef('');
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const subagentTextBufRef = useRef<Record<string, string>>({});
+  const subagentFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const assistantIdRef = useRef('');
   const segmentsRef = useRef<ContentSegment[]>([]);
   const currentTextRef = useRef('');
@@ -44,6 +46,29 @@ export function AgentProvider({
       )
     );
     textBufferRef.current = '';
+  }, []);
+
+  const flushSubagentText = useCallback(() => {
+    const bufs = subagentTextBufRef.current;
+    if (Object.keys(bufs).length === 0) return;
+    for (const [id, text] of Object.entries(bufs)) {
+      const idx = segmentsRef.current.findIndex(
+        (s) => s.type === 'answer' && s.subagentId === id
+      );
+      if (idx !== -1) {
+        const seg = segmentsRef.current[idx];
+        segmentsRef.current[idx] = { ...seg, text: (seg.text || '') + text };
+      } else {
+        segmentsRef.current.push({ type: 'answer', text, subagentId: id });
+      }
+    }
+    subagentTextBufRef.current = {};
+    const id = assistantIdRef.current;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, segments: [...segmentsRef.current] } : m
+      )
+    );
   }, []);
 
   const sendMessage = useCallback(
@@ -69,6 +94,7 @@ export function AgentProvider({
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
       setIsStreaming(true);
       textBufferRef.current = '';
+      subagentTextBufRef.current = {};
       segmentsRef.current = [];
       currentTextRef.current = '';
       phaseRef.current = 'thinking';
@@ -196,14 +222,40 @@ export function AgentProvider({
               )
             );
           },
+          onSubagentText: (data) => {
+            subagentTextBufRef.current[data.id] = (subagentTextBufRef.current[data.id] || '') + data.text;
+            if (!subagentFlushRef.current) {
+              subagentFlushRef.current = setTimeout(() => {
+                flushSubagentText();
+                subagentFlushRef.current = null;
+              }, 50);
+            }
+          },
           onSubagentEnd: (data) => {
-            segmentsRef.current.push({
-              type: 'subagent_end',
-              subagentId: data.id,
-              subagentName: data.name,
-              chart_spec: data.chart_spec,
-              text: data.result,
-            });
+            if (subagentFlushRef.current) {
+              clearTimeout(subagentFlushRef.current);
+              subagentFlushRef.current = null;
+            }
+            flushSubagentText();
+            if (data.chart_spec) {
+              segmentsRef.current.push({
+                type: 'subagent_end',
+                subagentId: data.id,
+                subagentName: data.name,
+                chart_spec: data.chart_spec,
+              });
+            } else if (data.result) {
+              const hasStreamed = segmentsRef.current.some(
+                (s) => s.type === 'answer' && s.subagentId === data.id
+              );
+              if (!hasStreamed) {
+                segmentsRef.current.push({
+                  type: 'answer',
+                  text: data.result,
+                  subagentId: data.id,
+                });
+              }
+            }
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
@@ -219,6 +271,11 @@ export function AgentProvider({
               flushTimerRef.current = null;
             }
             flushText();
+            if (subagentFlushRef.current) {
+              clearTimeout(subagentFlushRef.current);
+              subagentFlushRef.current = null;
+            }
+            flushSubagentText();
             if (currentTextRef.current.trim()) {
               segmentsRef.current.push({
                 type: 'answer',
@@ -242,6 +299,10 @@ export function AgentProvider({
               flushTimerRef.current = null;
             }
             flushText();
+            if (subagentFlushRef.current) {
+              clearTimeout(subagentFlushRef.current);
+              subagentFlushRef.current = null;
+            }
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
@@ -280,7 +341,7 @@ export function AgentProvider({
         userSessionId,
       );
     },
-    [isStreaming, flushText, refreshTables, userSessionId]
+    [isStreaming, flushText, flushSubagentText, refreshTables, userSessionId]
   );
 
   const editMessage = useCallback(
@@ -315,6 +376,7 @@ export function AgentProvider({
       setMessages((prev) => [...prev.slice(0, messageIndex), userMsg, assistantMsg]);
       setIsStreaming(true);
       textBufferRef.current = '';
+      subagentTextBufRef.current = {};
       segmentsRef.current = [];
       currentTextRef.current = '';
       phaseRef.current = 'thinking';
@@ -429,14 +491,40 @@ export function AgentProvider({
               )
             );
           },
+          onSubagentText: (data) => {
+            subagentTextBufRef.current[data.id] = (subagentTextBufRef.current[data.id] || '') + data.text;
+            if (!subagentFlushRef.current) {
+              subagentFlushRef.current = setTimeout(() => {
+                flushSubagentText();
+                subagentFlushRef.current = null;
+              }, 50);
+            }
+          },
           onSubagentEnd: (data) => {
-            segmentsRef.current.push({
-              type: 'subagent_end',
-              subagentId: data.id,
-              subagentName: data.name,
-              chart_spec: data.chart_spec,
-              text: data.result,
-            });
+            if (subagentFlushRef.current) {
+              clearTimeout(subagentFlushRef.current);
+              subagentFlushRef.current = null;
+            }
+            flushSubagentText();
+            if (data.chart_spec) {
+              segmentsRef.current.push({
+                type: 'subagent_end',
+                subagentId: data.id,
+                subagentName: data.name,
+                chart_spec: data.chart_spec,
+              });
+            } else if (data.result) {
+              const hasStreamed = segmentsRef.current.some(
+                (s) => s.type === 'answer' && s.subagentId === data.id
+              );
+              if (!hasStreamed) {
+                segmentsRef.current.push({
+                  type: 'answer',
+                  text: data.result,
+                  subagentId: data.id,
+                });
+              }
+            }
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
@@ -452,6 +540,11 @@ export function AgentProvider({
               flushTimerRef.current = null;
             }
             flushText();
+            if (subagentFlushRef.current) {
+              clearTimeout(subagentFlushRef.current);
+              subagentFlushRef.current = null;
+            }
+            flushSubagentText();
             if (currentTextRef.current.trim()) {
               segmentsRef.current.push({ type: 'answer', text: currentTextRef.current });
               currentTextRef.current = '';
@@ -472,6 +565,10 @@ export function AgentProvider({
               flushTimerRef.current = null;
             }
             flushText();
+            if (subagentFlushRef.current) {
+              clearTimeout(subagentFlushRef.current);
+              subagentFlushRef.current = null;
+            }
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
@@ -510,7 +607,7 @@ export function AgentProvider({
         userSessionId,
       );
     },
-    [isStreaming, messages, flushText, refreshTables, userSessionId]
+    [isStreaming, messages, flushText, flushSubagentText, refreshTables, userSessionId]
   );
 
   const deleteMessage = useCallback(
