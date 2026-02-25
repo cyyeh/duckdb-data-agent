@@ -3,7 +3,7 @@
   "checkpoint_id": "486ee561439a",
   "strategy": "manual-commit",
   "branch": "feat/animated-chart-support",
-  "checkpoints_count": 0,
+  "checkpoints_count": 4,
   "files_touched": [
     "frontend/src/components/ChartWidget.tsx",
     "utils/run_plotly.html"
@@ -57,13 +57,20 @@
       "context": "/48/6ee561439a/6/context.md",
       "content_hash": "/48/6ee561439a/6/content_hash.txt",
       "prompt": "/48/6ee561439a/6/prompt.txt"
+    },
+    {
+      "metadata": "/48/6ee561439a/7/metadata.json",
+      "transcript": "/48/6ee561439a/7/full.jsonl",
+      "context": "/48/6ee561439a/7/context.md",
+      "content_hash": "/48/6ee561439a/7/content_hash.txt",
+      "prompt": "/48/6ee561439a/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1616,
-    "cache_creation_tokens": 713556,
-    "cache_read_tokens": 34265216,
-    "output_tokens": 32922,
-    "api_call_count": 442
+    "input_tokens": 1685,
+    "cache_creation_tokens": 862978,
+    "cache_read_tokens": 36290415,
+    "output_tokens": 35467,
+    "api_call_count": 494
   }
 }
