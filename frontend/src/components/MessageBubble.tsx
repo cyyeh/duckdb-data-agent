@@ -279,6 +279,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               <UserQuestion
                 questionData={seg.questionData!}
                 userAnswer={seg.userAnswer}
+                userFreeText={seg.userFreeText}
               />
             </div>
           ))}

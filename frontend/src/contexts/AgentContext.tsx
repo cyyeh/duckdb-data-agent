@@ -531,6 +531,7 @@ export function AgentProvider({
         segmentsRef.current[segIdx] = {
           ...segmentsRef.current[segIdx],
           userAnswer: answers,
+          userFreeText: freeText,
         };
         setMessages((prev) =>
           prev.map((m) =>

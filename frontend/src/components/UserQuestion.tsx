@@ -7,9 +7,11 @@ import './UserQuestion.css';
 export function UserQuestion({
   questionData,
   userAnswer,
+  userFreeText,
 }: {
   questionData: UserQuestionData;
   userAnswer?: string[];
+  userFreeText?: string;
 }) {
   const { t } = useTranslation();
   const { respondToQuestion } = useAgent();
@@ -57,6 +59,9 @@ export function UserQuestion({
           {userAnswer.map((a, i) => (
             <span key={i} className="user-question__selected-chip">{a}</span>
           ))}
+          {userFreeText && (
+            <span className="user-question__selected-chip">{userFreeText}</span>
+          )}
         </div>
       </div>
     );
