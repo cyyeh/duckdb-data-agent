@@ -3,7 +3,7 @@
   "checkpoint_id": "3ba97b2afba3",
   "strategy": "manual-commit",
   "branch": "fix/compose-build-sidecar",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "Makefile",
     "docker-compose.yml"
@@ -64,13 +64,20 @@
       "context": "/3b/a97b2afba3/7/context.md",
       "content_hash": "/3b/a97b2afba3/7/content_hash.txt",
       "prompt": "/3b/a97b2afba3/7/prompt.txt"
+    },
+    {
+      "metadata": "/3b/a97b2afba3/8/metadata.json",
+      "transcript": "/3b/a97b2afba3/8/full.jsonl",
+      "context": "/3b/a97b2afba3/8/context.md",
+      "content_hash": "/3b/a97b2afba3/8/content_hash.txt",
+      "prompt": "/3b/a97b2afba3/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9033,
-    "cache_creation_tokens": 908104,
-    "cache_read_tokens": 48464507,
-    "output_tokens": 43404,
-    "api_call_count": 605
+    "input_tokens": 9044,
+    "cache_creation_tokens": 918599,
+    "cache_read_tokens": 48681196,
+    "output_tokens": 43583,
+    "api_call_count": 612
   }
 }
