@@ -1,0 +1,5 @@
+for user answering questions from "user_ask_question" tool using free-form text, user provided answer should be shown on the answered text
+
+---
+
+commit this and push
