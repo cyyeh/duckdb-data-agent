@@ -1,6 +1,6 @@
 .PHONY: dev backend frontend install install-backend install-frontend \
        sidecar-build sidecar-network clean compose-build compose-up compose-down \
-       install-e2e e2e-test e2e-report
+       install-e2e e2e-test e2e-test-headed e2e-test-ui e2e-report
 
 # Run both backend and frontend concurrently (requires sidecar image built)
 dev:
@@ -53,6 +53,12 @@ install-e2e:
 
 e2e-test:
 	cd e2e && npx playwright test
+
+e2e-test-headed:
+	cd e2e && npx playwright test --headed
+
+e2e-test-ui:
+	cd e2e && npx playwright test --ui
 
 e2e-report:
 	cd e2e && npx playwright show-report results

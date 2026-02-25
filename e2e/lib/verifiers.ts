@@ -21,10 +21,10 @@ export async function runStructuralVerify(page: Page, step: VerifyStep): Promise
   }
 
   if (expected.has_chart === true) {
-    await expect(lastAssistant.locator('.plotly-graph-div')).toBeVisible();
+    await expect(lastAssistant.locator('.js-plotly-plot')).toBeVisible();
   }
   if (expected.has_chart === false) {
-    await expect(lastAssistant.locator('.plotly-graph-div')).not.toBeVisible();
+    await expect(lastAssistant.locator('.js-plotly-plot')).not.toBeVisible();
   }
 
   if (expected.has_table === true) {

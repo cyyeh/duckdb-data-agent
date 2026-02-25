@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import * as path from 'path';
 import { Step } from './types';
 
@@ -37,14 +37,12 @@ async function sendMessage(page: Page, input: string): Promise<void> {
 
 async function waitForResponse(page: Page, timeout?: number): Promise<void> {
   const effectiveTimeout = timeout || 120_000;
-  // First wait for the typing indicator to appear (response started)
-  try {
-    await page.locator('.message-bubble__typing').waitFor({ state: 'visible', timeout: 10_000 });
-  } catch {
-    // Typing indicator may have already disappeared if response was fast
-  }
-  // Then wait for it to disappear (response complete)
-  await page.locator('.message-bubble__typing').waitFor({ state: 'hidden', timeout: effectiveTimeout });
+  // Wait for the chat input textarea to become enabled again.
+  // While the agent is streaming, the textarea is disabled with
+  // placeholder "Waiting for response...". This is the most reliable
+  // signal that the full response (including subagent work) is complete.
+  const textarea = page.locator('.chat-input__textarea');
+  await expect(textarea).toBeEnabled({ timeout: effectiveTimeout });
 }
 
 async function clickElement(page: Page, selector: string): Promise<void> {

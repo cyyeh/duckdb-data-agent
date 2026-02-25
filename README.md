@@ -279,10 +279,18 @@ Browser-based end-to-end tests are driven by YAML scenario files using [Playwrig
 make install-e2e
 ```
 
+**Environment setup:** Scenarios using `verify_llm` (LLM-as-judge) require an Anthropic API key. Create `e2e/.env` with:
+
+```
+ANTHROPIC_API_KEY=your-key-here
+```
+
 **Run tests** (requires `make dev` running in another terminal):
 
 ```bash
-make e2e-test
+make e2e-test            # headless (default)
+make e2e-test-headed     # with visible browser
+make e2e-test-ui         # interactive Playwright UI
 ```
 
 **View HTML report:**
