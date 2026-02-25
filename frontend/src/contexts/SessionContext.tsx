@@ -1,8 +1,9 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { SessionContext } from '../hooks/useSessionId';
+import { generateUUID } from '../utils/uuid';
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const sessionIdRef = useRef<string>(crypto.randomUUID());
+  const sessionIdRef = useRef<string>(generateUUID());
 
   useEffect(() => {
     const sessionId = sessionIdRef.current;

@@ -8,9 +8,10 @@ import { AgentContext } from '../hooks/useAgent';
 import { runAgentLoop, runAgentEditLoop } from '../agent/agentService';
 import type { ChatMessage, ContentSegment, ToolCallResult } from '../types';
 import { useSessionId } from '../hooks/useSessionId';
+import { generateUUID } from '../utils/uuid';
 
 function generateId() {
-  return crypto.randomUUID();
+  return generateUUID();
 }
 
 export function AgentProvider({
@@ -76,7 +77,7 @@ export function AgentProvider({
       // If there's pending history from a delete, start a new Langfuse session with that context
       const pendingHistory = pendingHistoryRef.current;
       pendingHistoryRef.current = null;
-      const langfuseSessionId = pendingHistory ? crypto.randomUUID() : null;
+      const langfuseSessionId = pendingHistory ? generateUUID() : null;
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -325,7 +326,7 @@ export function AgentProvider({
       await runAgentEditLoop(
         newContent,
         conversationHistory,
-        crypto.randomUUID(),
+        generateUUID(),
         {
           onTextChunk: (chunk) => {
             textBufferRef.current += chunk;
