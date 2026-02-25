@@ -320,8 +320,10 @@ async def stream_chat(
 
                     msg_type = msg.get("type")
                     parent_id = msg.get("parent_tool_use_id")
-                    if parent_id and parent_id in tool_names:
-                        logger.info("[subagent] type=%s parent=%s name=%s", msg_type, parent_id, tool_names.get(parent_id))
+                    if parent_id:
+                        logger.info("[subagent] type=%s parent=%s in_tool_names=%s tool_names_keys=%s", msg_type, parent_id, parent_id in tool_names, list(tool_names.keys()))
+                    elif msg_type in ("assistant", "user"):
+                        logger.info("[msg] type=%s parent_tool_use_id=%s", msg_type, parent_id)
                     # --- Token-level streaming events from SDK ---
                     if msg_type == "stream_event":
                         event = msg.get("event", {})
