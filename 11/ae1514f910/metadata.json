@@ -3,7 +3,7 @@
   "checkpoint_id": "11ae1514f910",
   "strategy": "manual-commit",
   "branch": "chore/minor-updates",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "frontend/src/components/ChartWidget.tsx"
   ],
@@ -21,13 +21,20 @@
       "context": "/11/ae1514f910/1/context.md",
       "content_hash": "/11/ae1514f910/1/content_hash.txt",
       "prompt": "/11/ae1514f910/1/prompt.txt"
+    },
+    {
+      "metadata": "/11/ae1514f910/2/metadata.json",
+      "transcript": "/11/ae1514f910/2/full.jsonl",
+      "context": "/11/ae1514f910/2/context.md",
+      "content_hash": "/11/ae1514f910/2/content_hash.txt",
+      "prompt": "/11/ae1514f910/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7693,
-    "cache_creation_tokens": 250196,
-    "cache_read_tokens": 13750307,
-    "output_tokens": 9903,
-    "api_call_count": 163
+    "input_tokens": 9895,
+    "cache_creation_tokens": 304799,
+    "cache_read_tokens": 14171050,
+    "output_tokens": 11491,
+    "api_call_count": 173
   }
 }
