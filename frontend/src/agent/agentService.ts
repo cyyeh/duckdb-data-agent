@@ -6,7 +6,6 @@ interface AgentCallbacks {
   onToolCall: (pending: ToolCallResult) => void;
   onToolResult: (result: ToolCallResult) => void;
   onSubagentStart?: (data: { id: string; name: string; prompt: string }) => void;
-  onSubagentText?: (data: { id: string; name: string; text: string }) => void;
   onSubagentEnd?: (data: { id: string; name: string; result?: string; chart_spec?: { data: unknown[]; layout?: Record<string, unknown> } }) => void;
   onDone: (sessionId: string | null) => void;
   onError: (error: string) => void;
@@ -219,13 +218,6 @@ function handleSSEEvent(
         id: data.id as string,
         name: data.name as string,
         prompt: (data.prompt as string) ?? '',
-      });
-      break;
-    case 'subagent_text':
-      callbacks.onSubagentText?.({
-        id: data.id as string,
-        name: data.name as string,
-        text: data.text as string,
       });
       break;
     case 'subagent_end':

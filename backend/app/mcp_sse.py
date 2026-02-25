@@ -1,5 +1,6 @@
 import json
 import logging
+import anyio
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import Response
@@ -151,14 +152,25 @@ async def handle_sse(request: Request) -> Response:
     db = session_manager.get_or_create(session_id)
     server = _create_mcp_server(db, session_id)
 
-    async with sse_transport.connect_sse(
-        request.scope, request.receive, request._send
-    ) as streams:
-        await server.run(
-            streams[0],
-            streams[1],
-            server.create_initialization_options(),
-        )
+    try:
+        async with sse_transport.connect_sse(
+            request.scope, request.receive, request._send
+        ) as streams:
+            await server.run(
+                streams[0],
+                streams[1],
+                server.create_initialization_options(),
+            )
+    except anyio.ClosedResourceError:
+        logger.debug("MCP SSE client disconnected (session %s)", session_id)
+    except BaseExceptionGroup as eg:
+        # The MCP library uses anyio task groups which wrap errors in
+        # ExceptionGroups.  Filter out ClosedResourceError (normal client
+        # disconnect) and re-raise anything else.
+        _, rest = eg.split(anyio.ClosedResourceError)
+        if rest:
+            raise rest from None
+        logger.debug("MCP SSE client disconnected (session %s)", session_id)
 
     return Response()
 
