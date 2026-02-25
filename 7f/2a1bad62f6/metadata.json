@@ -3,7 +3,7 @@
   "checkpoint_id": "7f2a1bad62f6",
   "strategy": "manual-commit",
   "branch": "feat/animated-chart-support",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "README.md"
   ],
@@ -56,13 +56,20 @@
       "context": "/7f/2a1bad62f6/6/context.md",
       "content_hash": "/7f/2a1bad62f6/6/content_hash.txt",
       "prompt": "/7f/2a1bad62f6/6/prompt.txt"
+    },
+    {
+      "metadata": "/7f/2a1bad62f6/7/metadata.json",
+      "transcript": "/7f/2a1bad62f6/7/full.jsonl",
+      "context": "/7f/2a1bad62f6/7/context.md",
+      "content_hash": "/7f/2a1bad62f6/7/content_hash.txt",
+      "prompt": "/7f/2a1bad62f6/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1321,
-    "cache_creation_tokens": 596887,
-    "cache_read_tokens": 32651750,
-    "output_tokens": 34669,
-    "api_call_count": 421
+    "input_tokens": 1331,
+    "cache_creation_tokens": 607521,
+    "cache_read_tokens": 33153600,
+    "output_tokens": 35181,
+    "api_call_count": 427
   }
 }
