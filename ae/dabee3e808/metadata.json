@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "aedabee3e808",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/tests/test_agent_chart.py",
+    "frontend/src/components/InlineQueryResult.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ae/dabee3e808/0/metadata.json",
+      "transcript": "/ae/dabee3e808/0/full.jsonl",
+      "context": "/ae/dabee3e808/0/context.md",
+      "content_hash": "/ae/dabee3e808/0/content_hash.txt",
+      "prompt": "/ae/dabee3e808/0/prompt.txt"
+    },
+    {
+      "metadata": "/ae/dabee3e808/1/metadata.json",
+      "transcript": "/ae/dabee3e808/1/full.jsonl",
+      "context": "/ae/dabee3e808/1/context.md",
+      "content_hash": "/ae/dabee3e808/1/content_hash.txt",
+      "prompt": "/ae/dabee3e808/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 115,
+    "cache_creation_tokens": 116130,
+    "cache_read_tokens": 6111915,
+    "output_tokens": 13902,
+    "api_call_count": 92
+  }
+}

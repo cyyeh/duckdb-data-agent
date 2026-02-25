@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "ca0bf6d65b14",
+  "session_id": "a40005b1-e1c8-431f-b2da-dd725a4b6a87",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-24T16:09:07.751908Z",
+  "branch": "feat/chart-rendering",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "README.md",
+    "backend/.env.example",
+    "backend/app/config.py",
+    "backend/app/container_manager.py",
+    "docs/plans/2026-02-20-langfuse-integration-plan.md",
+    "sidecar/src/server.ts"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "ba6c07bd5eea",
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 8668,
+    "cache_read_tokens": 106530,
+    "output_tokens": 277,
+    "api_call_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-24T16:09:07.706166Z",
+    "agent_lines": 54,
+    "human_added": 0,
+    "human_modified": 4,
+    "human_removed": 0,
+    "total_committed": 58,
+    "agent_percentage": 93.10344827586206
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/a40005b1-e1c8-431f-b2da-dd725a4b6a87.jsonl"
+}

@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "de3136676f17",
+  "session_id": "2949316c-c66e-4484-959e-3400e03d05cc",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T02:01:41.072787Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/2026-02-25-remove-subprocess-mode-plan.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "2a82405b56bc",
+  "token_usage": {
+    "input_tokens": 406,
+    "cache_creation_tokens": 179229,
+    "cache_read_tokens": 10750857,
+    "output_tokens": 7946,
+    "api_call_count": 124
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T02:01:39.391275Z",
+    "agent_lines": 0,
+    "human_added": 448,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 448,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/2949316c-c66e-4484-959e-3400e03d05cc.jsonl"
+}

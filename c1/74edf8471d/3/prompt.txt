@@ -1,0 +1,9 @@
+refine project structure section in readme based on current project
+
+---
+
+update Configuration and Deploy to Render to reflect new ANTHROPIC_MODEL env var
+
+---
+
+commit this

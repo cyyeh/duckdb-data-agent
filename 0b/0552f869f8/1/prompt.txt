@@ -1,0 +1,9 @@
+should move frontend/public/titanic.csv to backend, since backend should directly read titanic.csv from local file to load sample data
+
+---
+
+commit this
+
+---
+
+push it

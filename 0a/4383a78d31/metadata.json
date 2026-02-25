@@ -1,0 +1,82 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0a4383a78d31",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/plans/2026-02-25-remove-subprocess-mode-design.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0a/4383a78d31/0/metadata.json",
+      "transcript": "/0a/4383a78d31/0/full.jsonl",
+      "context": "/0a/4383a78d31/0/context.md",
+      "content_hash": "/0a/4383a78d31/0/content_hash.txt",
+      "prompt": "/0a/4383a78d31/0/prompt.txt"
+    },
+    {
+      "metadata": "/0a/4383a78d31/1/metadata.json",
+      "transcript": "/0a/4383a78d31/1/full.jsonl",
+      "context": "/0a/4383a78d31/1/context.md",
+      "content_hash": "/0a/4383a78d31/1/content_hash.txt",
+      "prompt": "/0a/4383a78d31/1/prompt.txt"
+    },
+    {
+      "metadata": "/0a/4383a78d31/2/metadata.json",
+      "transcript": "/0a/4383a78d31/2/full.jsonl",
+      "context": "/0a/4383a78d31/2/context.md",
+      "content_hash": "/0a/4383a78d31/2/content_hash.txt",
+      "prompt": "/0a/4383a78d31/2/prompt.txt"
+    },
+    {
+      "metadata": "/0a/4383a78d31/3/metadata.json",
+      "transcript": "/0a/4383a78d31/3/full.jsonl",
+      "context": "/0a/4383a78d31/3/context.md",
+      "content_hash": "/0a/4383a78d31/3/content_hash.txt",
+      "prompt": "/0a/4383a78d31/3/prompt.txt"
+    },
+    {
+      "metadata": "/0a/4383a78d31/4/metadata.json",
+      "transcript": "/0a/4383a78d31/4/full.jsonl",
+      "context": "/0a/4383a78d31/4/context.md",
+      "content_hash": "/0a/4383a78d31/4/content_hash.txt",
+      "prompt": "/0a/4383a78d31/4/prompt.txt"
+    },
+    {
+      "metadata": "/0a/4383a78d31/5/metadata.json",
+      "transcript": "/0a/4383a78d31/5/full.jsonl",
+      "context": "/0a/4383a78d31/5/context.md",
+      "content_hash": "/0a/4383a78d31/5/content_hash.txt",
+      "prompt": "/0a/4383a78d31/5/prompt.txt"
+    },
+    {
+      "metadata": "/0a/4383a78d31/6/metadata.json",
+      "transcript": "/0a/4383a78d31/6/full.jsonl",
+      "context": "/0a/4383a78d31/6/context.md",
+      "content_hash": "/0a/4383a78d31/6/content_hash.txt",
+      "prompt": "/0a/4383a78d31/6/prompt.txt"
+    },
+    {
+      "metadata": "/0a/4383a78d31/7/metadata.json",
+      "transcript": "/0a/4383a78d31/7/full.jsonl",
+      "context": "/0a/4383a78d31/7/context.md",
+      "content_hash": "/0a/4383a78d31/7/content_hash.txt",
+      "prompt": "/0a/4383a78d31/7/prompt.txt"
+    },
+    {
+      "metadata": "/0a/4383a78d31/8/metadata.json",
+      "transcript": "/0a/4383a78d31/8/full.jsonl",
+      "context": "/0a/4383a78d31/8/context.md",
+      "content_hash": "/0a/4383a78d31/8/content_hash.txt",
+      "prompt": "/0a/4383a78d31/8/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 8700,
+    "cache_creation_tokens": 857959,
+    "cache_read_tokens": 43335822,
+    "output_tokens": 37787,
+    "api_call_count": 551
+  }
+}

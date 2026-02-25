@@ -1,0 +1,107 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "c2aa23747b6e",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "frontend/src/App.tsx",
+    "frontend/src/components/AgentPanel.tsx",
+    "frontend/src/components/FileUpload.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c2/aa23747b6e/0/metadata.json",
+      "transcript": "/c2/aa23747b6e/0/full.jsonl",
+      "context": "/c2/aa23747b6e/0/context.md",
+      "content_hash": "/c2/aa23747b6e/0/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/0/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/1/metadata.json",
+      "transcript": "/c2/aa23747b6e/1/full.jsonl",
+      "context": "/c2/aa23747b6e/1/context.md",
+      "content_hash": "/c2/aa23747b6e/1/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/1/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/2/metadata.json",
+      "transcript": "/c2/aa23747b6e/2/full.jsonl",
+      "context": "/c2/aa23747b6e/2/context.md",
+      "content_hash": "/c2/aa23747b6e/2/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/2/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/3/metadata.json",
+      "transcript": "/c2/aa23747b6e/3/full.jsonl",
+      "context": "/c2/aa23747b6e/3/context.md",
+      "content_hash": "/c2/aa23747b6e/3/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/3/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/4/metadata.json",
+      "transcript": "/c2/aa23747b6e/4/full.jsonl",
+      "context": "/c2/aa23747b6e/4/context.md",
+      "content_hash": "/c2/aa23747b6e/4/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/4/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/5/metadata.json",
+      "transcript": "/c2/aa23747b6e/5/full.jsonl",
+      "context": "/c2/aa23747b6e/5/context.md",
+      "content_hash": "/c2/aa23747b6e/5/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/5/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/6/metadata.json",
+      "transcript": "/c2/aa23747b6e/6/full.jsonl",
+      "context": "/c2/aa23747b6e/6/context.md",
+      "content_hash": "/c2/aa23747b6e/6/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/6/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/7/metadata.json",
+      "transcript": "/c2/aa23747b6e/7/full.jsonl",
+      "context": "/c2/aa23747b6e/7/context.md",
+      "content_hash": "/c2/aa23747b6e/7/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/7/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/8/metadata.json",
+      "transcript": "/c2/aa23747b6e/8/full.jsonl",
+      "context": "/c2/aa23747b6e/8/context.md",
+      "content_hash": "/c2/aa23747b6e/8/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/8/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/9/metadata.json",
+      "transcript": "/c2/aa23747b6e/9/full.jsonl",
+      "context": "/c2/aa23747b6e/9/context.md",
+      "content_hash": "/c2/aa23747b6e/9/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/9/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/10/metadata.json",
+      "transcript": "/c2/aa23747b6e/10/full.jsonl",
+      "context": "/c2/aa23747b6e/10/context.md",
+      "content_hash": "/c2/aa23747b6e/10/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/10/prompt.txt"
+    },
+    {
+      "metadata": "/c2/aa23747b6e/11/metadata.json",
+      "transcript": "/c2/aa23747b6e/11/full.jsonl",
+      "context": "/c2/aa23747b6e/11/context.md",
+      "content_hash": "/c2/aa23747b6e/11/content_hash.txt",
+      "prompt": "/c2/aa23747b6e/11/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1474,
+    "cache_creation_tokens": 877403,
+    "cache_read_tokens": 44522435,
+    "output_tokens": 67131,
+    "api_call_count": 586
+  }
+}

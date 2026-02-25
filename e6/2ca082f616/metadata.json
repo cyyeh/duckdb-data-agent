@@ -1,0 +1,75 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e62ca082f616",
+  "strategy": "manual-commit",
+  "branch": "feat/subagent-sql-chart",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "backend/app/mcp_sse.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e6/2ca082f616/0/metadata.json",
+      "transcript": "/e6/2ca082f616/0/full.jsonl",
+      "context": "/e6/2ca082f616/0/context.md",
+      "content_hash": "/e6/2ca082f616/0/content_hash.txt",
+      "prompt": "/e6/2ca082f616/0/prompt.txt"
+    },
+    {
+      "metadata": "/e6/2ca082f616/1/metadata.json",
+      "transcript": "/e6/2ca082f616/1/full.jsonl",
+      "context": "/e6/2ca082f616/1/context.md",
+      "content_hash": "/e6/2ca082f616/1/content_hash.txt",
+      "prompt": "/e6/2ca082f616/1/prompt.txt"
+    },
+    {
+      "metadata": "/e6/2ca082f616/2/metadata.json",
+      "transcript": "/e6/2ca082f616/2/full.jsonl",
+      "context": "/e6/2ca082f616/2/context.md",
+      "content_hash": "/e6/2ca082f616/2/content_hash.txt",
+      "prompt": "/e6/2ca082f616/2/prompt.txt"
+    },
+    {
+      "metadata": "/e6/2ca082f616/3/metadata.json",
+      "transcript": "/e6/2ca082f616/3/full.jsonl",
+      "context": "/e6/2ca082f616/3/context.md",
+      "content_hash": "/e6/2ca082f616/3/content_hash.txt",
+      "prompt": "/e6/2ca082f616/3/prompt.txt"
+    },
+    {
+      "metadata": "/e6/2ca082f616/4/metadata.json",
+      "transcript": "/e6/2ca082f616/4/full.jsonl",
+      "context": "/e6/2ca082f616/4/context.md",
+      "content_hash": "/e6/2ca082f616/4/content_hash.txt",
+      "prompt": "/e6/2ca082f616/4/prompt.txt"
+    },
+    {
+      "metadata": "/e6/2ca082f616/5/metadata.json",
+      "transcript": "/e6/2ca082f616/5/full.jsonl",
+      "context": "/e6/2ca082f616/5/context.md",
+      "content_hash": "/e6/2ca082f616/5/content_hash.txt",
+      "prompt": "/e6/2ca082f616/5/prompt.txt"
+    },
+    {
+      "metadata": "/e6/2ca082f616/6/metadata.json",
+      "transcript": "/e6/2ca082f616/6/full.jsonl",
+      "context": "/e6/2ca082f616/6/context.md",
+      "content_hash": "/e6/2ca082f616/6/content_hash.txt",
+      "prompt": "/e6/2ca082f616/6/prompt.txt"
+    },
+    {
+      "metadata": "/e6/2ca082f616/7/metadata.json",
+      "transcript": "/e6/2ca082f616/7/full.jsonl",
+      "context": "/e6/2ca082f616/7/context.md",
+      "content_hash": "/e6/2ca082f616/7/content_hash.txt",
+      "prompt": "/e6/2ca082f616/7/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 8961,
+    "cache_creation_tokens": 816166,
+    "cache_read_tokens": 33194734,
+    "output_tokens": 66223,
+    "api_call_count": 419
+  }
+}

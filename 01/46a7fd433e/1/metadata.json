@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0146a7fd433e",
+  "session_id": "233d4be3-f9df-4627-880b-133b7372b550",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-24T19:29:29.349323Z",
+  "branch": "feat/subagent-sql-chart",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-25-ask-user-question-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "a3f74e73add5",
+  "token_usage": {
+    "input_tokens": 36,
+    "cache_creation_tokens": 50339,
+    "cache_read_tokens": 1688878,
+    "output_tokens": 1161,
+    "api_call_count": 31
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-24T19:29:29.123459Z",
+    "agent_lines": 0,
+    "human_added": 190,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 190,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/233d4be3-f9df-4627-880b-133b7372b550.jsonl"
+}

@@ -1,0 +1,10 @@
+found these error messages after deploying to render
+
+INFO:     10.16.254.4:54202 - "POST /api/chat HTTP/1.1" 200 OK
+--dangerously-skip-permissions cannot be used with root/sudo privileges for security reasons
+Fatal error in message reader: Command failed with exit code 1 (exit code: 1)
+Error output: Check stderr output for details
+
+---
+
+commit this and deploy

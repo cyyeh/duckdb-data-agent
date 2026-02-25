@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0707bfad5a31",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".dockerignore",
+    "Dockerfile",
+    "backend/app/main.py",
+    "render.yaml",
+    "vite.config.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/07/07bfad5a31/0/metadata.json",
+      "transcript": "/07/07bfad5a31/0/full.jsonl",
+      "context": "/07/07bfad5a31/0/context.md",
+      "content_hash": "/07/07bfad5a31/0/content_hash.txt",
+      "prompt": "/07/07bfad5a31/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 18878,
+    "cache_read_tokens": 406456,
+    "output_tokens": 142,
+    "api_call_count": 13
+  }
+}

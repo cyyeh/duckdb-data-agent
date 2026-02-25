@@ -1,0 +1,1 @@
+in ui agent mode, if thinking block content is too long, make it scrollable instead of expanding to the global view

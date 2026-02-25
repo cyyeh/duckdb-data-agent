@@ -1,0 +1,15 @@
+checkout to the worktree branch and rebase to the main branch
+
+---
+
+checkout to worktree-ask-user-question-branch
+
+---
+
+fatal: 'worktree-ask-user-question' is already used by worktree at '/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/ask-user-question'
+
+how to fix this
+
+---
+
+push to remote

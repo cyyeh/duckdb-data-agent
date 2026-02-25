@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "54d9ed58e1cf",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/54/d9ed58e1cf/0/metadata.json",
+      "transcript": "/54/d9ed58e1cf/0/full.jsonl",
+      "context": "/54/d9ed58e1cf/0/context.md",
+      "content_hash": "/54/d9ed58e1cf/0/content_hash.txt",
+      "prompt": "/54/d9ed58e1cf/0/prompt.txt"
+    },
+    {
+      "metadata": "/54/d9ed58e1cf/1/metadata.json",
+      "transcript": "/54/d9ed58e1cf/1/full.jsonl",
+      "context": "/54/d9ed58e1cf/1/context.md",
+      "content_hash": "/54/d9ed58e1cf/1/content_hash.txt",
+      "prompt": "/54/d9ed58e1cf/1/prompt.txt"
+    },
+    {
+      "metadata": "/54/d9ed58e1cf/2/metadata.json",
+      "transcript": "/54/d9ed58e1cf/2/full.jsonl",
+      "context": "/54/d9ed58e1cf/2/context.md",
+      "content_hash": "/54/d9ed58e1cf/2/content_hash.txt",
+      "prompt": "/54/d9ed58e1cf/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 465,
+    "cache_creation_tokens": 223952,
+    "cache_read_tokens": 12761094,
+    "output_tokens": 10460,
+    "api_call_count": 169
+  }
+}

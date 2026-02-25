@@ -1,0 +1,7 @@
+found this eror when using sidecar to generate chart: <tool_use_error>Unknown skill: chart-builder</tool_use_error>
+
+---
+
+<tool_use_error>Unknown skill: chart-builder</tool_use_error>
+
+still found this error

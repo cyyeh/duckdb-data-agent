@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d3be4c4192a9",
+  "session_id": "a350f4c6-314f-41d1-82e0-3cf767108a74",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-21T11:57:22.572721Z",
+  "branch": "claude/fix-sql-injection-table-names-zw7os",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/tests/test_sql_injection_fix.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "6b37ee5d4d75",
+  "token_usage": {
+    "input_tokens": 23,
+    "cache_creation_tokens": 40214,
+    "cache_read_tokens": 774183,
+    "output_tokens": 335,
+    "api_call_count": 19
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-21T11:57:22.301128Z",
+    "agent_lines": 290,
+    "human_added": 60,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 350,
+    "agent_percentage": 82.85714285714286
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-strange-germain/a350f4c6-314f-41d1-82e0-3cf767108a74.jsonl"
+}

@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "fabfda4c2493",
+  "session_id": "2949316c-c66e-4484-959e-3400e03d05cc",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-22T17:41:10.527406Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/routes/chat.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "2a82405b56bc",
+  "checkpoint_transcript_start": 299,
+  "transcript_lines_at_start": 299,
+  "token_usage": {
+    "input_tokens": 72,
+    "cache_creation_tokens": 95015,
+    "cache_read_tokens": 8179149,
+    "output_tokens": 3476,
+    "api_call_count": 67
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-22T17:41:08.783087Z",
+    "agent_lines": 0,
+    "human_added": 3176,
+    "human_modified": 3,
+    "human_removed": 0,
+    "total_committed": 3176,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/2949316c-c66e-4484-959e-3400e03d05cc.jsonl"
+}
