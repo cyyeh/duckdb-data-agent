@@ -247,6 +247,28 @@ export function AgentProvider({
             setIsStreaming(false);
             abortRef.current = null;
           },
+          onUserQuestion: (data) => {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            if (currentTextRef.current.trim()) {
+              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            segmentsRef.current.push({
+              type: 'user_question',
+              questionData: data,
+            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
         },
         controller.signal,
         userSessionId,
@@ -450,6 +472,28 @@ export function AgentProvider({
             setIsStreaming(false);
             abortRef.current = null;
           },
+          onUserQuestion: (data) => {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            flushText();
+            if (currentTextRef.current.trim()) {
+              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            segmentsRef.current.push({
+              type: 'user_question',
+              questionData: data,
+            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
         },
         controller.signal,
         userSessionId,
@@ -477,6 +521,47 @@ export function AgentProvider({
     [isStreaming]
   );
 
+  const respondToQuestion = useCallback(
+    async (questionId: string, answers: string[], freeText?: string) => {
+      // Update the segment to show the user's answer
+      const segIdx = segmentsRef.current.findIndex(
+        (s) => s.type === 'user_question' && s.questionData?.questionId === questionId
+      );
+      if (segIdx !== -1) {
+        segmentsRef.current[segIdx] = {
+          ...segmentsRef.current[segIdx],
+          userAnswer: answers,
+        };
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantIdRef.current
+              ? { ...m, segments: [...segmentsRef.current] }
+              : m
+          )
+        );
+      }
+
+      // POST to backend
+      try {
+        await fetch('/api/chat/respond', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(userSessionId ? { 'X-Session-ID': userSessionId } : {}),
+          },
+          body: JSON.stringify({
+            question_id: questionId,
+            answers,
+            free_text: freeText || null,
+          }),
+        });
+      } catch (e) {
+        console.error('Failed to respond to question:', e);
+      }
+    },
+    [userSessionId]
+  );
+
   const clearMessages = useCallback(() => {
     if (abortRef.current) {
       abortRef.current.abort();
@@ -489,7 +574,7 @@ export function AgentProvider({
 
   return (
     <AgentContext.Provider
-      value={{ messages, isStreaming, sendMessage, editMessage, deleteMessage, clearMessages }}
+      value={{ messages, isStreaming, sendMessage, editMessage, deleteMessage, clearMessages, respondToQuestion }}
     >
       {children}
     </AgentContext.Provider>

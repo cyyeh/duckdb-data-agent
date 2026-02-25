@@ -63,5 +63,11 @@
   "duplicateFilesExist": "Files already uploaded: {names}. Please remove or rename them before uploading.",
   "viewOnGitHub": "View on GitHub",
   "sqlAnalystWorking": "SQL Analyst working...",
-  "chartBuilderWorking": "Chart Builder working..."
+  "chartBuilderWorking": "Chart Builder working...",
+  "questionFromAgent": "Question",
+  "questionAnswered": "Answered",
+  "other": "Other...",
+  "hideOther": "Hide other",
+  "typeYourAnswer": "Type your answer...",
+  "submit": "Submit"
 }

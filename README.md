@@ -21,6 +21,7 @@ Each browser tab gets its own isolated, in-memory DuckDB session — uploaded da
 - **Table sidebar** — Collapsible panel to browse tables, inspect columns, and view types
 - **Dark / light mode** — Toggle between dark and light themes with the sun/moon button in the header; respects your OS preference on first visit and remembers your choice across sessions
 - **Internationalization (i18n)** — Switch between English and Traditional Chinese with the EN/中 toggle in the header; auto-detects your OS language on first visit and remembers your choice across sessions
+- **Interactive clarification** — When your request is ambiguous, the agent asks a clarifying question with selectable options displayed inline in the chat; pick an option or type a free-text response to continue
 
 ### Agent Mode (default mode)
 

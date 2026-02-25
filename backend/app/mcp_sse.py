@@ -9,6 +9,7 @@ from mcp.server.lowlevel.server import Server as MCPServer
 import mcp.types as types
 from app.session_manager import session_manager
 from app.database import Database
+from app.pending_questions import pending_question_store
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +22,8 @@ MAX_RESULT_ROWS = 100
 sse_transport = SseServerTransport("/messages/")
 
 
-def _create_mcp_server(db: Database) -> MCPServer:
-    """Create an MCP server with execute_sql tool bound to a DuckDB instance."""
+def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
+    """Create an MCP server with execute_sql and ask_user_question tools bound to a DuckDB instance."""
     server = MCPServer("duckdb")
 
     @server.list_tools()
@@ -38,6 +39,32 @@ def _create_mcp_server(db: Database) -> MCPServer:
                     "type": "object",
                     "properties": {"sql": {"type": "string"}},
                     "required": ["sql"],
+                },
+            ),
+            types.Tool(
+                name="ask_user_question",
+                description=(
+                    "Ask the user a clarifying question with selectable options. "
+                    "Pauses until the user responds."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string"},
+                        "options": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {"type": "string"},
+                                    "description": {"type": "string"},
+                                },
+                                "required": ["label"],
+                            },
+                        },
+                        "multi_select": {"type": "boolean", "default": False},
+                    },
+                    "required": ["question", "options"],
                 },
             ),
         ]
@@ -61,6 +88,19 @@ def _create_mcp_server(db: Database) -> MCPServer:
             except Exception as e:
                 error_json = {"status": "error", "error": str(e)}
                 return [types.TextContent(type="text", text=json.dumps(error_json))]
+        elif name == "ask_user_question":
+            question_data = {
+                "question": arguments.get("question", ""),
+                "options": arguments.get("options", []),
+                "multi_select": arguments.get("multi_select", False),
+            }
+            question_id = pending_question_store.create(session_id, question_data)
+            answer = await pending_question_store.wait(session_id, question_id, timeout=300.0)
+            if answer is None:
+                result = {"timeout": True, "message": "User did not respond within the time limit."}
+            else:
+                result = answer
+            return [types.TextContent(type="text", text=json.dumps(result))]
         else:
             raise ValueError(f"Unknown tool: {name}")
 
@@ -74,7 +114,7 @@ async def handle_sse(request: Request) -> Response:
         return Response("session_id query parameter is required", status_code=400)
 
     db = session_manager.get_or_create(session_id)
-    server = _create_mcp_server(db)
+    server = _create_mcp_server(db, session_id)
 
     async with sse_transport.connect_sse(
         request.scope, request.receive, request._send

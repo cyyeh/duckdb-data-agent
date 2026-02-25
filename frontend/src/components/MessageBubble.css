@@ -134,6 +134,10 @@
   border-left: 3px solid var(--color-border-dark);
 }
 
+.message-bubble__segment--question {
+  padding: 0;
+}
+
 .message-bubble__segment--answer {
   background: var(--color-success-bg);
   border-left: 3px solid var(--color-success-border);
