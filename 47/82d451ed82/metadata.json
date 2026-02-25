@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "4782d451ed82",
+  "strategy": "manual-commit",
+  "branch": "fix/persist-duckdb-to-disk",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "backend/app/database.py",
+    "backend/app/session_manager.py",
+    "backend/tests/test_session_manager.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/47/82d451ed82/0/metadata.json",
+      "transcript": "/47/82d451ed82/0/full.jsonl",
+      "context": "/47/82d451ed82/0/context.md",
+      "content_hash": "/47/82d451ed82/0/content_hash.txt",
+      "prompt": "/47/82d451ed82/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 56,
+    "cache_creation_tokens": 56983,
+    "cache_read_tokens": 1516977,
+    "output_tokens": 743,
+    "api_call_count": 36
+  }
+}
