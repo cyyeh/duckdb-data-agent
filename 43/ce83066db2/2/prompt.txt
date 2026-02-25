@@ -1,0 +1,9 @@
+still chart title is not shown in ui
+
+---
+
+commit and push
+
+---
+
+I don't see answer text underneath the chart for chart generation, only see the chart
