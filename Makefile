@@ -14,8 +14,8 @@ backend:
 frontend:
 	cd frontend && npm run dev
 
-# Install all dependencies
-install: install-backend install-frontend
+# Install all dependencies and set up sidecar
+install: install-backend install-frontend sidecar-build sidecar-network
 
 install-backend:
 	cd backend && poetry install
