@@ -377,9 +377,12 @@ async def stream_chat(
                         # that the Task tool_result metadata lacks.
                         if parent_tool_use_id and parent_tool_use_id in tool_names:
                             text_parts = []
+                            block_types = []
                             for block in message_obj.get("content", []):
+                                block_types.append(block.get("type"))
                                 if block.get("type") == "text" and block.get("text"):
                                     text_parts.append(block["text"])
+                            print(f"[subagent-assistant] block_types={block_types} text_parts_count={len(text_parts)} streamed={subagent_turn_streamed.get(parent_tool_use_id, False)}", flush=True)
                             if text_parts:
                                 combined = "\n".join(text_parts)
                                 subagent_texts[parent_tool_use_id] = combined
@@ -387,6 +390,7 @@ async def stream_chat(
                                 # were not received for this turn (SDK may not
                                 # yield deltas for subagent turns).
                                 if not subagent_turn_streamed.get(parent_tool_use_id, False):
+                                    print(f"[subagent-emit] emitting subagent_text len={len(combined)}", flush=True)
                                     yield f"event: subagent_text\ndata: {json.dumps({'id': parent_tool_use_id, 'name': tool_names.get(parent_tool_use_id, ''), 'text': combined})}\n\n"
                                 # Reset for next turn
                                 subagent_turn_streamed[parent_tool_use_id] = False
