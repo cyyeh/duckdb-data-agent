@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "486ee561439a",
+  "session_id": "56969570-4f20-4ab8-8d65-d4f9b3267980",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T17:50:30.042045Z",
+  "branch": "feat/animated-chart-support",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "frontend/src/components/ChartWidget.tsx",
+    "utils/run_plotly.html"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "bd3c4534d16a",
+  "transcript_identifier_at_start": "01fdd639-294a-4c0a-94f8-61a31b4f72ea",
+  "checkpoint_transcript_start": 193,
+  "transcript_lines_at_start": 193,
+  "token_usage": {
+    "input_tokens": 296,
+    "cache_creation_tokens": 116948,
+    "cache_read_tokens": 1724814,
+    "output_tokens": 1179,
+    "api_call_count": 22
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T17:50:29.125097Z",
+    "agent_lines": 0,
+    "human_added": 11,
+    "human_modified": 5,
+    "human_removed": 0,
+    "total_committed": 11,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/56969570-4f20-4ab8-8d65-d4f9b3267980.jsonl"
+}
