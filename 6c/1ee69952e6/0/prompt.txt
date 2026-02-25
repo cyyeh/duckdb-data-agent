@@ -1,0 +1,6 @@
+using docker-compose breaks: Container agent error: Sidecar container failed health check after 10 attempts                                      
+  I am using runsc runtime, make sure the fix will also fix runc runtime
+
+---
+
+commit this and push
