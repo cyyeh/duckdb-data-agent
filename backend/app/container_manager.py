@@ -27,8 +27,12 @@ class ContainerInfo:
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     _container: object = field(default=None, repr=False)
 
+    host_port: int | None = None
+
     @property
     def url(self) -> str:
+        if self.host_port:
+            return f"http://127.0.0.1:{self.host_port}"
         return f"http://{self.ip_address}:{self.port}"
 
 
@@ -100,6 +104,9 @@ class ContainerManager:
             # Use public DNS so gVisor's netstack can resolve external hosts
             # (Docker's embedded DNS at 127.0.0.11 doesn't work under runsc)
             dns=["8.8.8.8", "8.8.4.4"],
+            # Publish port to a random host port so the host-side backend
+            # can reach the sidecar (macOS cannot route to bridge IPs)
+            ports={"3000/tcp": None},
             labels={
                 "app": "duckdb-agent-sidecar",
                 "session_id": session_id,
@@ -112,10 +119,18 @@ class ContainerManager:
         network_info = networks.get(self._config.network, {})
         ip_address = network_info.get("IPAddress", "127.0.0.1")
 
+        # Extract the dynamically assigned host port
+        port_bindings = container.attrs.get("NetworkSettings", {}).get("Ports", {})
+        host_port = None
+        tcp_bindings = port_bindings.get("3000/tcp")
+        if tcp_bindings and len(tcp_bindings) > 0:
+            host_port = int(tcp_bindings[0].get("HostPort", 0)) or None
+
         info = ContainerInfo(
             container_id=container.id,
             session_id=session_id,
             ip_address=ip_address,
+            host_port=host_port,
             _container=container,
         )
         self._containers[session_id] = info
