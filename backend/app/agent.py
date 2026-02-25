@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import re
 from typing import AsyncIterator
 
 from claude_agent_sdk import AgentDefinition
@@ -132,37 +131,6 @@ def _build_message_with_history(
     history_text += f"\n---\n\nMy updated message:\n{message}"
     return history_text
 
-
-def _extract_chart_spec(text: str) -> dict | None:
-    """Extract chart_spec from subagent output text.
-
-    The chart-builder subagent returns markdown containing a JSON code block.
-    Try pure JSON first, then extract from ```json ... ``` fenced blocks.
-    """
-
-    # Try pure JSON first
-    try:
-        parsed = json.loads(text)
-        if "chart_spec" in parsed:
-            return parsed["chart_spec"]
-    except (json.JSONDecodeError, TypeError):
-        pass
-
-    # Extract from markdown fenced code blocks (```json ... ``` or ``` ... ```)
-    pattern = r"```(?:json)?\s*\n?(.*?)\n?\s*```"
-    for match in re.finditer(pattern, text, re.DOTALL):
-        block = match.group(1).strip()
-        try:
-            parsed = json.loads(block)
-            if "chart_spec" in parsed:
-                return parsed["chart_spec"]
-            # The block itself might BE the chart_spec
-            if "data" in parsed and isinstance(parsed["data"], list):
-                return parsed
-        except (json.JSONDecodeError, TypeError):
-            continue
-
-    return None
 
 
 def _build_chart_spec_from_stream_messages(
