@@ -50,9 +50,20 @@ def create_duckdb_server(db: Database, session_id: str = "default") -> "DuckDBSe
         "The tool will pause and wait for the user to select an option before continuing. "
         "Always provide clear, concise options. The user can also type a free-text response.",
         {
-            "question": str,
-            "options": list,
-            "multi_select": bool,
+            "type": "object",
+            "properties": {
+                "question": {"type": "string", "description": "The question to ask the user"},
+                "options": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of option strings the user can select from",
+                },
+                "multi_select": {
+                    "type": "boolean",
+                    "description": "Whether the user can select multiple options",
+                },
+            },
+            "required": ["question", "options"],
         },
     )
     async def ask_user_question(args: dict[str, Any]) -> dict[str, Any]:

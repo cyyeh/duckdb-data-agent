@@ -266,12 +266,14 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
         </div>
       ) : hasSegments ? (
         <div className="message-bubble__segments">
-          <ThinkingBlock
-            segments={message.segments!}
-            streamingRemainder={isThinkingPhase ? streamingRemainder : undefined}
-            isThinkingPhase={isThinkingPhase}
-            isAgentStreaming={!!message.isStreaming}
-          />
+          {!questionSegments.some((s) => !s.userAnswer) && (
+            <ThinkingBlock
+              segments={message.segments!}
+              streamingRemainder={isThinkingPhase ? streamingRemainder : undefined}
+              isThinkingPhase={isThinkingPhase}
+              isAgentStreaming={!!message.isStreaming}
+            />
+          )}
           {questionSegments.map((seg, i) => (
             <div key={`question-${i}`} className="message-bubble__segment message-bubble__segment--question">
               <UserQuestion
@@ -310,7 +312,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               </div>
             ) : null;
           })()}
-          {message.isStreaming && !message.content && (
+          {message.isStreaming && !message.content && questionSegments.length === 0 && (
             <span className="message-bubble__typing">{t('thinking')}</span>
           )}
         </div>

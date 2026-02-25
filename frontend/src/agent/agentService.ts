@@ -228,14 +228,24 @@ function handleSSEEvent(
         chart_spec: (data.chart_spec as { data: unknown[]; layout?: Record<string, unknown> }) ?? undefined,
       });
       break;
-    case 'user_question':
+    case 'user_question': {
+      // Normalize options: the agent may send plain strings or {label, description} objects
+      const rawOptions = (data.options as unknown[]) ?? [];
+      const normalizedOptions: UserQuestionOption[] = (Array.isArray(rawOptions) ? rawOptions : []).map(
+        (opt: unknown) => {
+          if (typeof opt === 'string') return { label: opt };
+          if (typeof opt === 'object' && opt !== null && 'label' in opt) return opt as UserQuestionOption;
+          return { label: String(opt) };
+        }
+      );
       callbacks.onUserQuestion?.({
         questionId: data.question_id as string,
         question: data.question as string,
-        options: (data.options as UserQuestionOption[]) ?? [],
+        options: normalizedOptions,
         multiSelect: (data.multi_select as boolean) ?? false,
       });
       break;
+    }
     case 'done':
       callbacks.onDone((data.session_id as string) ?? null);
       break;
