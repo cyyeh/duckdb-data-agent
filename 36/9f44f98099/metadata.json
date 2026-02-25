@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "369f44f98099",
+  "strategy": "manual-commit",
+  "branch": "feat/plotly-json-renderer",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "utils/run_plotly.html"
+  ],
+  "sessions": [
+    {
+      "metadata": "/36/9f44f98099/0/metadata.json",
+      "transcript": "/36/9f44f98099/0/full.jsonl",
+      "context": "/36/9f44f98099/0/context.md",
+      "content_hash": "/36/9f44f98099/0/content_hash.txt",
+      "prompt": "/36/9f44f98099/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7287,
+    "cache_creation_tokens": 70967,
+    "cache_read_tokens": 2999450,
+    "output_tokens": 1957,
+    "api_call_count": 39
+  }
+}
