@@ -3,15 +3,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-if not ANTHROPIC_API_KEY:
-    import warnings
-    warnings.warn(
-        "ANTHROPIC_API_KEY is not set — proxy will forward empty Bearer tokens to Anthropic",
-        RuntimeWarning,
-        stacklevel=1,
-    )
-PROXY_BASE_URL = os.getenv("PROXY_BASE_URL", "http://127.0.0.1:8000")
+BIFROST_BASE_URL = os.getenv("BIFROST_BASE_URL", "http://bifrost:8080")
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://duckdb-data-agent:10000")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 SQL_SUBAGENT_MODEL = os.getenv("SQL_SUBAGENT_MODEL", "haiku")
 CHART_SUBAGENT_MODEL = os.getenv("CHART_SUBAGENT_MODEL", "haiku")
