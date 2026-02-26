@@ -39,6 +39,11 @@ async def _cleanup_loop():
 
 @asynccontextmanager
 async def lifespan(app):
+    # Clean up orphaned sidecar containers from a previous unclean shutdown.
+    if container_manager is not None:
+        orphans = container_manager._cleanup_by_label()
+        if orphans:
+            logger.info("Startup: cleaned up %d orphaned sidecar containers", orphans)
     task = asyncio.create_task(_cleanup_loop())
     yield
     task.cancel()
