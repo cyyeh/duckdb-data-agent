@@ -3,7 +3,7 @@
   "checkpoint_id": "e52a437da0ef",
   "strategy": "manual-commit",
   "branch": "fix/sidecar-orphan-cleanup",
-  "checkpoints_count": 5,
+  "checkpoints_count": 7,
   "files_touched": [
     "backend/app/container_manager.py",
     "backend/app/main.py",
@@ -44,13 +44,20 @@
       "context": "/e5/2a437da0ef/4/context.md",
       "content_hash": "/e5/2a437da0ef/4/content_hash.txt",
       "prompt": "/e5/2a437da0ef/4/prompt.txt"
+    },
+    {
+      "metadata": "/e5/2a437da0ef/5/metadata.json",
+      "transcript": "/e5/2a437da0ef/5/full.jsonl",
+      "context": "/e5/2a437da0ef/5/context.md",
+      "content_hash": "/e5/2a437da0ef/5/content_hash.txt",
+      "prompt": "/e5/2a437da0ef/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 184,
-    "cache_creation_tokens": 227138,
-    "cache_read_tokens": 9807224,
-    "output_tokens": 16208,
-    "api_call_count": 149
+    "input_tokens": 210,
+    "cache_creation_tokens": 248491,
+    "cache_read_tokens": 10503150,
+    "output_tokens": 16818,
+    "api_call_count": 167
   }
 }
