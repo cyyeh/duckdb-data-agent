@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f11bc36ef330",
+  "strategy": "manual-commit",
+  "branch": "worktree-feature/llm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/llm_proxy.py",
+    "backend/app/llm_proxy_translate.py",
+    "backend/tests/test_llm_proxy.py",
+    "docker-compose.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f1/1bc36ef330/0/metadata.json",
+      "transcript": "/f1/1bc36ef330/0/full.jsonl",
+      "context": "/f1/1bc36ef330/0/context.md",
+      "content_hash": "/f1/1bc36ef330/0/content_hash.txt",
+      "prompt": "/f1/1bc36ef330/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 393,
+    "cache_creation_tokens": 229850,
+    "cache_read_tokens": 17386497,
+    "output_tokens": 71371,
+    "api_call_count": 188
+  }
+}
