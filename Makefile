@@ -2,9 +2,20 @@
        sidecar-build sidecar-network clean compose-build compose-up compose-down \
        install-e2e e2e-test e2e-test-headed e2e-test-ui e2e-report
 
-# Run both backend and frontend concurrently (requires sidecar image built)
+# Run Bifrost + backend + frontend concurrently (requires sidecar image built)
 dev:
-	@trap 'kill 0' EXIT; \
+	@docker rm -f bifrost-dev 2>/dev/null || true; \
+	docker run -d --name bifrost-dev \
+		--network agent-sandbox \
+		-p $${BIFROST_PORT:-8081}:8080 \
+		-v $$(pwd)/bifrost/config.json:/app/data/config.json \
+		--env-file backend/.env \
+		-e APP_HOST=0.0.0.0 \
+		maximhq/bifrost:latest && \
+	echo "Bifrost started on port $${BIFROST_PORT:-8081}"; \
+	trap 'kill 0; docker rm -f bifrost-dev 2>/dev/null' EXIT; \
+	export BIFROST_BASE_URL=http://bifrost-dev:8080; \
+	export BACKEND_BASE_URL=http://host.docker.internal:8000; \
 	cd backend && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 & \
 	cd frontend && npm run dev & \
 	wait
