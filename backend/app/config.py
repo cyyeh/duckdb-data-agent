@@ -26,19 +26,16 @@ def build_model_rewrites(pairs: list[tuple[str, str]]) -> dict[str, str]:
     return {sdk: real for sdk, real in pairs if sdk != real}
 
 
-_raw_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+_raw_model = os.getenv("ORCHESTRATOR_MODEL", "claude-sonnet-4-6")
 _raw_sql = os.getenv("SQL_SUBAGENT_MODEL", "inherit")
 _raw_chart = os.getenv("CHART_SUBAGENT_MODEL", "inherit")
 
-ANTHROPIC_MODEL_SDK, ANTHROPIC_MODEL_REAL = parse_model(_raw_model)
+ORCHESTRATOR_MODEL_SDK, ORCHESTRATOR_MODEL_REAL = parse_model(_raw_model)
 SQL_SUBAGENT_MODEL_SDK, SQL_SUBAGENT_MODEL_REAL = parse_model(_raw_sql)
 CHART_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_REAL = parse_model(_raw_chart)
 
-# Backwards compat alias — existing code that reads ANTHROPIC_MODEL gets the SDK alias
-ANTHROPIC_MODEL = ANTHROPIC_MODEL_SDK
-
 MODEL_REWRITES = build_model_rewrites([
-    (ANTHROPIC_MODEL_SDK, ANTHROPIC_MODEL_REAL),
+    (ORCHESTRATOR_MODEL_SDK, ORCHESTRATOR_MODEL_REAL),
     (SQL_SUBAGENT_MODEL_SDK, SQL_SUBAGENT_MODEL_REAL),
     (CHART_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_REAL),
 ])

@@ -6,7 +6,7 @@ from typing import AsyncIterator
 from claude_agent_sdk import AgentDefinition
 from app.database import Database
 from app.config import (
-    ANTHROPIC_MODEL_SDK,
+    ORCHESTRATOR_MODEL_SDK,
     SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK,
     BACKEND_BASE_URL,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
@@ -246,7 +246,7 @@ async def stream_chat(
             "message": query_message,
             "session_id": session_id,
             "system_prompt": system_prompt,
-            "model": ANTHROPIC_MODEL_SDK,
+            "model": ORCHESTRATOR_MODEL_SDK,
             "mcp_server_url": f"{BACKEND_BASE_URL}/mcp/sse?session_id={stable_session}",
             "env": {
                 "ANTHROPIC_API_KEY": "placeholder",

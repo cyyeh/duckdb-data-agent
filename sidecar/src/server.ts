@@ -99,7 +99,7 @@ app.post("/query", async (req: Request, res: Response) => {
   // Mirror the backend's session ID handling:
   //   - langfuse_session_id (from frontend for edit/delete) takes priority
   //   - session_id (CLI session from previous turn) as fallback
-  const modelName = body.model || process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+  const modelName = body.model || process.env.ORCHESTRATOR_MODEL || "claude-sonnet-4-6";
   const traceMessage = body.original_message || body.message;
   const traceInput: Record<string, unknown> = {
     message: traceMessage.substring(0, 500),
