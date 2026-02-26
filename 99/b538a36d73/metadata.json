@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "99b538a36d73",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/99/b538a36d73/0/metadata.json",
+      "transcript": "/99/b538a36d73/0/full.jsonl",
+      "context": "/99/b538a36d73/0/context.md",
+      "content_hash": "/99/b538a36d73/0/content_hash.txt",
+      "prompt": "/99/b538a36d73/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 341,
+    "cache_creation_tokens": 95411,
+    "cache_read_tokens": 4061669,
+    "output_tokens": 23437,
+    "api_call_count": 65
+  }
+}
