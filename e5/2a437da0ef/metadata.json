@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e52a437da0ef",
+  "strategy": "manual-commit",
+  "branch": "fix/sidecar-orphan-cleanup",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/container_manager.py",
+    "backend/app/main.py",
+    "backend/tests/test_container_manager.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e5/2a437da0ef/0/metadata.json",
+      "transcript": "/e5/2a437da0ef/0/full.jsonl",
+      "context": "/e5/2a437da0ef/0/context.md",
+      "content_hash": "/e5/2a437da0ef/0/content_hash.txt",
+      "prompt": "/e5/2a437da0ef/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 92278,
+    "cache_read_tokens": 930871,
+    "output_tokens": 7393,
+    "api_call_count": 22
+  }
+}
