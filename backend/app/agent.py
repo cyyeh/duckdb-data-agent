@@ -6,11 +6,10 @@ from typing import AsyncIterator
 from claude_agent_sdk import AgentDefinition
 from app.database import Database
 from app.config import (
-    ANTHROPIC_MODEL, PROXY_BASE_URL,
+    ANTHROPIC_MODEL, BIFROST_BASE_URL, BACKEND_BASE_URL,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
     SQL_SUBAGENT_MODEL, CHART_SUBAGENT_MODEL,
 )
-from app.proxy import proxy_token_store
 from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
@@ -182,26 +181,16 @@ async def stream_chat(
     query_message = _build_message_with_history(message, conversation_history)
     system_prompt = build_system_prompt(db)
 
-    session_token = proxy_token_store.create_token()
-
     # Pass Langfuse credentials to the container so the sidecar's
     # TypeScript Langfuse SDK can create traces directly.
     env: dict[str, str] = {
-        "ANTHROPIC_API_KEY": session_token,
-        "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+        "ANTHROPIC_API_KEY": "placeholder",
+        "ANTHROPIC_BASE_URL": f"{BIFROST_BASE_URL}/anthropic",
     }
     if LANGFUSE_ENABLED:
         env["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
         env["LANGFUSE_SECRET_KEY"] = LANGFUSE_SECRET_KEY
         env["LANGFUSE_BASE_URL"] = LANGFUSE_BASE_URL
-
-    if "127.0.0.1" in PROXY_BASE_URL or "localhost" in PROXY_BASE_URL:
-        logger.warning(
-            "PROXY_BASE_URL=%s uses localhost which is unreachable from containers. "
-            "Set PROXY_BASE_URL to the host's Docker-accessible address "
-            "(e.g., http://host.docker.internal:10000).",
-            PROXY_BASE_URL,
-        )
 
     # Use the backend session ID (X-Session-ID header) for both:
     # 1. MCP SSE URL — so the container queries the correct DuckDB instance
@@ -253,10 +242,10 @@ async def stream_chat(
             "session_id": session_id,
             "system_prompt": system_prompt,
             "model": ANTHROPIC_MODEL,
-            "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={stable_session}",
+            "mcp_server_url": f"{BACKEND_BASE_URL}/mcp/sse?session_id={stable_session}",
             "env": {
-                "ANTHROPIC_API_KEY": session_token,
-                "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+                "ANTHROPIC_API_KEY": "placeholder",
+                "ANTHROPIC_BASE_URL": f"{BIFROST_BASE_URL}/anthropic",
             },
             "agents": {
                 name: {
@@ -523,12 +512,7 @@ async def stream_chat(
         logger.error("Container agent error: %s", str(e))
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
     finally:
-        # Delay token revocation so the container's CLI subprocess can finish
-        # any in-flight API calls after the stream ends.  The container is
-        # intentionally kept alive for session resume (--resume flag) and is
+        # Container is kept alive for session resume (--resume flag) and is
         # cleaned up by the background cleanup loop after
         # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.
-        async def _delayed_revoke(token: str, delay: float = 10.0) -> None:
-            await asyncio.sleep(delay)
-            proxy_token_store.revoke_token(token)
-        asyncio.create_task(_delayed_revoke(session_token))
+        pass
