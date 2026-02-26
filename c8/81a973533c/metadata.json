@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "c881a973533c",
+  "strategy": "manual-commit",
+  "branch": "worktree-feature/llm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/llm_proxy_translate.py",
+    "backend/tests/test_llm_proxy_translate.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c8/81a973533c/0/metadata.json",
+      "transcript": "/c8/81a973533c/0/full.jsonl",
+      "context": "/c8/81a973533c/0/context.md",
+      "content_hash": "/c8/81a973533c/0/content_hash.txt",
+      "prompt": "/c8/81a973533c/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 373,
+    "cache_creation_tokens": 216190,
+    "cache_read_tokens": 15695186,
+    "output_tokens": 64826,
+    "api_call_count": 168
+  }
+}
