@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8ccc2ac47eeb",
+  "session_id": "f98a1c7b-7fec-4b21-8ed1-06049efbbcbc",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T14:52:54.679572Z",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "Makefile"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "4a342133b845",
+  "transcript_identifier_at_start": "06771a41-50f2-4a7f-8d3e-c770bfaf109b",
+  "token_usage": {
+    "input_tokens": 32,
+    "cache_creation_tokens": 17057,
+    "cache_read_tokens": 589572,
+    "output_tokens": 3261,
+    "api_call_count": 16
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T14:52:54.517659Z",
+    "agent_lines": 1,
+    "human_added": 26,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 27,
+    "agent_percentage": 3.7037037037037033
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-litellm-proxy/f98a1c7b-7fec-4b21-8ed1-06049efbbcbc.jsonl"
+}
