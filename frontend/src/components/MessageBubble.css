@@ -414,3 +414,7 @@
 .message-bubble__subagent-label {
   font-style: italic;
 }
+
+.message-bubble__chart-in-answer {
+  margin: 8px 0;
+}
