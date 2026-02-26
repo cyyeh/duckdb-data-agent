@@ -3,7 +3,7 @@
   "checkpoint_id": "89cfa693037b",
   "session_id": "8f456010-6596-4320-9158-f5875de3fec9",
   "strategy": "manual-commit",
-  "created_at": "2026-02-26T23:01:29.830646Z",
+  "created_at": "2026-02-26T23:04:40.188283Z",
   "branch": "worktree-litellm-proxy",
   "checkpoints_count": 0,
   "files_touched": [
@@ -22,12 +22,12 @@
     "api_call_count": 97
   },
   "initial_attribution": {
-    "calculated_at": "2026-02-26T23:01:29.189214Z",
+    "calculated_at": "2026-02-26T23:04:39.470453Z",
     "agent_lines": 0,
-    "human_added": 83,
-    "human_modified": 6,
+    "human_added": 2,
+    "human_modified": 0,
     "human_removed": 0,
-    "total_committed": 83,
+    "total_committed": 2,
     "agent_percentage": 0
   },
   "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-litellm-proxy/8f456010-6596-4320-9158-f5875de3fec9.jsonl"
