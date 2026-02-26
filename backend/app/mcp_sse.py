@@ -80,6 +80,7 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                         "data": {
                             "type": "array",
                             "description": "Array of Plotly trace objects (bar, line, scatter, pie, etc.)",
+                            "items": {"type": "object"},
                         },
                         "layout": {
                             "type": "object",

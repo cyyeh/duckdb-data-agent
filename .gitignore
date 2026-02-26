@@ -28,3 +28,4 @@ frontend/dist-ssr
 .pytest_cache
 sidecar/node_modules/
 sidecar/dist/
+bifrost/config.json

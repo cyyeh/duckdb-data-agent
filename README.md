@@ -76,6 +76,16 @@ MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (defaul
 
 > `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
 
+#### Bifrost LLM Gateway
+
+Copy the example config and adjust provider keys as needed:
+
+```bash
+cp bifrost/config.example.json bifrost/config.json
+```
+
+The default config routes requests through Anthropic using `ANTHROPIC_API_KEY` from your `backend/.env`. To add other providers (OpenAI, Bedrock, etc.), edit `bifrost/config.json` — see [`bifrost/README.md`](bifrost/README.md) for multi-provider examples.
+
 #### Langfuse (optional)
 
 To enable agent tracing with [Langfuse](https://langfuse.com/), add these to `backend/.env`:
