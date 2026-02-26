@@ -35,16 +35,21 @@ export function ChatInput() {
 
   return (
     <div className="chat-input">
-      <textarea
-        ref={textareaRef}
-        className="chat-input__textarea"
-        value={text}
-        onChange={handleInput}
-        onKeyDown={handleKeyDown}
-        placeholder={isStreaming ? t('chatPlaceholderWaiting') : t('chatPlaceholder')}
-        disabled={isStreaming}
-        rows={1}
-      />
+      <div className="chat-input__textarea-wrapper">
+        <textarea
+          ref={textareaRef}
+          className="chat-input__textarea"
+          value={text}
+          onChange={handleInput}
+          onKeyDown={handleKeyDown}
+          placeholder={isStreaming ? '' : t('chatPlaceholder')}
+          disabled={isStreaming}
+          rows={1}
+        />
+        {isStreaming && (
+          <span className="chat-input__shimmer">{t('chatPlaceholderWaiting')}</span>
+        )}
+      </div>
       <button
         className="chat-input__send"
         onClick={handleSend}
