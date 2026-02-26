@@ -176,22 +176,27 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
     (s) => (s.type === 'tool' && s.toolResult?.chart_spec) || (s.type === 'subagent_end' && s.chart_spec)
   );
 
-  const answerSegments = hasSegments
+  const answerBlockSegments = hasSegments
     ? message.segments!
         .filter((s) =>
           (s.type === 'answer' && s.text?.trim()) ||
-          (s.type === 'subagent_end' && !s.chart_spec && s.text?.trim())
-        )
-        .map((s) => hasCharts ? { ...s, text: stripChartSpecBlocks(s.text!) } : s)
-        .filter((s) => s.text?.trim())
-    : [];
-
-  const chartSegments = hasSegments
-    ? message.segments!.filter(
-        (s) =>
+          (s.type === 'subagent_end' && !s.chart_spec && s.text?.trim()) ||
           (s.type === 'tool' && s.toolResult?.chart_spec) ||
           (s.type === 'subagent_end' && s.chart_spec)
-      )
+        )
+        .map((s) => {
+          if ((s.type === 'answer' || (s.type === 'subagent_end' && !s.chart_spec)) && s.text && hasCharts) {
+            return { ...s, text: stripChartSpecBlocks(s.text) };
+          }
+          return s;
+        })
+        .filter((s) => {
+          // Remove text segments that became empty after stripping chart blocks
+          if ((s.type === 'answer' || (s.type === 'subagent_end' && !s.chart_spec)) && !s.text?.trim()) {
+            return false;
+          }
+          return true;
+        })
     : [];
 
   const questionSegments = hasSegments
@@ -286,23 +291,29 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               />
             </div>
           ))}
-          {(chartSegments.length > 0 || answerSegments.length > 0) && (
+          {answerBlockSegments.length > 0 && (
             <div className="message-bubble__segment message-bubble__segment--answer">
               <div className="message-bubble__segment-label message-bubble__segment-label--answer">{t('answer')}</div>
-              {chartSegments.map((seg, i) => (
-                <div key={`chart-${i}`} className="message-bubble__chart-in-answer">
-                  {seg.type === 'tool' && seg.toolResult ? (
-                    <InlineQueryResult result={seg.toolResult!} />
-                  ) : seg.chart_spec ? (
-                    <ChartWidget data={seg.chart_spec.data} layout={seg.chart_spec.layout} frames={seg.chart_spec.frames} />
-                  ) : null}
-                </div>
-              ))}
-              {answerSegments.map((seg, i) => (
-                <div key={`answer-${i}`} className="message-bubble__segment-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text!}</ReactMarkdown>
-                </div>
-              ))}
+              {answerBlockSegments.map((seg, i) => {
+                // Chart segment (tool with chart_spec or subagent_end with chart_spec)
+                if ((seg.type === 'tool' && seg.toolResult?.chart_spec) || (seg.type === 'subagent_end' && seg.chart_spec)) {
+                  return (
+                    <div key={`chart-${i}`} className="message-bubble__chart-in-answer">
+                      {seg.type === 'tool' && seg.toolResult ? (
+                        <InlineQueryResult result={seg.toolResult!} />
+                      ) : seg.chart_spec ? (
+                        <ChartWidget data={seg.chart_spec.data} layout={seg.chart_spec.layout} frames={seg.chart_spec.frames} />
+                      ) : null}
+                    </div>
+                  );
+                }
+                // Text segment (answer or subagent_end without chart_spec)
+                return (
+                  <div key={`answer-${i}`} className="message-bubble__segment-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text!}</ReactMarkdown>
+                  </div>
+                );
+              })}
             </div>
           )}
           {isInAnswerPhase && streamingRemainder?.trim() && (() => {
