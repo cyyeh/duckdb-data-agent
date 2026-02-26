@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8502db3f7e09",
+  "session_id": "ea9f6057-de83-4b6c-9b80-9974f35070de",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T12:52:41.696573Z",
+  "branch": "worktree-feature/llm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "307850de1179",
+  "token_usage": {
+    "input_tokens": 410,
+    "cache_creation_tokens": 317612,
+    "cache_read_tokens": 18834803,
+    "output_tokens": 77199,
+    "api_call_count": 203
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T12:52:39.341117Z",
+    "agent_lines": 0,
+    "human_added": 17,
+    "human_modified": 39,
+    "human_removed": 0,
+    "total_committed": 17,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-feature-llm-proxy/ea9f6057-de83-4b6c-9b80-9974f35070de.jsonl"
+}
