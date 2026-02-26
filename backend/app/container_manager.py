@@ -226,11 +226,62 @@ class ContainerManager:
         return len(expired)
 
     def shutdown_all(self) -> None:
-        """Stop and remove all active containers. Called on backend shutdown."""
+        """Stop and remove all sidecar containers. Called on backend shutdown.
+
+        In addition to the in-memory registry, queries Docker for any
+        containers with the ``app=duckdb-agent-sidecar`` label so that
+        orphaned containers (from a previous crash, SIGKILL, or race
+        during creation) are also cleaned up.
+        """
+        # 1. Snapshot tracked IDs before stopping (stop() pops from the dict).
+        tracked_ids = {info.container_id for info in self._containers.values()}
         session_ids = list(self._containers.keys())
         for sid in session_ids:
             self.stop(sid)
-        logger.info("Shut down %d sidecar containers", len(session_ids))
+        tracked_count = len(session_ids)
+
+        # 2. Find any remaining sidecar containers via Docker labels.
+        orphan_count = self._cleanup_by_label(exclude_ids=tracked_ids)
+
+        logger.info(
+            "Shut down %d tracked + %d orphaned sidecar containers",
+            tracked_count,
+            orphan_count,
+        )
+
+    def _cleanup_by_label(self, *, exclude_ids: set[str] | None = None) -> int:
+        """Stop and remove all Docker containers with the sidecar label.
+
+        Args:
+            exclude_ids: Container IDs to skip (already handled elsewhere).
+
+        Returns the number of containers cleaned up.
+        """
+        skip = exclude_ids or set()
+        cleaned = 0
+        try:
+            containers = self._client.containers.list(
+                filters={"label": "app=duckdb-agent-sidecar"},
+                all=True,
+            )
+        except Exception as e:
+            logger.warning("Failed to list sidecar containers by label: %s", e)
+            return 0
+
+        for container in containers:
+            if container.id in skip:
+                continue  # already handled
+            try:
+                container.stop(timeout=5)
+            except Exception as e:
+                logger.warning("Failed to stop orphaned container %s: %s", container.id[:12], e)
+            try:
+                container.remove(force=True)
+            except Exception as e:
+                logger.warning("Failed to remove orphaned container %s: %s", container.id[:12], e)
+            logger.info("Cleaned up orphaned sidecar container %s", container.id[:12])
+            cleaned += 1
+        return cleaned
 
 
 try:
