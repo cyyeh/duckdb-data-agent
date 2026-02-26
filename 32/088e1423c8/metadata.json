@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "32088e1423c8",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "bifrost/config.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/32/088e1423c8/0/metadata.json",
+      "transcript": "/32/088e1423c8/0/full.jsonl",
+      "context": "/32/088e1423c8/0/context.md",
+      "content_hash": "/32/088e1423c8/0/content_hash.txt",
+      "prompt": "/32/088e1423c8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 288,
+    "cache_creation_tokens": 13601,
+    "cache_read_tokens": 1379084,
+    "output_tokens": 2594,
+    "api_call_count": 16
+  }
+}
