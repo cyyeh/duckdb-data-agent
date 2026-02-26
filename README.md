@@ -68,13 +68,36 @@ Edit `backend/.env` and set your Anthropic API key:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-sonnet-4-6              # optional, defaults to sonnet
+ORCHESTRATOR_MODEL=claude-sonnet-4-6           # optional, defaults to sonnet
 SQL_SUBAGENT_MODEL=haiku           # optional, model for SQL analyst subagent (default: haiku)
 CHART_SUBAGENT_MODEL=haiku         # optional, model for chart builder subagent (default: haiku)
 MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (default: 500 MB)
 ```
 
-> `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
+> `ANTHROPIC_API_KEY` and `ORCHESTRATOR_MODEL` are only needed for the AI agent. The SQL playground works without them, but both require the backend running.
+
+#### Per-Subagent Model Routing
+
+You can route each agent (orchestrator, SQL subagent, chart subagent) to a different LLM provider by using the `@suffix` syntax:
+
+```
+ORCHESTRATOR_MODEL=openai/gpt-4o@sonnet
+SQL_SUBAGENT_MODEL=openai/gpt-4o-mini@haiku
+CHART_SUBAGENT_MODEL=openai/gpt-4o-mini@haiku
+```
+
+The format is `real_model@sdk_alias`. The SDK alias (after `@`) is the model name the Claude Agent SDK sees; the real model (before `@`) is what the backend proxy rewrites it to before forwarding to Bifrost. This lets you use any provider Bifrost supports (OpenAI, Bedrock, etc.) while keeping the SDK configuration unchanged.
+
+**How it works:**
+
+1. The SDK sends requests using the alias (e.g. `sonnet`, `haiku`).
+2. A lightweight reverse proxy on the backend (`/anthropic/*`) intercepts these requests.
+3. The proxy rewrites the `model` field to the real provider model (e.g. `openai/gpt-4o`) and forwards the request to Bifrost.
+4. Bifrost routes the request to the correct provider.
+
+Without `@suffix`, model values are used as-is (direct Anthropic routing).
+
+> **Warning:** The `@suffix` must NOT match the `ORCHESTRATOR_MODEL`'s Anthropic model name. For example, `ORCHESTRATOR_MODEL=haiku` with `SQL_SUBAGENT_MODEL=openai/gpt-4o-mini@haiku` will conflict because the proxy cannot distinguish orchestrator traffic from subagent traffic when both resolve to the same model name.
 
 #### Bifrost LLM Gateway
 
