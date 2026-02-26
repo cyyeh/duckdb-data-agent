@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "4ad7beb04862",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-26-bifrost-llm-gateway.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4a/d7beb04862/0/metadata.json",
+      "transcript": "/4a/d7beb04862/0/full.jsonl",
+      "context": "/4a/d7beb04862/0/context.md",
+      "content_hash": "/4a/d7beb04862/0/content_hash.txt",
+      "prompt": "/4a/d7beb04862/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 20105,
+    "cache_read_tokens": 446274,
+    "output_tokens": 5720,
+    "api_call_count": 7
+  }
+}
