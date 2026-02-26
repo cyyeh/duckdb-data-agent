@@ -511,8 +511,6 @@ async def stream_chat(
     except Exception as e:
         logger.error("Container agent error: %s", str(e))
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
-    finally:
-        # Container is kept alive for session resume (--resume flag) and is
-        # cleaned up by the background cleanup loop after
-        # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.
-        pass
+    # Note: Container is kept alive for session resume (--resume flag) and is
+    # cleaned up by the background cleanup loop after
+    # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.
