@@ -1,7 +1,7 @@
-from app.config import SQL_SUBAGENT_MODEL, CHART_SUBAGENT_MODEL
+from app.config import ANTHROPIC_MODEL
 
 
-def test_subagent_model_defaults():
-    """Subagent model configs should have sensible defaults."""
-    assert SQL_SUBAGENT_MODEL in ("haiku", "sonnet", "opus", "inherit")
-    assert CHART_SUBAGENT_MODEL in ("haiku", "sonnet", "opus", "inherit")
+def test_anthropic_model_has_default():
+    """ANTHROPIC_MODEL should always have a value."""
+    assert ANTHROPIC_MODEL is not None
+    assert len(ANTHROPIC_MODEL) > 0

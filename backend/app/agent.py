@@ -8,7 +8,6 @@ from app.database import Database
 from app.config import (
     ANTHROPIC_MODEL, BIFROST_BASE_URL, BACKEND_BASE_URL,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
-    SQL_SUBAGENT_MODEL, CHART_SUBAGENT_MODEL,
 )
 from app.tracing import get_langfuse_client
 
@@ -19,8 +18,11 @@ def build_system_prompt(db: Database) -> str:
     tables = db.list_tables()
     prompt = """You are a helpful data analyst assistant working with a DuckDB database.
 
-- Use the sql-analyst agent for any data question that requires SQL queries
-- Use the chart-builder agent for any visualization, chart, or graph request
+Task tool usage (CRITICAL — you MUST follow these rules):
+- When using the Task tool, you MUST set the "subagent_type" parameter to one of the named agents listed below. NEVER use generic values like "general-purpose", "code-writer", or any other value.
+- For any data question that requires SQL queries, set subagent_type to "sql-analyst"
+- For any visualization, chart, or graph request, set subagent_type to "chart-builder"
+- Do NOT set the "model" parameter on the Task tool — the named agents already have models configured. Omit the model field entirely.
 - After the chart-builder returns, do NOT repeat the chart JSON specification in your response. The chart is rendered automatically. Simply describe what the visualization shows in plain language.
 - Explain findings in plain language after getting results
 
@@ -103,6 +105,11 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
         + table_schemas
     )
 
+    # The Claude Agent SDK only accepts 'sonnet' | 'opus' | 'haiku' | 'inherit' for
+    # the model field.  Arbitrary model strings (e.g. "openai/gpt-5.2-2025-12-11")
+    # cause the SDK to silently reject the agent definition, making it unavailable.
+    # Using "inherit" makes subagents use the orchestrator's ANTHROPIC_MODEL, which
+    # is routed through Bifrost to the correct provider.
     return {
         "sql-analyst": AgentDefinition(
             description=(
@@ -111,7 +118,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
             ),
             prompt=sql_prompt,
             tools=["mcp__duckdb__execute_sql"],
-            model=SQL_SUBAGENT_MODEL,
+            model="inherit",
         ),
         "chart-builder": AgentDefinition(
             description=(
@@ -119,7 +126,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
             ),
             prompt=chart_prompt,
             tools=["mcp__duckdb__execute_sql", "mcp__duckdb__render_chart"],
-            model=CHART_SUBAGENT_MODEL,
+            model="inherit",
         ),
     }
 

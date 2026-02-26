@@ -6,8 +6,11 @@ load_dotenv()
 BIFROST_BASE_URL = os.getenv("BIFROST_BASE_URL", "http://bifrost:8080")
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://duckdb-data-agent:10000")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-SQL_SUBAGENT_MODEL = os.getenv("SQL_SUBAGENT_MODEL", "haiku")
-CHART_SUBAGENT_MODEL = os.getenv("CHART_SUBAGENT_MODEL", "haiku")
+# Subagent model vars are kept for backward compat but no longer used at runtime.
+# The Claude Agent SDK only accepts 'sonnet'|'opus'|'haiku'|'inherit' for agent
+# models, so subagents always inherit the orchestrator's ANTHROPIC_MODEL.  Use
+# ANTHROPIC_MODEL with a Bifrost provider prefix (e.g. "openai/gpt-5.2") to
+# control which LLM all agents use.
 
 LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")
 LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "")

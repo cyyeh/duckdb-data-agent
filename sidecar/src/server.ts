@@ -173,16 +173,23 @@ app.post("/query", async (req: Request, res: Response) => {
       }
     }
 
-    // Convert agents payload from the backend into SDK AgentDefinition objects
+    // Convert agents payload from the backend into SDK AgentDefinition objects.
+    // The SDK only accepts 'sonnet' | 'opus' | 'haiku' | 'inherit' for model.
+    // Arbitrary strings (e.g. "openai/gpt-5.2") are silently rejected, causing
+    // the agent to not be registered.  Validate and fall back to "inherit".
+    const VALID_AGENT_MODELS = new Set(["sonnet", "opus", "haiku", "inherit"]);
     let sdkAgents: Record<string, AgentDefinition> | undefined;
     if (body.agents) {
       sdkAgents = {};
       for (const [name, def] of Object.entries(body.agents)) {
+        const model = def.model && VALID_AGENT_MODELS.has(def.model)
+          ? (def.model as AgentDefinition["model"])
+          : "inherit";
         sdkAgents[name] = {
           description: def.description,
           prompt: def.prompt,
           ...(def.tools ? { tools: def.tools } : {}),
-          ...(def.model ? { model: def.model as AgentDefinition["model"] } : {}),
+          model,
         };
       }
     }
