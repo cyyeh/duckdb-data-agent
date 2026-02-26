@@ -6,13 +6,14 @@ services:
       - "${BIFROST_PORT:-8081}:8080"
     volumes:
       - ./bifrost/config.json:/app/data/config.json
+    env_file:
+      - backend/.env
     environment:
       APP_HOST: "0.0.0.0"
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     networks:
       - agent-sandbox
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 3
