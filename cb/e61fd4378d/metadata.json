@@ -3,7 +3,7 @@
   "checkpoint_id": "cbe61fd4378d",
   "strategy": "manual-commit",
   "branch": "worktree-litellm-proxy",
-  "checkpoints_count": 1,
+  "checkpoints_count": 4,
   "files_touched": [
     "backend/.env.example",
     "backend/app/agent.py",
@@ -34,13 +34,20 @@
       "context": "/cb/e61fd4378d/2/context.md",
       "content_hash": "/cb/e61fd4378d/2/content_hash.txt",
       "prompt": "/cb/e61fd4378d/2/prompt.txt"
+    },
+    {
+      "metadata": "/cb/e61fd4378d/3/metadata.json",
+      "transcript": "/cb/e61fd4378d/3/full.jsonl",
+      "context": "/cb/e61fd4378d/3/context.md",
+      "content_hash": "/cb/e61fd4378d/3/content_hash.txt",
+      "prompt": "/cb/e61fd4378d/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 552,
-    "cache_creation_tokens": 524282,
-    "cache_read_tokens": 24251193,
-    "output_tokens": 54736,
-    "api_call_count": 253
+    "input_tokens": 629,
+    "cache_creation_tokens": 595204,
+    "cache_read_tokens": 28433354,
+    "output_tokens": 80129,
+    "api_call_count": 314
   }
 }
