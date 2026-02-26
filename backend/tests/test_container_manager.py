@@ -132,6 +132,8 @@ def test_shutdown_all_stops_all_containers(manager, mock_docker_client):
     mock_container_2.attrs = {"NetworkSettings": {"Networks": {"agent-sandbox": {"IPAddress": "172.18.0.3"}}}}
 
     mock_docker_client.containers.run.side_effect = [mock_container_1, mock_container_2]
+    # No orphaned containers returned by label query
+    mock_docker_client.containers.list.return_value = []
 
     manager.create("s1", {})
     manager.create("s2", {})
@@ -140,6 +142,46 @@ def test_shutdown_all_stops_all_containers(manager, mock_docker_client):
     mock_container_1.stop.assert_called_once()
     mock_container_2.stop.assert_called_once()
     assert len(manager._containers) == 0
+
+
+def test_shutdown_all_cleans_up_orphaned_containers(manager, mock_docker_client):
+    """Containers not in the in-memory registry are still cleaned up via Docker labels."""
+    orphan = MagicMock()
+    orphan.id = "orphan123"
+
+    # No tracked containers, but Docker finds an orphan by label
+    mock_docker_client.containers.list.return_value = [orphan]
+
+    manager.shutdown_all()
+
+    orphan.stop.assert_called_once_with(timeout=5)
+    orphan.remove.assert_called_once_with(force=True)
+
+
+def test_shutdown_all_skips_tracked_containers_in_label_scan(manager, mock_docker_client):
+    """Containers already stopped via the registry are not stopped twice."""
+    tracked = MagicMock()
+    tracked.id = "tracked1"
+    tracked.attrs = {"NetworkSettings": {"Networks": {"agent-sandbox": {"IPAddress": "172.18.0.2"}}}}
+    mock_docker_client.containers.run.return_value = tracked
+
+    manager.create("s1", {})
+    # The label scan returns the same container that was already in the registry
+    mock_docker_client.containers.list.return_value = [tracked]
+
+    manager.shutdown_all()
+
+    # stop() called once by the registry path, not again by the label scan
+    tracked.stop.assert_called_once()
+
+
+def test_cleanup_by_label_handles_docker_error(manager, mock_docker_client):
+    """If Docker listing fails, _cleanup_by_label returns 0 without raising."""
+    mock_docker_client.containers.list.side_effect = Exception("Docker daemon error")
+
+    result = manager._cleanup_by_label()
+
+    assert result == 0
 
 
 def test_get_url_returns_correct_format(manager, mock_docker_client):
