@@ -6,7 +6,9 @@ from typing import AsyncIterator
 from claude_agent_sdk import AgentDefinition
 from app.database import Database
 from app.config import (
-    ANTHROPIC_MODEL, BIFROST_BASE_URL, BACKEND_BASE_URL,
+    ANTHROPIC_MODEL_SDK,
+    SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK,
+    BACKEND_BASE_URL,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
 )
 from app.tracing import get_langfuse_client
@@ -106,11 +108,6 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
         + table_schemas
     )
 
-    # The Claude Agent SDK only accepts 'sonnet' | 'opus' | 'haiku' | 'inherit' for
-    # the model field.  Arbitrary model strings (e.g. "openai/gpt-5.2-2025-12-11")
-    # cause the SDK to silently reject the agent definition, making it unavailable.
-    # Using "inherit" makes subagents use the orchestrator's ANTHROPIC_MODEL, which
-    # is routed through Bifrost to the correct provider.
     return {
         "sql-analyst": AgentDefinition(
             description=(
@@ -119,7 +116,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
             ),
             prompt=sql_prompt,
             tools=["mcp__duckdb__execute_sql"],
-            model="inherit",
+            model=SQL_SUBAGENT_MODEL_SDK,
         ),
         "chart-builder": AgentDefinition(
             description=(
@@ -127,7 +124,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
             ),
             prompt=chart_prompt,
             tools=["mcp__duckdb__execute_sql", "mcp__duckdb__render_chart"],
-            model="inherit",
+            model=CHART_SUBAGENT_MODEL_SDK,
         ),
     }
 
@@ -193,7 +190,7 @@ async def stream_chat(
     # TypeScript Langfuse SDK can create traces directly.
     env: dict[str, str] = {
         "ANTHROPIC_API_KEY": "placeholder",
-        "ANTHROPIC_BASE_URL": f"{BIFROST_BASE_URL}/anthropic",
+        "ANTHROPIC_BASE_URL": f"{BACKEND_BASE_URL}/anthropic",
     }
     if LANGFUSE_ENABLED:
         env["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
@@ -249,11 +246,11 @@ async def stream_chat(
             "message": query_message,
             "session_id": session_id,
             "system_prompt": system_prompt,
-            "model": ANTHROPIC_MODEL,
+            "model": ANTHROPIC_MODEL_SDK,
             "mcp_server_url": f"{BACKEND_BASE_URL}/mcp/sse?session_id={stable_session}",
             "env": {
                 "ANTHROPIC_API_KEY": "placeholder",
-                "ANTHROPIC_BASE_URL": f"{BIFROST_BASE_URL}/anthropic",
+                "ANTHROPIC_BASE_URL": f"{BACKEND_BASE_URL}/anthropic",
             },
             "agents": {
                 name: {

@@ -55,13 +55,12 @@ def test_subagent_prompts_include_table_schemas():
     assert '"sales"' in agents["chart-builder"].prompt
 
 
-def test_subagent_models_inherit():
+def test_subagent_models_use_sdk_aliases():
     from app.agent import build_subagent_definitions
+    from app.config import SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK
 
     db = _make_db()
     agents = build_subagent_definitions(db)
 
-    # Subagents must use "inherit" so the SDK accepts them and they
-    # inherit the orchestrator's ANTHROPIC_MODEL at runtime.
-    assert agents["sql-analyst"].model == "inherit"
-    assert agents["chart-builder"].model == "inherit"
+    assert agents["sql-analyst"].model == SQL_SUBAGENT_MODEL_SDK
+    assert agents["chart-builder"].model == CHART_SUBAGENT_MODEL_SDK
