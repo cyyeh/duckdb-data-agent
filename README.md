@@ -30,7 +30,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Inline results** — Query results rendered inline within the conversation
 - **Chart generation** — Ask for a chart or visualization and the chart-builder subagent generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly; animated charts with frames, sliders, and play/pause controls are also supported
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
-- **Credential proxy** — The backend runs a built-in Anthropic API reverse proxy; each agent session receives a short-lived UUID token instead of the real API key, so the sidecar container never has access to `ANTHROPIC_API_KEY`; tokens are revoked immediately when the session ends (see [Security](#security))
+- **Bifrost LLM gateway** — A [Bifrost](https://github.com/maximhq/bifrost) gateway service manages API keys centrally and routes LLM requests to multiple providers; sidecar containers never have access to real API keys (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
 - **Container isolation** — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
@@ -96,12 +96,6 @@ First-time setup — install dependencies, build the sidecar image, and create t
 make install
 ```
 
-Add `PROXY_BASE_URL` to `backend/.env` so the sidecar container can reach the local backend:
-
-```
-PROXY_BASE_URL=http://host.docker.internal:8000
-```
-
 Start both the frontend and backend:
 
 ```bash
@@ -147,32 +141,31 @@ make compose-down
 
 ## Security
 
-### Credential Proxy
+### Bifrost LLM Gateway
 
 When the agent runs, the backend spawns a sidecar container via the Docker SDK. A naive approach would pass `ANTHROPIC_API_KEY` directly into that container's environment — but any tool or shell command the agent executes could then read and exfiltrate the key.
 
-Instead, the backend runs a built-in reverse proxy at `/anthropic` that sits between Claude Code and `api.anthropic.com`:
+Instead, a [Bifrost](https://github.com/maximhq/bifrost) LLM gateway service manages API keys centrally and routes requests to LLM providers:
 
 ```
 Sidecar Container
-  → ANTHROPIC_BASE_URL=http://host:8000/anthropic
-  → ANTHROPIC_API_KEY=<short-lived UUID token>
+  → ANTHROPIC_BASE_URL=http://bifrost:8080/anthropic
+  → ANTHROPIC_API_KEY=placeholder
         ↓
-FastAPI proxy (/anthropic/{path})
-  → validates UUID token
-  → swaps it for the real ANTHROPIC_API_KEY
-  → forwards request to api.anthropic.com
+Bifrost Gateway (/anthropic)
+  → ignores client-sent key
+  → injects the real provider API key
+  → forwards request to provider (Anthropic, OpenAI, Bedrock, etc.)
 ```
 
 **How it works:**
 
-1. Before each agent session, the backend mints a random UUID token with a 10-minute TTL.
-2. The token is injected into the sidecar container environment as `ANTHROPIC_API_KEY`; the real key is never exposed.
-3. The proxy validates every inbound request against the token store and substitutes the real key before forwarding upstream.
-4. When the session ends, the token is explicitly revoked in a `finally` block, regardless of success or error.
-5. A background task runs every 60 seconds to sweep any tokens that outlived their TTL.
+1. Bifrost runs as a Docker Compose service with real API keys stored in `bifrost/config.json` (referencing environment variables).
+2. Sidecar containers receive a placeholder `ANTHROPIC_API_KEY` and point `ANTHROPIC_BASE_URL` to Bifrost's native `/anthropic` endpoint.
+3. Bifrost injects the real provider API key when forwarding requests upstream. The Claude Agent SDK works unchanged since Bifrost speaks native Anthropic Messages API.
+4. Additional providers (OpenAI, Bedrock, Vertex, etc.) can be added to `bifrost/config.json` or via Bifrost's Web UI. Use provider prefixes in model names (e.g., `openai/gpt-4o-mini`) to route subagent requests to different providers.
 
-The sidecar container only ever holds a single-session UUID. Even if a tool call reads the environment, all it gets is a temporary token scoped to that conversation.
+The sidecar container only ever holds a placeholder string. Even if a tool call reads the environment, it cannot obtain any real API key.
 
 ### Container Isolation
 
@@ -197,7 +190,7 @@ FastAPI Backend (host)
   │               │  POST /query → SSE   │
   │               └──────┬───────────────┘
   │                      │
-  ├── /anthropic ◄───────┘  (credential proxy)
+  │              ├──► Bifrost Gateway (:8080/anthropic)  (LLM routing)
   ├── /mcp/sse   ◄───────┘  (DuckDB MCP bridge)
   │
   └── DuckDB (per-user, disk-persisted)
@@ -206,12 +199,12 @@ FastAPI Backend (host)
 The data flow for a chat message is:
 
 1. Frontend sends a chat message to the FastAPI backend.
-2. Backend mints a short-lived UUID token via the credential proxy and spins up a gVisor container (or reuses an existing one for the session) via `ContainerManager`.
+2. Backend spins up a gVisor container (or reuses an existing one for the session) via `ContainerManager`, configured to route LLM calls through the Bifrost gateway.
 3. Backend sends the query to the sidecar's `POST /query` endpoint. The sidecar calls the Claude Agent SDK's `query()` function with `includePartialMessages: true` for token-level streaming, configured with the host's MCP SSE endpoint.
-4. Claude CLI talks to the host credential proxy (`/anthropic`) for Anthropic API access (using the UUID token, never the real key).
+4. Claude CLI talks to the Bifrost gateway (`/anthropic`) for LLM API access (using a placeholder key; Bifrost injects the real key).
 5. Claude CLI's `execute_sql` tool calls reach the host DuckDB via the **MCP SSE bridge** (`/mcp/sse?session_id=...`), which routes each connection to the correct per-user DuckDB instance through the existing `SessionManager`.
 6. The sidecar streams SSE events back to the backend, which forwards them to the frontend.
-7. On session end, the container is stopped and removed; the UUID token is revoked.
+7. On session end, the container is stopped and removed.
 
 **Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, the Agent SDK, and the `@anthropic-ai/claude-code` CLI (required by the SDK internally). Containers run with a read-only root filesystem, all Linux capabilities dropped, no volume mounts, no Docker socket access, and a non-root user.
 
@@ -235,13 +228,7 @@ The data flow for a chat message is:
 
 2. Install gVisor by following the [official guide](https://gvisor.dev/docs/user_guide/install/).
 
-3. Set `PROXY_BASE_URL` to an address reachable from containers (not `127.0.0.1`):
-
-   ```
-   PROXY_BASE_URL=http://host.docker.internal:8000
-   ```
-
-4. Start the app:
+3. Start the app:
 
    ```bash
    make compose-up
@@ -262,7 +249,7 @@ The data flow for a chat message is:
 
 - The container never accesses the host filesystem, processes, or environment
 - gVisor intercepts all syscalls -- even arbitrary bash/python execution is sandboxed
-- No real API keys inside the container (UUID token only, useless outside the host proxy)
+- No real API keys inside the container (placeholder string only; real keys managed by Bifrost)
 - Per-session isolation -- containers cannot see each other
 - Resource limits (CPU, memory, lifetime) prevent denial-of-service against the host
 - Internal networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) are blocked, preventing cloud metadata and internal service access
@@ -350,7 +337,6 @@ scenarios:
 │       ├── config.py       #   Environment variables (API key, model, upload limits, container settings)
 │       ├── database.py     #   DuckDB connection, query execution, and per-user SessionManager
 │       ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming via container sidecar
-│       ├── proxy.py        #   Credential proxy: token store + /anthropic reverse proxy
 │       ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB and chart tools over HTTP for containers
 │       ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
@@ -368,7 +354,9 @@ scenarios:
 │   ├── tests/              #   Dynamic test generator (scenario-runner.spec.ts)
 │   ├── lib/                #   YAML loader, actions, verifiers, LLM judge
 │   └── playwright.config.ts
-├── docker-compose.yml      # Compose orchestration (app + sidecar build)
+├── bifrost/                # Bifrost LLM gateway configuration
+│   └── config.json         #   Provider keys and routing config
+├── docker-compose.yml      # Compose orchestration (bifrost + app + sidecar build)
 └── Makefile                # Dev commands (install, dev, compose-build/up/down, e2e-test, clean)
 ```
 
