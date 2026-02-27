@@ -324,9 +324,19 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
                   </div>
                 );
               })}
+              {/* Render streaming remainder inside the same answer block to avoid duplicate headers */}
+              {isInAnswerPhase && streamingRemainder?.trim() && (() => {
+                const displayText = hasCharts ? stripChartSpecBlocks(streamingRemainder) : streamingRemainder;
+                return displayText?.trim() ? (
+                  <div className="message-bubble__segment-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayText}</ReactMarkdown>
+                  </div>
+                ) : null;
+              })()}
             </div>
           )}
-          {isInAnswerPhase && streamingRemainder?.trim() && (() => {
+          {/* Only show standalone streaming answer block when no answer segments exist yet */}
+          {answerBlockSegments.length === 0 && isInAnswerPhase && streamingRemainder?.trim() && (() => {
             const displayText = hasCharts ? stripChartSpecBlocks(streamingRemainder) : streamingRemainder;
             return displayText?.trim() ? (
               <div className="message-bubble__segment message-bubble__segment--answer">
