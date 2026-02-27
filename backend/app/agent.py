@@ -166,9 +166,21 @@ def _build_chart_spec_from_stream_messages(
     parent_id = msg.get("parent_tool_use_id")
     if not parent_id or tool_names.get(parent_id) != "chart-builder":
         return
+    _DATA_FIELDS = ("x", "y", "z", "values", "labels", "lat", "lon", "r", "theta",
+                     "lowerfence", "q1", "median", "q3", "upperfence")
     for block in msg.get("message", {}).get("content", []):
         if block.get("type") == "tool_use" and "render_chart" in block.get("name", ""):
-            subagent_chart_specs.setdefault(parent_id, []).append(block.get("input", {}))
+            spec = block.get("input", {})
+            # Skip specs with all-empty data traces to avoid rendering blank charts.
+            traces = spec.get("data", [])
+            has_data = any(
+                isinstance(trace.get(f), list) and len(trace.get(f)) > 0
+                for trace in traces if isinstance(trace, dict)
+                for f in _DATA_FIELDS
+            )
+            if not has_data:
+                return
+            subagent_chart_specs.setdefault(parent_id, []).append(spec)
             return
 
 

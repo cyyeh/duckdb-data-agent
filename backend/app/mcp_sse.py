@@ -134,6 +134,29 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
             if not isinstance(data, list) or not layout.get("title"):
                 logger.warning("render_chart called with missing data or layout.title: %s", arguments)
                 return [types.TextContent(type="text", text=json.dumps({"status": "error", "error": "data and layout.title are required"}))]
+
+            # Reject specs where every trace has empty data arrays.
+            # Data-bearing fields vary by chart type (x, y, z, values, labels, etc.).
+            _DATA_FIELDS = ("x", "y", "z", "values", "labels", "lat", "lon", "r", "theta",
+                            "lowerfence", "q1", "median", "q3", "upperfence")
+            has_nonempty_trace = False
+            for trace in data:
+                if not isinstance(trace, dict):
+                    continue
+                for field in _DATA_FIELDS:
+                    val = trace.get(field)
+                    if isinstance(val, list) and len(val) > 0:
+                        has_nonempty_trace = True
+                        break
+                if has_nonempty_trace:
+                    break
+            if not has_nonempty_trace:
+                logger.warning("render_chart called with all-empty data traces: %s", arguments)
+                return [types.TextContent(type="text", text=json.dumps({
+                    "status": "error",
+                    "error": "All data traces are empty — no data to chart. "
+                             "Check your SQL query results before calling render_chart."
+                }))]
             # Return a minimal acknowledgement. The chart spec (data + layout) is captured
             # upstream from the tool_use input block in the backend stream handler — not from
             # this response — so we don't need to echo the payload here.

@@ -71,5 +71,6 @@
   "typeYourAnswer": "輸入您的答案...",
   "submit": "提交",
   "errorOccurred": "發生錯誤",
-  "tryAgain": "重試"
+  "tryAgain": "重試",
+  "chartNoData": "沒有可顯示的圖表資料。"
 }
