@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "95d817ae3e17",
+  "strategy": "manual-commit",
+  "branch": "fix/duplicate-answer-block",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/MessageBubble.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/95/d817ae3e17/0/metadata.json",
+      "transcript": "/95/d817ae3e17/0/full.jsonl",
+      "context": "/95/d817ae3e17/0/context.md",
+      "content_hash": "/95/d817ae3e17/0/content_hash.txt",
+      "prompt": "/95/d817ae3e17/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 13,
+    "cache_creation_tokens": 15674,
+    "cache_read_tokens": 309441,
+    "output_tokens": 3047,
+    "api_call_count": 9
+  }
+}
