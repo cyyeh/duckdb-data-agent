@@ -1,0 +1,13 @@
+give me config for openai-compatible llm api setup for bifrost/config.example.json
+
+---
+
+add it to config.example.json and remove all vllm and ollama setting stuff you just added
+
+---
+
+also update the docs that reference vllm and ollama
+
+---
+
+commit this
