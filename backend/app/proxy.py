@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import Response, StreamingResponse
 import httpx
 
-from app.config import MODEL_REWRITES, BIFROST_BASE_URL
+from app.config import MODEL_REWRITES, DEFAULT_TOOL_MODEL, BIFROST_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +19,17 @@ _SKIP_RESPONSE_HEADERS = {"transfer-encoding", "content-encoding", "connection"}
 router = APIRouter(prefix="/anthropic")
 
 
-def rewrite_model_in_body(body: bytes, rewrites: dict[str, str]) -> bytes:
+def rewrite_model_in_body(
+    body: bytes, rewrites: dict[str, str], fallback: str = ""
+) -> bytes:
     """Rewrite the 'model' field in a JSON body using the rewrites map.
 
     Matches if the model string equals or contains a rewrite key
     (e.g. 'sonnet' matches 'claude-sonnet-4-6').
-    Returns the body unchanged if no match or if body is not valid JSON.
+    If no rewrite matches and a fallback is set, rewrites to the fallback.
+    Returns the body unchanged if no match/fallback or if body is not valid JSON.
     """
-    if not rewrites:
+    if not rewrites and not fallback:
         return body
     try:
         data = json.loads(body)
@@ -39,6 +42,9 @@ def rewrite_model_in_body(body: bytes, rewrites: dict[str, str]) -> bytes:
         if model == tier or tier in model:
             data["model"] = real_model
             return json.dumps(data).encode()
+    if fallback:
+        data["model"] = fallback
+        return json.dumps(data).encode()
     return body
 
 
@@ -52,8 +58,8 @@ async def proxy_to_upstream(path: str, request: Request):
     body = await request.body()
 
     # Rewrite model on POST requests (messages, completions, etc.)
-    if request.method == "POST" and MODEL_REWRITES:
-        body = rewrite_model_in_body(body, MODEL_REWRITES)
+    if request.method == "POST" and (MODEL_REWRITES or DEFAULT_TOOL_MODEL):
+        body = rewrite_model_in_body(body, MODEL_REWRITES, fallback=DEFAULT_TOOL_MODEL)
 
     client = httpx.AsyncClient(timeout=httpx.Timeout(300.0))
     try:
