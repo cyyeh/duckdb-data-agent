@@ -41,7 +41,7 @@
     90deg,
     var(--color-text-disabled) 0%,
     var(--color-text-disabled) 40%,
-    var(--color-accent-primary-light) 50%,
+    var(--color-accent-primary) 50%,
     var(--color-text-disabled) 60%,
     var(--color-text-disabled) 100%
   );
