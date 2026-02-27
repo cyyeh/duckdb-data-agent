@@ -354,11 +354,12 @@ scenarios:
 ```
 ├── frontend/               # React frontend
 │   ├── src/
-│   │   ├── components/     #   UI components (editor, results, sidebar, chat)
+│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts)
 │   │   ├── contexts/       #   React context providers (theme, language, agent, config, session)
 │   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig)
 │   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
+│   │   ├── utils/          #   Utility functions (UUID generation)
 │   │   └── types.ts        #   Shared TypeScript interfaces
 │   ├── index.html          #   HTML entry point
 │   ├── package.json        #   npm config
@@ -368,13 +369,23 @@ scenarios:
 │   └── app/
 │       ├── main.py         #   App setup, CORS, and background session/container cleanup loop
 │       ├── config.py       #   Environment variables (API key, model, upload limits, container settings)
-│       ├── database.py     #   DuckDB connection, query execution, and per-user SessionManager
+│       ├── database.py     #   DuckDB connection and query execution
+│       ├── session_manager.py  #   Per-user DuckDB session lifecycle (create, cleanup, disk persistence)
 │       ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming via container sidecar
 │       ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB and chart tools over HTTP for containers
 │       ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
+│       ├── proxy.py        #   Reverse proxy for per-subagent model routing (@suffix rewriting)
+│       ├── pending_questions.py  #   Interactive clarification (agent asks user for disambiguation)
+│       ├── dependencies.py #   FastAPI dependency injection utilities
 │       ├── tracing.py      #   Langfuse client wrapper & initialization
 │       ├── data/           #   Sample datasets (titanic.csv)
-│       └── routes/         #   API endpoints (tables, query, chat, config, langfuse status, heartbeat)
+│       └── routes/         #   API endpoints
+│           ├── chat.py     #     Chat endpoint with SSE streaming
+│           ├── query.py    #     SQL query execution
+│           ├── tables.py   #     Table inspection (schema, columns, sample data)
+│           ├── session.py  #     Session creation and deletion
+│           ├── config.py   #     Runtime configuration
+│           └── langfuse_status.py  #   Langfuse tracing status and link
 ├── sidecar/                # Containerized agent sidecar
 │   ├── src/
 │   │   ├── server.ts       #   TypeScript HTTP server using Claude Agent SDK with token-level streaming
@@ -389,6 +400,9 @@ scenarios:
 │   └── playwright.config.ts
 ├── bifrost/                # Bifrost LLM gateway configuration
 │   └── config.example.json #   Example provider keys and routing config (copy to config.json)
+├── docs/plans/             # Design and implementation plan documents
+├── utils/                  # Standalone utility scripts
+├── .github/workflows/      # GitHub Actions CI/CD (code review, CI)
 ├── docker-compose.yml      # Compose orchestration (bifrost + app + sidecar build)
 └── Makefile                # Dev commands (install, dev, compose-build/up/down, e2e-test, clean)
 ```
