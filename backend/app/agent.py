@@ -10,6 +10,7 @@ from app.config import (
     SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK,
     BACKEND_BASE_URL,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
+    SDK_IDLE_TIMEOUT_MS,
 )
 from app.tracing import get_langfuse_client
 
@@ -197,6 +198,7 @@ async def stream_chat(
     env: dict[str, str] = {
         "ANTHROPIC_API_KEY": "placeholder",
         "ANTHROPIC_BASE_URL": f"{BACKEND_BASE_URL}/anthropic",
+        "SDK_IDLE_TIMEOUT_MS": str(SDK_IDLE_TIMEOUT_MS),
     }
     if LANGFUSE_ENABLED:
         env["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY

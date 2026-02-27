@@ -470,5 +470,13 @@
 }
 
 .message-bubble__chart-in-answer {
-  margin: 8px 0;
+  margin: 20px 0;
+}
+
+.message-bubble__chart-in-answer:first-child {
+  margin-top: 8px;
+}
+
+.message-bubble__chart-in-answer:last-child {
+  margin-bottom: 8px;
 }
