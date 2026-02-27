@@ -4,6 +4,12 @@
 
 https://github.com/user-attachments/assets/eeb5e144-062c-444a-8232-679830b048de
 
+Or you can see examples online:
+- [example1](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example1.html)
+- [example2](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example2.html)
+
+---
+
 An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English — the agent delegates to specialized subagents for SQL queries and chart generation — or switch to the SQL editor for direct queries. Powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
 Each browser tab gets its own isolated DuckDB session — uploaded data and query state are fully isolated between users and tabs. Sessions are persisted to disk so your tables survive idle timeouts; the session file is only deleted when you close the tab explicitly.
