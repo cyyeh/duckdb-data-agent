@@ -20,6 +20,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Dark / light mode** — Toggle between dark and light themes with the sun/moon button in the header; respects your OS preference on first visit and remembers your choice across sessions
 - **Internationalization (i18n)** — Switch between English and Traditional Chinese with the EN/中 toggle in the header; auto-detects your OS language on first visit and remembers your choice across sessions
 - **Interactive clarification** — When your request is ambiguous, the agent asks a clarifying question with selectable options displayed inline in the chat; pick an option or type a free-text response to continue
+- **Export conversation** — Click the Export button to download the full conversation as a single self-contained HTML file; the export preserves the current theme, collapsible thinking blocks, interactive Plotly charts (via CDN), and styled query result tables; interactive-only elements (edit/delete buttons, retry buttons) are stripped for a clean read-only view
 
 ### Agent Mode (default mode)
 
@@ -372,7 +373,7 @@ scenarios:
 │   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig)
 │   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
-│   │   ├── utils/          #   Utility functions (UUID generation)
+│   │   ├── utils/          #   Utility functions (UUID generation, conversation export)
 │   │   └── types.ts        #   Shared TypeScript interfaces
 │   ├── index.html          #   HTML entry point
 │   ├── package.json        #   npm config

@@ -6,6 +6,7 @@ import { MessageBubble } from './MessageBubble';
 import { FileUpload } from './FileUpload';
 import type { TableInfo } from '../types';
 import './AgentPanel.css';
+import { exportConversation } from '../utils/exportConversation';
 
 interface AgentPanelProps {
   tables: TableInfo[];
@@ -41,6 +42,11 @@ export function AgentPanel({ tables, onUpload, onLoadSample }: AgentPanelProps) 
       <div className="agent-panel__header">
         <span className="agent-panel__title">{t('agentMode')}</span>
         <div className="agent-panel__actions">
+          {messages.length > 0 && (
+            <button className="agent-panel__clear" onClick={() => exportConversation()}>
+              {t('export')}
+            </button>
+          )}
           {messages.length > 0 && (
             <button className="agent-panel__clear" onClick={() => { if (confirm(t('clearConfirm'))) clearMessages(); }}>
               {t('clear')}
