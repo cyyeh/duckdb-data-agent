@@ -14,38 +14,17 @@
         "default_request_timeout_in_seconds": 300
       }
     },
-    "vllm": {
+    "openai": {
       "keys": [
         {
           "name": "default",
-          "value": "dummy",
+          "value": "env.OPENAI_API_KEY",
           "models": [],
           "weight": 1.0
         }
       ],
       "network_config": {
-        "base_url": "http://localhost:8000",
-        "default_request_timeout_in_seconds": 300
-      },
-      "custom_provider_config": {
-        "base_provider_type": "openai",
-        "allowed_requests": {
-          "chat_completion": true,
-          "chat_completion_stream": true
-        }
-      }
-    },
-    "ollama": {
-      "keys": [
-        {
-          "name": "default",
-          "value": "dummy",
-          "models": [],
-          "weight": 1.0
-        }
-      ],
-      "network_config": {
-        "base_url": "http://localhost:11434",
+        "base_url": "https://your-openai-compatible-endpoint/v1",
         "default_request_timeout_in_seconds": 300
       },
       "custom_provider_config": {
