@@ -202,7 +202,10 @@ async def stream_chat(
     import httpx
     import asyncio
 
-    query_message = _build_message_with_history(message, conversation_history)
+    # Only bake history into message text for edit/delete (no session to resume).
+    # For normal follow-ups with a session_id, pass history as a separate field
+    # so the sidecar can use it as fallback if resume fails.
+    query_message = _build_message_with_history(message, conversation_history) if not session_id else message
     system_prompt = build_system_prompt(db)
 
     # Pass Langfuse credentials to the container so the sidecar's
@@ -285,10 +288,12 @@ async def stream_chat(
         }
         if langfuse_session_id:
             payload["langfuse_session_id"] = langfuse_session_id
-        # Pass original message & history separately for Langfuse trace metadata
+        # Always pass conversation_history so the sidecar can use it as fallback
+        # if resume fails (e.g. container was recreated and session is gone).
+        # Also pass original_message for Langfuse trace metadata.
         if conversation_history:
             payload["original_message"] = message
-            payload["conversation_history"] = conversation_history
+        payload["conversation_history"] = conversation_history or []
 
         has_tool_calls = False
         has_thinking = False

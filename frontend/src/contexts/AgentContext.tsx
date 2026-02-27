@@ -74,6 +74,11 @@ export function AgentProvider({
       currentTextRef.current = '';
       phaseRef.current = 'thinking';
 
+      // Build conversation history from current messages for resume fallback
+      const history = messages
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({ role: m.role, content: m.content }));
+
       // If there's pending history from a delete, start a new Langfuse session with that context
       const pendingHistory = pendingHistoryRef.current;
       pendingHistoryRef.current = null;
@@ -86,7 +91,7 @@ export function AgentProvider({
         text,
         sessionIdRef.current,
         langfuseSessionId,
-        pendingHistory,
+        history.length > 0 ? history : pendingHistory,
         {
           onTextChunk: (chunk) => {
             textBufferRef.current += chunk;
