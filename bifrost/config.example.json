@@ -1,0 +1,38 @@
+{
+  "$schema": "https://www.getbifrost.ai/schema",
+  "config_store": {
+    "enabled": true,
+    "type": "sqlite",
+    "config": {
+      "path": "config.db"
+    }
+  },
+  "providers": {
+    "anthropic": {
+      "keys": [
+        {
+          "name": "default",
+          "value": "env.ANTHROPIC_API_KEY",
+          "models": [],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "default_request_timeout_in_seconds": 300
+      }
+    },
+    "openai": {
+      "keys": [
+        {
+          "name": "default",
+          "value": "env.OPENAI_API_KEY",
+          "models": [],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "default_request_timeout_in_seconds": 300
+      }
+    }
+  }
+}

@@ -9,9 +9,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.routes import tables, query, chat, langfuse_status, config, session
-from app import proxy as proxy_module
 from app.container_manager import container_manager
 from app.mcp_sse import mcp_app
+from app.proxy import router as proxy_router
 from app.config import CORS_ALLOWED_ORIGINS
 
 logger = logging.getLogger(__name__)
@@ -26,9 +26,6 @@ async def _cleanup_loop():
             removed = session_manager.cleanup_stale(ttl_seconds=300)
             if removed:
                 logger.info("Background cleanup: removed %d stale sessions", removed)
-            proxy_removed = proxy_module.proxy_token_store.cleanup_expired()
-            if proxy_removed:
-                logger.info("Background cleanup: removed %d expired proxy tokens", proxy_removed)
             if container_manager is not None:
                 container_removed = container_manager.cleanup_expired()
                 if container_removed:
@@ -67,7 +64,7 @@ app.include_router(chat.router)
 app.include_router(langfuse_status.router)
 app.include_router(config.router)
 app.include_router(session.router)
-app.include_router(proxy_module.router)
+app.include_router(proxy_router)
 
 
 app.mount("/mcp", mcp_app)

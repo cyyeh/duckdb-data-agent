@@ -1,105 +1,60 @@
+import json
 import logging
-import uuid
-from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Request
+from fastapi.responses import Response, StreamingResponse
 import httpx
 
-from app.config import ANTHROPIC_API_KEY
+from app.config import MODEL_REWRITES, BIFROST_BASE_URL
 
 logger = logging.getLogger(__name__)
 
-ANTHROPIC_UPSTREAM = "https://api.anthropic.com"
+ANTHROPIC_UPSTREAM = BIFROST_BASE_URL + "/anthropic"
 
 _SKIP_REQUEST_HEADERS = {
     "host", "content-length", "transfer-encoding", "connection",
-    "x-api-key",         # client must not override billing identity
-    "anthropic-version", # proxy controls API version
-    # anthropic-beta is intentionally NOT blocked: Claude Code sends beta body
-    # fields (e.g. context_management) alongside the matching beta header, and
-    # Anthropic rejects those fields as "extra inputs" if the header is absent.
 }
 _SKIP_RESPONSE_HEADERS = {"transfer-encoding", "content-encoding", "connection"}
-
-
-class ProxyTokenStore:
-    def __init__(self, ttl_seconds: int = 600):
-        self._ttl = ttl_seconds
-        self._tokens: dict[str, datetime] = {}
-
-    def create_token(self) -> str:
-        token = str(uuid.uuid4())
-        self._tokens[token] = datetime.now(timezone.utc) + timedelta(seconds=self._ttl)
-        return token
-
-    def validate_token(self, token: str) -> bool:
-        # Tokens are intentionally multi-use: Claude Code makes many API calls
-        # per session, all protected by the same UUID. The token is valid for
-        # the session TTL (600s safety net) but is explicitly revoked by
-        # proxy_token_store.revoke_token() in agent.py's finally block when
-        # the Claude Code subprocess exits. Do not make single-use.
-        expiry = self._tokens.get(token)
-        if expiry is None:
-            return False
-        if datetime.now(timezone.utc) > expiry:
-            self._tokens.pop(token, None)
-            return False
-        return True
-
-    def revoke_token(self, token: str) -> None:
-        self._tokens.pop(token, None)
-
-    def cleanup_expired(self) -> int:
-        now = datetime.now(timezone.utc)
-        expired = [t for t, exp in self._tokens.items() if now > exp]
-        for t in expired:
-            del self._tokens[t]
-        return len(expired)
-
-
-proxy_token_store = ProxyTokenStore()
 
 router = APIRouter(prefix="/anthropic")
 
 
-# Read-only discovery endpoints that the Claude Code SDK calls during startup
-# (e.g. GET /v1/models to resolve short model aliases like "sonnet").
-# These carry no session-specific data, so we forward them with the real API
-# key without requiring a registered session token.
-_UNAUTHENTICATED_PASSTHROUGH = {"v1/models"}
+def rewrite_model_in_body(body: bytes, rewrites: dict[str, str]) -> bytes:
+    """Rewrite the 'model' field in a JSON body using the rewrites map.
+
+    Matches if the model string equals or contains a rewrite key
+    (e.g. 'sonnet' matches 'claude-sonnet-4-6').
+    Returns the body unchanged if no match or if body is not valid JSON.
+    """
+    if not rewrites:
+        return body
+    try:
+        data = json.loads(body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return body
+    model = data.get("model")
+    if not model or not isinstance(model, str):
+        return body
+    for tier, real_model in rewrites.items():
+        if model == tier or tier in model:
+            data["model"] = real_model
+            return json.dumps(data).encode()
+    return body
 
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def proxy_anthropic(path: str, request: Request):
-    # Allow a small set of read-only discovery endpoints to pass through
-    # without a session token so the SDK can resolve short model names.
-    if path not in _UNAUTHENTICATED_PASSTHROUGH:
-        # Claude Code CLI sends the API key as x-api-key (Anthropic SDK default).
-        # Fall back to Authorization: Bearer for other clients.
-        session_token = (
-            request.headers.get("x-api-key")
-            or request.headers.get("authorization", "")[len("Bearer "):]
-            or None
-        )
-        if not session_token or not proxy_token_store.validate_token(session_token):
-            raise HTTPException(status_code=401, detail="Invalid or expired session token")
-
+async def proxy_to_upstream(path: str, request: Request):
     headers = {
         k: v for k, v in request.headers.items()
         if k.lower() not in _SKIP_REQUEST_HEADERS
     }
-    headers["x-api-key"] = ANTHROPIC_API_KEY
-    headers["anthropic-version"] = "2023-06-01"
 
     body = await request.body()
 
-    # Use a fresh client per request: streaming responses that are cut short
-    # (e.g. client disconnects) leave connections in a partial read state, and
-    # reusing a shared SSL context across those connections causes
-    # SSLV3_ALERT_BAD_RECORD_MAC / record layer failure errors.
-    # Query params are intentionally NOT forwarded — Claude Code appends
-    # internal params (e.g. ?beta=true) that Anthropic rejects as "extra inputs".
+    # Rewrite model on POST requests (messages, completions, etc.)
+    if request.method == "POST" and MODEL_REWRITES:
+        body = rewrite_model_in_body(body, MODEL_REWRITES)
+
     client = httpx.AsyncClient(timeout=httpx.Timeout(300.0))
     try:
         upstream_req = client.build_request(
@@ -114,6 +69,31 @@ async def proxy_anthropic(path: str, request: Request):
             k: v for k, v in upstream_resp.headers.items()
             if k.lower() not in _SKIP_RESPONSE_HEADERS
         }
+
+        # For error responses, read the full body and log it so we can
+        # debug upstream failures (e.g. Anthropic API 400 errors).
+        if upstream_resp.status_code >= 400:
+            error_body = await upstream_resp.aread()
+            await upstream_resp.aclose()
+            await client.aclose()
+            # Extract model from request for context
+            req_model = ""
+            try:
+                req_data = json.loads(body)
+                req_model = req_data.get("model", "")
+            except Exception:
+                pass
+            print(
+                f"[proxy] {upstream_resp.status_code} {request.method} /{path}"
+                f" model={req_model}:"
+                f" {error_body.decode('utf-8', errors='replace')[:2000]}",
+                flush=True,
+            )
+            return Response(
+                content=error_body,
+                status_code=upstream_resp.status_code,
+                headers=response_headers,
+            )
 
         async def body_generator():
             try:

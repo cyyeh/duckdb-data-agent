@@ -1,4 +1,25 @@
 services:
+  bifrost:
+    image: maximhq/bifrost:latest
+    container_name: bifrost
+    ports:
+      - "${BIFROST_PORT:-8081}:8080"
+    volumes:
+      - ./bifrost/data:/app/data
+      - ./bifrost/config.json:/app/data/config.json
+    env_file:
+      - backend/.env
+    environment:
+      APP_HOST: "0.0.0.0"
+    networks:
+      - agent-sandbox
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
   app:
     build:
       context: .
@@ -12,13 +33,17 @@ services:
     environment:
       CONTAINER_IMAGE: duckdb-agent-sidecar:latest
       CONTAINER_NETWORK: agent-sandbox
-      PROXY_BASE_URL: http://duckdb-data-agent:10000
+      BIFROST_BASE_URL: http://bifrost:8080
+      BACKEND_BASE_URL: http://duckdb-data-agent:10000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     group_add:
       - "${DOCKER_GID:-0}"
     networks:
       - agent-sandbox
+    depends_on:
+      bifrost:
+        condition: service_healthy
     restart: unless-stopped
 
   sidecar:

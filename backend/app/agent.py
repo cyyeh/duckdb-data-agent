@@ -6,11 +6,11 @@ from typing import AsyncIterator
 from claude_agent_sdk import AgentDefinition
 from app.database import Database
 from app.config import (
-    ANTHROPIC_MODEL, PROXY_BASE_URL,
+    ORCHESTRATOR_MODEL_SDK,
+    SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK,
+    BACKEND_BASE_URL,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
-    SQL_SUBAGENT_MODEL, CHART_SUBAGENT_MODEL,
 )
-from app.proxy import proxy_token_store
 from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
@@ -20,10 +20,14 @@ def build_system_prompt(db: Database) -> str:
     tables = db.list_tables()
     prompt = """You are a helpful data analyst assistant working with a DuckDB database.
 
-- Use the sql-analyst agent for any data question that requires SQL queries
-- Use the chart-builder agent for any visualization, chart, or graph request
+Task tool usage (CRITICAL — you MUST follow these rules):
+- When using the Task tool, you MUST set the "subagent_type" parameter to one of the named agents listed below. NEVER use generic values like "general-purpose", "code-writer", or any other value.
+- For any data question that requires SQL queries, set subagent_type to "sql-analyst"
+- For any visualization, chart, or graph request, set subagent_type to "chart-builder"
+- Do NOT set the "model" parameter on the Task tool — the named agents already have models configured. Omit the model field entirely.
 - After the chart-builder returns, do NOT repeat the chart JSON specification in your response. The chart is rendered automatically. Simply describe what the visualization shows in plain language.
 - Explain findings in plain language after getting results
+- Do NOT include SQL queries in your response unless the user explicitly asks to see the SQL. Focus on the results and insights, not the implementation details.
 
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
@@ -112,7 +116,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
             ),
             prompt=sql_prompt,
             tools=["mcp__duckdb__execute_sql"],
-            model=SQL_SUBAGENT_MODEL,
+            model=SQL_SUBAGENT_MODEL_SDK,
         ),
         "chart-builder": AgentDefinition(
             description=(
@@ -120,7 +124,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
             ),
             prompt=chart_prompt,
             tools=["mcp__duckdb__execute_sql", "mcp__duckdb__render_chart"],
-            model=CHART_SUBAGENT_MODEL,
+            model=CHART_SUBAGENT_MODEL_SDK,
         ),
     }
 
@@ -182,26 +186,16 @@ async def stream_chat(
     query_message = _build_message_with_history(message, conversation_history)
     system_prompt = build_system_prompt(db)
 
-    session_token = proxy_token_store.create_token()
-
     # Pass Langfuse credentials to the container so the sidecar's
     # TypeScript Langfuse SDK can create traces directly.
     env: dict[str, str] = {
-        "ANTHROPIC_API_KEY": session_token,
-        "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+        "ANTHROPIC_API_KEY": "placeholder",
+        "ANTHROPIC_BASE_URL": f"{BACKEND_BASE_URL}/anthropic",
     }
     if LANGFUSE_ENABLED:
         env["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
         env["LANGFUSE_SECRET_KEY"] = LANGFUSE_SECRET_KEY
         env["LANGFUSE_BASE_URL"] = LANGFUSE_BASE_URL
-
-    if "127.0.0.1" in PROXY_BASE_URL or "localhost" in PROXY_BASE_URL:
-        logger.warning(
-            "PROXY_BASE_URL=%s uses localhost which is unreachable from containers. "
-            "Set PROXY_BASE_URL to the host's Docker-accessible address "
-            "(e.g., http://host.docker.internal:10000).",
-            PROXY_BASE_URL,
-        )
 
     # Use the backend session ID (X-Session-ID header) for both:
     # 1. MCP SSE URL — so the container queries the correct DuckDB instance
@@ -252,11 +246,11 @@ async def stream_chat(
             "message": query_message,
             "session_id": session_id,
             "system_prompt": system_prompt,
-            "model": ANTHROPIC_MODEL,
-            "mcp_server_url": f"{PROXY_BASE_URL}/mcp/sse?session_id={stable_session}",
+            "model": ORCHESTRATOR_MODEL_SDK,
+            "mcp_server_url": f"{BACKEND_BASE_URL}/mcp/sse?session_id={stable_session}",
             "env": {
-                "ANTHROPIC_API_KEY": session_token,
-                "ANTHROPIC_BASE_URL": f"{PROXY_BASE_URL}/anthropic",
+                "ANTHROPIC_API_KEY": "placeholder",
+                "ANTHROPIC_BASE_URL": f"{BACKEND_BASE_URL}/anthropic",
             },
             "agents": {
                 name: {
@@ -522,13 +516,6 @@ async def stream_chat(
     except Exception as e:
         logger.error("Container agent error: %s", str(e))
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
-    finally:
-        # Delay token revocation so the container's CLI subprocess can finish
-        # any in-flight API calls after the stream ends.  The container is
-        # intentionally kept alive for session resume (--resume flag) and is
-        # cleaned up by the background cleanup loop after
-        # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.
-        async def _delayed_revoke(token: str, delay: float = 10.0) -> None:
-            await asyncio.sleep(delay)
-            proxy_token_store.revoke_token(token)
-        asyncio.create_task(_delayed_revoke(session_token))
+    # Note: Container is kept alive for session resume (--resume flag) and is
+    # cleaned up by the background cleanup loop after
+    # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.

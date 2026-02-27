@@ -22,7 +22,8 @@
 }
 
 .agent-panel__clear {
-  padding: 4px 10px;
+  height: 28px;
+  padding: 0 10px;
   font-size: 12px;
   background: none;
   border: 1px solid var(--color-border-dark);
@@ -46,7 +47,8 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  height: 28px;
+  padding: 0 10px;
   font-size: 12px;
   background: none;
   border: 1px solid var(--color-border-dark);

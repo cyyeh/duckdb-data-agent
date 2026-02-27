@@ -72,7 +72,7 @@ app.post("/query", async (req: Request, res: Response) => {
   const requestId = nextRequestId++;
   activeAborts.set(requestId, abortController);
 
-  // Merge per-request env overrides (e.g. fresh proxy tokens) with process env
+  // Merge per-request env overrides (e.g. Bifrost gateway URLs) with process env
   const sdkEnv: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined) sdkEnv[k] = v;
@@ -99,7 +99,7 @@ app.post("/query", async (req: Request, res: Response) => {
   // Mirror the backend's session ID handling:
   //   - langfuse_session_id (from frontend for edit/delete) takes priority
   //   - session_id (CLI session from previous turn) as fallback
-  const modelName = body.model || process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+  const modelName = body.model || process.env.ORCHESTRATOR_MODEL || "claude-sonnet-4-6";
   const traceMessage = body.original_message || body.message;
   const traceInput: Record<string, unknown> = {
     message: traceMessage.substring(0, 500),
@@ -130,7 +130,7 @@ app.post("/query", async (req: Request, res: Response) => {
   try {
     // --- Pre-flight reachability checks ---
     // The CLI subprocess will hang silently if it can't reach the MCP SSE
-    // server or the Anthropic API proxy.  Test connectivity first so we can
+    // server or the Bifrost LLM gateway.  Test connectivity first so we can
     // fail fast with a useful error message.
     const apiBase = sdkEnv["ANTHROPIC_BASE_URL"] || "";
     console.log(
@@ -150,39 +150,46 @@ app.post("/query", async (req: Request, res: Response) => {
         const reason = e instanceof Error ? e.message : String(e);
         throw new Error(
           `MCP server unreachable at ${body.mcp_server_url}: ${reason}. ` +
-          `Check that PROXY_BASE_URL is reachable from inside the container.`
+          `Check that BACKEND_BASE_URL is reachable from inside the container.`
         );
       }
     }
 
     if (apiBase) {
       try {
-        // Just a quick TCP-level check — the proxy will return 4xx without
+        // Just a quick TCP-level check — Bifrost will return 4xx without
         // a real API key but that still proves reachability.
         const apiResp = await fetch(`${apiBase}/v1/models`, {
           signal: AbortSignal.timeout(PREFLIGHT_TIMEOUT_MS),
         });
         apiResp.body?.cancel();
-        console.log(`[sidecar] API proxy reachability OK (status=${apiResp.status})`);
+        console.log(`[sidecar] Bifrost LLM gateway reachability OK (status=${apiResp.status})`);
       } catch (e: unknown) {
         const reason = e instanceof Error ? e.message : String(e);
         throw new Error(
-          `Anthropic API proxy unreachable at ${apiBase}: ${reason}. ` +
-          `Check that PROXY_BASE_URL is reachable from inside the container.`
+          `Bifrost LLM gateway unreachable at ${apiBase}: ${reason}. ` +
+          `Check that BIFROST_BASE_URL is reachable from inside the container.`
         );
       }
     }
 
-    // Convert agents payload from the backend into SDK AgentDefinition objects
+    // Convert agents payload from the backend into SDK AgentDefinition objects.
+    // The SDK only accepts 'sonnet' | 'opus' | 'haiku' | 'inherit' for model.
+    // Arbitrary strings (e.g. "openai/gpt-5.2") are silently rejected, causing
+    // the agent to not be registered.  Validate and fall back to "inherit".
+    const VALID_AGENT_MODELS = new Set(["sonnet", "opus", "haiku", "inherit"]);
     let sdkAgents: Record<string, AgentDefinition> | undefined;
     if (body.agents) {
       sdkAgents = {};
       for (const [name, def] of Object.entries(body.agents)) {
+        const model = def.model && VALID_AGENT_MODELS.has(def.model)
+          ? (def.model as AgentDefinition["model"])
+          : "inherit";
         sdkAgents[name] = {
           description: def.description,
           prompt: def.prompt,
           ...(def.tools ? { tools: def.tools } : {}),
-          ...(def.model ? { model: def.model as AgentDefinition["model"] } : {}),
+          model,
         };
       }
     }

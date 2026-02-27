@@ -3,18 +3,42 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-if not ANTHROPIC_API_KEY:
-    import warnings
-    warnings.warn(
-        "ANTHROPIC_API_KEY is not set — proxy will forward empty Bearer tokens to Anthropic",
-        RuntimeWarning,
-        stacklevel=1,
-    )
-PROXY_BASE_URL = os.getenv("PROXY_BASE_URL", "http://127.0.0.1:8000")
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-SQL_SUBAGENT_MODEL = os.getenv("SQL_SUBAGENT_MODEL", "haiku")
-CHART_SUBAGENT_MODEL = os.getenv("CHART_SUBAGENT_MODEL", "haiku")
+BIFROST_BASE_URL = os.getenv("BIFROST_BASE_URL", "http://bifrost:8080")
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://duckdb-data-agent:10000")
+
+
+def parse_model(value: str) -> tuple[str, str]:
+    """Parse 'real_model@sdk_alias' -> (sdk_alias, real_model).
+
+    If no '@', returns (value, value) for backwards compatibility.
+    """
+    if "@" in value:
+        real, sdk = value.rsplit("@", 1)
+        return sdk, real
+    return value, value
+
+
+def build_model_rewrites(pairs: list[tuple[str, str]]) -> dict[str, str]:
+    """Build a rewrite map from (sdk_alias, real_model) pairs.
+
+    Only includes entries where sdk != real (i.e. rewriting is needed).
+    """
+    return {sdk: real for sdk, real in pairs if sdk != real}
+
+
+_raw_model = os.getenv("ORCHESTRATOR_MODEL", "claude-sonnet-4-6")
+_raw_sql = os.getenv("SQL_SUBAGENT_MODEL", "inherit")
+_raw_chart = os.getenv("CHART_SUBAGENT_MODEL", "inherit")
+
+ORCHESTRATOR_MODEL_SDK, ORCHESTRATOR_MODEL_REAL = parse_model(_raw_model)
+SQL_SUBAGENT_MODEL_SDK, SQL_SUBAGENT_MODEL_REAL = parse_model(_raw_sql)
+CHART_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_REAL = parse_model(_raw_chart)
+
+MODEL_REWRITES = build_model_rewrites([
+    (ORCHESTRATOR_MODEL_SDK, ORCHESTRATOR_MODEL_REAL),
+    (SQL_SUBAGENT_MODEL_SDK, SQL_SUBAGENT_MODEL_REAL),
+    (CHART_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_REAL),
+])
 
 LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")
 LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "")
