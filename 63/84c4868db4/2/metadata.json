@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "6384c4868db4",
+  "session_id": "5047d34d-3376-4554-b06e-f5e50423e207",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T06:11:41.963856Z",
+  "branch": "feat/default-tool-model-fallback",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/config.py",
+    "backend/tests/test_proxy.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "57799e218e1e",
+  "transcript_identifier_at_start": "b8d94932-dd9a-4fc6-8a34-ed77236f7dc6",
+  "token_usage": {
+    "input_tokens": 17,
+    "cache_creation_tokens": 44611,
+    "cache_read_tokens": 466387,
+    "output_tokens": 3843,
+    "api_call_count": 13
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T06:11:41.864922Z",
+    "agent_lines": 58,
+    "human_added": 29,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 87,
+    "agent_percentage": 66.66666666666666
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/5047d34d-3376-4554-b06e-f5e50423e207.jsonl"
+}

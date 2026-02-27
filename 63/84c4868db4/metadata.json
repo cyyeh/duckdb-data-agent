@@ -3,7 +3,7 @@
   "checkpoint_id": "6384c4868db4",
   "strategy": "manual-commit",
   "branch": "feat/default-tool-model-fallback",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "README.md",
     "backend/.env.example",
@@ -25,13 +25,20 @@
       "context": "/63/84c4868db4/1/context.md",
       "content_hash": "/63/84c4868db4/1/content_hash.txt",
       "prompt": "/63/84c4868db4/1/prompt.txt"
+    },
+    {
+      "metadata": "/63/84c4868db4/2/metadata.json",
+      "transcript": "/63/84c4868db4/2/full.jsonl",
+      "context": "/63/84c4868db4/2/context.md",
+      "content_hash": "/63/84c4868db4/2/content_hash.txt",
+      "prompt": "/63/84c4868db4/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 65,
-    "cache_creation_tokens": 63905,
-    "cache_read_tokens": 1999605,
-    "output_tokens": 7679,
-    "api_call_count": 51
+    "input_tokens": 82,
+    "cache_creation_tokens": 108516,
+    "cache_read_tokens": 2465992,
+    "output_tokens": 11522,
+    "api_call_count": 64
   }
 }
