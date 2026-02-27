@@ -29,3 +29,4 @@ frontend/dist-ssr
 sidecar/node_modules/
 sidecar/dist/
 bifrost/config.json
+bifrost/data/

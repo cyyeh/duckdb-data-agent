@@ -107,7 +107,7 @@ Copy the example config and adjust provider keys as needed:
 cp bifrost/config.example.json bifrost/config.json
 ```
 
-The default config routes requests through Anthropic using `ANTHROPIC_API_KEY` from your `backend/.env`. To add other providers (OpenAI, Bedrock, etc.), edit `bifrost/config.json` — see [`bifrost/config.example.json`](bifrost/config.example.json) for multi-provider examples. You can also configure providers via Bifrost's Web UI at `http://localhost:8081` (or `$BIFROST_PORT`). Note that you still need to set `ANTHROPIC_API_KEY` and model names (`ORCHESTRATOR_MODEL`, `SQL_SUBAGENT_MODEL`, `CHART_SUBAGENT_MODEL`) in `backend/.env`.
+The default config routes requests through Anthropic using `ANTHROPIC_API_KEY` from your `backend/.env`. To add other providers (OpenAI, Bedrock, etc.), edit `bifrost/config.json` — see [`bifrost/config.example.json`](bifrost/config.example.json) for multi-provider examples. You can also configure providers via Bifrost's Web UI at `http://localhost:8081` (or `$BIFROST_PORT`). Note that you still need to set api keys and model names in `backend/.env`.
 
 #### Langfuse (optional)
 

@@ -8,6 +8,7 @@ dev:
 	docker run -d --name bifrost-dev \
 		--network agent-sandbox \
 		-p $${BIFROST_PORT:-8081}:8080 \
+		-v $$(pwd)/bifrost/data:/app/data \
 		-v $$(pwd)/bifrost/config.json:/app/data/config.json \
 		--env-file backend/.env \
 		-e APP_HOST=0.0.0.0 \
