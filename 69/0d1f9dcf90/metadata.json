@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "690d1f9dcf90",
+  "strategy": "manual-commit",
+  "branch": "feature/idle-based-container-lifecycle",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/agent.py",
+    "backend/app/config.py",
+    "backend/app/container_manager.py",
+    "backend/tests/test_container_manager.py",
+    "docs/plans/2026-02-27-idle-based-container-lifecycle-design.md",
+    "docs/plans/2026-02-27-idle-based-container-lifecycle.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/69/0d1f9dcf90/0/metadata.json",
+      "transcript": "/69/0d1f9dcf90/0/full.jsonl",
+      "context": "/69/0d1f9dcf90/0/context.md",
+      "content_hash": "/69/0d1f9dcf90/0/content_hash.txt",
+      "prompt": "/69/0d1f9dcf90/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 29992,
+    "cache_read_tokens": 1353546,
+    "output_tokens": 1859,
+    "api_call_count": 35
+  }
+}
