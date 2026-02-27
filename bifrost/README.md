@@ -84,6 +84,40 @@ Edit `config.json` to add or modify providers. Bifrost reads this file on startu
 }
 ```
 
+**Self-Hosted (vLLM):**
+
+```json
+"vllm": {
+  "keys": [{ "name": "default", "value": "dummy", "models": [], "weight": 1.0 }],
+  "network_config": {
+    "base_url": "http://localhost:8000",
+    "default_request_timeout_in_seconds": 300
+  },
+  "custom_provider_config": {
+    "base_provider_type": "openai",
+    "allowed_requests": { "chat_completion": true, "chat_completion_stream": true }
+  }
+}
+```
+
+**Self-Hosted (Ollama):**
+
+```json
+"ollama": {
+  "keys": [{ "name": "default", "value": "dummy", "models": [], "weight": 1.0 }],
+  "network_config": {
+    "base_url": "http://localhost:11434",
+    "default_request_timeout_in_seconds": 300
+  },
+  "custom_provider_config": {
+    "base_provider_type": "openai",
+    "allowed_requests": { "chat_completion": true, "chat_completion_stream": true }
+  }
+}
+```
+
+Self-hosted providers use `custom_provider_config` with `base_provider_type: "openai"` since vLLM and Ollama expose OpenAI-compatible APIs. The `value` can be `"dummy"` as these servers typically don't require API keys. Adjust `base_url` if your server is on a different host (use `http://host.docker.internal:<port>` when Bifrost runs in Docker and the LLM server is on the host).
+
 ### Example: Multi-Provider Setup
 
 ```json
@@ -104,6 +138,13 @@ Then set subagent models to use the desired provider via prefix:
 ```
 SQL_SUBAGENT_MODEL=openai/gpt-4o-mini
 CHART_SUBAGENT_MODEL=openai/gpt-4o-mini
+```
+
+For self-hosted models:
+
+```
+ORCHESTRATOR_MODEL=vllm/qwen2.5-coder@sonnet
+SQL_SUBAGENT_MODEL=ollama/qwen2.5-coder@haiku
 ```
 
 ### Environment Variables
