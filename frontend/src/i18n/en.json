@@ -69,5 +69,7 @@
   "other": "Other...",
   "hideOther": "Hide other",
   "typeYourAnswer": "Type your answer...",
-  "submit": "Submit"
+  "submit": "Submit",
+  "errorOccurred": "Something went wrong",
+  "tryAgain": "Try Again"
 }

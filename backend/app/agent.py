@@ -518,6 +518,7 @@ async def stream_chat(
         # Guard: always send done even if sidecar ended without result message
         if not done_sent:
             logger.warning("Sidecar stream ended without result message; sending done event")
+            yield f"event: error\ndata: {json.dumps({'message': 'Connection to agent was lost. Please try again.'})}\n\n"
             yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
 
     except Exception as e:
