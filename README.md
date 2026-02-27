@@ -372,9 +372,9 @@ scenarios:
 ```
 ├── frontend/               # React frontend
 │   ├── src/
-│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts)
+│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, user-question)
 │   │   ├── contexts/       #   React context providers (theme, language, agent, config, session)
-│   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig)
+│   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig, useSessionId)
 │   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
 │   │   ├── utils/          #   Utility functions (UUID generation, conversation export)
@@ -384,31 +384,39 @@ scenarios:
 │   └── vite.config.ts      #   Vite bundler config
 ├── backend/                # FastAPI backend
 │   ├── Dockerfile          #   Production image: Python 3.12 + React frontend bundle
-│   └── app/
-│       ├── main.py         #   App setup, CORS, and background session/container cleanup loop
-│       ├── config.py       #   Environment variables (API key, model, upload limits, container settings)
-│       ├── database.py     #   DuckDB connection and query execution
-│       ├── session_manager.py  #   Per-user DuckDB session lifecycle (create, cleanup, disk persistence)
-│       ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming via container sidecar
-│       ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB and chart tools over HTTP for containers
-│       ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
-│       ├── proxy.py        #   Reverse proxy for per-subagent model routing (@suffix rewriting)
-│       ├── pending_questions.py  #   Interactive clarification (agent asks user for disambiguation)
-│       ├── dependencies.py #   FastAPI dependency injection utilities
-│       ├── tracing.py      #   Langfuse client wrapper & initialization
-│       ├── data/           #   Sample datasets (titanic.csv)
-│       └── routes/         #   API endpoints
-│           ├── chat.py     #     Chat endpoint with SSE streaming
-│           ├── query.py    #     SQL query execution
-│           ├── tables.py   #     Table inspection (schema, columns, sample data)
-│           ├── session.py  #     Session creation and deletion
-│           ├── config.py   #     Runtime configuration
-│           └── langfuse_status.py  #   Langfuse tracing status and link
+│   ├── app/
+│   │   ├── main.py         #   App setup, CORS, and background session/container cleanup loop
+│   │   ├── config.py       #   Environment variables (API key, model, upload limits, container settings)
+│   │   ├── database.py     #   DuckDB connection and query execution
+│   │   ├── session_manager.py  #   Per-user DuckDB session lifecycle (create, cleanup, disk persistence)
+│   │   ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming via container sidecar
+│   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB and chart tools over HTTP for containers
+│   │   ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
+│   │   ├── proxy.py        #   Reverse proxy for per-subagent model routing (@suffix rewriting)
+│   │   ├── pending_questions.py  #   Interactive clarification (agent asks user for disambiguation)
+│   │   ├── dependencies.py #   FastAPI dependency injection utilities
+│   │   ├── tracing.py      #   Langfuse client wrapper & initialization
+│   │   ├── data/           #   Sample datasets (titanic.csv)
+│   │   └── routes/         #   API endpoints
+│   │       ├── chat.py     #     Chat endpoint with SSE streaming
+│   │       ├── query.py    #     SQL query execution
+│   │       ├── tables.py   #     Table inspection (schema, columns, sample data)
+│   │       ├── session.py  #     Session creation and deletion
+│   │       ├── config.py   #     Runtime configuration
+│   │       └── langfuse_status.py  #   Langfuse tracing status and link
+│   └── tests/              #   Unit tests (pytest)
+│       ├── test_agent_chart.py
+│       ├── test_container_manager.py
+│       ├── test_mcp_sse.py
+│       ├── test_proxy.py
+│       ├── test_session_manager.py
+│       └── ...             #   14 test modules total
 ├── sidecar/                # Containerized agent sidecar
 │   ├── src/
 │   │   ├── server.ts       #   TypeScript HTTP server using Claude Agent SDK with token-level streaming
 │   │   └── types.ts        #   Request/response type definitions
 │   ├── Dockerfile          #   Sidecar image: Node.js 20 + Python 3.12 + Claude CLI
+│   ├── package.json        #   npm config
 │   └── setup-network.sh    #   Docker network setup script
 ├── e2e/                    # Playwright E2E tests
 │   ├── scenarios/          #   YAML test scenario files
@@ -418,6 +426,7 @@ scenarios:
 │   └── playwright.config.ts
 ├── bifrost/                # Bifrost LLM gateway configuration
 │   └── config.example.json #   Example provider keys and routing config (copy to config.json)
+├── examples/               # Exported conversation examples (self-contained HTML)
 ├── docs/plans/             # Design and implementation plan documents
 ├── utils/                  # Standalone utility scripts
 ├── .github/workflows/      # GitHub Actions CI/CD (code review, CI)
