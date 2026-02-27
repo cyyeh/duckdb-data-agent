@@ -71,6 +71,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 ORCHESTRATOR_MODEL=claude-sonnet-4-6           # optional, defaults to sonnet
 SQL_SUBAGENT_MODEL=haiku           # optional, model for SQL analyst subagent (default: haiku)
 CHART_SUBAGENT_MODEL=haiku         # optional, model for chart builder subagent (default: haiku)
+DEFAULT_TOOL_MODEL=                # optional, fallback model for SDK built-in tools (see below)
 MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (default: 500 MB)
 ```
 
@@ -96,6 +97,18 @@ The format is `real_model@sdk_alias`. The SDK alias (after `@`) is the model nam
 4. Bifrost routes the request to the correct provider.
 
 Without `@suffix`, model values are used as-is (direct Anthropic routing).
+
+#### Default Tool Model
+
+The Claude Agent SDK's built-in tools (e.g. WebFetch) internally use their own Anthropic models (e.g. `claude-haiku-4-5-20251001`). When routing all traffic through a non-Anthropic provider, these models are not in the rewrite map and will fail because they lack a provider prefix.
+
+Set `DEFAULT_TOOL_MODEL` to catch any model not matched by the per-agent rewrites:
+
+```
+DEFAULT_TOOL_MODEL=openai/gpt-4o-mini
+```
+
+Any request whose model does not match a configured rewrite is rewritten to this value before forwarding to Bifrost. When empty (default), unmatched models pass through unchanged.
 
 > **Warning:** The `@suffix` must NOT match the `ORCHESTRATOR_MODEL`'s Anthropic model name. For example, `ORCHESTRATOR_MODEL=haiku` with `SQL_SUBAGENT_MODEL=openai/gpt-4o-mini@haiku` will conflict because the proxy cannot distinguish orchestrator traffic from subagent traffic when both resolve to the same model name.
 

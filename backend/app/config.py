@@ -40,6 +40,8 @@ MODEL_REWRITES = build_model_rewrites([
     (CHART_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_REAL),
 ])
 
+DEFAULT_TOOL_MODEL = parse_model(os.getenv("DEFAULT_TOOL_MODEL", ""))[1]
+
 LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")
 LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "")
 LANGFUSE_BASE_URL = os.getenv("LANGFUSE_BASE_URL", "https://cloud.langfuse.com")
