@@ -1,0 +1,36 @@
+for this problem, is it possible for server to reconnect and retry
+
+WARNING:app.agent:Sidecar closed connection early (incomplete chunked read); treating as end-of-stream
+WARNING:app.agent:Sidecar stream ended without result message; sending done event
+
+---
+
+how about showing a block saying something is wrong and ask user try again?
+
+---
+
+commit this and push to remote branch
+
+---
+
+The first approach (backend done_sent = False) is the quickest -> do this for me
+
+---
+
+I don't see error
+
+---
+
+[Request interrupted by user]
+
+---
+
+revert the test
+
+---
+
+commit and push and raise pr
+
+---
+
+merge pr and delete local and remote branch
