@@ -3,7 +3,7 @@
   "checkpoint_id": "d52ad2ad9287",
   "strategy": "manual-commit",
   "branch": "worktree-litellm-proxy",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     ".gitignore",
     "Makefile",
@@ -17,13 +17,20 @@
       "context": "/d5/2ad2ad9287/0/context.md",
       "content_hash": "/d5/2ad2ad9287/0/content_hash.txt",
       "prompt": "/d5/2ad2ad9287/0/prompt.txt"
+    },
+    {
+      "metadata": "/d5/2ad2ad9287/1/metadata.json",
+      "transcript": "/d5/2ad2ad9287/1/full.jsonl",
+      "context": "/d5/2ad2ad9287/1/context.md",
+      "content_hash": "/d5/2ad2ad9287/1/content_hash.txt",
+      "prompt": "/d5/2ad2ad9287/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 28,
-    "cache_creation_tokens": 21832,
-    "cache_read_tokens": 748828,
-    "output_tokens": 2887,
-    "api_call_count": 20
+    "input_tokens": 181,
+    "cache_creation_tokens": 165139,
+    "cache_read_tokens": 15421756,
+    "output_tokens": 55495,
+    "api_call_count": 155
   }
 }
