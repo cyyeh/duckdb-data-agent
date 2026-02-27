@@ -3,7 +3,7 @@
   "checkpoint_id": "f970983bdd45",
   "strategy": "manual-commit",
   "branch": "worktree-litellm-proxy",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
     "Makefile",
     "README.md",
@@ -41,13 +41,20 @@
       "context": "/f9/70983bdd45/3/context.md",
       "content_hash": "/f9/70983bdd45/3/content_hash.txt",
       "prompt": "/f9/70983bdd45/3/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/4/metadata.json",
+      "transcript": "/f9/70983bdd45/4/full.jsonl",
+      "context": "/f9/70983bdd45/4/context.md",
+      "content_hash": "/f9/70983bdd45/4/content_hash.txt",
+      "prompt": "/f9/70983bdd45/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1408,
-    "cache_creation_tokens": 218749,
-    "cache_read_tokens": 16639712,
-    "output_tokens": 70406,
-    "api_call_count": 179
+    "input_tokens": 1467,
+    "cache_creation_tokens": 247898,
+    "cache_read_tokens": 17219408,
+    "output_tokens": 81563,
+    "api_call_count": 193
   }
 }
