@@ -1,0 +1,12 @@
+fix this issue
+
+1.623                                                                                                                                                                                       
+1.623 > duckdb-data-agent@0.0.0 build                                                                                                                                                       
+1.623 > tsc -b && vite build                                                                                                                                                                
+1.623                                                                                                                                                                                       
+13.78 src/components/MessageBubble.tsx(292,15): error TS2322: Type 'boolean | undefined' is not assignable to type 'boolean'.                                                               
+13.78   Type 'undefined' is not assignable to type 'boolean'.
+
+---
+
+create new branch and push and raise pr
