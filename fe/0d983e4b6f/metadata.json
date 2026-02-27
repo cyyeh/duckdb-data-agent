@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "fe0d983e4b6f",
+  "strategy": "manual-commit",
+  "branch": "fix/shimmer-light-mode",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/ChatInput.css",
+    "frontend/src/components/MessageBubble.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fe/0d983e4b6f/0/metadata.json",
+      "transcript": "/fe/0d983e4b6f/0/full.jsonl",
+      "context": "/fe/0d983e4b6f/0/context.md",
+      "content_hash": "/fe/0d983e4b6f/0/content_hash.txt",
+      "prompt": "/fe/0d983e4b6f/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 22210,
+    "cache_read_tokens": 367836,
+    "output_tokens": 4607,
+    "api_call_count": 10
+  }
+}

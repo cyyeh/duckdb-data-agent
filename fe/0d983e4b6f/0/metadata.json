@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "fe0d983e4b6f",
+  "session_id": "0e98e4dd-7d39-4aa9-91e2-94475bde3341",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T06:14:10.390276Z",
+  "branch": "fix/shimmer-light-mode",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/ChatInput.css",
+    "frontend/src/components/MessageBubble.css"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "ffaab421cf86",
+  "transcript_identifier_at_start": "489d0414-c0f6-480c-b63b-ae42bbcb0ad4",
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 22210,
+    "cache_read_tokens": 367836,
+    "output_tokens": 4607,
+    "api_call_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T06:14:09.924364Z",
+    "agent_lines": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/0e98e4dd-7d39-4aa9-91e2-94475bde3341.jsonl"
+}
