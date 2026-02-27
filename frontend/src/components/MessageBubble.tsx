@@ -177,7 +177,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
     }
   }
 
-  const hasAnswer = hasSegments && message.segments!.some((s) => s.type === 'answer');
+  const hasAnswer = !!hasSegments && message.segments!.some((s) => s.type === 'answer');
   const isInAnswerPhase = message.currentPhase === 'answer';
   const isThinkingPhase = !!message.isStreaming && !hasAnswer && !isInAnswerPhase;
 
