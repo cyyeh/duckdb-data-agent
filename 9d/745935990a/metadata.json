@@ -3,7 +3,7 @@
   "checkpoint_id": "9d745935990a",
   "strategy": "manual-commit",
   "branch": "chore/minor-updates",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "Makefile",
     "docker-compose.yml",
@@ -25,13 +25,20 @@
       "context": "/9d/745935990a/1/context.md",
       "content_hash": "/9d/745935990a/1/content_hash.txt",
       "prompt": "/9d/745935990a/1/prompt.txt"
+    },
+    {
+      "metadata": "/9d/745935990a/2/metadata.json",
+      "transcript": "/9d/745935990a/2/full.jsonl",
+      "context": "/9d/745935990a/2/context.md",
+      "content_hash": "/9d/745935990a/2/content_hash.txt",
+      "prompt": "/9d/745935990a/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 54,
-    "cache_creation_tokens": 88528,
-    "cache_read_tokens": 1643035,
-    "output_tokens": 6496,
-    "api_call_count": 42
+    "input_tokens": 64,
+    "cache_creation_tokens": 97638,
+    "cache_read_tokens": 1837347,
+    "output_tokens": 8349,
+    "api_call_count": 48
   }
 }

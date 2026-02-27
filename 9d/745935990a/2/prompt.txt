@@ -1,0 +1,5 @@
+allow setting claude-code npm version for building image from sidebar/Dockerfile, default: latest
+
+---
+
+how about run "make compose-build"
