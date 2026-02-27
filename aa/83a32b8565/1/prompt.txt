@@ -1,0 +1,6 @@
+update readme to say that users can see examples online here underneath the demo video
+give example1, example2 texts each with link like this: https://htmlpreview.github.io/?https://github.com/cyyeh/duckdb-data-agent/blob/main/examples/<file_name>
+
+---
+
+create new branch and commit and push
