@@ -60,6 +60,8 @@ function cleanClone(clone: HTMLElement): void {
   clone.querySelectorAll('.message-bubble__error-retry').forEach((el) => el.remove());
   // Remove streaming indicators
   clone.querySelectorAll('.message-bubble__typing').forEach((el) => el.remove());
+  // Strip javascript: hrefs from user-supplied markdown links
+  clone.querySelectorAll('a[href^="javascript:"]').forEach((el) => el.removeAttribute('href'));
 }
 
 function replacePlotlyWithPlaceholders(clone: HTMLElement): void {
@@ -112,7 +114,7 @@ export function exportConversation(): void {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 function buildHTML(opts: {
@@ -124,7 +126,8 @@ function buildHTML(opts: {
 }): string {
   const { clone, css, charts, theme, title } = opts;
 
-  const chartsJSON = JSON.stringify(charts);
+  const chartsJSON = JSON.stringify(charts).replace(/<\//g, '<\\/');
+
 
   return `<!DOCTYPE html>
 <html data-theme="${theme}">
