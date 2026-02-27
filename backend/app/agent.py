@@ -157,13 +157,17 @@ def _build_chart_spec_from_stream_messages(
     appears in an assistant message whose parent_tool_use_id is the Task
     tool_use_id for the chart-builder.  We extract input directly so we never
     need to parse free-text JSON.
+
+    A single chart-builder may call render_chart multiple times (e.g. for a
+    multi-chart request).  We accumulate all specs in a list keyed by the
+    parent task tool_use_id.
     """
     parent_id = msg.get("parent_tool_use_id")
     if not parent_id or tool_names.get(parent_id) != "chart-builder":
         return
     for block in msg.get("message", {}).get("content", []):
         if block.get("type") == "tool_use" and "render_chart" in block.get("name", ""):
-            subagent_chart_specs[parent_id] = block.get("input", {})
+            subagent_chart_specs.setdefault(parent_id, []).append(block.get("input", {}))
             return
 
 
@@ -299,6 +303,15 @@ async def stream_chat(
                         else:
                             line = await line_iter.__anext__()
                     except StopAsyncIteration:
+                        break
+                    except httpx.RemoteProtocolError:
+                        # Sidecar closed the connection before sending a
+                        # proper chunked-encoding terminator.  This is
+                        # benign — the sidecar's Express handler calls
+                        # res.end() in its finally block and the
+                        # connection can tear down before the last chunk
+                        # delimiter reaches us.  Treat it as end-of-stream.
+                        logger.warning("Sidecar closed connection early (incomplete chunked read); treating as end-of-stream")
                         break
 
                     if not line.startswith("data: "):
@@ -466,9 +479,9 @@ async def stream_chat(
                             if name in ("sql-analyst", "chart-builder"):
                                 end_data: dict = {"id": tool_id, "name": name}
                                 if name == "chart-builder":
-                                    chart_spec = subagent_chart_specs.get(tool_id)
-                                    if chart_spec:
-                                        end_data["chart_spec"] = chart_spec
+                                    chart_specs = subagent_chart_specs.get(tool_id, [])
+                                    if chart_specs:
+                                        end_data["chart_specs"] = chart_specs
                                     else:
                                         logger.warning(
                                             "[container] render_chart tool_use not found for chart-builder %s",
