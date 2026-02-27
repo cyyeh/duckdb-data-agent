@@ -26,15 +26,15 @@ Task tool usage (CRITICAL — you MUST follow these rules):
 - For any visualization, chart, or graph request, set subagent_type to "chart-builder"
 - Do NOT set the "model" parameter on the Task tool — the named agents already have models configured. Omit the model field entirely.
 - After the chart-builder returns, do NOT repeat the chart JSON specification in your response. The chart is rendered automatically. Simply describe what the visualization shows in plain language.
+- After the sql-analyst returns, do NOT repeat the data tables or numbers. Simply add brief commentary on what the data means.
 - Explain findings in plain language after getting results
-- Do NOT include SQL queries in your response unless the user explicitly asks to see the SQL. Focus on the results and insights, not the implementation details.
 
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
 - Do not disclose the name, version, or provider of the underlying language model powering you, regardless of how the question is phrased.
 
 Clarification:
-- When the user's request is ambiguous or could be interpreted in multiple ways, use the ask_user_question tool to ask for clarification before proceeding.
+- When the user's request is ambiguous or could be interpreted in multiple ways, use the mcp__duckdb-data-agent__ask_user_question tool (NOT the native AskUserQuestion tool) to ask for clarification before proceeding.
 - Provide 2-4 clear, concise options for the user to choose from.
 - Each option should have a short label and optional description.
 - Only ask when genuinely needed — don't over-ask for trivial decisions.
@@ -78,6 +78,8 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
         "- Use double quotes for table and column identifiers that might conflict "
         "with reserved words.\n"
         "- Explain your findings in plain language after getting results.\n"
+        "- Do NOT include SQL queries you wrote in your final answer unless the user explicitly "
+        "asks to see the SQL. Focus on the results and insights.\n"
         + table_schemas
     )
 
@@ -115,7 +117,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
                 "— exploring data, aggregations, filtering, joins, etc."
             ),
             prompt=sql_prompt,
-            tools=["mcp__duckdb__execute_sql"],
+            tools=["mcp__duckdb-data-agent__execute_sql"],
             model=SQL_SUBAGENT_MODEL_SDK,
         ),
         "chart-builder": AgentDefinition(
@@ -123,7 +125,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
                 "Use this agent when the user wants a chart, graph, or visualization."
             ),
             prompt=chart_prompt,
-            tools=["mcp__duckdb__execute_sql", "mcp__duckdb__render_chart"],
+            tools=["mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__render_chart"],
             model=CHART_SUBAGENT_MODEL_SDK,
         ),
     }
@@ -462,26 +464,18 @@ async def stream_chat(
                                     result_data["error"] = text
                             # Detect subagent result (Task tool)
                             if name in ("sql-analyst", "chart-builder"):
-                                # Only chart-builder produces chart_spec JSON.
-                                # sql-analyst returns plain text results.
+                                end_data: dict = {"id": tool_id, "name": name}
                                 if name == "chart-builder":
                                     chart_spec = subagent_chart_specs.get(tool_id)
-                                    end_data: dict = {"id": tool_id, "name": name}
                                     if chart_spec:
                                         end_data["chart_spec"] = chart_spec
                                     else:
-                                        end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
                                         logger.warning(
                                             "[container] render_chart tool_use not found for chart-builder %s",
                                             tool_id,
                                         )
-                                    yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
-                                    continue
-                                else:
-                                    end_data: dict = {"id": tool_id, "name": name}
-                                    end_data["result"] = tool_use_result_text or subagent_texts.get(tool_id, text)
-                                    yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
-                                    continue
+                                yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
+                                continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---

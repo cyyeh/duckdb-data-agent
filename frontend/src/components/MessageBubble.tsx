@@ -37,19 +37,21 @@ function getLastThinkingLine(segments: ContentSegment[], streamingRemainder: str
   return t('thinking');
 }
 
-function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentStreaming }: {
+function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentStreaming, hasAnswer }: {
   segments: ContentSegment[];
   streamingRemainder?: string;
   isThinkingPhase: boolean;
   isAgentStreaming: boolean;
+  hasAnswer: boolean;
 }) {
   const { t } = useTranslation();
   // All non-answer, non-chart, non-user_question segments go inside the thinking block
+  // When hasAnswer is true, subagent_end text segments are shown here instead of in the answer block
   const thinkingSegments = segments.filter(
-    (s) => s.type !== 'answer' && s.type !== 'user_question' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && (s.chart_spec || s.text?.trim()))
+    (s) => s.type !== 'answer' && s.type !== 'user_question' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && (s.chart_spec || (s.text?.trim() && !hasAnswer)))
   );
   const hasContent = thinkingSegments.some(
-    (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start'
+    (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start' || (s.type === 'subagent_end' && !s.chart_spec && s.text?.trim())
   ) || streamingRemainder?.trim();
 
   if (!hasContent) return null;
@@ -88,6 +90,13 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
             return (
               <div key={i} className="message-bubble__subagent-indicator">
                 <span className="message-bubble__subagent-label">{displayName}</span>
+              </div>
+            );
+          }
+          if (seg.type === 'subagent_end' && !seg.chart_spec && seg.text?.trim()) {
+            return (
+              <div key={i} className="message-bubble__segment-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text}</ReactMarkdown>
               </div>
             );
           }
@@ -180,7 +189,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
     ? message.segments!
         .filter((s) =>
           (s.type === 'answer' && s.text?.trim()) ||
-          (s.type === 'subagent_end' && !s.chart_spec && s.text?.trim()) ||
+          (s.type === 'subagent_end' && !s.chart_spec && s.text?.trim() && !hasAnswer) ||
           (s.type === 'tool' && s.toolResult?.chart_spec) ||
           (s.type === 'subagent_end' && s.chart_spec)
         )
@@ -280,6 +289,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               streamingRemainder={isThinkingPhase ? streamingRemainder : undefined}
               isThinkingPhase={isThinkingPhase}
               isAgentStreaming={!!message.isStreaming}
+              hasAnswer={hasAnswer}
             />
           )}
           {questionSegments.map((seg, i) => (

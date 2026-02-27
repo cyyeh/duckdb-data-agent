@@ -1,7 +1,41 @@
+import { useState, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import type { ToolCallResult } from '../types';
 import './InlineQueryResult.css';
 import { ChartWidget } from './ChartWidget';
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // fallback
+    }
+  }, [text]);
+
+  return (
+    <button
+      className="inline-query__copy-btn"
+      onClick={handleCopy}
+      title={copied ? 'Copied!' : 'Copy'}
+    >
+      {copied ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 const MAX_DISPLAY_ROWS = 20;
 
@@ -55,6 +89,7 @@ export function InlineQueryResult({ result }: { result: ToolCallResult }) {
       <div className="inline-query inline-query--chart">
         <div className="inline-query__label inline-query__label--generic">
           {getToolDisplayName(result, t)}
+          <CopyButton text={JSON.stringify(result.chart_spec, null, 2)} />
         </div>
         <ChartWidget
           data={result.chart_spec.data}
@@ -81,6 +116,7 @@ export function InlineQueryResult({ result }: { result: ToolCallResult }) {
       {/* Tool input */}
       {inputDisplay && (
         <div className="inline-query__sql">
+          <CopyButton text={inputDisplay} />
           <code>{inputDisplay}</code>
         </div>
       )}
