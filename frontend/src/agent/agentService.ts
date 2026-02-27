@@ -220,14 +220,40 @@ function handleSSEEvent(
         prompt: (data.prompt as string) ?? '',
       });
       break;
-    case 'subagent_end':
-      callbacks.onSubagentEnd?.({
-        id: data.id as string,
-        name: data.name as string,
-        result: (data.result as string) ?? undefined,
-        chart_spec: (data.chart_spec as { data: unknown[]; layout?: Record<string, unknown> }) ?? undefined,
-      });
+    case 'subagent_end': {
+      type ChartSpec = { data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[] };
+      // Backend sends chart_specs (array) for multi-chart support.
+      // Fall back to legacy chart_spec (single object) for backwards compat.
+      const rawSpecs = data.chart_specs as ChartSpec[] | undefined;
+      const legacySpec = data.chart_spec as ChartSpec | undefined;
+      const chartSpecs: ChartSpec[] = rawSpecs ?? (legacySpec ? [legacySpec] : []);
+
+      if (chartSpecs.length > 0) {
+        // Emit one callback per chart so each gets its own segment
+        for (const spec of chartSpecs) {
+          callbacks.onSubagentEnd?.({
+            id: data.id as string,
+            name: data.name as string,
+            chart_spec: spec,
+          });
+        }
+        // Emit text result separately (if any) so it doesn't get lost
+        if (data.result) {
+          callbacks.onSubagentEnd?.({
+            id: data.id as string,
+            name: data.name as string,
+            result: data.result as string,
+          });
+        }
+      } else {
+        callbacks.onSubagentEnd?.({
+          id: data.id as string,
+          name: data.name as string,
+          result: (data.result as string) ?? undefined,
+        });
+      }
       break;
+    }
     case 'user_question': {
       // Normalize options: the agent may send plain strings or {label, description} objects
       const rawOptions = (data.options as unknown[]) ?? [];

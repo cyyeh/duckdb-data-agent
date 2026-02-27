@@ -69,5 +69,7 @@
   "other": "其他...",
   "hideOther": "隱藏其他",
   "typeYourAnswer": "輸入您的答案...",
-  "submit": "提交"
+  "submit": "提交",
+  "errorOccurred": "發生錯誤",
+  "tryAgain": "重試"
 }

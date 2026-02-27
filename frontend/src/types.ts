@@ -49,7 +49,7 @@ export interface UserQuestionData {
 }
 
 export interface ContentSegment {
-  type: 'thinking' | 'tool' | 'answer' | 'subagent_start' | 'subagent_end' | 'user_question';
+  type: 'thinking' | 'tool' | 'answer' | 'subagent_start' | 'subagent_end' | 'user_question' | 'error';
   text?: string;
   toolResult?: ToolCallResult;
   subagentId?: string;
@@ -62,6 +62,7 @@ export interface ContentSegment {
   questionData?: UserQuestionData;
   userAnswer?: string[];
   userFreeText?: string;
+  errorMessage?: string;
 }
 
 export interface ChatMessage {

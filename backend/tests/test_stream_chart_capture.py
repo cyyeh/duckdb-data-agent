@@ -36,7 +36,7 @@ def test_captures_render_chart_input_as_chart_spec():
     tool_names = {"task_001": "chart-builder"}
     _build_chart_spec_from_stream_messages(msg, tool_names, specs)
 
-    assert specs["task_001"] == chart_input
+    assert specs["task_001"] == [chart_input]
 
 
 def test_ignores_non_render_chart_tool_use():
@@ -67,3 +67,62 @@ def test_ignores_messages_not_from_chart_builder():
     _build_chart_spec_from_stream_messages(msg, tool_names, specs)
 
     assert specs == {}
+
+
+def test_multiple_render_chart_calls_accumulated():
+    """Multiple render_chart calls by the same chart-builder are all captured."""
+    chart_input_1 = {
+        "data": [{"type": "bar", "x": ["A", "B"], "y": [1, 2]}],
+        "layout": {"title": "Chart 1"},
+    }
+    chart_input_2 = {
+        "data": [{"type": "line", "x": [1, 2, 3], "y": [10, 20, 30]}],
+        "layout": {"title": "Chart 2"},
+    }
+    msg1 = _make_assistant_msg(
+        parent_tool_use_id="task_001",
+        tool_use_name="mcp__duckdb-data-agent__render_chart",
+        tool_input=chart_input_1,
+    )
+    msg2 = _make_assistant_msg(
+        parent_tool_use_id="task_001",
+        tool_use_name="mcp__duckdb-data-agent__render_chart",
+        tool_input=chart_input_2,
+    )
+
+    specs: dict = {}
+    tool_names = {"task_001": "chart-builder"}
+    _build_chart_spec_from_stream_messages(msg1, tool_names, specs)
+    _build_chart_spec_from_stream_messages(msg2, tool_names, specs)
+
+    assert specs["task_001"] == [chart_input_1, chart_input_2]
+
+
+def test_multiple_chart_builders_independent():
+    """Multiple chart-builder subagents each get their own list of chart specs."""
+    chart_a = {
+        "data": [{"type": "bar", "x": ["A"], "y": [1]}],
+        "layout": {"title": "Chart A"},
+    }
+    chart_b = {
+        "data": [{"type": "pie", "labels": ["X"], "values": [5]}],
+        "layout": {"title": "Chart B"},
+    }
+    msg_a = _make_assistant_msg(
+        parent_tool_use_id="task_A",
+        tool_use_name="mcp__duckdb-data-agent__render_chart",
+        tool_input=chart_a,
+    )
+    msg_b = _make_assistant_msg(
+        parent_tool_use_id="task_B",
+        tool_use_name="mcp__duckdb-data-agent__render_chart",
+        tool_input=chart_b,
+    )
+
+    specs: dict = {}
+    tool_names = {"task_A": "chart-builder", "task_B": "chart-builder"}
+    _build_chart_spec_from_stream_messages(msg_a, tool_names, specs)
+    _build_chart_spec_from_stream_messages(msg_b, tool_names, specs)
+
+    assert specs["task_A"] == [chart_a]
+    assert specs["task_B"] == [chart_b]

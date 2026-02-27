@@ -112,9 +112,24 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
   );
 }
 
+function ErrorBlock({ errorMessage, onRetry }: { errorMessage: string; onRetry?: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="message-bubble__segment message-bubble__segment--error">
+      <div className="message-bubble__error-header">{t('errorOccurred')}</div>
+      <div className="message-bubble__error-message">{errorMessage}</div>
+      {onRetry && (
+        <button className="message-bubble__error-retry" onClick={onRetry}>
+          {t('tryAgain')}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function MessageBubble({ message, messageIndex }: { message: ChatMessage; messageIndex: number }) {
   const { t } = useTranslation();
-  const { isStreaming, editMessage, deleteMessage } = useAgent();
+  const { isStreaming, editMessage, deleteMessage, sendMessage, messages } = useAgent();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -347,6 +362,11 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               </div>
             ) : null;
           })()}
+          {message.segments!.filter((s) => s.type === 'error').map((seg, i) => {
+            const lastUserMsg = messages.slice().reverse().find((m) => m.role === 'user');
+            const handleRetry = lastUserMsg ? () => sendMessage(lastUserMsg.content) : undefined;
+            return <ErrorBlock key={`error-${i}`} errorMessage={seg.errorMessage || 'Unknown error'} onRetry={!isStreaming ? handleRetry : undefined} />;
+          })}
           {message.isStreaming && !message.content && questionSegments.length === 0 && (
             <span className="message-bubble__typing">{t('thinking')}</span>
           )}

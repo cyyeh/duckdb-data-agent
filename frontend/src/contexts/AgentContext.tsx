@@ -243,10 +243,16 @@ export function AgentProvider({
               flushTimerRef.current = null;
             }
             flushText();
+            if (currentTextRef.current.trim()) {
+              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            segmentsRef.current.push({ type: 'error', errorMessage: error });
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, content: m.content + `\n\n**Error:** ${error}`, isStreaming: false }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...segmentsRef.current] }
                   : m
               )
             );
@@ -473,10 +479,16 @@ export function AgentProvider({
               flushTimerRef.current = null;
             }
             flushText();
+            if (currentTextRef.current.trim()) {
+              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
+              currentTextRef.current = '';
+            }
+            segmentsRef.current.push({ type: 'error', errorMessage: error });
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, content: m.content + `\n\n**Error:** ${error}`, isStreaming: false }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...segmentsRef.current] }
                   : m
               )
             );
