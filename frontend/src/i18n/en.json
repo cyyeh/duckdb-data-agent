@@ -71,5 +71,6 @@
   "typeYourAnswer": "Type your answer...",
   "submit": "Submit",
   "errorOccurred": "Something went wrong",
-  "tryAgain": "Try Again"
+  "tryAgain": "Try Again",
+  "chartNoData": "No data available to display chart."
 }

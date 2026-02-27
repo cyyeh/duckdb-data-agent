@@ -10,6 +10,7 @@ from app.config import (
     SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK,
     BACKEND_BASE_URL,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
+    SDK_IDLE_TIMEOUT_MS,
 )
 from app.tracing import get_langfuse_client
 
@@ -165,9 +166,21 @@ def _build_chart_spec_from_stream_messages(
     parent_id = msg.get("parent_tool_use_id")
     if not parent_id or tool_names.get(parent_id) != "chart-builder":
         return
+    _DATA_FIELDS = ("x", "y", "z", "values", "labels", "lat", "lon", "r", "theta",
+                     "lowerfence", "q1", "median", "q3", "upperfence")
     for block in msg.get("message", {}).get("content", []):
         if block.get("type") == "tool_use" and "render_chart" in block.get("name", ""):
-            subagent_chart_specs.setdefault(parent_id, []).append(block.get("input", {}))
+            spec = block.get("input", {})
+            # Skip specs with all-empty data traces to avoid rendering blank charts.
+            traces = spec.get("data", [])
+            has_data = any(
+                isinstance(trace.get(f), list) and len(trace.get(f)) > 0
+                for trace in traces if isinstance(trace, dict)
+                for f in _DATA_FIELDS
+            )
+            if not has_data:
+                return
+            subagent_chart_specs.setdefault(parent_id, []).append(spec)
             return
 
 
@@ -197,6 +210,7 @@ async def stream_chat(
     env: dict[str, str] = {
         "ANTHROPIC_API_KEY": "placeholder",
         "ANTHROPIC_BASE_URL": f"{BACKEND_BASE_URL}/anthropic",
+        "SDK_IDLE_TIMEOUT_MS": str(SDK_IDLE_TIMEOUT_MS),
     }
     if LANGFUSE_ENABLED:
         env["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
