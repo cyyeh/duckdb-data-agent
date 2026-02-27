@@ -388,7 +388,7 @@ scenarios:
 │   ├── lib/                #   YAML loader, actions, verifiers, LLM judge
 │   └── playwright.config.ts
 ├── bifrost/                # Bifrost LLM gateway configuration
-│   └── config.json         #   Provider keys and routing config
+│   └── config.example.json #   Example provider keys and routing config (copy to config.json)
 ├── docker-compose.yml      # Compose orchestration (bifrost + app + sidecar build)
 └── Makefile                # Dev commands (install, dev, compose-build/up/down, e2e-test, clean)
 ```
@@ -414,6 +414,9 @@ scenarios:
 - [Express](https://expressjs.com/) HTTP server
 - [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript) (`@anthropic-ai/claude-agent-sdk`) with token-level streaming
 - [Claude CLI](https://docs.anthropic.com/en/docs/claude-code) (`@anthropic-ai/claude-code`) — required by the SDK internally
+
+**LLM Gateway**
+- [Bifrost](https://github.com/maximhq/bifrost) — centralized API key management and multi-provider LLM routing (Anthropic, OpenAI, Bedrock, etc.)
 
 ## License
 
