@@ -25,13 +25,20 @@
       "context": "/e2/facf906e42/1/context.md",
       "content_hash": "/e2/facf906e42/1/content_hash.txt",
       "prompt": "/e2/facf906e42/1/prompt.txt"
+    },
+    {
+      "metadata": "/e2/facf906e42/2/metadata.json",
+      "transcript": "/e2/facf906e42/2/full.jsonl",
+      "context": "/e2/facf906e42/2/context.md",
+      "content_hash": "/e2/facf906e42/2/content_hash.txt",
+      "prompt": "/e2/facf906e42/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 13,
-    "cache_creation_tokens": 30172,
-    "cache_read_tokens": 293280,
-    "output_tokens": 3473,
-    "api_call_count": 9
+    "input_tokens": 56,
+    "cache_creation_tokens": 60164,
+    "cache_read_tokens": 1646826,
+    "output_tokens": 5332,
+    "api_call_count": 44
   }
 }
