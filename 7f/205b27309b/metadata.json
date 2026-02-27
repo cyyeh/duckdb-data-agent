@@ -3,7 +3,7 @@
   "checkpoint_id": "7f205b27309b",
   "strategy": "manual-commit",
   "branch": "worktree-litellm-proxy",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "backend/.env.example",
     "bifrost/README.md",
@@ -16,13 +16,20 @@
       "context": "/7f/205b27309b/0/context.md",
       "content_hash": "/7f/205b27309b/0/content_hash.txt",
       "prompt": "/7f/205b27309b/0/prompt.txt"
+    },
+    {
+      "metadata": "/7f/205b27309b/1/metadata.json",
+      "transcript": "/7f/205b27309b/1/full.jsonl",
+      "context": "/7f/205b27309b/1/context.md",
+      "content_hash": "/7f/205b27309b/1/content_hash.txt",
+      "prompt": "/7f/205b27309b/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 28,
-    "cache_creation_tokens": 21832,
-    "cache_read_tokens": 748828,
-    "output_tokens": 2887,
-    "api_call_count": 20
+    "input_tokens": 181,
+    "cache_creation_tokens": 165139,
+    "cache_read_tokens": 15421756,
+    "output_tokens": 55495,
+    "api_call_count": 155
   }
 }
