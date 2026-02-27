@@ -91,7 +91,7 @@ export function AgentProvider({
         text,
         sessionIdRef.current,
         langfuseSessionId,
-        history.length > 0 ? history : pendingHistory,
+        pendingHistory ?? (history.length > 0 ? history : null),
         {
           onTextChunk: (chunk) => {
             textBufferRef.current += chunk;
