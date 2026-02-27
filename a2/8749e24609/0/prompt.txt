@@ -1,0 +1,4322 @@
+how to prevent "double-sending-data" issue from subagent to orchestrator, then orchestrator to ui? does claude agent sdk implement handoff?
+
+---
+
+<h1>Building LLM-Powered Applications with Claude</h1>
+<p>This skill helps you build LLM-powered applications with Claude. Choose the right surface based on your needs, detect the project language, then read the relevant language-specific documentation.</p>
+<h2>Defaults</h2>
+<p>Unless the user requests otherwise:</p>
+<p>For the Claude model version, please use Claude Opus 4.6, which you can access via the exact model string <code>claude-opus-4-6</code>. Please default to using adaptive thinking (<code>thinking: {type: &quot;adaptive&quot;}</code>) for anything remotely complicated. And finally, please default to streaming for any request that may involve long input, long output, or high <code>max_tokens</code> — it prevents hitting request timeouts. Use the SDK's <code>.get_final_message()</code> / <code>.finalMessage()</code> helper to get the complete response if you don't need to handle individual stream events</p>
+<hr />
+<h2>Language Detection</h2>
+<p>Before reading code examples, determine which language the user is working in:</p>
+<ol>
+<li>
+<p><strong>Look at project files</strong> to infer the language:</p>
+<ul>
+<li><code>*.py</code>, <code>requirements.txt</code>, <code>pyproject.toml</code>, <code>setup.py</code>, <code>Pipfile</code> → <strong>Python</strong> — read from <code>python/</code></li>
+<li><code>*.ts</code>, <code>*.tsx</code>, <code>package.json</code>, <code>tsconfig.json</code> → <strong>TypeScript</strong> — read from <code>typescript/</code></li>
+<li><code>*.js</code>, <code>*.jsx</code> (no <code>.ts</code> files present) → <strong>TypeScript</strong> — JS uses the same SDK, read from <code>typescript/</code></li>
+<li><code>*.java</code>, <code>pom.xml</code>, <code>build.gradle</code> → <strong>Java</strong> — read from <code>java/</code></li>
+<li><code>*.kt</code>, <code>*.kts</code>, <code>build.gradle.kts</code> → <strong>Java</strong> — Kotlin uses the Java SDK, read from <code>java/</code></li>
+<li><code>*.scala</code>, <code>build.sbt</code> → <strong>Java</strong> — Scala uses the Java SDK, read from <code>java/</code></li>
+<li><code>*.go</code>, <code>go.mod</code> → <strong>Go</strong> — read from <code>go/</code></li>
+<li><code>*.rb</code>, <code>Gemfile</code> → <strong>Ruby</strong> — read from <code>ruby/</code></li>
+<li><code>*.cs</code>, <code>*.csproj</code> → <strong>C#</strong> — read from <code>csharp/</code></li>
+<li><code>*.php</code>, <code>composer.json</code> → <strong>PHP</strong> — read from <code>php/</code></li>
+</ul>
+</li>
+<li>
+<p><strong>If multiple languages detected</strong> (e.g., both Python and TypeScript files):</p>
+<ul>
+<li>Check which language the user's current file or question relates to</li>
+<li>If still ambiguous, ask: &quot;I detected both Python and TypeScript files. Which language are you using for the Claude API integration?&quot;</li>
+</ul>
+</li>
+<li>
+<p><strong>If language can't be inferred</strong> (empty project, no source files, or unsupported language):</p>
+<ul>
+<li>Use AskUserQuestion with options: Python, TypeScript, Java, Go, Ruby, cURL/raw HTTP, C#, PHP</li>
+<li>If AskUserQuestion is unavailable, default to Python examples and note: &quot;Showing Python examples. Let me know if you need a different language.&quot;</li>
+</ul>
+</li>
+<li>
+<p><strong>If unsupported language detected</strong> (Rust, Swift, C++, Elixir, etc.):</p>
+<ul>
+<li>Suggest cURL/raw HTTP examples from <code>curl/</code> and note that community SDKs may exist</li>
+<li>Offer to show Python or TypeScript examples as reference implementations</li>
+</ul>
+</li>
+<li>
+<p><strong>If user needs cURL/raw HTTP examples</strong>, read from <code>curl/</code>.</p>
+</li>
+</ol>
+<h3>Language-Specific Feature Support</h3>
+<table>
+<thead>
+<tr><th>Language</th><th>Tool Runner</th><th>Agent SDK</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>Python</td><td>Yes (beta)</td><td>Yes</td><td>Full support — <code>@beta_tool</code> decorator</td></tr>
+<tr><td>TypeScript</td><td>Yes (beta)</td><td>Yes</td><td>Full support — <code>betaZodTool</code> + Zod</td></tr>
+<tr><td>Java</td><td>Yes (beta)</td><td>No</td><td>Beta tool use with annotated classes</td></tr>
+<tr><td>Go</td><td>No</td><td>No</td><td>Manual agentic loop only</td></tr>
+<tr><td>Ruby</td><td>Yes (beta)</td><td>No</td><td><code>BaseTool</code> + <code>tool_runner</code> in beta</td></tr>
+<tr><td>cURL</td><td>N/A</td><td>N/A</td><td>Raw HTTP, no SDK features</td></tr>
+<tr><td>C#</td><td>No</td><td>No</td><td>Official SDK</td></tr>
+<tr><td>PHP</td><td>No</td><td>No</td><td>Official SDK</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Which Surface Should I Use?</h2>
+<blockquote>
+<p><strong>Start simple.</strong> Default to the simplest tier that meets your needs. Single API calls and workflows handle most use cases — only reach for agents when the task genuinely requires open-ended, model-driven exploration.</p>
+</blockquote>
+<table>
+<thead>
+<tr><th>Use Case</th><th>Tier</th><th>Recommended Surface</th><th>Why</th></tr>
+</thead>
+<tbody>
+<tr><td>Classification, summarization, extraction, Q&amp;A</td><td>Single LLM call</td><td><strong>Claude API</strong></td><td>One request, one response</td></tr>
+<tr><td>Batch processing or embeddings</td><td>Single LLM call</td><td><strong>Claude API</strong></td><td>Specialized endpoints</td></tr>
+<tr><td>Multi-step pipelines with code-controlled logic</td><td>Workflow</td><td><strong>Claude API + tool use</strong></td><td>You orchestrate the loop</td></tr>
+<tr><td>Custom agent with your own tools</td><td>Agent</td><td><strong>Claude API + tool use</strong></td><td>Maximum flexibility</td></tr>
+<tr><td>AI agent with file/web/terminal access</td><td>Agent</td><td><strong>Agent SDK</strong></td><td>Built-in tools, safety, and MCP support</td></tr>
+<tr><td>Agentic coding assistant</td><td>Agent</td><td><strong>Agent SDK</strong></td><td>Designed for this use case</td></tr>
+<tr><td>Want built-in permissions and guardrails</td><td>Agent</td><td><strong>Agent SDK</strong></td><td>Safety features included</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note:</strong> The Agent SDK is for when you want built-in file/web/terminal tools, permissions, and MCP out of the box. If you want to build an agent with your own tools, Claude API is the right choice — use the tool runner for automatic loop handling, or the manual loop for fine-grained control (approval gates, custom logging, conditional execution).</p>
+</blockquote>
+<h3>Decision Tree</h3>
+<pre><code>What does your application need?
+
+1. Single LLM call (classification, summarization, extraction, Q&amp;A)
+   └── Claude API — one request, one response
+
+2. Does Claude need to read/write files, browse the web, or run shell commands
+   as part of its work? (Not: does your app read a file and hand it to Claude —
+   does Claude itself need to discover and access files/web/shell?)
+   └── Yes → Agent SDK — built-in tools, don't reimplement them
+       Examples: &quot;scan a codebase for bugs&quot;, &quot;summarize every file in a directory&quot;,
+                 &quot;find bugs using subagents&quot;, &quot;research a topic via web search&quot;
+
+3. Workflow (multi-step, code-orchestrated, with your own tools)
+   └── Claude API with tool use — you control the loop
+
+4. Open-ended agent (model decides its own trajectory, your own tools)
+   └── Claude API agentic loop (maximum flexibility)
+</code></pre>
+<h3>Should I Build an Agent?</h3>
+<p>Before choosing the agent tier, check all four criteria:</p>
+<ul>
+<li><strong>Complexity</strong> — Is the task multi-step and hard to fully specify in advance? (e.g., &quot;turn this design doc into a PR&quot; vs. &quot;extract the title from this PDF&quot;)</li>
+<li><strong>Value</strong> — Does the outcome justify higher cost and latency?</li>
+<li><strong>Viability</strong> — Is Claude capable at this task type?</li>
+<li><strong>Cost of error</strong> — Can errors be caught and recovered from? (tests, review, rollback)</li>
+</ul>
+<p>If the answer is &quot;no&quot; to any of these, stay at a simpler tier (single call or workflow).</p>
+<hr />
+<h2>Architecture</h2>
+<p>Everything goes through <code>POST /v1/messages</code>. Tools and output constraints are features of this single endpoint — not separate APIs.</p>
+<p><strong>User-defined tools</strong> — You define tools (via decorators, Zod schemas, or raw JSON), and the SDK's tool runner handles calling the API, executing your functions, and looping until Claude is done. For full control, you can write the loop manually.</p>
+<p><strong>Server-side tools</strong> — Anthropic-hosted tools that run on Anthropic's infrastructure. Code execution is fully server-side (declare it in <code>tools</code>, Claude runs code automatically). Computer use can be server-hosted or self-hosted.</p>
+<p><strong>Structured outputs</strong> — Constrains the Messages API response format (<code>output_config.format</code>) and/or tool parameter validation (<code>strict: true</code>). The recommended approach is <code>client.messages.parse()</code> which validates responses against your schema automatically. Note: the old <code>output_format</code> parameter is deprecated; use <code>output_config: {format: {...}}</code> on <code>messages.create()</code>.</p>
+<p><strong>Supporting endpoints</strong> — Batches (<code>POST /v1/messages/batches</code>), Files (<code>POST /v1/files</code>), and Token Counting feed into or support Messages API requests.</p>
+<hr />
+<h2>Current Models (cached: 2026-02-17)</h2>
+<table>
+<thead>
+<tr><th>Model</th><th>Model ID</th><th>Context</th><th>Input $/1M</th><th>Output $/1M</th></tr>
+</thead>
+<tbody>
+<tr><td>Claude Opus 4.6</td><td><code>claude-opus-4-6</code></td><td>200K (1M beta)</td><td>$5.00</td><td>$25.00</td></tr>
+<tr><td>Claude Sonnet 4.6</td><td><code>claude-sonnet-4-6</code></td><td>200K (1M beta)</td><td>$3.00</td><td>$15.00</td></tr>
+<tr><td>Claude Haiku 4.5</td><td><code>claude-haiku-4-5</code></td><td>200K</td><td>$1.00</td><td>$5.00</td></tr>
+</tbody>
+</table>
+<p><strong>ALWAYS use <code>claude-opus-4-6</code> unless the user explicitly names a different model.</strong> This is non-negotiable. Do not use <code>claude-sonnet-4-6</code>, <code>claude-sonnet-4-5</code>, or any other model unless the user literally says &quot;use sonnet&quot; or &quot;use haiku&quot;. Never downgrade for cost — that's the user's decision, not yours.</p>
+<p><strong>CRITICAL: Use only the exact model ID strings from the table above — they are complete as-is. Do not append date suffixes.</strong> For example, use <code>claude-sonnet-4-5</code>, never <code>claude-sonnet-4-5-20250514</code> or any other date-suffixed variant you might recall from training data. If the user requests an older model not in the table (e.g., &quot;opus 4.5&quot;, &quot;sonnet 3.7&quot;), read <code>shared/models.md</code> for the exact ID — do not construct one yourself.</p>
+<p>A note: if any of the model strings above look unfamiliar to you, that's to be expected — that just means they were released after your training data cutoff. Rest assured they are real models; we wouldn't mess with you like that.</p>
+<hr />
+<h2>Thinking &amp; Effort (Quick Reference)</h2>
+<p><strong>Opus 4.6 — Adaptive thinking (recommended):</strong> Use <code>thinking: {type: &quot;adaptive&quot;}</code>. Claude dynamically decides when and how much to think. No <code>budget_tokens</code> needed — <code>budget_tokens</code> is deprecated on Opus 4.6 and Sonnet 4.6 and must not be used. Adaptive thinking also automatically enables interleaved thinking (no beta header needed). <strong>When the user asks for &quot;extended thinking&quot;, a &quot;thinking budget&quot;, or <code>budget_tokens</code>: always use Opus 4.6 with <code>thinking: {type: &quot;adaptive&quot;}</code>. The concept of a fixed token budget for thinking is deprecated — adaptive thinking replaces it. Do NOT use <code>budget_tokens</code> and do NOT switch to an older model.</strong></p>
+<p><strong>Effort parameter (GA, no beta header):</strong> Controls thinking depth and overall token spend via <code>output_config: {effort: &quot;low&quot;|&quot;medium&quot;|&quot;high&quot;|&quot;max&quot;}</code> (inside <code>output_config</code>, not top-level). Default is <code>high</code> (equivalent to omitting it). <code>max</code> is Opus 4.6 only. Works on Opus 4.5, Opus 4.6, and Sonnet 4.6. Will error on Sonnet 4.5 / Haiku 4.5. Combine with adaptive thinking for the best cost-quality tradeoffs. Use <code>low</code> for subagents or simple tasks; <code>max</code> for the deepest reasoning.</p>
+<p><strong>Sonnet 4.6:</strong> Supports adaptive thinking (<code>thinking: {type: &quot;adaptive&quot;}</code>). <code>budget_tokens</code> is deprecated on Sonnet 4.6 — use adaptive thinking instead.</p>
+<p><strong>Older models (only if explicitly requested):</strong> If the user specifically asks for Sonnet 4.5 or another older model, use <code>thinking: {type: &quot;enabled&quot;, budget_tokens: N}</code>. <code>budget_tokens</code> must be less than <code>max_tokens</code> (minimum 1024). Never choose an older model just because the user mentions <code>budget_tokens</code> — use Opus 4.6 with adaptive thinking instead.</p>
+<hr />
+<h2>Compaction (Quick Reference)</h2>
+<p><strong>Beta, Opus 4.6 only.</strong> For long-running conversations that may exceed the 200K context window, enable server-side compaction. The API automatically summarizes earlier context when it approaches the trigger threshold (default: 150K tokens). Requires beta header <code>compact-2026-01-12</code>.</p>
+<p><strong>Critical:</strong> Append <code>response.content</code> (not just the text) back to your messages on every turn. Compaction blocks in the response must be preserved — the API uses them to replace the compacted history on the next request. Extracting only the text string and appending that will silently lose the compaction state.</p>
+<p>See <code>{lang}/claude-api/README.md</code> (Compaction section) for code examples. Full docs via WebFetch in <code>shared/live-sources.md</code>.</p>
+<hr />
+<h2>Reading Guide</h2>
+<p>After detecting the language, read the relevant files based on what the user needs:</p>
+<h3>Quick Task Reference</h3>
+<p><strong>Single text classification/summarization/extraction/Q&amp;A:</strong>
+→ Read only <code>{lang}/claude-api/README.md</code></p>
+<p><strong>Chat UI or real-time response display:</strong>
+→ Read <code>{lang}/claude-api/README.md</code> + <code>{lang}/claude-api/streaming.md</code></p>
+<p><strong>Long-running conversations (may exceed context window):</strong>
+→ Read <code>{lang}/claude-api/README.md</code> — see Compaction section</p>
+<p><strong>Function calling / tool use / agents:</strong>
+→ Read <code>{lang}/claude-api/README.md</code> + <code>shared/tool-use-concepts.md</code> + <code>{lang}/claude-api/tool-use.md</code></p>
+<p><strong>Batch processing (non-latency-sensitive):</strong>
+→ Read <code>{lang}/claude-api/README.md</code> + <code>{lang}/claude-api/batches.md</code></p>
+<p><strong>File uploads across multiple requests:</strong>
+→ Read <code>{lang}/claude-api/README.md</code> + <code>{lang}/claude-api/files-api.md</code></p>
+<p><strong>Agent with built-in tools (file/web/terminal):</strong>
+→ Read <code>{lang}/agent-sdk/README.md</code> + <code>{lang}/agent-sdk/patterns.md</code></p>
+<h3>Claude API (Full File Reference)</h3>
+<p>Read the <strong>language-specific Claude API folder</strong> (<code>{language}/claude-api/</code>):</p>
+<ol>
+<li><strong><code>{language}/claude-api/README.md</code></strong> — <strong>Read this first.</strong> Installation, quick start, common patterns, error handling.</li>
+<li><strong><code>shared/tool-use-concepts.md</code></strong> — Read when the user needs function calling, code execution, memory, or structured outputs. Covers conceptual foundations.</li>
+<li><strong><code>{language}/claude-api/tool-use.md</code></strong> — Read for language-specific tool use code examples (tool runner, manual loop, code execution, memory, structured outputs).</li>
+<li><strong><code>{language}/claude-api/streaming.md</code></strong> — Read when building chat UIs or interfaces that display responses incrementally.</li>
+<li><strong><code>{language}/claude-api/batches.md</code></strong> — Read when processing many requests offline (not latency-sensitive). Runs asynchronously at 50% cost.</li>
+<li><strong><code>{language}/claude-api/files-api.md</code></strong> — Read when sending the same file across multiple requests without re-uploading.</li>
+<li><strong><code>shared/error-codes.md</code></strong> — Read when debugging HTTP errors or implementing error handling.</li>
+<li><strong><code>shared/live-sources.md</code></strong> — WebFetch URLs for fetching the latest official documentation.</li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> For Java, Go, Ruby, C#, PHP, and cURL — these have a single file each covering all basics. Read that file plus <code>shared/tool-use-concepts.md</code> and <code>shared/error-codes.md</code> as needed.</p>
+</blockquote>
+<h3>Agent SDK</h3>
+<p>Read the <strong>language-specific Agent SDK folder</strong> (<code>{language}/agent-sdk/</code>). Agent SDK is available for <strong>Python and TypeScript only</strong>.</p>
+<ol>
+<li><strong><code>{language}/agent-sdk/README.md</code></strong> — Installation, quick start, built-in tools, permissions, MCP, hooks.</li>
+<li><strong><code>{language}/agent-sdk/patterns.md</code></strong> — Custom tools, hooks, subagents, MCP integration, session resumption.</li>
+<li><strong><code>shared/live-sources.md</code></strong> — WebFetch URLs for current Agent SDK docs.</li>
+</ol>
+<hr />
+<h2>When to Use WebFetch</h2>
+<p>Use WebFetch to get the latest documentation when:</p>
+<ul>
+<li>User asks for &quot;latest&quot; or &quot;current&quot; information</li>
+<li>Cached data seems incorrect</li>
+<li>User asks about features not covered here</li>
+</ul>
+<p>Live documentation URLs are in <code>shared/live-sources.md</code>.</p>
+<h2>Common Pitfalls</h2>
+<ul>
+<li>Don't truncate inputs when passing files or content to the API. If the content is too long to fit in the context window, notify the user and discuss options (chunking, summarization, etc.) rather than silently truncating.</li>
+<li><strong>Opus 4.6 / Sonnet 4.6 thinking:</strong> Use <code>thinking: {type: &quot;adaptive&quot;}</code> — do NOT use <code>budget_tokens</code> (deprecated on both Opus 4.6 and Sonnet 4.6). For older models, <code>budget_tokens</code> must be less than <code>max_tokens</code> (minimum 1024). This will throw an error if you get it wrong.</li>
+<li><strong>Opus 4.6 prefill removed:</strong> Assistant message prefills (last-assistant-turn prefills) return a 400 error on Opus 4.6. Use structured outputs (<code>output_config.format</code>) or system prompt instructions to control response format instead.</li>
+<li><strong>128K output tokens:</strong> Opus 4.6 supports up to 128K <code>max_tokens</code>, but the SDKs require streaming for large <code>max_tokens</code> to avoid HTTP timeouts. Use <code>.stream()</code> with <code>.get_final_message()</code> / <code>.finalMessage()</code>.</li>
+<li><strong>Tool call JSON parsing (Opus 4.6):</strong> Opus 4.6 may produce different JSON string escaping in tool call <code>input</code> fields (e.g., Unicode or forward-slash escaping). Always parse tool inputs with <code>json.loads()</code> / <code>JSON.parse()</code> — never do raw string matching on the serialized input.</li>
+<li><strong>Structured outputs (all models):</strong> Use <code>output_config: {format: {...}}</code> instead of the deprecated <code>output_format</code> parameter on <code>messages.create()</code>. This is a general API change, not 4.6-specific.</li>
+</ul>
+
+
+## Reference Documentation
+
+The relevant documentation for your detected language is included below in `<doc>` tags. Each tag has a `path` attribute showing its original file path. Use this to find the right section:
+
+### Quick Task Reference
+
+**Single text classification/summarization/extraction/Q&A:**
+→ Refer to `unknown/claude-api/README.md`
+
+**Chat UI or real-time response display:**
+→ Refer to `unknown/claude-api/README.md` + `unknown/claude-api/streaming.md`
+
+**Long-running conversations (may exceed context window):**
+→ Refer to `unknown/claude-api/README.md` — see Compaction section
+
+**Function calling / tool use / agents:**
+→ Refer to `unknown/claude-api/README.md` + `shared/tool-use-concepts.md` + `unknown/claude-api/tool-use.md`
+
+**Batch processing (non-latency-sensitive):**
+→ Refer to `unknown/claude-api/README.md` + `unknown/claude-api/batches.md`
+
+**File uploads across multiple requests:**
+→ Refer to `unknown/claude-api/README.md` + `unknown/claude-api/files-api.md`
+
+**Agent with built-in tools (file/web/terminal) (Python & TypeScript only):**
+→ Refer to `unknown/agent-sdk/README.md` + `unknown/agent-sdk/patterns.md`
+
+**Error handling:**
+→ Refer to `shared/error-codes.md`
+
+**Latest docs via WebFetch:**
+→ Refer to `shared/live-sources.md` for URLs
+
+No project language was auto-detected. Ask the user which language they are using, then refer to the matching docs below.
+
+---
+
+## Included Documentation
+
+<doc path="csharp/claude-api.md">
+<h1>Claude API — C#</h1>
+<blockquote>
+<p><strong>Note:</strong> The C# SDK is the official Anthropic SDK for C#. Tool use is supported via the Messages API. A class-annotation-based tool runner is not available; use raw tool definitions with JSON schema. The SDK also supports Microsoft.Extensions.AI IChatClient integration with function invocation.</p>
+</blockquote>
+<h2>Installation</h2>
+<pre><code class="language-bash">dotnet add package Anthropic
+</code></pre>
+<h2>Client Initialization</h2>
+<pre><code class="language-csharp">using Anthropic;
+
+// Default (uses ANTHROPIC_API_KEY env var)
+AnthropicClient client = new();
+
+// Explicit API key (use environment variables — never hardcode keys)
+AnthropicClient client = new() {
+    ApiKey = Environment.GetEnvironmentVariable(&quot;ANTHROPIC_API_KEY&quot;)
+};
+</code></pre>
+<hr />
+<h2>Basic Message Request</h2>
+<pre><code class="language-csharp">using Anthropic.Models.Messages;
+
+var parameters = new MessageCreateParams
+{
+    Model = Model.ClaudeOpus4_6,
+    MaxTokens = 1024,
+    Messages = [new() { Role = Role.User, Content = &quot;What is the capital of France?&quot; }]
+};
+var message = await client.Messages.Create(parameters);
+Console.WriteLine(message);
+</code></pre>
+<hr />
+<h2>Streaming</h2>
+<pre><code class="language-csharp">using Anthropic.Models.Messages;
+
+var parameters = new MessageCreateParams
+{
+    Model = Model.ClaudeOpus4_6,
+    MaxTokens = 1024,
+    Messages = [new() { Role = Role.User, Content = &quot;Write a haiku&quot; }]
+};
+
+await foreach (RawMessageStreamEvent streamEvent in client.Messages.CreateStreaming(parameters))
+{
+    if (streamEvent.TryPickContentBlockDelta(out var delta) &amp;&amp;
+        delta.Delta.TryPickText(out var text))
+    {
+        Console.Write(text.Text);
+    }
+}
+</code></pre>
+<hr />
+<h2>Tool Use (Manual Loop)</h2>
+<p>The C# SDK supports raw tool definitions via JSON schema. See the <a href="../shared/tool-use-concepts.md">shared tool use concepts</a> for the tool definition format and agentic loop pattern.</p>
+</doc>
+
+<doc path="curl/examples.md">
+<h1>Claude API — cURL / Raw HTTP</h1>
+<p>Use these examples when the user needs raw HTTP requests or is working in a language without an official SDK.</p>
+<h2>Setup</h2>
+<pre><code class="language-bash">export ANTHROPIC_API_KEY=&quot;your-api-key&quot;
+</code></pre>
+<hr />
+<h2>Basic Message Request</h2>
+<pre><code class="language-bash">curl https://api.anthropic.com/v1/messages \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;x-api-key: $ANTHROPIC_API_KEY&quot; \
+  -H &quot;anthropic-version: 2023-06-01&quot; \
+  -d '{
+    &quot;model&quot;: &quot;claude-opus-4-6&quot;,
+    &quot;max_tokens&quot;: 1024,
+    &quot;messages&quot;: [
+      {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What is the capital of France?&quot;}
+    ]
+  }'
+</code></pre>
+<hr />
+<h2>Streaming (SSE)</h2>
+<pre><code class="language-bash">curl https://api.anthropic.com/v1/messages \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;x-api-key: $ANTHROPIC_API_KEY&quot; \
+  -H &quot;anthropic-version: 2023-06-01&quot; \
+  -d '{
+    &quot;model&quot;: &quot;claude-opus-4-6&quot;,
+    &quot;max_tokens&quot;: 1024,
+    &quot;stream&quot;: true,
+    &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Write a haiku&quot;}]
+  }'
+</code></pre>
+<p>The response is a stream of Server-Sent Events:</p>
+<pre><code>event: message_start
+data: {&quot;type&quot;:&quot;message_start&quot;,&quot;message&quot;:{&quot;id&quot;:&quot;msg_...&quot;,&quot;type&quot;:&quot;message&quot;,...}}
+
+event: content_block_start
+data: {&quot;type&quot;:&quot;content_block_start&quot;,&quot;index&quot;:0,&quot;content_block&quot;:{&quot;type&quot;:&quot;text&quot;,&quot;text&quot;:&quot;&quot;}}
+
+event: content_block_delta
+data: {&quot;type&quot;:&quot;content_block_delta&quot;,&quot;index&quot;:0,&quot;delta&quot;:{&quot;type&quot;:&quot;text_delta&quot;,&quot;text&quot;:&quot;Hello&quot;}}
+
+event: content_block_stop
+data: {&quot;type&quot;:&quot;content_block_stop&quot;,&quot;index&quot;:0}
+
+event: message_delta
+data: {&quot;type&quot;:&quot;message_delta&quot;,&quot;delta&quot;:{&quot;stop_reason&quot;:&quot;end_turn&quot;},&quot;usage&quot;:{&quot;output_tokens&quot;:12}}
+
+event: message_stop
+data: {&quot;type&quot;:&quot;message_stop&quot;}
+</code></pre>
+<hr />
+<h2>Tool Use</h2>
+<pre><code class="language-bash">curl https://api.anthropic.com/v1/messages \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;x-api-key: $ANTHROPIC_API_KEY&quot; \
+  -H &quot;anthropic-version: 2023-06-01&quot; \
+  -d '{
+    &quot;model&quot;: &quot;claude-opus-4-6&quot;,
+    &quot;max_tokens&quot;: 1024,
+    &quot;tools&quot;: [{
+      &quot;name&quot;: &quot;get_weather&quot;,
+      &quot;description&quot;: &quot;Get current weather for a location&quot;,
+      &quot;input_schema&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {
+          &quot;location&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;description&quot;: &quot;City name&quot;}
+        },
+        &quot;required&quot;: [&quot;location&quot;]
+      }
+    }],
+    &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What is the weather in Paris?&quot;}]
+  }'
+</code></pre>
+<p>When Claude responds with a <code>tool_use</code> block, send the result back:</p>
+<pre><code class="language-bash">curl https://api.anthropic.com/v1/messages \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;x-api-key: $ANTHROPIC_API_KEY&quot; \
+  -H &quot;anthropic-version: 2023-06-01&quot; \
+  -d '{
+    &quot;model&quot;: &quot;claude-opus-4-6&quot;,
+    &quot;max_tokens&quot;: 1024,
+    &quot;tools&quot;: [{
+      &quot;name&quot;: &quot;get_weather&quot;,
+      &quot;description&quot;: &quot;Get current weather for a location&quot;,
+      &quot;input_schema&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {
+          &quot;location&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;description&quot;: &quot;City name&quot;}
+        },
+        &quot;required&quot;: [&quot;location&quot;]
+      }
+    }],
+    &quot;messages&quot;: [
+      {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What is the weather in Paris?&quot;},
+      {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: [
+        {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Let me check the weather.&quot;},
+        {&quot;type&quot;: &quot;tool_use&quot;, &quot;id&quot;: &quot;toolu_abc123&quot;, &quot;name&quot;: &quot;get_weather&quot;, &quot;input&quot;: {&quot;location&quot;: &quot;Paris&quot;}}
+      ]},
+      {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: [
+        {&quot;type&quot;: &quot;tool_result&quot;, &quot;tool_use_id&quot;: &quot;toolu_abc123&quot;, &quot;content&quot;: &quot;72°F and sunny&quot;}
+      ]}
+    ]
+  }'
+</code></pre>
+<hr />
+<h2>Extended Thinking</h2>
+<blockquote>
+<p><strong>Opus 4.6 and Sonnet 4.6:</strong> Use adaptive thinking. <code>budget_tokens</code> is deprecated on both Opus 4.6 and Sonnet 4.6.
+<strong>Older models:</strong> Use <code>&quot;type&quot;: &quot;enabled&quot;</code> with <code>&quot;budget_tokens&quot;: N</code> (must be &lt; <code>max_tokens</code>, min 1024).</p>
+</blockquote>
+<pre><code class="language-bash"># Opus 4.6: adaptive thinking (recommended)
+curl https://api.anthropic.com/v1/messages \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;x-api-key: $ANTHROPIC_API_KEY&quot; \
+  -H &quot;anthropic-version: 2023-06-01&quot; \
+  -d '{
+    &quot;model&quot;: &quot;claude-opus-4-6&quot;,
+    &quot;max_tokens&quot;: 16000,
+    &quot;thinking&quot;: {
+      &quot;type&quot;: &quot;adaptive&quot;
+    },
+    &quot;output_config&quot;: {
+      &quot;effort&quot;: &quot;high&quot;
+    },
+    &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Solve this step by step...&quot;}]
+  }'
+</code></pre>
+<hr />
+<h2>Required Headers</h2>
+<table>
+<thead>
+<tr><th>Header</th><th>Value</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Content-Type</code></td><td><code>application/json</code></td><td>Required</td></tr>
+<tr><td><code>x-api-key</code></td><td>Your API key</td><td>Authentication</td></tr>
+<tr><td><code>anthropic-version</code></td><td><code>2023-06-01</code></td><td>API version</td></tr>
+<tr><td><code>anthropic-beta</code></td><td>Beta feature IDs</td><td>Required for beta features</td></tr>
+</tbody>
+</table>
+</doc>
+
+<doc path="go/claude-api.md">
+<h1>Claude API — Go</h1>
+<blockquote>
+<p><strong>Note:</strong> The Go SDK supports the Claude API. Tool runner and Agent SDK are not yet available for Go — use the manual agentic loop for tool use.</p>
+</blockquote>
+<h2>Installation</h2>
+<pre><code class="language-bash">go get github.com/anthropics/anthropic-sdk-go
+</code></pre>
+<h2>Client Initialization</h2>
+<pre><code class="language-go">import (
+    &quot;github.com/anthropics/anthropic-sdk-go&quot;
+    &quot;github.com/anthropics/anthropic-sdk-go/option&quot;
+)
+
+// Default (uses ANTHROPIC_API_KEY env var)
+client := anthropic.NewClient()
+
+// Explicit API key
+client := anthropic.NewClient(
+    option.WithAPIKey(&quot;your-api-key&quot;),
+)
+</code></pre>
+<hr />
+<h2>Basic Message Request</h2>
+<pre><code class="language-go">response, err := client.Messages.New(context.TODO(), anthropic.MessageNewParams{
+    Model:     anthropic.ModelClaudeOpus4_6,
+    MaxTokens: 1024,
+    Messages: []anthropic.MessageParam{
+        anthropic.NewUserMessage(anthropic.NewTextBlock(&quot;What is the capital of France?&quot;)),
+    },
+})
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(response.Content[0].Text)
+</code></pre>
+<hr />
+<h2>Streaming</h2>
+<pre><code class="language-go">stream := client.Messages.NewStreaming(context.TODO(), anthropic.MessageNewParams{
+    Model:     anthropic.ModelClaudeOpus4_6,
+    MaxTokens: 1024,
+    Messages: []anthropic.MessageParam{
+        anthropic.NewUserMessage(anthropic.NewTextBlock(&quot;Write a haiku&quot;)),
+    },
+})
+
+for stream.Next() {
+    event := stream.Current()
+    switch eventVariant := event.AsAny().(type) {
+    case anthropic.ContentBlockDeltaEvent:
+        switch deltaVariant := eventVariant.Delta.AsAny().(type) {
+        case anthropic.TextDelta:
+            fmt.Print(deltaVariant.Text)
+        }
+    }
+}
+if err := stream.Err(); err != nil {
+    log.Fatal(err)
+}
+</code></pre>
+<hr />
+<h2>Tool Use (Manual Loop)</h2>
+<p>The Go SDK supports raw tool definitions via JSON schema. See the <a href="../shared/tool-use-concepts.md">shared tool use concepts</a> for the tool definition format and agentic loop pattern.</p>
+</doc>
+
+<doc path="java/claude-api.md">
+<h1>Claude API — Java</h1>
+<blockquote>
+<p><strong>Note:</strong> The Java SDK supports the Claude API and beta tool use with annotated classes. Agent SDK is not yet available for Java.</p>
+</blockquote>
+<h2>Installation</h2>
+<p>Maven:</p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;com.anthropic&lt;/groupId&gt;
+    &lt;artifactId&gt;anthropic-java&lt;/artifactId&gt;
+    &lt;version&gt;2.14.0&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<p>Gradle:</p>
+<pre><code class="language-groovy">implementation(&quot;com.anthropic:anthropic-java:2.14.0&quot;)
+</code></pre>
+<h2>Client Initialization</h2>
+<pre><code class="language-java">import com.anthropic.client.AnthropicClient;
+import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+
+// Default (reads ANTHROPIC_API_KEY from environment)
+AnthropicClient client = AnthropicOkHttpClient.fromEnv();
+
+// Explicit API key
+AnthropicClient client = AnthropicOkHttpClient.builder()
+    .apiKey(&quot;your-api-key&quot;)
+    .build();
+</code></pre>
+<hr />
+<h2>Basic Message Request</h2>
+<pre><code class="language-java">import com.anthropic.models.messages.MessageCreateParams;
+import com.anthropic.models.messages.Message;
+import com.anthropic.models.messages.Model;
+
+MessageCreateParams params = MessageCreateParams.builder()
+    .model(Model.CLAUDE_OPUS_4_6)
+    .maxTokens(1024L)
+    .addUserMessage(&quot;What is the capital of France?&quot;)
+    .build();
+
+Message response = client.messages().create(params);
+response.content().stream()
+    .flatMap(block -&gt; block.text().stream())
+    .forEach(textBlock -&gt; System.out.println(textBlock.text()));
+</code></pre>
+<hr />
+<h2>Streaming</h2>
+<pre><code class="language-java">import com.anthropic.core.http.StreamResponse;
+import com.anthropic.models.messages.RawMessageStreamEvent;
+
+MessageCreateParams params = MessageCreateParams.builder()
+    .model(Model.CLAUDE_OPUS_4_6)
+    .maxTokens(1024L)
+    .addUserMessage(&quot;Write a haiku&quot;)
+    .build();
+
+try (StreamResponse&lt;RawMessageStreamEvent&gt; streamResponse = client.messages().createStreaming(params)) {
+    streamResponse.stream()
+        .flatMap(event -&gt; event.contentBlockDelta().stream())
+        .flatMap(deltaEvent -&gt; deltaEvent.delta().text().stream())
+        .forEach(textDelta -&gt; System.out.print(textDelta.text()));
+}
+</code></pre>
+<hr />
+<h2>Tool Use (Beta)</h2>
+<p>The Java SDK supports beta tool use with annotated classes. Tool classes implement <code>Supplier&lt;String&gt;</code> for automatic execution via <code>BetaToolRunner</code>.</p>
+<h3>Tool Runner (automatic loop)</h3>
+<pre><code class="language-java">import com.anthropic.models.beta.messages.MessageCreateParams;
+import com.anthropic.models.beta.messages.BetaMessage;
+import com.anthropic.helpers.BetaToolRunner;
+import com.fasterxml.jackson.annotation.JsonClassDescription;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import java.util.function.Supplier;
+
+@JsonClassDescription(&quot;Get the weather in a given location&quot;)
+static class GetWeather implements Supplier&lt;String&gt; {
+    @JsonPropertyDescription(&quot;The city and state, e.g. San Francisco, CA&quot;)
+    public String location;
+
+    @Override
+    public String get() {
+        return &quot;The weather in &quot; + location + &quot; is sunny and 72°F&quot;;
+    }
+}
+
+BetaToolRunner toolRunner = client.beta().messages().toolRunner(
+    MessageCreateParams.builder()
+        .model(&quot;claude-opus-4-6&quot;)
+        .maxTokens(1024L)
+        .putAdditionalHeader(&quot;anthropic-beta&quot;, &quot;structured-outputs-2025-11-13&quot;)
+        .addTool(GetWeather.class)
+        .addUserMessage(&quot;What's the weather in San Francisco?&quot;)
+        .build());
+
+for (BetaMessage message : toolRunner) {
+    System.out.println(message);
+}
+</code></pre>
+<h3>Non-Beta Tool Use</h3>
+<p>Tool use is also available through the non-beta <code>com.anthropic.models.messages.MessageCreateParams</code> with <code>addTool(Tool)</code> for manually defined JSON schemas, without needing the beta namespace. The beta namespace is only needed for the class-annotation convenience layer (<code>@JsonClassDescription</code>, <code>BetaToolRunner</code>).</p>
+<h3>Manual Loop</h3>
+<p>For manual tool loops, define tools as JSON schema in the request, handle <code>tool_use</code> blocks in the response, send <code>tool_result</code> back, and loop until <code>stop_reason</code> is <code>&quot;end_turn&quot;</code>. See the <a href="../shared/tool-use-concepts.md">shared tool use concepts</a> for the agentic loop pattern.</p>
+</doc>
+
+<doc path="php/claude-api.md">
+<h1>Claude API — PHP</h1>
+<blockquote>
+<p><strong>Note:</strong> The PHP SDK is the official Anthropic SDK for PHP. Tool runner and Agent SDK are not available.</p>
+</blockquote>
+<h2>Installation</h2>
+<pre><code class="language-bash">composer require &quot;anthropic-ai/sdk 0.5.0&quot;
+</code></pre>
+<h2>Client Initialization</h2>
+<pre><code class="language-php">use Anthropic\Client;
+
+// Using API key from environment variable
+$client = new Client(apiKey: getenv(&quot;ANTHROPIC_API_KEY&quot;));
+</code></pre>
+<hr />
+<h2>Basic Message Request</h2>
+<pre><code class="language-php">$message = $client-&gt;messages-&gt;create(
+    model: 'claude-opus-4-6',
+    maxTokens: 1024,
+    messages: [
+        ['role' =&gt; 'user', 'content' =&gt; 'What is the capital of France?'],
+    ],
+);
+echo $message-&gt;content[0]-&gt;text;
+</code></pre>
+<hr />
+<h2>Streaming</h2>
+<pre><code class="language-php">$stream = $client-&gt;messages-&gt;createStream(
+    model: 'claude-opus-4-6',
+    maxTokens: 1024,
+    messages: [
+        ['role' =&gt; 'user', 'content' =&gt; 'Write a haiku'],
+    ],
+);
+
+foreach ($stream as $event) {
+    echo $event;
+}
+</code></pre>
+<hr />
+<h2>Tool Use (Manual Loop)</h2>
+<p>The PHP SDK supports raw tool definitions via JSON schema. See the <a href="../shared/tool-use-concepts.md">shared tool use concepts</a> for the tool definition format and agentic loop pattern.</p>
+</doc>
+
+<doc path="python/agent-sdk/README.md">
+<h1>Agent SDK — Python</h1>
+<p>The Claude Agent SDK provides a higher-level interface for building AI agents with built-in tools, safety features, and agentic capabilities.</p>
+<h2>Installation</h2>
+<pre><code class="language-bash">pip install claude-agent-sdk
+</code></pre>
+<hr />
+<h2>Quick Start</h2>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+async def main():
+    async for message in query(
+        prompt=&quot;Explain this codebase&quot;,
+        options=ClaudeAgentOptions(allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;])
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+
+anyio.run(main)
+</code></pre>
+<hr />
+<h2>Built-in Tools</h2>
+<table>
+<thead>
+<tr><th>Tool</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>Read files in the workspace</td></tr>
+<tr><td>Write</td><td>Create new files</td></tr>
+<tr><td>Edit</td><td>Make precise edits to existing files</td></tr>
+<tr><td>Bash</td><td>Execute shell commands</td></tr>
+<tr><td>Glob</td><td>Find files by pattern</td></tr>
+<tr><td>Grep</td><td>Search files by content</td></tr>
+<tr><td>WebSearch</td><td>Search the web for information</td></tr>
+<tr><td>WebFetch</td><td>Fetch and analyze web pages</td></tr>
+<tr><td>AskUserQuestion</td><td>Ask user clarifying questions</td></tr>
+<tr><td>Task</td><td>Spawn subagent tasks</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Primary Interfaces</h2>
+<h3><code>query()</code> — Simple One-Shot Usage</h3>
+<p>The <code>query()</code> function is the simplest way to run an agent. It returns an async iterator of messages.</p>
+<pre><code class="language-python">from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+async for message in query(
+    prompt=&quot;Explain this codebase&quot;,
+    options=ClaudeAgentOptions(allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;])
+):
+    if isinstance(message, ResultMessage):
+        print(message.result)
+</code></pre>
+<h3><code>ClaudeSDKClient</code> — Full Control</h3>
+<p><code>ClaudeSDKClient</code> provides full control over the agent lifecycle. Use it when you need custom tools, hooks, streaming, or the ability to interrupt execution.</p>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions, AssistantMessage, TextBlock
+
+async def main():
+    options = ClaudeAgentOptions(allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;])
+    async with ClaudeSDKClient(options=options) as client:
+        await client.query(&quot;Explain this codebase&quot;)
+        async for message in client.receive_response():
+            if isinstance(message, AssistantMessage):
+                for block in message.content:
+                    if isinstance(block, TextBlock):
+                        print(block.text)
+
+anyio.run(main)
+</code></pre>
+<p><code>ClaudeSDKClient</code> supports:</p>
+<ul>
+<li><strong>Context manager</strong> (<code>async with</code>) for automatic resource cleanup</li>
+<li><strong><code>client.query(prompt)</code></strong> to send a prompt to the agent</li>
+<li><strong><code>receive_response()</code></strong> for streaming messages until completion</li>
+<li><strong><code>interrupt()</code></strong> to stop agent execution mid-task</li>
+<li><strong>Required for custom tools</strong> (via SDK MCP servers)</li>
+</ul>
+<hr />
+<h2>Permission System</h2>
+<pre><code class="language-python">from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+async for message in query(
+    prompt=&quot;Refactor the authentication module&quot;,
+    options=ClaudeAgentOptions(
+        allowed_tools=[&quot;Read&quot;, &quot;Edit&quot;, &quot;Write&quot;],
+        permission_mode=&quot;acceptEdits&quot;  # Auto-accept file edits
+    )
+):
+    if isinstance(message, ResultMessage):
+        print(message.result)
+</code></pre>
+<p>Permission modes:</p>
+<ul>
+<li><code>&quot;default&quot;</code>: Prompt for dangerous operations</li>
+<li><code>&quot;plan&quot;</code>: Planning only, no execution</li>
+<li><code>&quot;acceptEdits&quot;</code>: Auto-accept file edits</li>
+<li><code>&quot;dontAsk&quot;</code>: Don't prompt (useful for CI/CD)</li>
+<li><code>&quot;bypassPermissions&quot;</code>: Skip all prompts (requires <code>allow_dangerously_skip_permissions=True</code> in options)</li>
+</ul>
+<hr />
+<h2>MCP (Model Context Protocol) Support</h2>
+<pre><code class="language-python">from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+async for message in query(
+    prompt=&quot;Open example.com and describe what you see&quot;,
+    options=ClaudeAgentOptions(
+        mcp_servers={
+            &quot;playwright&quot;: {&quot;command&quot;: &quot;npx&quot;, &quot;args&quot;: [&quot;@playwright/mcp@latest&quot;]}
+        }
+    )
+):
+    if isinstance(message, ResultMessage):
+        print(message.result)
+</code></pre>
+<hr />
+<h2>Hooks</h2>
+<p>Customize agent behavior with hooks using callback functions:</p>
+<pre><code class="language-python">from claude_agent_sdk import query, ClaudeAgentOptions, HookMatcher, ResultMessage
+
+async def log_file_change(input_data, tool_use_id, context):
+    file_path = input_data.get('tool_input', {}).get('file_path', 'unknown')
+    print(f&quot;Modified: {file_path}&quot;)
+    return {}
+
+async for message in query(
+    prompt=&quot;Refactor utils.py&quot;,
+    options=ClaudeAgentOptions(
+        permission_mode=&quot;acceptEdits&quot;,
+        hooks={
+            &quot;PostToolUse&quot;: [HookMatcher(matcher=&quot;Edit|Write&quot;, hooks=[log_file_change])]
+        }
+    )
+):
+    if isinstance(message, ResultMessage):
+        print(message.result)
+</code></pre>
+<p>Available hook events: <code>PreToolUse</code>, <code>PostToolUse</code>, <code>PostToolUseFailure</code>, <code>Notification</code>, <code>UserPromptSubmit</code>, <code>SessionStart</code>, <code>SessionEnd</code>, <code>Stop</code>, <code>SubagentStart</code>, <code>SubagentStop</code>, <code>PreCompact</code>, <code>PermissionRequest</code>, <code>Setup</code>, <code>TeammateIdle</code>, <code>TaskCompleted</code>, <code>ConfigChange</code></p>
+<hr />
+<h2>Common Options</h2>
+<p><code>query()</code> takes a top-level <code>prompt</code> (string) and an <code>options</code> object (<code>ClaudeAgentOptions</code>):</p>
+<pre><code class="language-python">async for message in query(prompt=&quot;...&quot;, options=ClaudeAgentOptions(...)):
+</code></pre>
+<table>
+<thead>
+<tr><th>Option</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>cwd</code></td><td>string</td><td>Working directory for file operations</td></tr>
+<tr><td><code>allowed_tools</code></td><td>list</td><td>Tools the agent can use (e.g., <code>[&quot;Read&quot;, &quot;Edit&quot;, &quot;Bash&quot;]</code>)</td></tr>
+<tr><td><code>tools</code></td><td>list</td><td>Built-in tools to make available (restricts the default set)</td></tr>
+<tr><td><code>disallowed_tools</code></td><td>list</td><td>Tools to explicitly disallow</td></tr>
+<tr><td><code>permission_mode</code></td><td>string</td><td>How to handle permission prompts</td></tr>
+<tr><td><code>allow_dangerously_skip_permissions</code></td><td>bool</td><td>Must be <code>True</code> to use <code>permission_mode=&quot;bypassPermissions&quot;</code></td></tr>
+<tr><td><code>mcp_servers</code></td><td>dict</td><td>MCP servers to connect to</td></tr>
+<tr><td><code>hooks</code></td><td>dict</td><td>Hooks for customizing behavior</td></tr>
+<tr><td><code>system_prompt</code></td><td>string</td><td>Custom system prompt</td></tr>
+<tr><td><code>max_turns</code></td><td>int</td><td>Maximum agent turns before stopping</td></tr>
+<tr><td><code>max_budget_usd</code></td><td>float</td><td>Maximum budget in USD for the query</td></tr>
+<tr><td><code>model</code></td><td>string</td><td>Model ID (default: determined by CLI)</td></tr>
+<tr><td><code>agents</code></td><td>dict</td><td>Subagent definitions (<code>dict[str, AgentDefinition]</code>)</td></tr>
+<tr><td><code>output_format</code></td><td>dict</td><td>Structured output schema</td></tr>
+<tr><td><code>thinking</code></td><td>dict</td><td>Thinking/reasoning control</td></tr>
+<tr><td><code>betas</code></td><td>list</td><td>Beta features to enable (e.g., <code>[&quot;context-1m-2025-08-07&quot;]</code>)</td></tr>
+<tr><td><code>setting_sources</code></td><td>list</td><td>Settings to load (e.g., <code>[&quot;project&quot;]</code>). Default: none (no CLAUDE.md files)</td></tr>
+<tr><td><code>env</code></td><td>dict</td><td>Environment variables to set for the session</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Message Types</h2>
+<pre><code class="language-python">from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage, SystemMessage
+
+async for message in query(
+    prompt=&quot;Find TODO comments&quot;,
+    options=ClaudeAgentOptions(allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;])
+):
+    if isinstance(message, ResultMessage):
+        print(message.result)
+    elif isinstance(message, SystemMessage) and message.subtype == &quot;init&quot;:
+        session_id = message.session_id  # Capture for resuming later
+</code></pre>
+<hr />
+<h2>Subagents</h2>
+<pre><code class="language-python">from claude_agent_sdk import query, ClaudeAgentOptions, AgentDefinition, ResultMessage
+
+async for message in query(
+    prompt=&quot;Use the code-reviewer agent to review this codebase&quot;,
+    options=ClaudeAgentOptions(
+        allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;, &quot;Task&quot;],
+        agents={
+            &quot;code-reviewer&quot;: AgentDefinition(
+                description=&quot;Expert code reviewer for quality and security reviews.&quot;,
+                prompt=&quot;Analyze code quality and suggest improvements.&quot;,
+                tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;]
+            )
+        }
+    )
+):
+    if isinstance(message, ResultMessage):
+        print(message.result)
+</code></pre>
+<hr />
+<h2>Error Handling</h2>
+<pre><code class="language-python">from claude_agent_sdk import query, ClaudeAgentOptions, CLINotFoundError, CLIConnectionError, ResultMessage
+
+try:
+    async for message in query(
+        prompt=&quot;...&quot;,
+        options=ClaudeAgentOptions(allowed_tools=[&quot;Read&quot;])
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+except CLINotFoundError:
+    print(&quot;Claude Code CLI not found. Install with: pip install claude-agent-sdk&quot;)
+except CLIConnectionError as e:
+    print(f&quot;Connection error: {e}&quot;)
+</code></pre>
+<hr />
+<h2>Best Practices</h2>
+<ol>
+<li><strong>Always specify allowed_tools</strong> — Explicitly list which tools the agent can use</li>
+<li><strong>Set working directory</strong> — Always specify <code>cwd</code> for file operations</li>
+<li><strong>Use appropriate permission modes</strong> — Start with <code>&quot;default&quot;</code> and only escalate when needed</li>
+<li><strong>Handle all message types</strong> — Check for <code>ResultMessage</code> to get agent output</li>
+<li><strong>Limit max_turns</strong> — Prevent runaway agents with reasonable limits</li>
+</ol>
+</doc>
+
+<doc path="python/agent-sdk/patterns.md">
+<h1>Agent SDK Patterns — Python</h1>
+<h2>Basic Agent</h2>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+async def main():
+    async for message in query(
+        prompt=&quot;Explain what this repository does&quot;,
+        options=ClaudeAgentOptions(
+            cwd=&quot;/path/to/project&quot;,
+            allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;]
+        )
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+
+anyio.run(main)
+</code></pre>
+<hr />
+<h2>Custom Tools</h2>
+<p>Custom tools require an MCP server. Use <code>ClaudeSDKClient</code> for full control, or pass the server to <code>query()</code> via <code>mcp_servers</code>.</p>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import (
+    tool,
+    create_sdk_mcp_server,
+    ClaudeSDKClient,
+    ClaudeAgentOptions,
+    AssistantMessage,
+    TextBlock,
+)
+
+@tool(&quot;get_weather&quot;, &quot;Get the current weather for a location&quot;, {&quot;location&quot;: str})
+async def get_weather(args):
+    location = args[&quot;location&quot;]
+    return {&quot;content&quot;: [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: f&quot;The weather in {location} is sunny and 72°F.&quot;}]}
+
+server = create_sdk_mcp_server(&quot;weather-tools&quot;, tools=[get_weather])
+
+async def main():
+    options = ClaudeAgentOptions(mcp_servers={&quot;weather&quot;: server})
+    async with ClaudeSDKClient(options=options) as client:
+        await client.query(&quot;What's the weather in Paris?&quot;)
+        async for message in client.receive_response():
+            if isinstance(message, AssistantMessage):
+                for block in message.content:
+                    if isinstance(block, TextBlock):
+                        print(block.text)
+
+anyio.run(main)
+</code></pre>
+<hr />
+<h2>Hooks</h2>
+<h3>After Tool Use Hook</h3>
+<p>Log file changes after any edit:</p>
+<pre><code class="language-python">import anyio
+from datetime import datetime
+from claude_agent_sdk import query, ClaudeAgentOptions, HookMatcher, ResultMessage
+
+async def log_file_change(input_data, tool_use_id, context):
+    file_path = input_data.get('tool_input', {}).get('file_path', 'unknown')
+    with open('./audit.log', 'a') as f:
+        f.write(f&quot;{datetime.now()}: modified {file_path}\n&quot;)
+    return {}
+
+async def main():
+    async for message in query(
+        prompt=&quot;Refactor utils.py to improve readability&quot;,
+        options=ClaudeAgentOptions(
+            allowed_tools=[&quot;Read&quot;, &quot;Edit&quot;, &quot;Write&quot;],
+            permission_mode=&quot;acceptEdits&quot;,
+            hooks={
+                &quot;PostToolUse&quot;: [HookMatcher(matcher=&quot;Edit|Write&quot;, hooks=[log_file_change])]
+            }
+        )
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+
+anyio.run(main)
+</code></pre>
+<hr />
+<h2>Subagents</h2>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import query, ClaudeAgentOptions, AgentDefinition, ResultMessage
+
+async def main():
+    async for message in query(
+        prompt=&quot;Use the code-reviewer agent to review this codebase&quot;,
+        options=ClaudeAgentOptions(
+            allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;, &quot;Task&quot;],
+            agents={
+                &quot;code-reviewer&quot;: AgentDefinition(
+                    description=&quot;Expert code reviewer for quality and security reviews.&quot;,
+                    prompt=&quot;Analyze code quality and suggest improvements.&quot;,
+                    tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;]
+                )
+            }
+        )
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+
+anyio.run(main)
+</code></pre>
+<hr />
+<h2>MCP Server Integration</h2>
+<h3>Browser Automation (Playwright)</h3>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+async def main():
+    async for message in query(
+        prompt=&quot;Open example.com and describe what you see&quot;,
+        options=ClaudeAgentOptions(
+            mcp_servers={
+                &quot;playwright&quot;: {&quot;command&quot;: &quot;npx&quot;, &quot;args&quot;: [&quot;@playwright/mcp@latest&quot;]}
+            }
+        )
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+
+anyio.run(main)
+</code></pre>
+<h3>Database Access (PostgreSQL)</h3>
+<pre><code class="language-python">import os
+import anyio
+from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+async def main():
+    async for message in query(
+        prompt=&quot;Show me the top 10 users by order count&quot;,
+        options=ClaudeAgentOptions(
+            mcp_servers={
+                &quot;postgres&quot;: {
+                    &quot;command&quot;: &quot;npx&quot;,
+                    &quot;args&quot;: [&quot;-y&quot;, &quot;@modelcontextprotocol/server-postgres&quot;],
+                    &quot;env&quot;: {&quot;DATABASE_URL&quot;: os.environ[&quot;DATABASE_URL&quot;]}
+                }
+            }
+        )
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+
+anyio.run(main)
+</code></pre>
+<hr />
+<h2>Permission Modes</h2>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import query, ClaudeAgentOptions
+
+async def main():
+    # Default: prompt for dangerous operations
+    async for message in query(
+        prompt=&quot;Delete all test files&quot;,
+        options=ClaudeAgentOptions(
+            allowed_tools=[&quot;Bash&quot;],
+            permission_mode=&quot;default&quot;  # Will prompt before deleting
+        )
+    ):
+        pass
+
+    # Plan: agent creates a plan before making changes
+    async for message in query(
+        prompt=&quot;Refactor the auth system&quot;,
+        options=ClaudeAgentOptions(
+            allowed_tools=[&quot;Read&quot;, &quot;Edit&quot;],
+            permission_mode=&quot;plan&quot;
+        )
+    ):
+        pass
+
+    # Accept edits: auto-accept file edits
+    async for message in query(
+        prompt=&quot;Refactor this module&quot;,
+        options=ClaudeAgentOptions(
+            allowed_tools=[&quot;Read&quot;, &quot;Edit&quot;],
+            permission_mode=&quot;acceptEdits&quot;
+        )
+    ):
+        pass
+
+    # Bypass: skip all prompts (use with caution)
+    async for message in query(
+        prompt=&quot;Set up the development environment&quot;,
+        options=ClaudeAgentOptions(
+            allowed_tools=[&quot;Bash&quot;, &quot;Write&quot;],
+            permission_mode=&quot;bypassPermissions&quot;,
+            allow_dangerously_skip_permissions=True
+        )
+    ):
+        pass
+
+anyio.run(main)
+</code></pre>
+<hr />
+<h2>Error Recovery</h2>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import (
+    query,
+    ClaudeAgentOptions,
+    CLINotFoundError,
+    CLIConnectionError,
+    ProcessError,
+    ResultMessage,
+)
+
+async def run_with_recovery():
+    try:
+        async for message in query(
+            prompt=&quot;Fix the failing tests&quot;,
+            options=ClaudeAgentOptions(
+                allowed_tools=[&quot;Read&quot;, &quot;Edit&quot;, &quot;Bash&quot;],
+                max_turns=10
+            )
+        ):
+            if isinstance(message, ResultMessage):
+                print(message.result)
+    except CLINotFoundError:
+        print(&quot;Claude Code CLI not found. Install with: pip install claude-agent-sdk&quot;)
+    except CLIConnectionError as e:
+        print(f&quot;Connection error: {e}&quot;)
+    except ProcessError as e:
+        print(f&quot;Process error: {e}&quot;)
+
+anyio.run(run_with_recovery)
+</code></pre>
+<hr />
+<h2>Session Resumption</h2>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage, SystemMessage
+
+async def main():
+    session_id = None
+
+    # First query: capture the session ID
+    async for message in query(
+        prompt=&quot;Read the authentication module&quot;,
+        options=ClaudeAgentOptions(allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;])
+    ):
+        if isinstance(message, SystemMessage) and message.subtype == &quot;init&quot;:
+            session_id = message.session_id
+
+    # Resume with full context from the first query
+    async for message in query(
+        prompt=&quot;Now find all places that call it&quot;,  # &quot;it&quot; = auth module
+        options=ClaudeAgentOptions(resume=session_id)
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+
+anyio.run(main)
+</code></pre>
+<hr />
+<h2>Custom System Prompt</h2>
+<pre><code class="language-python">import anyio
+from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+async def main():
+    async for message in query(
+        prompt=&quot;Review this code&quot;,
+        options=ClaudeAgentOptions(
+            allowed_tools=[&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;],
+            system_prompt=&quot;&quot;&quot;You are a senior code reviewer focused on:
+1. Security vulnerabilities
+2. Performance issues
+3. Code maintainability
+
+Always provide specific line numbers and suggestions for improvement.&quot;&quot;&quot;
+        )
+    ):
+        if isinstance(message, ResultMessage):
+            print(message.result)
+
+anyio.run(main)
+</code></pre>
+</doc>
+
+<doc path="python/claude-api/README.md">
+<h1>Claude API — Python</h1>
+<h2>Installation</h2>
+<pre><code class="language-bash">pip install anthropic
+</code></pre>
+<h2>Client Initialization</h2>
+<pre><code class="language-python">import anthropic
+
+# Default (uses ANTHROPIC_API_KEY env var)
+client = anthropic.Anthropic()
+
+# Explicit API key
+client = anthropic.Anthropic(api_key=&quot;your-api-key&quot;)
+
+# Async client
+async_client = anthropic.AsyncAnthropic()
+</code></pre>
+<hr />
+<h2>Basic Message Request</h2>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What is the capital of France?&quot;}
+    ]
+)
+print(response.content[0].text)
+</code></pre>
+<hr />
+<h2>System Prompts</h2>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    system=&quot;You are a helpful coding assistant. Always provide examples in Python.&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;How do I read a JSON file?&quot;}]
+)
+</code></pre>
+<hr />
+<h2>Vision (Images)</h2>
+<h3>Base64</h3>
+<pre><code class="language-python">import base64
+
+with open(&quot;image.png&quot;, &quot;rb&quot;) as f:
+    image_data = base64.standard_b64encode(f.read()).decode(&quot;utf-8&quot;)
+
+response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: [
+            {
+                &quot;type&quot;: &quot;image&quot;,
+                &quot;source&quot;: {
+                    &quot;type&quot;: &quot;base64&quot;,
+                    &quot;media_type&quot;: &quot;image/png&quot;,
+                    &quot;data&quot;: image_data
+                }
+            },
+            {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;What's in this image?&quot;}
+        ]
+    }]
+)
+</code></pre>
+<h3>URL</h3>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: [
+            {
+                &quot;type&quot;: &quot;image&quot;,
+                &quot;source&quot;: {
+                    &quot;type&quot;: &quot;url&quot;,
+                    &quot;url&quot;: &quot;https://example.com/image.png&quot;
+                }
+            },
+            {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Describe this image&quot;}
+        ]
+    }]
+)
+</code></pre>
+<hr />
+<h2>Prompt Caching</h2>
+<p>Cache large context to reduce costs (up to 90% savings).</p>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    system=[{
+        &quot;type&quot;: &quot;text&quot;,
+        &quot;text&quot;: &quot;You are an expert on this large document...&quot;,
+        &quot;cache_control&quot;: {&quot;type&quot;: &quot;ephemeral&quot;}  # default TTL is 5 minutes
+    }],
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Summarize the key points&quot;}]
+)
+
+# With explicit TTL (time-to-live)
+response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    system=[{
+        &quot;type&quot;: &quot;text&quot;,
+        &quot;text&quot;: &quot;You are an expert on this large document...&quot;,
+        &quot;cache_control&quot;: {&quot;type&quot;: &quot;ephemeral&quot;, &quot;ttl&quot;: &quot;1h&quot;}  # 1 hour TTL
+    }],
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Summarize the key points&quot;}]
+)
+</code></pre>
+<hr />
+<h2>Extended Thinking</h2>
+<blockquote>
+<p><strong>Opus 4.6 and Sonnet 4.6:</strong> Use adaptive thinking. <code>budget_tokens</code> is deprecated on both Opus 4.6 and Sonnet 4.6.
+<strong>Older models:</strong> Use <code>thinking: {type: &quot;enabled&quot;, budget_tokens: N}</code> (must be &lt; <code>max_tokens</code>, min 1024).</p>
+</blockquote>
+<pre><code class="language-python"># Opus 4.6: adaptive thinking (recommended)
+response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=16000,
+    thinking={&quot;type&quot;: &quot;adaptive&quot;},
+    output_config={&quot;effort&quot;: &quot;high&quot;},  # low | medium | high | max
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Solve this step by step...&quot;}]
+)
+
+# Access thinking and response
+for block in response.content:
+    if block.type == &quot;thinking&quot;:
+        print(f&quot;Thinking: {block.thinking}&quot;)
+    elif block.type == &quot;text&quot;:
+        print(f&quot;Response: {block.text}&quot;)
+</code></pre>
+<hr />
+<h2>Error Handling</h2>
+<pre><code class="language-python">import anthropic
+
+try:
+    response = client.messages.create(...)
+except anthropic.BadRequestError as e:
+    print(f&quot;Bad request: {e.message}&quot;)
+except anthropic.AuthenticationError:
+    print(&quot;Invalid API key&quot;)
+except anthropic.PermissionDeniedError:
+    print(&quot;API key lacks required permissions&quot;)
+except anthropic.NotFoundError:
+    print(&quot;Invalid model or endpoint&quot;)
+except anthropic.RateLimitError as e:
+    retry_after = int(e.response.headers.get(&quot;retry-after&quot;, &quot;60&quot;))
+    print(f&quot;Rate limited. Retry after {retry_after}s.&quot;)
+except anthropic.APIStatusError as e:
+    if e.status_code &gt;= 500:
+        print(f&quot;Server error ({e.status_code}). Retry later.&quot;)
+    else:
+        print(f&quot;API error: {e.message}&quot;)
+except anthropic.APIConnectionError:
+    print(&quot;Network error. Check internet connection.&quot;)
+</code></pre>
+<hr />
+<h2>Multi-Turn Conversations</h2>
+<p>The API is stateless — send the full conversation history each time.</p>
+<pre><code class="language-python">class ConversationManager:
+    &quot;&quot;&quot;Manage multi-turn conversations with the Claude API.&quot;&quot;&quot;
+
+    def __init__(self, client: anthropic.Anthropic, model: str, system: str = None):
+        self.client = client
+        self.model = model
+        self.system = system
+        self.messages = []
+
+    def send(self, user_message: str, **kwargs) -&gt; str:
+        &quot;&quot;&quot;Send a message and get a response.&quot;&quot;&quot;
+        self.messages.append({&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user_message})
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=kwargs.get(&quot;max_tokens&quot;, 1024),
+            system=self.system,
+            messages=self.messages,
+            **kwargs
+        )
+
+        assistant_message = response.content[0].text
+        self.messages.append({&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: assistant_message})
+
+        return assistant_message
+
+# Usage
+conversation = ConversationManager(
+    client=anthropic.Anthropic(),
+    model=&quot;claude-opus-4-6&quot;,
+    system=&quot;You are a helpful assistant.&quot;
+)
+
+response1 = conversation.send(&quot;My name is Alice.&quot;)
+response2 = conversation.send(&quot;What's my name?&quot;)  # Claude remembers &quot;Alice&quot;
+</code></pre>
+<p><strong>Rules:</strong></p>
+<ul>
+<li>Messages must alternate between <code>user</code> and <code>assistant</code></li>
+<li>First message must be <code>user</code></li>
+</ul>
+<hr />
+<h3>Compaction (long conversations)</h3>
+<blockquote>
+<p><strong>Beta, Opus 4.6 only.</strong> When conversations approach the 200K context window, compaction automatically summarizes earlier context server-side. The API returns a <code>compaction</code> block; you must pass it back on subsequent requests — append <code>response.content</code>, not just the text.</p>
+</blockquote>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+messages = []
+
+def chat(user_message: str) -&gt; str:
+    messages.append({&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user_message})
+
+    response = client.beta.messages.create(
+        betas=[&quot;compact-2026-01-12&quot;],
+        model=&quot;claude-opus-4-6&quot;,
+        max_tokens=4096,
+        messages=messages,
+        context_management={
+            &quot;edits&quot;: [{&quot;type&quot;: &quot;compact_20260112&quot;}]
+        }
+    )
+
+    # Append full content — compaction blocks must be preserved
+    messages.append({&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: response.content})
+
+    return next(block.text for block in response.content if block.type == &quot;text&quot;)
+
+# Compaction triggers automatically when context grows large
+print(chat(&quot;Help me build a Python web scraper&quot;))
+print(chat(&quot;Add support for JavaScript-rendered pages&quot;))
+print(chat(&quot;Now add rate limiting and error handling&quot;))
+</code></pre>
+<hr />
+<h2>Stop Reasons</h2>
+<p>The <code>stop_reason</code> field in the response indicates why the model stopped generating:</p>
+<table>
+<thead>
+<tr><th>Value</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>end_turn</code></td><td>Claude finished its response naturally</td></tr>
+<tr><td><code>max_tokens</code></td><td>Hit the <code>max_tokens</code> limit — increase it or use streaming</td></tr>
+<tr><td><code>stop_sequence</code></td><td>Hit a custom stop sequence</td></tr>
+<tr><td><code>tool_use</code></td><td>Claude wants to call a tool — execute it and continue</td></tr>
+<tr><td><code>pause_turn</code></td><td>Model paused and can be resumed (agentic flows)</td></tr>
+<tr><td><code>refusal</code></td><td>Claude refused for safety reasons — output may not match your schema</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Cost Optimization Strategies</h2>
+<h3>1. Use Prompt Caching for Repeated Context</h3>
+<pre><code class="language-python"># Cache large system prompts or documents
+system_with_cache = [{
+    &quot;type&quot;: &quot;text&quot;,
+    &quot;text&quot;: large_document_text,  # e.g., 50KB of context
+    &quot;cache_control&quot;: {&quot;type&quot;: &quot;ephemeral&quot;}  # add &quot;ttl&quot;: &quot;1h&quot; for longer caching
+}]
+
+# First request: full cost
+# Subsequent requests: ~90% cheaper for cached portion
+</code></pre>
+<h3>2. Choose the Right Model</h3>
+<pre><code class="language-python"># Default to Opus for most tasks
+response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,  # $5.00/$25.00 per 1M tokens
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Explain quantum computing&quot;}]
+)
+
+# Use Sonnet for high-volume production workloads
+standard_response = client.messages.create(
+    model=&quot;claude-sonnet-4-6&quot;,  # $3.00/$15.00 per 1M tokens
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Summarize this document&quot;}]
+)
+
+# Use Haiku only for simple, speed-critical tasks
+simple_response = client.messages.create(
+    model=&quot;claude-haiku-4-5&quot;,  # $1.00/$5.00 per 1M tokens
+    max_tokens=256,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Classify this as positive or negative&quot;}]
+)
+</code></pre>
+<h3>3. Use Token Counting Before Requests</h3>
+<pre><code class="language-python">count_response = client.messages.count_tokens(
+    model=&quot;claude-opus-4-6&quot;,
+    messages=messages,
+    system=system
+)
+
+estimated_input_cost = count_response.input_tokens * 0.000005  # $5/1M tokens
+print(f&quot;Estimated input cost: ${estimated_input_cost:.4f}&quot;)
+</code></pre>
+<hr />
+<h2>Retry with Exponential Backoff</h2>
+<blockquote>
+<p><strong>Note:</strong> The Anthropic SDK automatically retries rate limit (429) and server errors (5xx) with exponential backoff. You can configure this with <code>max_retries</code> (default: 2). Only implement custom retry logic if you need behavior beyond what the SDK provides.</p>
+</blockquote>
+<pre><code class="language-python">import time
+import random
+import anthropic
+
+def call_with_retry(
+    client: anthropic.Anthropic,
+    max_retries: int = 5,
+    base_delay: float = 1.0,
+    max_delay: float = 60.0,
+    **kwargs
+):
+    &quot;&quot;&quot;Call the API with exponential backoff retry.&quot;&quot;&quot;
+    last_exception = None
+
+    for attempt in range(max_retries):
+        try:
+            return client.messages.create(**kwargs)
+        except anthropic.RateLimitError as e:
+            last_exception = e
+        except anthropic.APIStatusError as e:
+            if e.status_code &gt;= 500:
+                last_exception = e
+            else:
+                raise  # Client errors (4xx except 429) should not be retried
+
+        delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), max_delay)
+        print(f&quot;Retry {attempt + 1}/{max_retries} after {delay:.1f}s&quot;)
+        time.sleep(delay)
+
+    raise last_exception
+</code></pre>
+</doc>
+
+<doc path="python/claude-api/batches.md">
+<h1>Message Batches API — Python</h1>
+<p>The Batches API (<code>POST /v1/messages/batches</code>) processes Messages API requests asynchronously at 50% of standard prices.</p>
+<h2>Key Facts</h2>
+<ul>
+<li>Up to 100,000 requests or 256 MB per batch</li>
+<li>Most batches complete within 1 hour; maximum 24 hours</li>
+<li>Results available for 29 days after creation</li>
+<li>50% cost reduction on all token usage</li>
+<li>All Messages API features supported (vision, tools, caching, etc.)</li>
+</ul>
+<hr />
+<h2>Create a Batch</h2>
+<pre><code class="language-python">import anthropic
+from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+from anthropic.types.messages.batch_create_params import Request
+
+client = anthropic.Anthropic()
+
+message_batch = client.messages.batches.create(
+    requests=[
+        Request(
+            custom_id=&quot;request-1&quot;,
+            params=MessageCreateParamsNonStreaming(
+                model=&quot;claude-opus-4-6&quot;,
+                max_tokens=1024,
+                messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Summarize climate change impacts&quot;}]
+            )
+        ),
+        Request(
+            custom_id=&quot;request-2&quot;,
+            params=MessageCreateParamsNonStreaming(
+                model=&quot;claude-opus-4-6&quot;,
+                max_tokens=1024,
+                messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Explain quantum computing basics&quot;}]
+            )
+        ),
+    ]
+)
+
+print(f&quot;Batch ID: {message_batch.id}&quot;)
+print(f&quot;Status: {message_batch.processing_status}&quot;)
+</code></pre>
+<hr />
+<h2>Poll for Completion</h2>
+<pre><code class="language-python">import time
+
+while True:
+    batch = client.messages.batches.retrieve(message_batch.id)
+    if batch.processing_status == &quot;ended&quot;:
+        break
+    print(f&quot;Status: {batch.processing_status}, processing: {batch.request_counts.processing}&quot;)
+    time.sleep(60)
+
+print(&quot;Batch complete!&quot;)
+print(f&quot;Succeeded: {batch.request_counts.succeeded}&quot;)
+print(f&quot;Errored: {batch.request_counts.errored}&quot;)
+</code></pre>
+<hr />
+<h2>Retrieve Results</h2>
+<blockquote>
+<p><strong>Note:</strong> Examples below use <code>match/case</code> syntax, requiring Python 3.10+. For earlier versions, use <code>if/elif</code> chains instead.</p>
+</blockquote>
+<pre><code class="language-python">for result in client.messages.batches.results(message_batch.id):
+    match result.result.type:
+        case &quot;succeeded&quot;:
+            print(f&quot;[{result.custom_id}] {result.result.message.content[0].text[:100]}&quot;)
+        case &quot;errored&quot;:
+            if result.result.error.type == &quot;invalid_request&quot;:
+                print(f&quot;[{result.custom_id}] Validation error - fix request and retry&quot;)
+            else:
+                print(f&quot;[{result.custom_id}] Server error - safe to retry&quot;)
+        case &quot;canceled&quot;:
+            print(f&quot;[{result.custom_id}] Canceled&quot;)
+        case &quot;expired&quot;:
+            print(f&quot;[{result.custom_id}] Expired - resubmit&quot;)
+</code></pre>
+<hr />
+<h2>Cancel a Batch</h2>
+<pre><code class="language-python">cancelled = client.messages.batches.cancel(message_batch.id)
+print(f&quot;Status: {cancelled.processing_status}&quot;)  # &quot;canceling&quot;
+</code></pre>
+<hr />
+<h2>Batch with Prompt Caching</h2>
+<pre><code class="language-python">shared_system = [
+    {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;You are a literary analyst.&quot;},
+    {
+        &quot;type&quot;: &quot;text&quot;,
+        &quot;text&quot;: large_document_text,  # Shared across all requests
+        &quot;cache_control&quot;: {&quot;type&quot;: &quot;ephemeral&quot;}
+    }
+]
+
+message_batch = client.messages.batches.create(
+    requests=[
+        Request(
+            custom_id=f&quot;analysis-{i}&quot;,
+            params=MessageCreateParamsNonStreaming(
+                model=&quot;claude-opus-4-6&quot;,
+                max_tokens=1024,
+                system=shared_system,
+                messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: question}]
+            )
+        )
+        for i, question in enumerate(questions)
+    ]
+)
+</code></pre>
+<hr />
+<h2>Full End-to-End Example</h2>
+<pre><code class="language-python">import anthropic
+import time
+from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+from anthropic.types.messages.batch_create_params import Request
+
+client = anthropic.Anthropic()
+
+# 1. Prepare requests
+items_to_classify = [
+    &quot;The product quality is excellent!&quot;,
+    &quot;Terrible customer service, never again.&quot;,
+    &quot;It's okay, nothing special.&quot;,
+]
+
+requests = [
+    Request(
+        custom_id=f&quot;classify-{i}&quot;,
+        params=MessageCreateParamsNonStreaming(
+            model=&quot;claude-haiku-4-5&quot;,
+            max_tokens=50,
+            messages=[{
+                &quot;role&quot;: &quot;user&quot;,
+                &quot;content&quot;: f&quot;Classify as positive/negative/neutral (one word): {text}&quot;
+            }]
+        )
+    )
+    for i, text in enumerate(items_to_classify)
+]
+
+# 2. Create batch
+batch = client.messages.batches.create(requests=requests)
+print(f&quot;Created batch: {batch.id}&quot;)
+
+# 3. Wait for completion
+while True:
+    batch = client.messages.batches.retrieve(batch.id)
+    if batch.processing_status == &quot;ended&quot;:
+        break
+    time.sleep(10)
+
+# 4. Collect results
+results = {}
+for result in client.messages.batches.results(batch.id):
+    if result.result.type == &quot;succeeded&quot;:
+        results[result.custom_id] = result.result.message.content[0].text
+
+for custom_id, classification in sorted(results.items()):
+    print(f&quot;{custom_id}: {classification}&quot;)
+</code></pre>
+</doc>
+
+<doc path="python/claude-api/files-api.md">
+<h1>Files API — Python</h1>
+<p>The Files API uploads files for use in Messages API requests. Reference files via <code>file_id</code> in content blocks, avoiding re-uploads across multiple API calls.</p>
+<p><strong>Beta:</strong> Pass <code>betas=[&quot;files-api-2025-04-14&quot;]</code> in your API calls (the SDK sets the required header automatically).</p>
+<h2>Key Facts</h2>
+<ul>
+<li>Maximum file size: 500 MB</li>
+<li>Total storage: 100 GB per organization</li>
+<li>Files persist until deleted</li>
+<li>File operations (upload, list, delete) are free; content used in messages is billed as input tokens</li>
+<li>Not available on Amazon Bedrock or Google Vertex AI</li>
+</ul>
+<hr />
+<h2>Upload a File</h2>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+uploaded = client.beta.files.upload(
+    file=(&quot;report.pdf&quot;, open(&quot;report.pdf&quot;, &quot;rb&quot;), &quot;application/pdf&quot;),
+)
+print(f&quot;File ID: {uploaded.id}&quot;)
+print(f&quot;Size: {uploaded.size_bytes} bytes&quot;)
+</code></pre>
+<hr />
+<h2>Use a File in Messages</h2>
+<h3>PDF / Text Document</h3>
+<pre><code class="language-python">response = client.beta.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: [
+            {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Summarize the key findings in this report.&quot;},
+            {
+                &quot;type&quot;: &quot;document&quot;,
+                &quot;source&quot;: {&quot;type&quot;: &quot;file&quot;, &quot;file_id&quot;: uploaded.id},
+                &quot;title&quot;: &quot;Q4 Report&quot;,           # optional
+                &quot;citations&quot;: {&quot;enabled&quot;: True}   # optional, enables citations
+            }
+        ]
+    }],
+    betas=[&quot;files-api-2025-04-14&quot;],
+)
+print(response.content[0].text)
+</code></pre>
+<h3>Image</h3>
+<pre><code class="language-python">image_file = client.beta.files.upload(
+    file=(&quot;photo.png&quot;, open(&quot;photo.png&quot;, &quot;rb&quot;), &quot;image/png&quot;),
+)
+
+response = client.beta.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: [
+            {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;What's in this image?&quot;},
+            {
+                &quot;type&quot;: &quot;image&quot;,
+                &quot;source&quot;: {&quot;type&quot;: &quot;file&quot;, &quot;file_id&quot;: image_file.id}
+            }
+        ]
+    }],
+    betas=[&quot;files-api-2025-04-14&quot;],
+)
+</code></pre>
+<hr />
+<h2>Manage Files</h2>
+<h3>List Files</h3>
+<pre><code class="language-python">files = client.beta.files.list()
+for f in files.data:
+    print(f&quot;{f.id}: {f.filename} ({f.size_bytes} bytes)&quot;)
+</code></pre>
+<h3>Get File Metadata</h3>
+<pre><code class="language-python">file_info = client.beta.files.retrieve_metadata(&quot;file_011CNha8iCJcU1wXNR6q4V8w&quot;)
+print(f&quot;Filename: {file_info.filename}&quot;)
+print(f&quot;MIME type: {file_info.mime_type}&quot;)
+</code></pre>
+<h3>Delete a File</h3>
+<pre><code class="language-python">client.beta.files.delete(&quot;file_011CNha8iCJcU1wXNR6q4V8w&quot;)
+</code></pre>
+<h3>Download a File</h3>
+<p>Only files created by the code execution tool or skills can be downloaded (not user-uploaded files).</p>
+<pre><code class="language-python">file_content = client.beta.files.download(&quot;file_011CNha8iCJcU1wXNR6q4V8w&quot;)
+file_content.write_to_file(&quot;output.txt&quot;)
+</code></pre>
+<hr />
+<h2>Full End-to-End Example</h2>
+<p>Upload a document once, ask multiple questions about it:</p>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+# 1. Upload once
+uploaded = client.beta.files.upload(
+    file=(&quot;contract.pdf&quot;, open(&quot;contract.pdf&quot;, &quot;rb&quot;), &quot;application/pdf&quot;),
+)
+print(f&quot;Uploaded: {uploaded.id}&quot;)
+
+# 2. Ask multiple questions using the same file_id
+questions = [
+    &quot;What are the key terms and conditions?&quot;,
+    &quot;What is the termination clause?&quot;,
+    &quot;Summarize the payment schedule.&quot;,
+]
+
+for question in questions:
+    response = client.beta.messages.create(
+        model=&quot;claude-opus-4-6&quot;,
+        max_tokens=1024,
+        messages=[{
+            &quot;role&quot;: &quot;user&quot;,
+            &quot;content&quot;: [
+                {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: question},
+                {
+                    &quot;type&quot;: &quot;document&quot;,
+                    &quot;source&quot;: {&quot;type&quot;: &quot;file&quot;, &quot;file_id&quot;: uploaded.id}
+                }
+            ]
+        }],
+        betas=[&quot;files-api-2025-04-14&quot;],
+    )
+    print(f&quot;\nQ: {question}&quot;)
+    print(f&quot;A: {response.content[0].text[:200]}&quot;)
+
+# 3. Clean up when done
+client.beta.files.delete(uploaded.id)
+</code></pre>
+</doc>
+
+<doc path="python/claude-api/streaming.md">
+<h1>Streaming — Python</h1>
+<h2>Quick Start</h2>
+<pre><code class="language-python">with client.messages.stream(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Write a story&quot;}]
+) as stream:
+    for text in stream.text_stream:
+        print(text, end=&quot;&quot;, flush=True)
+</code></pre>
+<h3>Async</h3>
+<pre><code class="language-python">async with async_client.messages.stream(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Write a story&quot;}]
+) as stream:
+    async for text in stream.text_stream:
+        print(text, end=&quot;&quot;, flush=True)
+</code></pre>
+<hr />
+<h2>Handling Different Content Types</h2>
+<p>Claude may return text, thinking blocks, or tool use. Handle each appropriately:</p>
+<blockquote>
+<p><strong>Opus 4.6:</strong> Use <code>thinking: {type: &quot;adaptive&quot;}</code>. On older models, use <code>thinking: {type: &quot;enabled&quot;, budget_tokens: N}</code> instead.</p>
+</blockquote>
+<pre><code class="language-python">with client.messages.stream(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=16000,
+    thinking={&quot;type&quot;: &quot;adaptive&quot;},
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Analyze this problem&quot;}]
+) as stream:
+    for event in stream:
+        if event.type == &quot;content_block_start&quot;:
+            if event.content_block.type == &quot;thinking&quot;:
+                print(&quot;\n[Thinking...]&quot;)
+            elif event.content_block.type == &quot;text&quot;:
+                print(&quot;\n[Response:]&quot;)
+
+        elif event.type == &quot;content_block_delta&quot;:
+            if event.delta.type == &quot;thinking_delta&quot;:
+                print(event.delta.thinking, end=&quot;&quot;, flush=True)
+            elif event.delta.type == &quot;text_delta&quot;:
+                print(event.delta.text, end=&quot;&quot;, flush=True)
+</code></pre>
+<hr />
+<h2>Streaming with Tool Use</h2>
+<p>The Python tool runner currently returns complete messages. Use streaming for individual API calls within a manual loop if you need per-token streaming with tools:</p>
+<pre><code class="language-python">with client.messages.stream(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=4096,
+    tools=tools,
+    messages=messages
+) as stream:
+    for text in stream.text_stream:
+        print(text, end=&quot;&quot;, flush=True)
+
+    response = stream.get_final_message()
+    # Continue with tool execution if response.stop_reason == &quot;tool_use&quot;
+</code></pre>
+<hr />
+<h2>Getting the Final Message</h2>
+<pre><code class="language-python">with client.messages.stream(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Hello&quot;}]
+) as stream:
+    for text in stream.text_stream:
+        print(text, end=&quot;&quot;, flush=True)
+
+    # Get full message after streaming
+    final_message = stream.get_final_message()
+    print(f&quot;\n\nTokens used: {final_message.usage.output_tokens}&quot;)
+</code></pre>
+<hr />
+<h2>Streaming with Progress Updates</h2>
+<pre><code class="language-python">def stream_with_progress(client, **kwargs):
+    &quot;&quot;&quot;Stream a response with progress updates.&quot;&quot;&quot;
+    total_tokens = 0
+    content_parts = []
+
+    with client.messages.stream(**kwargs) as stream:
+        for event in stream:
+            if event.type == &quot;content_block_delta&quot;:
+                if event.delta.type == &quot;text_delta&quot;:
+                    text = event.delta.text
+                    content_parts.append(text)
+                    print(text, end=&quot;&quot;, flush=True)
+
+            elif event.type == &quot;message_delta&quot;:
+                if event.usage and event.usage.output_tokens is not None:
+                    total_tokens = event.usage.output_tokens
+
+        final_message = stream.get_final_message()
+
+    print(f&quot;\n\n[Tokens used: {total_tokens}]&quot;)
+    return &quot;&quot;.join(content_parts)
+</code></pre>
+<hr />
+<h2>Error Handling in Streams</h2>
+<pre><code class="language-python">try:
+    with client.messages.stream(
+        model=&quot;claude-opus-4-6&quot;,
+        max_tokens=1024,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Write a story&quot;}]
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end=&quot;&quot;, flush=True)
+except anthropic.APIConnectionError:
+    print(&quot;\nConnection lost. Please retry.&quot;)
+except anthropic.RateLimitError:
+    print(&quot;\nRate limited. Please wait and retry.&quot;)
+except anthropic.APIStatusError as e:
+    print(f&quot;\nAPI error: {e.status_code}&quot;)
+</code></pre>
+<hr />
+<h2>Stream Event Types</h2>
+<table>
+<thead>
+<tr><th>Event Type</th><th>Description</th><th>When it fires</th></tr>
+</thead>
+<tbody>
+<tr><td><code>message_start</code></td><td>Contains message metadata</td><td>Once at the beginning</td></tr>
+<tr><td><code>content_block_start</code></td><td>New content block beginning</td><td>When a text/tool_use block starts</td></tr>
+<tr><td><code>content_block_delta</code></td><td>Incremental content update</td><td>For each token/chunk</td></tr>
+<tr><td><code>content_block_stop</code></td><td>Content block complete</td><td>When a block finishes</td></tr>
+<tr><td><code>message_delta</code></td><td>Message-level updates</td><td>Contains <code>stop_reason</code>, usage</td></tr>
+<tr><td><code>message_stop</code></td><td>Message complete</td><td>Once at the end</td></tr>
+</tbody>
+</table>
+<h2>Best Practices</h2>
+<ol>
+<li><strong>Always flush output</strong> — Use <code>flush=True</code> to show tokens immediately</li>
+<li><strong>Handle partial responses</strong> — If the stream is interrupted, you may have incomplete content</li>
+<li><strong>Track token usage</strong> — The <code>message_delta</code> event contains usage information</li>
+<li><strong>Use timeouts</strong> — Set appropriate timeouts for your application</li>
+<li><strong>Default to streaming</strong> — Use <code>.get_final_message()</code> to get the complete response even when streaming, giving you timeout protection without needing to handle individual events</li>
+</ol>
+</doc>
+
+<doc path="python/claude-api/tool-use.md">
+<h1>Tool Use — Python</h1>
+<p>For conceptual overview (tool definitions, tool choice, tips), see <a href="../../shared/tool-use-concepts.md">shared/tool-use-concepts.md</a>.</p>
+<h2>Tool Runner (Recommended)</h2>
+<p><strong>Beta:</strong> The tool runner is in beta in the Python SDK.</p>
+<p>Use the <code>@beta_tool</code> decorator to define tools as typed functions, then pass them to <code>client.beta.messages.tool_runner()</code>:</p>
+<pre><code class="language-python">import anthropic
+from anthropic import beta_tool
+
+client = anthropic.Anthropic()
+
+@beta_tool
+def get_weather(location: str, unit: str = &quot;celsius&quot;) -&gt; str:
+    &quot;&quot;&quot;Get current weather for a location.
+
+    Args:
+        location: City and state, e.g., San Francisco, CA.
+        unit: Temperature unit, either &quot;celsius&quot; or &quot;fahrenheit&quot;.
+    &quot;&quot;&quot;
+    # Your implementation here
+    return f&quot;72°F and sunny in {location}&quot;
+
+# The tool runner handles the agentic loop automatically
+runner = client.beta.messages.tool_runner(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=4096,
+    tools=[get_weather],
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What's the weather in Paris?&quot;}],
+)
+
+# Each iteration yields a BetaMessage; iteration stops when Claude is done
+for message in runner:
+    print(message)
+</code></pre>
+<p>For async usage, use <code>@beta_async_tool</code> with <code>async def</code> functions.</p>
+<p><strong>Key benefits of the tool runner:</strong></p>
+<ul>
+<li>No manual loop — the SDK handles calling tools and feeding results back</li>
+<li>Type-safe tool inputs via decorators</li>
+<li>Tool schemas are generated automatically from function signatures</li>
+<li>Iteration stops automatically when Claude has no more tool calls</li>
+</ul>
+<hr />
+<h2>Manual Agentic Loop</h2>
+<p>Use this when you need fine-grained control over the loop (e.g., custom logging, conditional tool execution, human-in-the-loop approval):</p>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+tools = [...]  # Your tool definitions
+messages = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user_input}]
+
+# Agentic loop: keep going until Claude stops calling tools
+while True:
+    response = client.messages.create(
+        model=&quot;claude-opus-4-6&quot;,
+        max_tokens=4096,
+        tools=tools,
+        messages=messages
+    )
+
+    # If Claude is done (no more tool calls), break
+    if response.stop_reason == &quot;end_turn&quot;:
+        break
+
+    # Extract tool use blocks from the response
+    tool_use_blocks = [b for b in response.content if b.type == &quot;tool_use&quot;]
+
+    # Append assistant's response (including tool_use blocks)
+    messages.append({&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: response.content})
+
+    # Execute each tool and collect results
+    tool_results = []
+    for tool in tool_use_blocks:
+        result = execute_tool(tool.name, tool.input)  # Your implementation
+        tool_results.append({
+            &quot;type&quot;: &quot;tool_result&quot;,
+            &quot;tool_use_id&quot;: tool.id,  # Must match the tool_use block's id
+            &quot;content&quot;: result
+        })
+
+    # Append tool results as a user message
+    messages.append({&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: tool_results})
+
+# Final response text
+final_text = next(b.text for b in response.content if b.type == &quot;text&quot;)
+</code></pre>
+<hr />
+<h2>Handling Tool Results</h2>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    tools=tools,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What's the weather in Paris?&quot;}]
+)
+
+for block in response.content:
+    if block.type == &quot;tool_use&quot;:
+        tool_name = block.name
+        tool_input = block.input
+        tool_use_id = block.id
+
+        result = execute_tool(tool_name, tool_input)
+
+        followup = client.messages.create(
+            model=&quot;claude-opus-4-6&quot;,
+            max_tokens=1024,
+            tools=tools,
+            messages=[
+                {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What's the weather in Paris?&quot;},
+                {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: response.content},
+                {
+                    &quot;role&quot;: &quot;user&quot;,
+                    &quot;content&quot;: [{
+                        &quot;type&quot;: &quot;tool_result&quot;,
+                        &quot;tool_use_id&quot;: tool_use_id,
+                        &quot;content&quot;: result
+                    }]
+                }
+            ]
+        )
+</code></pre>
+<hr />
+<h2>Multiple Tool Calls</h2>
+<pre><code class="language-python">tool_results = []
+
+for block in response.content:
+    if block.type == &quot;tool_use&quot;:
+        result = execute_tool(block.name, block.input)
+        tool_results.append({
+            &quot;type&quot;: &quot;tool_result&quot;,
+            &quot;tool_use_id&quot;: block.id,
+            &quot;content&quot;: result
+        })
+
+# Send all results back at once
+if tool_results:
+    followup = client.messages.create(
+        model=&quot;claude-opus-4-6&quot;,
+        max_tokens=1024,
+        tools=tools,
+        messages=[
+            *previous_messages,
+            {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: response.content},
+            {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: tool_results}
+        ]
+    )
+</code></pre>
+<hr />
+<h2>Error Handling in Tool Results</h2>
+<pre><code class="language-python">tool_result = {
+    &quot;type&quot;: &quot;tool_result&quot;,
+    &quot;tool_use_id&quot;: tool_use_id,
+    &quot;content&quot;: &quot;Error: Location 'xyz' not found. Please provide a valid city name.&quot;,
+    &quot;is_error&quot;: True
+}
+</code></pre>
+<hr />
+<h2>Tool Choice</h2>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    tools=tools,
+    tool_choice={&quot;type&quot;: &quot;tool&quot;, &quot;name&quot;: &quot;get_weather&quot;},  # Force specific tool
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What's the weather in Paris?&quot;}]
+)
+</code></pre>
+<hr />
+<h2>Code Execution</h2>
+<h3>Basic Usage</h3>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=4096,
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: &quot;Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]&quot;
+    }],
+    tools=[{
+        &quot;type&quot;: &quot;code_execution_20260120&quot;,
+        &quot;name&quot;: &quot;code_execution&quot;
+    }]
+)
+
+for block in response.content:
+    if block.type == &quot;text&quot;:
+        print(block.text)
+    elif block.type == &quot;bash_code_execution_tool_result&quot;:
+        print(f&quot;stdout: {block.content.stdout}&quot;)
+</code></pre>
+<h3>Upload Files for Analysis</h3>
+<pre><code class="language-python"># 1. Upload a file
+uploaded = client.beta.files.upload(file=open(&quot;sales_data.csv&quot;, &quot;rb&quot;))
+
+# 2. Pass to code execution via container_upload block
+# Code execution is GA; Files API is still beta (pass via extra_headers)
+response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=4096,
+    extra_headers={&quot;anthropic-beta&quot;: &quot;files-api-2025-04-14&quot;},
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: [
+            {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Analyze this sales data. Show trends and create a visualization.&quot;},
+            {&quot;type&quot;: &quot;container_upload&quot;, &quot;file_id&quot;: uploaded.id}
+        ]
+    }],
+    tools=[{&quot;type&quot;: &quot;code_execution_20260120&quot;, &quot;name&quot;: &quot;code_execution&quot;}]
+)
+</code></pre>
+<h3>Retrieve Generated Files</h3>
+<pre><code class="language-python">import os
+
+OUTPUT_DIR = &quot;./claude_outputs&quot;
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+for block in response.content:
+    if block.type == &quot;bash_code_execution_tool_result&quot;:
+        result = block.content
+        if result.type == &quot;bash_code_execution_result&quot; and result.content:
+            for file_ref in result.content:
+                if file_ref.type == &quot;bash_code_execution_output&quot;:
+                    metadata = client.beta.files.retrieve_metadata(file_ref.file_id)
+                    file_content = client.beta.files.download(file_ref.file_id)
+                    # Use basename to prevent path traversal; validate result
+                    safe_name = os.path.basename(metadata.filename)
+                    if not safe_name or safe_name in (&quot;.&quot;, &quot;..&quot;):
+                        print(f&quot;Skipping invalid filename: {metadata.filename}&quot;)
+                        continue
+                    output_path = os.path.join(OUTPUT_DIR, safe_name)
+                    file_content.write_to_file(output_path)
+                    print(f&quot;Saved: {output_path}&quot;)
+</code></pre>
+<h3>Container Reuse</h3>
+<pre><code class="language-python"># First request: set up environment
+response1 = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=4096,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Install tabulate and create data.json with sample data&quot;}],
+    tools=[{&quot;type&quot;: &quot;code_execution_20260120&quot;, &quot;name&quot;: &quot;code_execution&quot;}]
+)
+
+# Get container ID from response
+container_id = response1.container.id
+
+# Second request: reuse the same container
+response2 = client.messages.create(
+    container=container_id,
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=4096,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Read data.json and display as a formatted table&quot;}],
+    tools=[{&quot;type&quot;: &quot;code_execution_20260120&quot;, &quot;name&quot;: &quot;code_execution&quot;}]
+)
+</code></pre>
+<h3>Response Structure</h3>
+<pre><code class="language-python">for block in response.content:
+    if block.type == &quot;text&quot;:
+        print(block.text)  # Claude's explanation
+    elif block.type == &quot;server_tool_use&quot;:
+        print(f&quot;Running: {block.name} - {block.input}&quot;)  # What Claude is doing
+    elif block.type == &quot;bash_code_execution_tool_result&quot;:
+        result = block.content
+        if result.type == &quot;bash_code_execution_result&quot;:
+            if result.return_code == 0:
+                print(f&quot;Output: {result.stdout}&quot;)
+            else:
+                print(f&quot;Error: {result.stderr}&quot;)
+        else:
+            print(f&quot;Tool error: {result.error_code}&quot;)
+    elif block.type == &quot;text_editor_code_execution_tool_result&quot;:
+        print(f&quot;File operation: {block.content}&quot;)
+</code></pre>
+<hr />
+<h2>Memory Tool</h2>
+<h3>Basic Usage</h3>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=2048,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Remember that my preferred language is Python.&quot;}],
+    tools=[{&quot;type&quot;: &quot;memory_20250818&quot;, &quot;name&quot;: &quot;memory&quot;}],
+)
+</code></pre>
+<h3>SDK Memory Helper</h3>
+<p>Subclass <code>BetaAbstractMemoryTool</code>:</p>
+<pre><code class="language-python">from anthropic.lib.tools import BetaAbstractMemoryTool
+
+class MyMemoryTool(BetaAbstractMemoryTool):
+    def view(self, command): ...
+    def create(self, command): ...
+    def str_replace(self, command): ...
+    def insert(self, command): ...
+    def delete(self, command): ...
+    def rename(self, command): ...
+
+memory = MyMemoryTool()
+
+# Use with tool runner
+runner = client.beta.messages.tool_runner(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=2048,
+    tools=[memory],
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Remember my preferences&quot;}],
+)
+
+for message in runner:
+    print(message)
+</code></pre>
+<p>For full implementation examples, use WebFetch:</p>
+<ul>
+<li><code>https://github.com/anthropics/anthropic-sdk-python/blob/main/examples/memory/basic.py</code></li>
+</ul>
+<hr />
+<h2>Structured Outputs</h2>
+<h3>JSON Outputs (Pydantic — Recommended)</h3>
+<pre><code class="language-python">from pydantic import BaseModel
+from typing import List
+import anthropic
+
+class ContactInfo(BaseModel):
+    name: str
+    email: str
+    plan: str
+    interests: List[str]
+    demo_requested: bool
+
+client = anthropic.Anthropic()
+
+response = client.messages.parse(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: &quot;Extract: Jane Doe (jane@co.com) wants Enterprise, interested in API and SDKs, wants a demo.&quot;
+    }],
+    output_format=ContactInfo,
+)
+
+# response.parsed_output is a validated ContactInfo instance
+contact = response.parsed_output
+print(contact.name)           # &quot;Jane Doe&quot;
+print(contact.interests)      # [&quot;API&quot;, &quot;SDKs&quot;]
+</code></pre>
+<h3>Raw Schema</h3>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: &quot;Extract info: John Smith (john@example.com) wants the Enterprise plan.&quot;
+    }],
+    output_config={
+        &quot;format&quot;: {
+            &quot;type&quot;: &quot;json_schema&quot;,
+            &quot;schema&quot;: {
+                &quot;type&quot;: &quot;object&quot;,
+                &quot;properties&quot;: {
+                    &quot;name&quot;: {&quot;type&quot;: &quot;string&quot;},
+                    &quot;email&quot;: {&quot;type&quot;: &quot;string&quot;},
+                    &quot;plan&quot;: {&quot;type&quot;: &quot;string&quot;},
+                    &quot;demo_requested&quot;: {&quot;type&quot;: &quot;boolean&quot;}
+                },
+                &quot;required&quot;: [&quot;name&quot;, &quot;email&quot;, &quot;plan&quot;, &quot;demo_requested&quot;],
+                &quot;additionalProperties&quot;: False
+            }
+        }
+    }
+)
+
+import json
+data = json.loads(response.content[0].text)
+</code></pre>
+<h3>Strict Tool Use</h3>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Book a flight to Tokyo for 2 passengers on March 15&quot;}],
+    tools=[{
+        &quot;name&quot;: &quot;book_flight&quot;,
+        &quot;description&quot;: &quot;Book a flight to a destination&quot;,
+        &quot;strict&quot;: True,
+        &quot;input_schema&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;destination&quot;: {&quot;type&quot;: &quot;string&quot;},
+                &quot;date&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;format&quot;: &quot;date&quot;},
+                &quot;passengers&quot;: {&quot;type&quot;: &quot;integer&quot;, &quot;enum&quot;: [1, 2, 3, 4, 5, 6, 7, 8]}
+            },
+            &quot;required&quot;: [&quot;destination&quot;, &quot;date&quot;, &quot;passengers&quot;],
+            &quot;additionalProperties&quot;: False
+        }
+    }]
+)
+</code></pre>
+<h3>Using Both Together</h3>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-4-6&quot;,
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Plan a trip to Paris next month&quot;}],
+    output_config={
+        &quot;format&quot;: {
+            &quot;type&quot;: &quot;json_schema&quot;,
+            &quot;schema&quot;: {
+                &quot;type&quot;: &quot;object&quot;,
+                &quot;properties&quot;: {
+                    &quot;summary&quot;: {&quot;type&quot;: &quot;string&quot;},
+                    &quot;next_steps&quot;: {&quot;type&quot;: &quot;array&quot;, &quot;items&quot;: {&quot;type&quot;: &quot;string&quot;}}
+                },
+                &quot;required&quot;: [&quot;summary&quot;, &quot;next_steps&quot;],
+                &quot;additionalProperties&quot;: False
+            }
+        }
+    },
+    tools=[{
+        &quot;name&quot;: &quot;search_flights&quot;,
+        &quot;description&quot;: &quot;Search for available flights&quot;,
+        &quot;strict&quot;: True,
+        &quot;input_schema&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;destination&quot;: {&quot;type&quot;: &quot;string&quot;},
+                &quot;date&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;format&quot;: &quot;date&quot;}
+            },
+            &quot;required&quot;: [&quot;destination&quot;, &quot;date&quot;],
+            &quot;additionalProperties&quot;: False
+        }
+    }]
+)
+</code></pre>
+</doc>
+
+<doc path="ruby/claude-api.md">
+<h1>Claude API — Ruby</h1>
+<blockquote>
+<p><strong>Note:</strong> The Ruby SDK supports the Claude API. A tool runner is available in beta via <code>client.beta.messages.tool_runner()</code>. Agent SDK is not yet available for Ruby.</p>
+</blockquote>
+<h2>Installation</h2>
+<pre><code class="language-bash">gem install anthropic
+</code></pre>
+<h2>Client Initialization</h2>
+<pre><code class="language-ruby">require &quot;anthropic&quot;
+
+# Default (uses ANTHROPIC_API_KEY env var)
+client = Anthropic::Client.new
+
+# Explicit API key
+client = Anthropic::Client.new(api_key: &quot;your-api-key&quot;)
+</code></pre>
+<hr />
+<h2>Basic Message Request</h2>
+<pre><code class="language-ruby">message = client.messages.create(
+  model: :&quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [
+    { role: &quot;user&quot;, content: &quot;What is the capital of France?&quot; }
+  ]
+)
+puts message.content.first.text
+</code></pre>
+<hr />
+<h2>Streaming</h2>
+<pre><code class="language-ruby">stream = client.messages.stream(
+  model: :&quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [{ role: &quot;user&quot;, content: &quot;Write a haiku&quot; }]
+)
+
+stream.text.each { |text| print(text) }
+</code></pre>
+<hr />
+<h2>Tool Use</h2>
+<p>The Ruby SDK supports tool use via raw JSON schema definitions and also provides a beta tool runner for automatic tool execution.</p>
+<h3>Tool Runner (Beta)</h3>
+<pre><code class="language-ruby">class GetWeatherInput &lt; Anthropic::BaseModel
+  required :location, String, doc: &quot;City and state, e.g. San Francisco, CA&quot;
+end
+
+class GetWeather &lt; Anthropic::BaseTool
+  doc &quot;Get the current weather for a location&quot;
+
+  input_schema GetWeatherInput
+
+  def call(input)
+    &quot;The weather in #{input.location} is sunny and 72°F.&quot;
+  end
+end
+
+client.beta.messages.tool_runner(
+  model: :&quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  tools: [GetWeather.new],
+  messages: [{ role: &quot;user&quot;, content: &quot;What's the weather in San Francisco?&quot; }]
+).each_message do |message|
+  puts message.content
+end
+</code></pre>
+<h3>Manual Loop</h3>
+<p>See the <a href="../shared/tool-use-concepts.md">shared tool use concepts</a> for the tool definition format and agentic loop pattern.</p>
+</doc>
+
+<doc path="shared/error-codes.md">
+<h1>HTTP Error Codes Reference</h1>
+<p>This file documents HTTP error codes returned by the Claude API, their common causes, and how to handle them. For language-specific error handling examples, see the <code>python/</code> or <code>typescript/</code> folders.</p>
+<h2>Error Code Summary</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Error Type</th><th>Retryable</th><th>Common Cause</th></tr>
+</thead>
+<tbody>
+<tr><td>400</td><td><code>invalid_request_error</code></td><td>No</td><td>Invalid request format or parameters</td></tr>
+<tr><td>401</td><td><code>authentication_error</code></td><td>No</td><td>Invalid or missing API key</td></tr>
+<tr><td>403</td><td><code>permission_error</code></td><td>No</td><td>API key lacks permission</td></tr>
+<tr><td>404</td><td><code>not_found_error</code></td><td>No</td><td>Invalid endpoint or model ID</td></tr>
+<tr><td>413</td><td><code>request_too_large</code></td><td>No</td><td>Request exceeds size limits</td></tr>
+<tr><td>429</td><td><code>rate_limit_error</code></td><td>Yes</td><td>Too many requests</td></tr>
+<tr><td>500</td><td><code>api_error</code></td><td>Yes</td><td>Anthropic service issue</td></tr>
+<tr><td>529</td><td><code>overloaded_error</code></td><td>Yes</td><td>API is temporarily overloaded</td></tr>
+</tbody>
+</table>
+<h2>Detailed Error Information</h2>
+<h3>400 Bad Request</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Malformed JSON in request body</li>
+<li>Missing required parameters (<code>model</code>, <code>max_tokens</code>, <code>messages</code>)</li>
+<li>Invalid parameter types (e.g., string where integer expected)</li>
+<li>Empty messages array</li>
+<li>Messages not alternating user/assistant</li>
+</ul>
+<p><strong>Example error:</strong></p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;error&quot;,
+  &quot;error&quot;: {
+    &quot;type&quot;: &quot;invalid_request_error&quot;,
+    &quot;message&quot;: &quot;messages: roles must alternate between \&quot;user\&quot; and \&quot;assistant\&quot;&quot;
+  }
+}
+</code></pre>
+<p><strong>Fix:</strong> Validate request structure before sending. Check that:</p>
+<ul>
+<li><code>model</code> is a valid model ID</li>
+<li><code>max_tokens</code> is a positive integer</li>
+<li><code>messages</code> array is non-empty and alternates correctly</li>
+</ul>
+<hr />
+<h3>401 Unauthorized</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Missing <code>x-api-key</code> header or <code>Authorization</code> header</li>
+<li>Invalid API key format</li>
+<li>Revoked or deleted API key</li>
+</ul>
+<p><strong>Fix:</strong> Ensure <code>ANTHROPIC_API_KEY</code> environment variable is set correctly.</p>
+<hr />
+<h3>403 Forbidden</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>API key doesn't have access to the requested model</li>
+<li>Organization-level restrictions</li>
+<li>Attempting to access beta features without beta access</li>
+</ul>
+<p><strong>Fix:</strong> Check your API key permissions in the Console. You may need a different API key or to request access to specific features.</p>
+<hr />
+<h3>404 Not Found</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Typo in model ID (e.g., <code>claude-sonnet-4.6</code> instead of <code>claude-sonnet-4-6</code>)</li>
+<li>Using deprecated model ID</li>
+<li>Invalid API endpoint</li>
+</ul>
+<p><strong>Fix:</strong> Use exact model IDs from the models documentation. You can use aliases (e.g., <code>claude-opus-4-6</code>).</p>
+<hr />
+<h3>413 Request Too Large</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Request body exceeds maximum size</li>
+<li>Too many tokens in input</li>
+<li>Image data too large</li>
+</ul>
+<p><strong>Fix:</strong> Reduce input size — truncate conversation history, compress/resize images, or split large documents into chunks.</p>
+<hr />
+<h3>400 Validation Errors</h3>
+<p>Some 400 errors are specifically related to parameter validation:</p>
+<ul>
+<li><code>max_tokens</code> exceeds model's limit</li>
+<li>Invalid <code>temperature</code> value (must be 0.0-1.0)</li>
+<li><code>budget_tokens</code> &gt;= <code>max_tokens</code> in extended thinking</li>
+<li>Invalid tool definition schema</li>
+</ul>
+<p><strong>Common mistake with extended thinking:</strong></p>
+<pre><code># Wrong: budget_tokens must be &lt; max_tokens
+thinking: budget_tokens=10000, max_tokens=1000  → Error!
+
+# Correct
+thinking: budget_tokens=10000, max_tokens=16000
+</code></pre>
+<hr />
+<h3>429 Rate Limited</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Exceeded requests per minute (RPM)</li>
+<li>Exceeded tokens per minute (TPM)</li>
+<li>Exceeded tokens per day (TPD)</li>
+</ul>
+<p><strong>Headers to check:</strong></p>
+<ul>
+<li><code>retry-after</code>: Seconds to wait before retrying</li>
+<li><code>x-ratelimit-limit-*</code>: Your limits</li>
+<li><code>x-ratelimit-remaining-*</code>: Remaining quota</li>
+</ul>
+<p><strong>Fix:</strong> The Anthropic SDKs automatically retry 429 and 5xx errors with exponential backoff (default: <code>max_retries=2</code>). For custom retry behavior, see the language-specific error handling examples.</p>
+<hr />
+<h3>500 Internal Server Error</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Temporary Anthropic service issue</li>
+<li>Bug in API processing</li>
+</ul>
+<p><strong>Fix:</strong> Retry with exponential backoff. If persistent, check <a href="https://status.anthropic.com">status.anthropic.com</a>.</p>
+<hr />
+<h3>529 Overloaded</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>High API demand</li>
+<li>Service capacity reached</li>
+</ul>
+<p><strong>Fix:</strong> Retry with exponential backoff. Consider using a different model (Haiku is often less loaded), spreading requests over time, or implementing request queuing.</p>
+<hr />
+<h2>Common Mistakes and Fixes</h2>
+<table>
+<thead>
+<tr><th>Mistake</th><th>Error</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td><code>budget_tokens</code> &gt;= <code>max_tokens</code></td><td>400</td><td>Ensure <code>budget_tokens</code> &lt; <code>max_tokens</code></td></tr>
+<tr><td>Typo in model ID</td><td>404</td><td>Use valid model ID like <code>claude-opus-4-6</code></td></tr>
+<tr><td>First message is <code>assistant</code></td><td>400</td><td>First message must be <code>user</code></td></tr>
+<tr><td>Consecutive same-role messages</td><td>400</td><td>Alternate <code>user</code> and <code>assistant</code></td></tr>
+<tr><td>API key in code</td><td>401 (leaked key)</td><td>Use environment variable</td></tr>
+<tr><td>Custom retry needs</td><td>429/5xx</td><td>SDK retries automatically; customize with <code>max_retries</code></td></tr>
+</tbody>
+</table>
+</doc>
+
+<doc path="shared/live-sources.md">
+<h1>Live Documentation Sources</h1>
+<p>This file contains WebFetch URLs for fetching current information from platform.claude.com and Agent SDK repositories. Use these when users need the latest data that may have changed since the cached content was last updated.</p>
+<h2>When to Use WebFetch</h2>
+<ul>
+<li>User explicitly asks for &quot;latest&quot; or &quot;current&quot; information</li>
+<li>Cached data seems incorrect</li>
+<li>User asks about features not covered in cached content</li>
+<li>User needs specific API details or examples</li>
+</ul>
+<h2>Claude API Documentation URLs</h2>
+<h3>Models &amp; Pricing</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>URL</th><th>Extraction Prompt</th></tr>
+</thead>
+<tbody>
+<tr><td>Models Overview</td><td><code>https://platform.claude.com/docs/en/about-claude/models/overview.md</code></td><td>&quot;Extract current model IDs, context windows, and pricing for all Claude models&quot;</td></tr>
+<tr><td>Pricing</td><td><code>https://platform.claude.com/docs/en/pricing.md</code></td><td>&quot;Extract current pricing per million tokens for input and output&quot;</td></tr>
+</tbody>
+</table>
+<h3>Core Features</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>URL</th><th>Extraction Prompt</th></tr>
+</thead>
+<tbody>
+<tr><td>Extended Thinking</td><td><code>https://platform.claude.com/docs/en/build-with-claude/extended-thinking.md</code></td><td>&quot;Extract extended thinking parameters, budget_tokens requirements, and usage examples&quot;</td></tr>
+<tr><td>Adaptive Thinking</td><td><code>https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking.md</code></td><td>&quot;Extract adaptive thinking setup, effort levels, and Opus 4.6 usage examples&quot;</td></tr>
+<tr><td>Effort Parameter</td><td><code>https://platform.claude.com/docs/en/build-with-claude/effort.md</code></td><td>&quot;Extract effort levels, cost-quality tradeoffs, and interaction with thinking&quot;</td></tr>
+<tr><td>Tool Use</td><td><code>https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview.md</code></td><td>&quot;Extract tool definition schema, tool_choice options, and handling tool results&quot;</td></tr>
+<tr><td>Streaming</td><td><code>https://platform.claude.com/docs/en/build-with-claude/streaming.md</code></td><td>&quot;Extract streaming event types, SDK examples, and best practices&quot;</td></tr>
+<tr><td>Prompt Caching</td><td><code>https://platform.claude.com/docs/en/build-with-claude/prompt-caching.md</code></td><td>&quot;Extract cache_control usage, pricing benefits, and implementation examples&quot;</td></tr>
+</tbody>
+</table>
+<h3>Media &amp; Files</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>URL</th><th>Extraction Prompt</th></tr>
+</thead>
+<tbody>
+<tr><td>Vision</td><td><code>https://platform.claude.com/docs/en/build-with-claude/vision.md</code></td><td>&quot;Extract supported image formats, size limits, and code examples&quot;</td></tr>
+<tr><td>PDF Support</td><td><code>https://platform.claude.com/docs/en/build-with-claude/pdf-support.md</code></td><td>&quot;Extract PDF handling capabilities, limits, and examples&quot;</td></tr>
+</tbody>
+</table>
+<h3>API Operations</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>URL</th><th>Extraction Prompt</th></tr>
+</thead>
+<tbody>
+<tr><td>Batch Processing</td><td><code>https://platform.claude.com/docs/en/build-with-claude/batch-processing.md</code></td><td>&quot;Extract batch API endpoints, request format, and polling for results&quot;</td></tr>
+<tr><td>Files API</td><td><code>https://platform.claude.com/docs/en/build-with-claude/files.md</code></td><td>&quot;Extract file upload, download, and referencing in messages, including supported types and beta header&quot;</td></tr>
+<tr><td>Token Counting</td><td><code>https://platform.claude.com/docs/en/build-with-claude/token-counting.md</code></td><td>&quot;Extract token counting API usage and examples&quot;</td></tr>
+<tr><td>Rate Limits</td><td><code>https://platform.claude.com/docs/en/api/rate-limits.md</code></td><td>&quot;Extract current rate limits by tier and model&quot;</td></tr>
+<tr><td>Errors</td><td><code>https://platform.claude.com/docs/en/api/errors.md</code></td><td>&quot;Extract HTTP error codes, meanings, and retry guidance&quot;</td></tr>
+</tbody>
+</table>
+<h3>Tools</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>URL</th><th>Extraction Prompt</th></tr>
+</thead>
+<tbody>
+<tr><td>Code Execution</td><td><code>https://platform.claude.com/docs/en/agents-and-tools/tool-use/code-execution-tool.md</code></td><td>&quot;Extract code execution tool setup, file upload, container reuse, and response handling&quot;</td></tr>
+<tr><td>Computer Use</td><td><code>https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use.md</code></td><td>&quot;Extract computer use tool setup, capabilities, and implementation examples&quot;</td></tr>
+</tbody>
+</table>
+<h3>Advanced Features</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>URL</th><th>Extraction Prompt</th></tr>
+</thead>
+<tbody>
+<tr><td>Structured Outputs</td><td><code>https://platform.claude.com/docs/en/build-with-claude/structured-outputs.md</code></td><td>&quot;Extract output_config.format usage and schema enforcement&quot;</td></tr>
+<tr><td>Compaction</td><td><code>https://platform.claude.com/docs/en/build-with-claude/compaction.md</code></td><td>&quot;Extract compaction setup, trigger config, and streaming with compaction&quot;</td></tr>
+<tr><td>Citations</td><td><code>https://platform.claude.com/docs/en/build-with-claude/citations.md</code></td><td>&quot;Extract citation format and implementation&quot;</td></tr>
+<tr><td>Context Windows</td><td><code>https://platform.claude.com/docs/en/build-with-claude/context-windows.md</code></td><td>&quot;Extract context window sizes and token management&quot;</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Claude API SDK Repositories</h2>
+<table>
+<thead>
+<tr><th>SDK</th><th>URL</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Python</td><td><code>https://github.com/anthropics/anthropic-sdk-python</code></td><td><code>anthropic</code> pip package source</td></tr>
+<tr><td>TypeScript</td><td><code>https://github.com/anthropics/anthropic-sdk-typescript</code></td><td><code>@anthropic-ai/sdk</code> npm source</td></tr>
+<tr><td>Java</td><td><code>https://github.com/anthropics/anthropic-sdk-java</code></td><td><code>anthropic-java</code> Maven source</td></tr>
+<tr><td>Go</td><td><code>https://github.com/anthropics/anthropic-sdk-go</code></td><td>Go module source</td></tr>
+<tr><td>Ruby</td><td><code>https://github.com/anthropics/anthropic-sdk-ruby</code></td><td><code>anthropic</code> gem source</td></tr>
+<tr><td>C#</td><td><code>https://github.com/anthropics/anthropic-sdk-csharp</code></td><td>NuGet package source</td></tr>
+<tr><td>PHP</td><td><code>https://github.com/anthropics/anthropic-sdk-php</code></td><td>Composer package source</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Agent SDK Documentation URLs</h2>
+<h3>Core Documentation</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>URL</th><th>Extraction Prompt</th></tr>
+</thead>
+<tbody>
+<tr><td>Agent SDK Overview</td><td><code>https://platform.claude.com/docs/en/agent-sdk.md</code></td><td>&quot;Extract the Agent SDK overview, key features, and use cases&quot;</td></tr>
+<tr><td>Agent SDK Python</td><td><code>https://github.com/anthropics/claude-agent-sdk-python</code></td><td>&quot;Extract Python SDK installation, imports, and basic usage&quot;</td></tr>
+<tr><td>Agent SDK TypeScript</td><td><code>https://github.com/anthropics/claude-agent-sdk-typescript</code></td><td>&quot;Extract TypeScript SDK installation, imports, and basic usage&quot;</td></tr>
+</tbody>
+</table>
+<h3>SDK Reference (GitHub READMEs)</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>URL</th><th>Extraction Prompt</th></tr>
+</thead>
+<tbody>
+<tr><td>Python SDK</td><td><code>https://raw.githubusercontent.com/anthropics/claude-agent-sdk-python/main/README.md</code></td><td>&quot;Extract Python SDK API reference, classes, and methods&quot;</td></tr>
+<tr><td>TypeScript SDK</td><td><code>https://raw.githubusercontent.com/anthropics/claude-agent-sdk-typescript/main/README.md</code></td><td>&quot;Extract TypeScript SDK API reference, types, and functions&quot;</td></tr>
+</tbody>
+</table>
+<h3>npm/PyPI Packages</h3>
+<table>
+<thead>
+<tr><th>Package</th><th>URL</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>claude-agent-sdk (Python)</td><td><code>https://pypi.org/project/claude-agent-sdk/</code></td><td>Python package on PyPI</td></tr>
+<tr><td>@anthropic-ai/claude-agent-sdk (TS)</td><td><code>https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk</code></td><td>TypeScript package on npm</td></tr>
+</tbody>
+</table>
+<h3>GitHub Repositories</h3>
+<table>
+<thead>
+<tr><th>Resource</th><th>URL</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Python SDK</td><td><code>https://github.com/anthropics/claude-agent-sdk-python</code></td><td>Python package source</td></tr>
+<tr><td>TypeScript SDK</td><td><code>https://github.com/anthropics/claude-agent-sdk-typescript</code></td><td>TypeScript/Node.js package source</td></tr>
+<tr><td>MCP Servers</td><td><code>https://github.com/modelcontextprotocol</code></td><td>Official MCP server implementations</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Fallback Strategy</h2>
+<p>If WebFetch fails (network issues, URL changed):</p>
+<ol>
+<li>Use cached content from the language-specific files (note the cache date)</li>
+<li>Inform user the data may be outdated</li>
+<li>Suggest they check platform.claude.com or the GitHub repos directly</li>
+</ol>
+</doc>
+
+<doc path="shared/models.md">
+<h1>Claude Model Catalog</h1>
+<p><strong>Only use exact model IDs listed in this file.</strong> Never guess or construct model IDs — incorrect IDs will cause API errors. Use aliases wherever available. For the latest information, WebFetch the Models Overview URL in <code>shared/live-sources.md</code>.</p>
+<h2>Current Models (recommended)</h2>
+<table>
+<thead>
+<tr><th>Friendly Name</th><th>Alias (use this)</th><th>Full ID</th><th>Context</th><th>Max Output</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td>Claude Opus 4.6</td><td><code>claude-opus-4-6</code></td><td>—</td><td>200K (1M beta)</td><td>128K</td><td>Active</td></tr>
+<tr><td>Claude Sonnet 4.6</td><td><code>claude-sonnet-4-6</code></td><td>-</td><td>200K (1M beta)</td><td>64K</td><td>Active</td></tr>
+<tr><td>Claude Haiku 4.5</td><td><code>claude-haiku-4-5</code></td><td><code>claude-haiku-4-5-20251001</code></td><td>200K</td><td>64K</td><td>Active</td></tr>
+</tbody>
+</table>
+<h3>Model Descriptions</h3>
+<ul>
+<li><strong>Claude Opus 4.6</strong> — Our most intelligent model for building agents and coding. Supports adaptive thinking (recommended), 128K max output tokens (requires streaming for large outputs). 1M context window available in beta via <code>context-1m-2025-08-07</code> header.</li>
+<li><strong>Claude Sonnet 4.6</strong> — Our best combination of speed and intelligence. Supports adaptive thinking (recommended). 1M context window available in beta via <code>context-1m-2025-08-07</code> header. 64K max output tokens.</li>
+<li><strong>Claude Haiku 4.5</strong> — Fastest and most cost-effective model for simple tasks.</li>
+</ul>
+<h2>Legacy Models (still active)</h2>
+<table>
+<thead>
+<tr><th>Friendly Name</th><th>Alias (use this)</th><th>Full ID</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td>Claude Opus 4.5</td><td><code>claude-opus-4-5</code></td><td><code>claude-opus-4-5-20251101</code></td><td>Active</td></tr>
+<tr><td>Claude Opus 4.1</td><td><code>claude-opus-4-1</code></td><td><code>claude-opus-4-1-20250805</code></td><td>Active</td></tr>
+<tr><td>Claude Sonnet 4.5</td><td><code>claude-sonnet-4-5</code></td><td><code>claude-sonnet-4-5-20250929</code></td><td>Active</td></tr>
+<tr><td>Claude Sonnet 4</td><td><code>claude-sonnet-4-0</code></td><td><code>claude-sonnet-4-20250514</code></td><td>Active</td></tr>
+<tr><td>Claude Opus 4</td><td><code>claude-opus-4-0</code></td><td><code>claude-opus-4-20250514</code></td><td>Active</td></tr>
+<tr><td>Claude Haiku 3</td><td>—</td><td><code>claude-3-haiku-20240307</code></td><td>Active</td></tr>
+</tbody>
+</table>
+<h2>Deprecated Models (retiring soon)</h2>
+<p>(none currently)</p>
+<h2>Retired Models (no longer available)</h2>
+<table>
+<thead>
+<tr><th>Friendly Name</th><th>Full ID</th><th>Retired</th></tr>
+</thead>
+<tbody>
+<tr><td>Claude Sonnet 3.7</td><td><code>claude-3-7-sonnet-20250219</code></td><td>Feb 19, 2026</td></tr>
+<tr><td>Claude Haiku 3.5</td><td><code>claude-3-5-haiku-20241022</code></td><td>Feb 19, 2026</td></tr>
+<tr><td>Claude Opus 3</td><td><code>claude-3-opus-20240229</code></td><td>Jan 5, 2026</td></tr>
+<tr><td>Claude Sonnet 3.5</td><td><code>claude-3-5-sonnet-20241022</code></td><td>Oct 28, 2025</td></tr>
+<tr><td>Claude Sonnet 3.5</td><td><code>claude-3-5-sonnet-20240620</code></td><td>Oct 28, 2025</td></tr>
+<tr><td>Claude Sonnet 3</td><td><code>claude-3-sonnet-20240229</code></td><td>Jul 21, 2025</td></tr>
+<tr><td>Claude 2.1</td><td><code>claude-2.1</code></td><td>Jul 21, 2025</td></tr>
+<tr><td>Claude 2.0</td><td><code>claude-2.0</code></td><td>Jul 21, 2025</td></tr>
+</tbody>
+</table>
+<h2>Resolving User Requests</h2>
+<p>When a user asks for a model by name, use this table to find the correct model ID:</p>
+<table>
+<thead>
+<tr><th>User says...</th><th>Use this model ID</th></tr>
+</thead>
+<tbody>
+<tr><td>&quot;opus&quot;, &quot;most powerful&quot;</td><td><code>claude-opus-4-6</code></td></tr>
+<tr><td>&quot;opus 4.6&quot;</td><td><code>claude-opus-4-6</code></td></tr>
+<tr><td>&quot;opus 4.5&quot;</td><td><code>claude-opus-4-5</code></td></tr>
+<tr><td>&quot;opus 4.1&quot;</td><td><code>claude-opus-4-1</code></td></tr>
+<tr><td>&quot;opus 4&quot;, &quot;opus 4.0&quot;</td><td><code>claude-opus-4-0</code></td></tr>
+<tr><td>&quot;sonnet&quot;, &quot;balanced&quot;</td><td><code>claude-sonnet-4-6</code></td></tr>
+<tr><td>&quot;sonnet 4.6&quot;</td><td><code>claude-sonnet-4-6</code></td></tr>
+<tr><td>&quot;sonnet 4.5&quot;</td><td><code>claude-sonnet-4-5</code></td></tr>
+<tr><td>&quot;sonnet 4&quot;, &quot;sonnet 4.0&quot;</td><td><code>claude-sonnet-4-0</code></td></tr>
+<tr><td>&quot;sonnet 3.7&quot;</td><td>Retired — suggest <code>claude-sonnet-4-5</code></td></tr>
+<tr><td>&quot;sonnet 3.5&quot;</td><td>Retired — suggest <code>claude-sonnet-4-5</code></td></tr>
+<tr><td>&quot;haiku&quot;, &quot;fast&quot;, &quot;cheap&quot;</td><td><code>claude-haiku-4-5</code></td></tr>
+<tr><td>&quot;haiku 4.5&quot;</td><td><code>claude-haiku-4-5</code></td></tr>
+<tr><td>&quot;haiku 3.5&quot;</td><td>Retired — suggest <code>claude-haiku-4-5</code></td></tr>
+<tr><td>&quot;haiku 3&quot;</td><td><code>claude-3-haiku-20240307</code></td></tr>
+</tbody>
+</table>
+</doc>
+
+<doc path="shared/tool-use-concepts.md">
+<h1>Tool Use Concepts</h1>
+<p>This file covers the conceptual foundations of tool use with the Claude API. For language-specific code examples, see the <code>python/</code>, <code>typescript/</code>, or other language folders.</p>
+<h2>User-Defined Tools</h2>
+<h3>Tool Definition Structure</h3>
+<blockquote>
+<p><strong>Note:</strong> When using the Tool Runner (beta), tool schemas are generated automatically from your function signatures (Python) or Zod schemas (TypeScript). The raw JSON schema format below is for the manual approach or SDKs without tool runner support.</p>
+</blockquote>
+<p>Each tool requires a name, description, and JSON Schema for its inputs:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;get_weather&quot;,
+  &quot;description&quot;: &quot;Get current weather for a location&quot;,
+  &quot;input_schema&quot;: {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {
+      &quot;location&quot;: {
+        &quot;type&quot;: &quot;string&quot;,
+        &quot;description&quot;: &quot;City and state, e.g., San Francisco, CA&quot;
+      },
+      &quot;unit&quot;: {
+        &quot;type&quot;: &quot;string&quot;,
+        &quot;enum&quot;: [&quot;celsius&quot;, &quot;fahrenheit&quot;],
+        &quot;description&quot;: &quot;Temperature unit&quot;
+      }
+    },
+    &quot;required&quot;: [&quot;location&quot;]
+  }
+}
+</code></pre>
+<p><strong>Best practices for tool definitions:</strong></p>
+<ul>
+<li>Use clear, descriptive names (e.g., <code>get_weather</code>, <code>search_database</code>, <code>send_email</code>)</li>
+<li>Write detailed descriptions — Claude uses these to decide when to use the tool</li>
+<li>Include descriptions for each property</li>
+<li>Use <code>enum</code> for parameters with a fixed set of values</li>
+<li>Mark truly required parameters in <code>required</code>; make others optional with defaults</li>
+</ul>
+<hr />
+<h3>Tool Choice Options</h3>
+<p>Control when Claude uses tools:</p>
+<table>
+<thead>
+<tr><th>Value</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td><code>{&quot;type&quot;: &quot;auto&quot;}</code></td><td>Claude decides whether to use tools (default)</td></tr>
+<tr><td><code>{&quot;type&quot;: &quot;any&quot;}</code></td><td>Claude must use at least one tool</td></tr>
+<tr><td><code>{&quot;type&quot;: &quot;tool&quot;, &quot;name&quot;: &quot;...&quot;}</code></td><td>Claude must use the specified tool</td></tr>
+<tr><td><code>{&quot;type&quot;: &quot;none&quot;}</code></td><td>Claude cannot use tools</td></tr>
+</tbody>
+</table>
+<p>Any <code>tool_choice</code> value can also include <code>&quot;disable_parallel_tool_use&quot;: true</code> to force Claude to use at most one tool per response. By default, Claude may request multiple tool calls in a single response.</p>
+<hr />
+<h3>Tool Runner vs Manual Loop</h3>
+<p><strong>Tool Runner (Recommended):</strong> The SDK's tool runner handles the agentic loop automatically — it calls the API, detects tool use requests, executes your tool functions, feeds results back to Claude, and repeats until Claude stops calling tools. Available in Python and TypeScript SDKs (beta).</p>
+<p><strong>Manual Agentic Loop:</strong> Use when you need fine-grained control over the loop (e.g., custom logging, conditional tool execution, human-in-the-loop approval). Loop until <code>stop_reason == &quot;end_turn&quot;</code>, always append the full <code>response.content</code> to preserve tool_use blocks, and ensure each <code>tool_result</code> includes the matching <code>tool_use_id</code>.</p>
+<p><strong>Stop reasons for server-side tools:</strong> When using server-side tools (code execution, web search, etc.), the API runs a server-side sampling loop. If this loop reaches its default limit of 10 iterations, the response will have <code>stop_reason: &quot;pause_turn&quot;</code>. To continue, send the response back as-is and make another API request — the server will resume where it left off.</p>
+<blockquote>
+<p><strong>Security:</strong> The tool runner executes your tool functions automatically whenever Claude requests them. For tools with side effects (sending emails, modifying databases, financial transactions), validate inputs within your tool functions and consider requiring confirmation for destructive operations. Use the manual agentic loop if you need human-in-the-loop approval before each tool execution.</p>
+</blockquote>
+<hr />
+<h3>Handling Tool Results</h3>
+<p>When Claude uses a tool, the response contains a <code>tool_use</code> block. You must:</p>
+<ol>
+<li>Execute the tool with the provided input</li>
+<li>Send the result back in a <code>tool_result</code> message</li>
+<li>Continue the conversation</li>
+</ol>
+<p><strong>Error handling in tool results:</strong> When a tool execution fails, set <code>&quot;is_error&quot;: true</code> and provide an informative error message. Claude will typically acknowledge the error and either try a different approach or ask for clarification.</p>
+<p><strong>Multiple tool calls:</strong> Claude can request multiple tools in a single response. Handle them all before continuing — send all results back in a single <code>user</code> message.</p>
+<hr />
+<h2>Server-Side Tools: Code Execution</h2>
+<p>The code execution tool lets Claude run code in a secure, sandboxed container. Unlike user-defined tools, server-side tools run on Anthropic's infrastructure — you don't execute anything client-side. Just include the tool definition and Claude handles the rest.</p>
+<h3>Key Facts</h3>
+<ul>
+<li>Runs in an isolated container (1 CPU, 5 GiB RAM, 5 GiB disk)</li>
+<li>No internet access (fully sandboxed)</li>
+<li>Python 3.11 with data science libraries pre-installed</li>
+<li>Containers persist for 30 days and can be reused across requests</li>
+<li>Free when used with web search/web fetch tools; otherwise $0.05/hour after 1,550 free hours/month per organization</li>
+</ul>
+<h3>Tool Definition</h3>
+<p>The tool requires no schema — just declare it in the <code>tools</code> array:</p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;code_execution_20260120&quot;,
+  &quot;name&quot;: &quot;code_execution&quot;
+}
+</code></pre>
+<p>Claude automatically gains access to <code>bash_code_execution</code> (run shell commands) and <code>text_editor_code_execution</code> (create/view/edit files).</p>
+<h3>Pre-installed Python Libraries</h3>
+<ul>
+<li><strong>Data science</strong>: pandas, numpy, scipy, scikit-learn, statsmodels</li>
+<li><strong>Visualization</strong>: matplotlib, seaborn</li>
+<li><strong>File processing</strong>: openpyxl, xlsxwriter, pillow, pypdf, pdfplumber, python-docx, python-pptx</li>
+<li><strong>Math</strong>: sympy, mpmath</li>
+<li><strong>Utilities</strong>: tqdm, python-dateutil, pytz, sqlite3</li>
+</ul>
+<p>Additional packages can be installed at runtime via <code>pip install</code>.</p>
+<h3>Supported File Types for Upload</h3>
+<table>
+<thead>
+<tr><th>Type</th><th>Extensions</th></tr>
+</thead>
+<tbody>
+<tr><td>Data</td><td>CSV, Excel (.xlsx/.xls), JSON, XML</td></tr>
+<tr><td>Images</td><td>JPEG, PNG, GIF, WebP</td></tr>
+<tr><td>Text</td><td>.txt, .md, .py, .js, etc.</td></tr>
+</tbody>
+</table>
+<h3>Container Reuse</h3>
+<p>Reuse containers across requests to maintain state (files, installed packages, variables). Extract the <code>container_id</code> from the first response and pass it to subsequent requests.</p>
+<h3>Response Structure</h3>
+<p>The response contains interleaved text and tool result blocks:</p>
+<ul>
+<li><code>text</code> — Claude's explanation</li>
+<li><code>server_tool_use</code> — What Claude is doing</li>
+<li><code>bash_code_execution_tool_result</code> — Code execution output (check <code>return_code</code> for success/failure)</li>
+<li><code>text_editor_code_execution_tool_result</code> — File operation results</li>
+</ul>
+<blockquote>
+<p><strong>Security:</strong> Always sanitize filenames with <code>os.path.basename()</code> / <code>path.basename()</code> before writing downloaded files to disk to prevent path traversal attacks. Write files to a dedicated output directory.</p>
+</blockquote>
+<hr />
+<h2>Server-Side Tools: Web Search and Web Fetch</h2>
+<p>Web search and web fetch let Claude search the web and retrieve page content. They run server-side — just include the tool definitions and Claude handles queries, fetching, and result processing automatically.</p>
+<h3>Tool Definitions</h3>
+<pre><code class="language-json">[
+  { &quot;type&quot;: &quot;web_search_20260209&quot;, &quot;name&quot;: &quot;web_search&quot; },
+  { &quot;type&quot;: &quot;web_fetch_20260209&quot;, &quot;name&quot;: &quot;web_fetch&quot; }
+]
+</code></pre>
+<h3>Dynamic Filtering (Opus 4.6 / Sonnet 4.6)</h3>
+<p>The <code>web_search_20260209</code> and <code>web_fetch_20260209</code> versions support <strong>dynamic filtering</strong> — Claude writes and executes code to filter search results before they reach the context window, improving accuracy and token efficiency. Dynamic filtering requires:</p>
+<ol>
+<li>The code execution tool (<code>code_execution_20260120</code>) must also be enabled in <code>tools</code></li>
+<li>The beta header <code>code-execution-web-tools-2026-02-09</code></li>
+</ol>
+<p>Header: <code>anthropic-beta: code-execution-web-tools-2026-02-09</code></p>
+<pre><code class="language-json">{
+  &quot;tools&quot;: [
+    { &quot;type&quot;: &quot;web_search_20260209&quot;, &quot;name&quot;: &quot;web_search&quot; },
+    { &quot;type&quot;: &quot;web_fetch_20260209&quot;, &quot;name&quot;: &quot;web_fetch&quot; },
+    { &quot;type&quot;: &quot;code_execution_20260120&quot;, &quot;name&quot;: &quot;code_execution&quot; }
+  ]
+}
+</code></pre>
+<p>Without the beta header and code execution, these tools still work but without dynamic filtering. The previous <code>web_search_20250305</code> version is also available.</p>
+<hr />
+<h2>Server-Side Tools: Programmatic Tool Calling</h2>
+<p>Programmatic tool calling lets Claude execute complex multi-tool workflows in code, keeping intermediate results out of the context window. Claude writes code that calls your tools directly, reducing token usage for multi-step operations.</p>
+<p>For full documentation, use WebFetch:</p>
+<ul>
+<li>URL: <code>https://platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling</code></li>
+</ul>
+<hr />
+<h2>Server-Side Tools: Tool Search</h2>
+<p>The tool search tool lets Claude dynamically discover tools from large libraries without loading all definitions into the context window. Useful when you have many tools but only a few are relevant to any given query.</p>
+<p>For full documentation, use WebFetch:</p>
+<ul>
+<li>URL: <code>https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool</code></li>
+</ul>
+<hr />
+<h2>Tool Use Examples</h2>
+<p>You can provide sample tool calls directly in your tool definitions to demonstrate usage patterns and reduce parameter errors. This helps Claude understand how to correctly format tool inputs, especially for tools with complex schemas.</p>
+<p>For full documentation, use WebFetch:</p>
+<ul>
+<li>URL: <code>https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use</code></li>
+</ul>
+<hr />
+<h2>Server-Side Tools: Computer Use</h2>
+<p>Computer use lets Claude interact with a desktop environment (screenshots, mouse, keyboard). It can be Anthropic-hosted (server-side, like code execution) or self-hosted (you provide the environment and execute actions client-side).</p>
+<p>For full documentation, use WebFetch:</p>
+<ul>
+<li>URL: <code>https://platform.claude.com/docs/en/agents-and-tools/computer-use/overview</code></li>
+</ul>
+<hr />
+<h2>Client-Side Tools: Memory</h2>
+<p>The memory tool enables Claude to store and retrieve information across conversations through a memory file directory. Claude can create, read, update, and delete files that persist between sessions.</p>
+<h3>Key Facts</h3>
+<ul>
+<li>Client-side tool — you control storage via your implementation</li>
+<li>Supports commands: <code>view</code>, <code>create</code>, <code>str_replace</code>, <code>insert</code>, <code>delete</code>, <code>rename</code></li>
+<li>Operates on files in a <code>/memories</code> directory</li>
+<li>The SDKs provide helper classes/functions for implementing the memory backend</li>
+</ul>
+<blockquote>
+<p><strong>Security:</strong> Never store API keys, passwords, tokens, or other secrets in memory files. Be cautious with personally identifiable information (PII) — check data privacy regulations (GDPR, CCPA) before persisting user data. The reference implementations have no built-in access control; in multi-user systems, implement per-user memory directories and authentication in your tool handlers.</p>
+</blockquote>
+<p>For full implementation examples, use WebFetch:</p>
+<ul>
+<li>Docs: <code>https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool.md</code></li>
+</ul>
+<hr />
+<h2>Structured Outputs</h2>
+<p>Structured outputs constrain Claude's responses to follow a specific JSON schema, guaranteeing valid, parseable output. This is not a separate tool — it enhances the Messages API response format and/or tool parameter validation.</p>
+<p>Two features are available:</p>
+<ul>
+<li><strong>JSON outputs</strong> (<code>output_config.format</code>): Control Claude's response format</li>
+<li><strong>Strict tool use</strong> (<code>strict: true</code>): Guarantee valid tool parameter schemas</li>
+</ul>
+<p><strong>Supported models:</strong> Claude Opus 4.6, Claude Sonnet 4.6, and Claude Haiku 4.5. Legacy models (Claude Opus 4.5, Claude Opus 4.1) also support structured outputs.</p>
+<blockquote>
+<p><strong>Recommended:</strong> Use <code>client.messages.parse()</code> which automatically validates responses against your schema. When using <code>messages.create()</code> directly, use <code>output_config: {format: {...}}</code>. The <code>output_format</code> convenience parameter is also accepted by some SDK methods (e.g., <code>.parse()</code>), but <code>output_config.format</code> is the canonical API-level parameter.</p>
+</blockquote>
+<h3>JSON Schema Limitations</h3>
+<p><strong>Supported:</strong></p>
+<ul>
+<li>Basic types: object, array, string, integer, number, boolean, null</li>
+<li><code>enum</code>, <code>const</code>, <code>anyOf</code>, <code>allOf</code>, <code>$ref</code>/<code>$def</code></li>
+<li>String formats: <code>date-time</code>, <code>time</code>, <code>date</code>, <code>duration</code>, <code>email</code>, <code>hostname</code>, <code>uri</code>, <code>ipv4</code>, <code>ipv6</code>, <code>uuid</code></li>
+<li><code>additionalProperties: false</code> (required for all objects)</li>
+</ul>
+<p><strong>Not supported:</strong></p>
+<ul>
+<li>Recursive schemas</li>
+<li>Numerical constraints (<code>minimum</code>, <code>maximum</code>, <code>multipleOf</code>)</li>
+<li>String constraints (<code>minLength</code>, <code>maxLength</code>)</li>
+<li>Complex array constraints</li>
+<li><code>additionalProperties</code> set to anything other than <code>false</code></li>
+</ul>
+<p>The Python and TypeScript SDKs automatically handle unsupported constraints by removing them from the schema sent to the API and validating them client-side.</p>
+<h3>Important Notes</h3>
+<ul>
+<li><strong>First request latency</strong>: New schemas incur a one-time compilation cost. Subsequent requests with the same schema use a 24-hour cache.</li>
+<li><strong>Refusals</strong>: If Claude refuses for safety reasons (<code>stop_reason: &quot;refusal&quot;</code>), the output may not match your schema.</li>
+<li><strong>Token limits</strong>: If <code>stop_reason: &quot;max_tokens&quot;</code>, output may be incomplete. Increase <code>max_tokens</code>.</li>
+<li><strong>Incompatible with</strong>: Citations (returns 400 error), message prefilling.</li>
+<li><strong>Works with</strong>: Batches API, streaming, token counting, extended thinking.</li>
+</ul>
+<hr />
+<h2>Tips for Effective Tool Use</h2>
+<ol>
+<li><strong>Provide detailed descriptions</strong>: Claude relies heavily on descriptions to understand when and how to use tools</li>
+<li><strong>Use specific tool names</strong>: <code>get_current_weather</code> is better than <code>weather</code></li>
+<li><strong>Validate inputs</strong>: Always validate tool inputs before execution</li>
+<li><strong>Handle errors gracefully</strong>: Return informative error messages so Claude can adapt</li>
+<li><strong>Limit tool count</strong>: Too many tools can confuse the model — keep the set focused</li>
+<li><strong>Test tool interactions</strong>: Verify Claude uses tools correctly in various scenarios</li>
+</ol>
+<p>For detailed tool use documentation, use WebFetch:</p>
+<ul>
+<li>URL: <code>https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview</code></li>
+</ul>
+</doc>
+
+<doc path="typescript/agent-sdk/README.md">
+<h1>Agent SDK — TypeScript</h1>
+<p>The Claude Agent SDK provides a higher-level interface for building AI agents with built-in tools, safety features, and agentic capabilities.</p>
+<h2>Installation</h2>
+<pre><code class="language-bash">npm install @anthropic-ai/claude-agent-sdk
+</code></pre>
+<hr />
+<h2>Quick Start</h2>
+<pre><code class="language-typescript">import { query } from &quot;@anthropic-ai/claude-agent-sdk&quot;;
+
+for await (const message of query({
+  prompt: &quot;Explain this codebase&quot;,
+  options: { allowedTools: [&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;] },
+})) {
+  if (&quot;result&quot; in message) {
+    console.log(message.result);
+  }
+}
+</code></pre>
+<hr />
+<h2>Built-in Tools</h2>
+<table>
+<thead>
+<tr><th>Tool</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>Read files in the workspace</td></tr>
+<tr><td>Write</td><td>Create new files</td></tr>
+<tr><td>Edit</td><td>Make precise edits to existing files</td></tr>
+<tr><td>Bash</td><td>Execute shell commands</td></tr>
+<tr><td>Glob</td><td>Find files by pattern</td></tr>
+<tr><td>Grep</td><td>Search files by content</td></tr>
+<tr><td>WebSearch</td><td>Search the web for information</td></tr>
+<tr><td>WebFetch</td><td>Fetch and analyze web pages</td></tr>
+<tr><td>AskUserQuestion</td><td>Ask user clarifying questions</td></tr>
+<tr><td>Task</td><td>Spawn subagent tasks</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Permission System</h2>
+<pre><code class="language-typescript">for await (const message of query({
+  prompt: &quot;Refactor the authentication module&quot;,
+  options: {
+    allowedTools: [&quot;Read&quot;, &quot;Edit&quot;, &quot;Write&quot;],
+    permissionMode: &quot;acceptEdits&quot;,
+  },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<p>Permission modes:</p>
+<ul>
+<li><code>&quot;default&quot;</code>: Prompt for dangerous operations</li>
+<li><code>&quot;plan&quot;</code>: Planning only, no execution</li>
+<li><code>&quot;acceptEdits&quot;</code>: Auto-accept file edits</li>
+<li><code>&quot;dontAsk&quot;</code>: Don't prompt (useful for CI/CD)</li>
+<li><code>&quot;bypassPermissions&quot;</code>: Skip all prompts (requires <code>allowDangerouslySkipPermissions: true</code> in options)</li>
+</ul>
+<hr />
+<h2>MCP (Model Context Protocol) Support</h2>
+<pre><code class="language-typescript">for await (const message of query({
+  prompt: &quot;Open example.com and describe what you see&quot;,
+  options: {
+    mcpServers: {
+      playwright: { command: &quot;npx&quot;, args: [&quot;@playwright/mcp@latest&quot;] },
+    },
+  },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<h3>In-Process MCP Tools</h3>
+<p>You can define custom tools that run in-process using <code>tool()</code> and <code>createSdkMcpServer</code>:</p>
+<pre><code class="language-typescript">import { query, tool, createSdkMcpServer } from &quot;@anthropic-ai/claude-agent-sdk&quot;;
+import { z } from &quot;zod&quot;;
+
+const myTool = tool(&quot;my-tool&quot;, &quot;Description&quot;, { input: z.string() }, async (args) =&gt; {
+  return { content: [{ type: &quot;text&quot;, text: &quot;result&quot; }] };
+});
+
+const server = createSdkMcpServer({ name: &quot;my-server&quot;, tools: [myTool] });
+
+// Pass to query
+for await (const message of query({
+  prompt: &quot;Use my-tool to do something&quot;,
+  options: { mcpServers: { myServer: server } },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<hr />
+<h2>Hooks</h2>
+<pre><code class="language-typescript">import { query, HookCallback } from &quot;@anthropic-ai/claude-agent-sdk&quot;;
+import { appendFileSync } from &quot;fs&quot;;
+
+const logFileChange: HookCallback = async (input) =&gt; {
+  const filePath = (input as any).tool_input?.file_path ?? &quot;unknown&quot;;
+  appendFileSync(
+    &quot;./audit.log&quot;,
+    `${new Date().toISOString()}: modified ${filePath}\n`,
+  );
+  return {};
+};
+
+for await (const message of query({
+  prompt: &quot;Refactor utils.py to improve readability&quot;,
+  options: {
+    allowedTools: [&quot;Read&quot;, &quot;Edit&quot;, &quot;Write&quot;],
+    permissionMode: &quot;acceptEdits&quot;,
+    hooks: {
+      PostToolUse: [{ matcher: &quot;Edit|Write&quot;, hooks: [logFileChange] }],
+    },
+  },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<p>Available hook events: <code>PreToolUse</code>, <code>PostToolUse</code>, <code>PostToolUseFailure</code>, <code>Notification</code>, <code>UserPromptSubmit</code>, <code>SessionStart</code>, <code>SessionEnd</code>, <code>Stop</code>, <code>SubagentStart</code>, <code>SubagentStop</code>, <code>PreCompact</code>, <code>PermissionRequest</code>, <code>Setup</code>, <code>TeammateIdle</code>, <code>TaskCompleted</code>, <code>ConfigChange</code></p>
+<hr />
+<h2>Common Options</h2>
+<p><code>query()</code> takes a top-level <code>prompt</code> (string) and an <code>options</code> object:</p>
+<pre><code class="language-typescript">query({ prompt: &quot;...&quot;, options: { ... } })
+</code></pre>
+<table>
+<thead>
+<tr><th>Option</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>cwd</code></td><td>string</td><td>Working directory for file operations</td></tr>
+<tr><td><code>allowedTools</code></td><td>array</td><td>Tools the agent can use (e.g., <code>[&quot;Read&quot;, &quot;Edit&quot;, &quot;Bash&quot;]</code>)</td></tr>
+<tr><td><code>tools</code></td><td>array</td><td>Built-in tools to make available (restricts the default set)</td></tr>
+<tr><td><code>disallowedTools</code></td><td>array</td><td>Tools to explicitly disallow</td></tr>
+<tr><td><code>permissionMode</code></td><td>string</td><td>How to handle permission prompts</td></tr>
+<tr><td><code>allowDangerouslySkipPermissions</code></td><td>bool</td><td>Must be <code>true</code> to use <code>permissionMode: &quot;bypassPermissions&quot;</code></td></tr>
+<tr><td><code>mcpServers</code></td><td>object</td><td>MCP servers to connect to</td></tr>
+<tr><td><code>hooks</code></td><td>object</td><td>Hooks for customizing behavior</td></tr>
+<tr><td><code>systemPrompt</code></td><td>string</td><td>Custom system prompt</td></tr>
+<tr><td><code>maxTurns</code></td><td>number</td><td>Maximum agent turns before stopping</td></tr>
+<tr><td><code>maxBudgetUsd</code></td><td>number</td><td>Maximum budget in USD for the query</td></tr>
+<tr><td><code>model</code></td><td>string</td><td>Model ID (default: determined by CLI)</td></tr>
+<tr><td><code>agents</code></td><td>object</td><td>Subagent definitions (<code>Record&lt;string, AgentDefinition&gt;</code>)</td></tr>
+<tr><td><code>outputFormat</code></td><td>object</td><td>Structured output schema</td></tr>
+<tr><td><code>thinking</code></td><td>object</td><td>Thinking/reasoning control</td></tr>
+<tr><td><code>betas</code></td><td>array</td><td>Beta features to enable (e.g., <code>[&quot;context-1m-2025-08-07&quot;]</code>)</td></tr>
+<tr><td><code>settingSources</code></td><td>array</td><td>Settings to load (e.g., <code>[&quot;project&quot;]</code>). Default: none (no CLAUDE.md files)</td></tr>
+<tr><td><code>env</code></td><td>object</td><td>Environment variables to set for the session</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Subagents</h2>
+<pre><code class="language-typescript">for await (const message of query({
+  prompt: &quot;Use the code-reviewer agent to review this codebase&quot;,
+  options: {
+    allowedTools: [&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;, &quot;Task&quot;],
+    agents: {
+      &quot;code-reviewer&quot;: {
+        description: &quot;Expert code reviewer for quality and security reviews.&quot;,
+        prompt: &quot;Analyze code quality and suggest improvements.&quot;,
+        tools: [&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;],
+      },
+    },
+  },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<hr />
+<h2>Message Types</h2>
+<pre><code class="language-typescript">for await (const message of query({
+  prompt: &quot;Find TODO comments&quot;,
+  options: { allowedTools: [&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;] },
+})) {
+  if (&quot;result&quot; in message) {
+    console.log(message.result);
+  } else if (message.type === &quot;system&quot; &amp;&amp; message.subtype === &quot;init&quot;) {
+    const sessionId = message.session_id; // Capture for resuming later
+  }
+}
+</code></pre>
+<hr />
+<h2>Best Practices</h2>
+<ol>
+<li><strong>Always specify allowedTools</strong> — Explicitly list which tools the agent can use</li>
+<li><strong>Set working directory</strong> — Always specify <code>cwd</code> for file operations</li>
+<li><strong>Use appropriate permission modes</strong> — Start with <code>&quot;default&quot;</code> and only escalate when needed</li>
+<li><strong>Handle all message types</strong> — Check for <code>result</code> property to get agent output</li>
+<li><strong>Limit maxTurns</strong> — Prevent runaway agents with reasonable limits</li>
+</ol>
+</doc>
+
+<doc path="typescript/agent-sdk/patterns.md">
+<h1>Agent SDK Patterns — TypeScript</h1>
+<h2>Basic Agent</h2>
+<pre><code class="language-typescript">import { query } from &quot;@anthropic-ai/claude-agent-sdk&quot;;
+
+async function main() {
+  for await (const message of query({
+    prompt: &quot;Explain what this repository does&quot;,
+    options: {
+      cwd: &quot;/path/to/project&quot;,
+      allowedTools: [&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;],
+    },
+  })) {
+    if (&quot;result&quot; in message) {
+      console.log(message.result);
+    }
+  }
+}
+
+main();
+</code></pre>
+<hr />
+<h2>Hooks</h2>
+<h3>After Tool Use Hook</h3>
+<pre><code class="language-typescript">import { query, HookCallback } from &quot;@anthropic-ai/claude-agent-sdk&quot;;
+import { appendFileSync } from &quot;fs&quot;;
+
+const logFileChange: HookCallback = async (input) =&gt; {
+  const filePath = (input as any).tool_input?.file_path ?? &quot;unknown&quot;;
+  appendFileSync(
+    &quot;./audit.log&quot;,
+    `${new Date().toISOString()}: modified ${filePath}\n`,
+  );
+  return {};
+};
+
+for await (const message of query({
+  prompt: &quot;Refactor utils.py to improve readability&quot;,
+  options: {
+    allowedTools: [&quot;Read&quot;, &quot;Edit&quot;, &quot;Write&quot;],
+    permissionMode: &quot;acceptEdits&quot;,
+    hooks: {
+      PostToolUse: [{ matcher: &quot;Edit|Write&quot;, hooks: [logFileChange] }],
+    },
+  },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<hr />
+<h2>Subagents</h2>
+<pre><code class="language-typescript">import { query } from &quot;@anthropic-ai/claude-agent-sdk&quot;;
+
+for await (const message of query({
+  prompt: &quot;Use the code-reviewer agent to review this codebase&quot;,
+  options: {
+    allowedTools: [&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;, &quot;Task&quot;],
+    agents: {
+      &quot;code-reviewer&quot;: {
+        description: &quot;Expert code reviewer for quality and security reviews.&quot;,
+        prompt: &quot;Analyze code quality and suggest improvements.&quot;,
+        tools: [&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;],
+      },
+    },
+  },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<hr />
+<h2>MCP Server Integration</h2>
+<h3>Browser Automation (Playwright)</h3>
+<pre><code class="language-typescript">for await (const message of query({
+  prompt: &quot;Open example.com and describe what you see&quot;,
+  options: {
+    mcpServers: {
+      playwright: { command: &quot;npx&quot;, args: [&quot;@playwright/mcp@latest&quot;] },
+    },
+  },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<hr />
+<h2>Session Resumption</h2>
+<pre><code class="language-typescript">import { query } from &quot;@anthropic-ai/claude-agent-sdk&quot;;
+
+let sessionId: string | undefined;
+
+// First query: capture the session ID
+for await (const message of query({
+  prompt: &quot;Read the authentication module&quot;,
+  options: { allowedTools: [&quot;Read&quot;, &quot;Glob&quot;] },
+})) {
+  if (message.type === &quot;system&quot; &amp;&amp; message.subtype === &quot;init&quot;) {
+    sessionId = message.session_id;
+  }
+}
+
+// Resume with full context from the first query
+for await (const message of query({
+  prompt: &quot;Now find all places that call it&quot;,
+  options: { resume: sessionId },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+<hr />
+<h2>Custom System Prompt</h2>
+<pre><code class="language-typescript">import { query } from &quot;@anthropic-ai/claude-agent-sdk&quot;;
+
+for await (const message of query({
+  prompt: &quot;Review this code&quot;,
+  options: {
+    allowedTools: [&quot;Read&quot;, &quot;Glob&quot;, &quot;Grep&quot;],
+    systemPrompt: `You are a senior code reviewer focused on:
+1. Security vulnerabilities
+2. Performance issues
+3. Code maintainability
+
+Always provide specific line numbers and suggestions for improvement.`,
+  },
+})) {
+  if (&quot;result&quot; in message) console.log(message.result);
+}
+</code></pre>
+</doc>
+
+<doc path="typescript/claude-api/README.md">
+<h1>Claude API — TypeScript</h1>
+<h2>Installation</h2>
+<pre><code class="language-bash">npm install @anthropic-ai/sdk
+</code></pre>
+<h2>Client Initialization</h2>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+
+// Default (uses ANTHROPIC_API_KEY env var)
+const client = new Anthropic();
+
+// Explicit API key
+const client = new Anthropic({ apiKey: &quot;your-api-key&quot; });
+</code></pre>
+<hr />
+<h2>Basic Message Request</h2>
+<pre><code class="language-typescript">const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [{ role: &quot;user&quot;, content: &quot;What is the capital of France?&quot; }],
+});
+console.log(response.content[0].text);
+</code></pre>
+<hr />
+<h2>System Prompts</h2>
+<pre><code class="language-typescript">const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  system:
+    &quot;You are a helpful coding assistant. Always provide examples in Python.&quot;,
+  messages: [{ role: &quot;user&quot;, content: &quot;How do I read a JSON file?&quot; }],
+});
+</code></pre>
+<hr />
+<h2>Vision (Images)</h2>
+<h3>URL</h3>
+<pre><code class="language-typescript">const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content: [
+        {
+          type: &quot;image&quot;,
+          source: { type: &quot;url&quot;, url: &quot;https://example.com/image.png&quot; },
+        },
+        { type: &quot;text&quot;, text: &quot;Describe this image&quot; },
+      ],
+    },
+  ],
+});
+</code></pre>
+<h3>Base64</h3>
+<pre><code class="language-typescript">import fs from &quot;fs&quot;;
+
+const imageData = fs.readFileSync(&quot;image.png&quot;).toString(&quot;base64&quot;);
+
+const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content: [
+        {
+          type: &quot;image&quot;,
+          source: { type: &quot;base64&quot;, media_type: &quot;image/png&quot;, data: imageData },
+        },
+        { type: &quot;text&quot;, text: &quot;What's in this image?&quot; },
+      ],
+    },
+  ],
+});
+</code></pre>
+<hr />
+<h2>Prompt Caching</h2>
+<pre><code class="language-typescript">const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  system: [
+    {
+      type: &quot;text&quot;,
+      text: &quot;You are an expert on this large document...&quot;,
+      cache_control: { type: &quot;ephemeral&quot; }, // default TTL is 5 minutes
+    },
+  ],
+  messages: [{ role: &quot;user&quot;, content: &quot;Summarize the key points&quot; }],
+});
+
+// With explicit TTL (time-to-live)
+const response2 = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  system: [
+    {
+      type: &quot;text&quot;,
+      text: &quot;You are an expert on this large document...&quot;,
+      cache_control: { type: &quot;ephemeral&quot;, ttl: &quot;1h&quot; }, // 1 hour TTL
+    },
+  ],
+  messages: [{ role: &quot;user&quot;, content: &quot;Summarize the key points&quot; }],
+});
+</code></pre>
+<hr />
+<h2>Extended Thinking</h2>
+<blockquote>
+<p><strong>Opus 4.6 and Sonnet 4.6:</strong> Use adaptive thinking. <code>budget_tokens</code> is deprecated on both Opus 4.6 and Sonnet 4.6.
+<strong>Older models:</strong> Use <code>thinking: {type: &quot;enabled&quot;, budget_tokens: N}</code> (must be &lt; <code>max_tokens</code>, min 1024).</p>
+</blockquote>
+<pre><code class="language-typescript">// Opus 4.6: adaptive thinking (recommended)
+const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 16000,
+  thinking: { type: &quot;adaptive&quot; },
+  output_config: { effort: &quot;high&quot; }, // low | medium | high | max
+  messages: [
+    { role: &quot;user&quot;, content: &quot;Solve this math problem step by step...&quot; },
+  ],
+});
+
+for (const block of response.content) {
+  if (block.type === &quot;thinking&quot;) {
+    console.log(&quot;Thinking:&quot;, block.thinking);
+  } else if (block.type === &quot;text&quot;) {
+    console.log(&quot;Response:&quot;, block.text);
+  }
+}
+</code></pre>
+<hr />
+<h2>Error Handling</h2>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+
+try {
+  const response = await client.messages.create({...});
+} catch (error) {
+  if (error instanceof Anthropic.BadRequestError) {
+    console.error(&quot;Bad request:&quot;, error.message);
+  } else if (error instanceof Anthropic.AuthenticationError) {
+    console.error(&quot;Invalid API key&quot;);
+  } else if (error instanceof Anthropic.RateLimitError) {
+    console.error(&quot;Rate limited - retry later&quot;);
+  } else if (error instanceof Anthropic.APIError) {
+    console.error(`API error ${error.status}:`, error.message);
+  }
+}
+</code></pre>
+<hr />
+<h2>Multi-Turn Conversations</h2>
+<p>The API is stateless — send the full conversation history each time.</p>
+<pre><code class="language-typescript">const messages = [
+  { role: &quot;user&quot;, content: &quot;My name is Alice.&quot; },
+  { role: &quot;assistant&quot;, content: &quot;Hello Alice! Nice to meet you.&quot; },
+  { role: &quot;user&quot;, content: &quot;What's my name?&quot; },
+];
+
+const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: messages,
+});
+</code></pre>
+<p><strong>Rules:</strong></p>
+<ul>
+<li>Messages must alternate between <code>user</code> and <code>assistant</code></li>
+<li>First message must be <code>user</code></li>
+</ul>
+<hr />
+<h3>Compaction (long conversations)</h3>
+<blockquote>
+<p><strong>Beta, Opus 4.6 only.</strong> When conversations approach the 200K context window, compaction automatically summarizes earlier context server-side. The API returns a <code>compaction</code> block; you must pass it back on subsequent requests — append <code>response.content</code>, not just the text.</p>
+</blockquote>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+
+const client = new Anthropic();
+const messages: Anthropic.Beta.BetaMessageParam[] = [];
+
+async function chat(userMessage: string): Promise&lt;string&gt; {
+  messages.push({ role: &quot;user&quot;, content: userMessage });
+
+  const response = await client.beta.messages.create({
+    betas: [&quot;compact-2026-01-12&quot;],
+    model: &quot;claude-opus-4-6&quot;,
+    max_tokens: 4096,
+    messages,
+    context_management: {
+      edits: [{ type: &quot;compact_20260112&quot; }],
+    },
+  });
+
+  // Append full content — compaction blocks must be preserved
+  messages.push({ role: &quot;assistant&quot;, content: response.content });
+
+  const textBlock = response.content.find((block) =&gt; block.type === &quot;text&quot;);
+  return textBlock?.text ?? &quot;&quot;;
+}
+
+// Compaction triggers automatically when context grows large
+console.log(await chat(&quot;Help me build a Python web scraper&quot;));
+console.log(await chat(&quot;Add support for JavaScript-rendered pages&quot;));
+console.log(await chat(&quot;Now add rate limiting and error handling&quot;));
+</code></pre>
+<hr />
+<h2>Stop Reasons</h2>
+<p>The <code>stop_reason</code> field in the response indicates why the model stopped generating:</p>
+<table>
+<thead>
+<tr><th>Value</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>end_turn</code></td><td>Claude finished its response naturally</td></tr>
+<tr><td><code>max_tokens</code></td><td>Hit the <code>max_tokens</code> limit — increase it or use streaming</td></tr>
+<tr><td><code>stop_sequence</code></td><td>Hit a custom stop sequence</td></tr>
+<tr><td><code>tool_use</code></td><td>Claude wants to call a tool — execute it and continue</td></tr>
+<tr><td><code>pause_turn</code></td><td>Model paused and can be resumed (agentic flows)</td></tr>
+<tr><td><code>refusal</code></td><td>Claude refused for safety reasons — output may not match schema</td></tr>
+</tbody>
+</table>
+<hr />
+<h2>Cost Optimization Strategies</h2>
+<h3>1. Use Prompt Caching for Repeated Context</h3>
+<pre><code class="language-typescript">const systemWithCache = [
+  {
+    type: &quot;text&quot;,
+    text: largeDocumentText, // e.g., 50KB of context
+    cache_control: { type: &quot;ephemeral&quot; }, // add ttl: &quot;1h&quot; for longer caching
+  },
+];
+
+// First request: full cost
+// Subsequent requests: ~90% cheaper for cached portion
+</code></pre>
+<h3>2. Use Token Counting Before Requests</h3>
+<pre><code class="language-typescript">const countResponse = await client.messages.countTokens({
+  model: &quot;claude-opus-4-6&quot;,
+  messages: messages,
+  system: system,
+});
+
+const estimatedInputCost = countResponse.input_tokens * 0.000005; // $5/1M tokens
+console.log(`Estimated input cost: $${estimatedInputCost.toFixed(4)}`);
+</code></pre>
+</doc>
+
+<doc path="typescript/claude-api/batches.md">
+<h1>Message Batches API — TypeScript</h1>
+<p>The Batches API (<code>POST /v1/messages/batches</code>) processes Messages API requests asynchronously at 50% of standard prices.</p>
+<h2>Key Facts</h2>
+<ul>
+<li>Up to 100,000 requests or 256 MB per batch</li>
+<li>Most batches complete within 1 hour; maximum 24 hours</li>
+<li>Results available for 29 days after creation</li>
+<li>50% cost reduction on all token usage</li>
+<li>All Messages API features supported (vision, tools, caching, etc.)</li>
+</ul>
+<hr />
+<h2>Create a Batch</h2>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+
+const client = new Anthropic();
+
+const messageBatch = await client.messages.batches.create({
+  requests: [
+    {
+      custom_id: &quot;request-1&quot;,
+      params: {
+        model: &quot;claude-opus-4-6&quot;,
+        max_tokens: 1024,
+        messages: [
+          { role: &quot;user&quot;, content: &quot;Summarize climate change impacts&quot; },
+        ],
+      },
+    },
+    {
+      custom_id: &quot;request-2&quot;,
+      params: {
+        model: &quot;claude-opus-4-6&quot;,
+        max_tokens: 1024,
+        messages: [
+          { role: &quot;user&quot;, content: &quot;Explain quantum computing basics&quot; },
+        ],
+      },
+    },
+  ],
+});
+
+console.log(`Batch ID: ${messageBatch.id}`);
+console.log(`Status: ${messageBatch.processing_status}`);
+</code></pre>
+<hr />
+<h2>Poll for Completion</h2>
+<pre><code class="language-typescript">let batch;
+while (true) {
+  batch = await client.messages.batches.retrieve(messageBatch.id);
+  if (batch.processing_status === &quot;ended&quot;) break;
+  console.log(
+    `Status: ${batch.processing_status}, processing: ${batch.request_counts.processing}`,
+  );
+  await new Promise((resolve) =&gt; setTimeout(resolve, 60_000));
+}
+
+console.log(&quot;Batch complete!&quot;);
+console.log(`Succeeded: ${batch.request_counts.succeeded}`);
+console.log(`Errored: ${batch.request_counts.errored}`);
+</code></pre>
+<hr />
+<h2>Retrieve Results</h2>
+<pre><code class="language-typescript">for await (const result of await client.messages.batches.results(
+  messageBatch.id,
+)) {
+  switch (result.result.type) {
+    case &quot;succeeded&quot;:
+      console.log(
+        `[${result.custom_id}] ${result.result.message.content[0].text.slice(0, 100)}`,
+      );
+      break;
+    case &quot;errored&quot;:
+      if (result.result.error.type === &quot;invalid_request&quot;) {
+        console.log(`[${result.custom_id}] Validation error - fix and retry`);
+      } else {
+        console.log(`[${result.custom_id}] Server error - safe to retry`);
+      }
+      break;
+    case &quot;expired&quot;:
+      console.log(`[${result.custom_id}] Expired - resubmit`);
+      break;
+  }
+}
+</code></pre>
+<hr />
+<h2>Cancel a Batch</h2>
+<pre><code class="language-typescript">const cancelled = await client.messages.batches.cancel(messageBatch.id);
+console.log(`Status: ${cancelled.processing_status}`); // &quot;canceling&quot;
+</code></pre>
+</doc>
+
+<doc path="typescript/claude-api/files-api.md">
+<h1>Files API — TypeScript</h1>
+<p>The Files API uploads files for use in Messages API requests. Reference files via <code>file_id</code> in content blocks, avoiding re-uploads across multiple API calls.</p>
+<p><strong>Beta:</strong> Pass <code>betas: [&quot;files-api-2025-04-14&quot;]</code> in your API calls (the SDK sets the required header automatically).</p>
+<h2>Key Facts</h2>
+<ul>
+<li>Maximum file size: 500 MB</li>
+<li>Total storage: 100 GB per organization</li>
+<li>Files persist until deleted</li>
+<li>File operations (upload, list, delete) are free; content used in messages is billed as input tokens</li>
+<li>Not available on Amazon Bedrock or Google Vertex AI</li>
+</ul>
+<hr />
+<h2>Upload a File</h2>
+<pre><code class="language-typescript">import Anthropic, { toFile } from &quot;@anthropic-ai/sdk&quot;;
+import fs from &quot;fs&quot;;
+
+const client = new Anthropic();
+
+const uploaded = await client.beta.files.upload({
+  file: await toFile(fs.createReadStream(&quot;report.pdf&quot;), undefined, {
+    type: &quot;application/pdf&quot;,
+  }),
+  betas: [&quot;files-api-2025-04-14&quot;],
+});
+
+console.log(`File ID: ${uploaded.id}`);
+console.log(`Size: ${uploaded.size_bytes} bytes`);
+</code></pre>
+<hr />
+<h2>Use a File in Messages</h2>
+<h3>PDF / Text Document</h3>
+<pre><code class="language-typescript">const response = await client.beta.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content: [
+        { type: &quot;text&quot;, text: &quot;Summarize the key findings in this report.&quot; },
+        {
+          type: &quot;document&quot;,
+          source: { type: &quot;file&quot;, file_id: uploaded.id },
+          title: &quot;Q4 Report&quot;,
+          citations: { enabled: true },
+        },
+      ],
+    },
+  ],
+  betas: [&quot;files-api-2025-04-14&quot;],
+});
+
+console.log(response.content[0].text);
+</code></pre>
+<hr />
+<h2>Manage Files</h2>
+<h3>List Files</h3>
+<pre><code class="language-typescript">const files = await client.beta.files.list({
+  betas: [&quot;files-api-2025-04-14&quot;],
+});
+for (const f of files.data) {
+  console.log(`${f.id}: ${f.filename} (${f.size_bytes} bytes)`);
+}
+</code></pre>
+<h3>Delete a File</h3>
+<pre><code class="language-typescript">await client.beta.files.delete(&quot;file_011CNha8iCJcU1wXNR6q4V8w&quot;, {
+  betas: [&quot;files-api-2025-04-14&quot;],
+});
+</code></pre>
+<h3>Download a File</h3>
+<pre><code class="language-typescript">const response = await client.beta.files.download(
+  &quot;file_011CNha8iCJcU1wXNR6q4V8w&quot;,
+  { betas: [&quot;files-api-2025-04-14&quot;] },
+);
+const content = Buffer.from(await response.arrayBuffer());
+await fs.promises.writeFile(&quot;output.txt&quot;, content);
+</code></pre>
+</doc>
+
+<doc path="typescript/claude-api/streaming.md">
+<h1>Streaming — TypeScript</h1>
+<h2>Quick Start</h2>
+<pre><code class="language-typescript">const stream = client.messages.stream({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [{ role: &quot;user&quot;, content: &quot;Write a story&quot; }],
+});
+
+for await (const event of stream) {
+  if (
+    event.type === &quot;content_block_delta&quot; &amp;&amp;
+    event.delta.type === &quot;text_delta&quot;
+  ) {
+    process.stdout.write(event.delta.text);
+  }
+}
+</code></pre>
+<hr />
+<h2>Handling Different Content Types</h2>
+<blockquote>
+<p><strong>Opus 4.6:</strong> Use <code>thinking: {type: &quot;adaptive&quot;}</code>. On older models, use <code>thinking: {type: &quot;enabled&quot;, budget_tokens: N}</code> instead.</p>
+</blockquote>
+<pre><code class="language-typescript">const stream = client.messages.stream({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 16000,
+  thinking: { type: &quot;adaptive&quot; },
+  messages: [{ role: &quot;user&quot;, content: &quot;Analyze this problem&quot; }],
+});
+
+for await (const event of stream) {
+  switch (event.type) {
+    case &quot;content_block_start&quot;:
+      switch (event.content_block.type) {
+        case &quot;thinking&quot;:
+          console.log(&quot;\n[Thinking...]&quot;);
+          break;
+        case &quot;text&quot;:
+          console.log(&quot;\n[Response:]&quot;);
+          break;
+      }
+      break;
+    case &quot;content_block_delta&quot;:
+      switch (event.delta.type) {
+        case &quot;thinking_delta&quot;:
+          process.stdout.write(event.delta.thinking);
+          break;
+        case &quot;text_delta&quot;:
+          process.stdout.write(event.delta.text);
+          break;
+      }
+      break;
+  }
+}
+</code></pre>
+<hr />
+<h2>Streaming with Tool Use (Tool Runner)</h2>
+<p>Use the tool runner with <code>stream: true</code>. The outer loop iterates over tool runner iterations (messages), the inner loop processes stream events:</p>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+import { betaZodTool } from &quot;@anthropic-ai/sdk/helpers/beta/zod&quot;;
+import { z } from &quot;zod&quot;;
+
+const client = new Anthropic();
+
+const getWeather = betaZodTool({
+  name: &quot;get_weather&quot;,
+  description: &quot;Get current weather for a location&quot;,
+  inputSchema: z.object({
+    location: z.string().describe(&quot;City and state, e.g., San Francisco, CA&quot;),
+  }),
+  run: async ({ location }) =&gt; `72°F and sunny in ${location}`,
+});
+
+const runner = client.beta.messages.toolRunner({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 4096,
+  tools: [getWeather],
+  messages: [
+    { role: &quot;user&quot;, content: &quot;What's the weather in Paris and London?&quot; },
+  ],
+  stream: true,
+});
+
+// Outer loop: each tool runner iteration
+for await (const messageStream of runner) {
+  // Inner loop: stream events for this iteration
+  for await (const event of messageStream) {
+    switch (event.type) {
+      case &quot;content_block_delta&quot;:
+        switch (event.delta.type) {
+          case &quot;text_delta&quot;:
+            process.stdout.write(event.delta.text);
+            break;
+          case &quot;input_json_delta&quot;:
+            // Tool input being streamed
+            break;
+        }
+        break;
+    }
+  }
+}
+</code></pre>
+<hr />
+<h2>Getting the Final Message</h2>
+<pre><code class="language-typescript">const stream = client.messages.stream({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [{ role: &quot;user&quot;, content: &quot;Hello&quot; }],
+});
+
+for await (const event of stream) {
+  // Process events...
+}
+
+const finalMessage = await stream.finalMessage();
+console.log(`Tokens used: ${finalMessage.usage.output_tokens}`);
+</code></pre>
+<hr />
+<h2>Stream Event Types</h2>
+<table>
+<thead>
+<tr><th>Event Type</th><th>Description</th><th>When it fires</th></tr>
+</thead>
+<tbody>
+<tr><td><code>message_start</code></td><td>Contains message metadata</td><td>Once at the beginning</td></tr>
+<tr><td><code>content_block_start</code></td><td>New content block beginning</td><td>When a text/tool_use block starts</td></tr>
+<tr><td><code>content_block_delta</code></td><td>Incremental content update</td><td>For each token/chunk</td></tr>
+<tr><td><code>content_block_stop</code></td><td>Content block complete</td><td>When a block finishes</td></tr>
+<tr><td><code>message_delta</code></td><td>Message-level updates</td><td>Contains <code>stop_reason</code>, usage</td></tr>
+<tr><td><code>message_stop</code></td><td>Message complete</td><td>Once at the end</td></tr>
+</tbody>
+</table>
+<h2>Best Practices</h2>
+<ol>
+<li><strong>Always flush output</strong> — Use <code>process.stdout.write()</code> for immediate display</li>
+<li><strong>Handle partial responses</strong> — If the stream is interrupted, you may have incomplete content</li>
+<li><strong>Track token usage</strong> — The <code>message_delta</code> event contains usage information</li>
+<li><strong>Use <code>finalMessage()</code></strong> — Get the complete response even when streaming for timeout protection</li>
+<li><strong>Buffer for web UIs</strong> — Consider buffering a few tokens before rendering to avoid excessive DOM updates</li>
+</ol>
+<h2>Raw SSE Format</h2>
+<p>If using raw HTTP (not SDKs), the stream returns Server-Sent Events:</p>
+<pre><code>event: message_start
+data: {&quot;type&quot;:&quot;message_start&quot;,&quot;message&quot;:{&quot;id&quot;:&quot;msg_...&quot;,&quot;type&quot;:&quot;message&quot;,...}}
+
+event: content_block_start
+data: {&quot;type&quot;:&quot;content_block_start&quot;,&quot;index&quot;:0,&quot;content_block&quot;:{&quot;type&quot;:&quot;text&quot;,&quot;text&quot;:&quot;&quot;}}
+
+event: content_block_delta
+data: {&quot;type&quot;:&quot;content_block_delta&quot;,&quot;index&quot;:0,&quot;delta&quot;:{&quot;type&quot;:&quot;text_delta&quot;,&quot;text&quot;:&quot;Hello&quot;}}
+
+event: content_block_stop
+data: {&quot;type&quot;:&quot;content_block_stop&quot;,&quot;index&quot;:0}
+
+event: message_delta
+data: {&quot;type&quot;:&quot;message_delta&quot;,&quot;delta&quot;:{&quot;stop_reason&quot;:&quot;end_turn&quot;},&quot;usage&quot;:{&quot;output_tokens&quot;:12}}
+
+event: message_stop
+data: {&quot;type&quot;:&quot;message_stop&quot;}
+</code></pre>
+</doc>
+
+<doc path="typescript/claude-api/tool-use.md">
+<h1>Tool Use — TypeScript</h1>
+<p>For conceptual overview (tool definitions, tool choice, tips), see <a href="../../shared/tool-use-concepts.md">shared/tool-use-concepts.md</a>.</p>
+<h2>Tool Runner (Recommended)</h2>
+<p><strong>Beta:</strong> The tool runner is in beta in the TypeScript SDK.</p>
+<p>Use <code>betaZodTool</code> with Zod schemas to define tools with a <code>run</code> function, then pass them to <code>client.beta.messages.toolRunner()</code>:</p>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+import { betaZodTool } from &quot;@anthropic-ai/sdk/helpers/beta/zod&quot;;
+import { z } from &quot;zod&quot;;
+
+const client = new Anthropic();
+
+const getWeather = betaZodTool({
+  name: &quot;get_weather&quot;,
+  description: &quot;Get current weather for a location&quot;,
+  inputSchema: z.object({
+    location: z.string().describe(&quot;City and state, e.g., San Francisco, CA&quot;),
+    unit: z.enum([&quot;celsius&quot;, &quot;fahrenheit&quot;]).optional(),
+  }),
+  run: async (input) =&gt; {
+    // Your implementation here
+    return `72°F and sunny in ${input.location}`;
+  },
+});
+
+// The tool runner handles the agentic loop and returns the final message
+const finalMessage = await client.beta.messages.toolRunner({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 4096,
+  tools: [getWeather],
+  messages: [{ role: &quot;user&quot;, content: &quot;What's the weather in Paris?&quot; }],
+});
+
+console.log(finalMessage.content);
+</code></pre>
+<p><strong>Key benefits of the tool runner:</strong></p>
+<ul>
+<li>No manual loop — the SDK handles calling tools and feeding results back</li>
+<li>Type-safe tool inputs via Zod schemas</li>
+<li>Tool schemas are generated automatically from Zod definitions</li>
+<li>Iteration stops automatically when Claude has no more tool calls</li>
+</ul>
+<hr />
+<h2>Manual Agentic Loop</h2>
+<p>Use this when you need fine-grained control:</p>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+
+const client = new Anthropic();
+const tools = [...]; // Your tool definitions
+const messages = [{ role: &quot;user&quot;, content: userInput }];
+
+while (true) {
+  const response = await client.messages.create({
+    model: &quot;claude-opus-4-6&quot;,
+    max_tokens: 4096,
+    tools: tools,
+    messages: messages,
+  });
+
+  if (response.stop_reason === &quot;end_turn&quot;) break;
+
+  const toolUseBlocks = response.content.filter((b) =&gt; b.type === &quot;tool_use&quot;);
+
+  messages.push({ role: &quot;assistant&quot;, content: response.content });
+
+  const toolResults = [];
+  for (const tool of toolUseBlocks) {
+    const result = await executeTool(tool.name, tool.input);
+    toolResults.push({
+      type: &quot;tool_result&quot;,
+      tool_use_id: tool.id,
+      content: result,
+    });
+  }
+
+  messages.push({ role: &quot;user&quot;, content: toolResults });
+}
+</code></pre>
+<hr />
+<h2>Handling Tool Results</h2>
+<pre><code class="language-typescript">const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  tools: tools,
+  messages: [{ role: &quot;user&quot;, content: &quot;What's the weather in Paris?&quot; }],
+});
+
+for (const block of response.content) {
+  if (block.type === &quot;tool_use&quot;) {
+    const result = await executeTool(block.name, block.input);
+
+    const followup = await client.messages.create({
+      model: &quot;claude-opus-4-6&quot;,
+      max_tokens: 1024,
+      tools: tools,
+      messages: [
+        { role: &quot;user&quot;, content: &quot;What's the weather in Paris?&quot; },
+        { role: &quot;assistant&quot;, content: response.content },
+        {
+          role: &quot;user&quot;,
+          content: [
+            { type: &quot;tool_result&quot;, tool_use_id: block.id, content: result },
+          ],
+        },
+      ],
+    });
+  }
+}
+</code></pre>
+<hr />
+<h2>Tool Choice</h2>
+<pre><code class="language-typescript">const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  tools: tools,
+  tool_choice: { type: &quot;tool&quot;, name: &quot;get_weather&quot; },
+  messages: [{ role: &quot;user&quot;, content: &quot;What's the weather in Paris?&quot; }],
+});
+</code></pre>
+<hr />
+<h2>Code Execution</h2>
+<h3>Basic Usage</h3>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+
+const client = new Anthropic();
+
+const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 4096,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content:
+        &quot;Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]&quot;,
+    },
+  ],
+  tools: [{ type: &quot;code_execution_20260120&quot;, name: &quot;code_execution&quot; }],
+});
+</code></pre>
+<h3>Upload Files for Analysis</h3>
+<pre><code class="language-typescript">import Anthropic, { toFile } from &quot;@anthropic-ai/sdk&quot;;
+import { createReadStream } from &quot;fs&quot;;
+
+const client = new Anthropic();
+
+// 1. Upload a file
+const uploaded = await client.beta.files.upload({
+  file: await toFile(createReadStream(&quot;sales_data.csv&quot;), undefined, {
+    type: &quot;text/csv&quot;,
+  }),
+  betas: [&quot;files-api-2025-04-14&quot;],
+});
+
+// 2. Pass to code execution
+// Code execution is GA; Files API is still beta (pass via RequestOptions)
+const response = await client.messages.create(
+  {
+    model: &quot;claude-opus-4-6&quot;,
+    max_tokens: 4096,
+    messages: [
+      {
+        role: &quot;user&quot;,
+        content: [
+          {
+            type: &quot;text&quot;,
+            text: &quot;Analyze this sales data. Show trends and create a visualization.&quot;,
+          },
+          { type: &quot;container_upload&quot;, file_id: uploaded.id },
+        ],
+      },
+    ],
+    tools: [{ type: &quot;code_execution_20260120&quot;, name: &quot;code_execution&quot; }],
+  },
+  { headers: { &quot;anthropic-beta&quot;: &quot;files-api-2025-04-14&quot; } },
+);
+</code></pre>
+<h3>Retrieve Generated Files</h3>
+<pre><code class="language-typescript">import path from &quot;path&quot;;
+import fs from &quot;fs&quot;;
+
+const OUTPUT_DIR = &quot;./claude_outputs&quot;;
+await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
+
+for (const block of response.content) {
+  if (block.type === &quot;bash_code_execution_tool_result&quot;) {
+    const result = block.content;
+    if (result.type === &quot;bash_code_execution_result&quot; &amp;&amp; result.content) {
+      for (const fileRef of result.content) {
+        if (fileRef.type === &quot;bash_code_execution_output&quot;) {
+          const metadata = await client.beta.files.retrieveMetadata(
+            fileRef.file_id,
+          );
+          const response = await client.beta.files.download(fileRef.file_id);
+          const fileBytes = Buffer.from(await response.arrayBuffer());
+          const safeName = path.basename(metadata.filename);
+          if (!safeName || safeName === &quot;.&quot; || safeName === &quot;..&quot;) {
+            console.warn(`Skipping invalid filename: ${metadata.filename}`);
+            continue;
+          }
+          const outputPath = path.join(OUTPUT_DIR, safeName);
+          await fs.promises.writeFile(outputPath, fileBytes);
+          console.log(`Saved: ${outputPath}`);
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<h3>Container Reuse</h3>
+<pre><code class="language-typescript">// First request: set up environment
+const response1 = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 4096,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content: &quot;Install tabulate and create data.json with sample user data&quot;,
+    },
+  ],
+  tools: [{ type: &quot;code_execution_20260120&quot;, name: &quot;code_execution&quot; }],
+});
+
+// Reuse container
+const containerId = response1.container.id;
+
+const response2 = await client.messages.create({
+  container: containerId,
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 4096,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content: &quot;Read data.json and display as a formatted table&quot;,
+    },
+  ],
+  tools: [{ type: &quot;code_execution_20260120&quot;, name: &quot;code_execution&quot; }],
+});
+</code></pre>
+<hr />
+<h2>Memory Tool</h2>
+<h3>Basic Usage</h3>
+<pre><code class="language-typescript">const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 2048,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content: &quot;Remember that my preferred language is TypeScript.&quot;,
+    },
+  ],
+  tools: [{ type: &quot;memory_20250818&quot;, name: &quot;memory&quot; }],
+});
+</code></pre>
+<h3>SDK Memory Helper</h3>
+<p>Use <code>betaMemoryTool</code> with a <code>MemoryToolHandlers</code> implementation:</p>
+<pre><code class="language-typescript">import {
+  betaMemoryTool,
+  type MemoryToolHandlers,
+} from &quot;@anthropic-ai/sdk/helpers/beta/memory&quot;;
+
+const handlers: MemoryToolHandlers = {
+  async view(command) { ... },
+  async create(command) { ... },
+  async str_replace(command) { ... },
+  async insert(command) { ... },
+  async delete(command) { ... },
+  async rename(command) { ... },
+};
+
+const memory = betaMemoryTool(handlers);
+
+const runner = client.beta.messages.toolRunner({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 2048,
+  tools: [memory],
+  messages: [{ role: &quot;user&quot;, content: &quot;Remember my preferences&quot; }],
+});
+
+for await (const message of runner) {
+  console.log(message);
+}
+</code></pre>
+<p>For full implementation examples, use WebFetch:</p>
+<ul>
+<li><code>https://github.com/anthropics/anthropic-sdk-typescript/blob/main/examples/tools-helpers-memory.ts</code></li>
+</ul>
+<hr />
+<h2>Structured Outputs</h2>
+<h3>JSON Outputs (Zod — Recommended)</h3>
+<pre><code class="language-typescript">import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+import { z } from &quot;zod&quot;;
+import { zodOutputFormat } from &quot;@anthropic-ai/sdk/helpers/zod&quot;;
+
+const ContactInfoSchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  plan: z.string(),
+  interests: z.array(z.string()),
+  demo_requested: z.boolean(),
+});
+
+const client = new Anthropic();
+
+const response = await client.messages.parse({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content:
+        &quot;Extract: Jane Doe (jane@co.com) wants Enterprise, interested in API and SDKs, wants a demo.&quot;,
+    },
+  ],
+  output_config: {
+    format: zodOutputFormat(ContactInfoSchema),
+  },
+});
+
+console.log(response.parsed_output.name); // &quot;Jane Doe&quot;
+</code></pre>
+<h3>Strict Tool Use</h3>
+<pre><code class="language-typescript">const response = await client.messages.create({
+  model: &quot;claude-opus-4-6&quot;,
+  max_tokens: 1024,
+  messages: [
+    {
+      role: &quot;user&quot;,
+      content: &quot;Book a flight to Tokyo for 2 passengers on March 15&quot;,
+    },
+  ],
+  tools: [
+    {
+      name: &quot;book_flight&quot;,
+      description: &quot;Book a flight to a destination&quot;,
+      strict: true,
+      input_schema: {
+        type: &quot;object&quot;,
+        properties: {
+          destination: { type: &quot;string&quot; },
+          date: { type: &quot;string&quot;, format: &quot;date&quot; },
+          passengers: {
+            type: &quot;integer&quot;,
+            enum: [1, 2, 3, 4, 5, 6, 7, 8],
+          },
+        },
+        required: [&quot;destination&quot;, &quot;date&quot;, &quot;passengers&quot;],
+        additionalProperties: false,
+      },
+    },
+  ],
+});
+</code></pre>
+</doc>
+
+---
+
+After sql-analyst returns, do NOT repeat the data tables or numbers.
+    Simply add brief commentary on what the data means. 
+
+then I think we could put subagent result in answer block now, right?
+
+---
+
+I don't want subagent final answer shown in ui at all
+
+---
+
+commit this and push

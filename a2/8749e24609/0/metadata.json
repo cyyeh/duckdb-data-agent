@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a28749e24609",
+  "session_id": "1ff2d640-6e79-4d39-8785-c773179c174a",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T04:28:22.985664Z",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/components/MessageBubble.tsx"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "a14c6e8088ea",
+  "transcript_identifier_at_start": "0e5e2a81-c7b6-485e-8e83-5f635d4e2443",
+  "token_usage": {
+    "input_tokens": 27,
+    "cache_creation_tokens": 109974,
+    "cache_read_tokens": 1900112,
+    "output_tokens": 18745,
+    "api_call_count": 17
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T04:28:22.264528Z",
+    "agent_lines": 17,
+    "human_added": 0,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 18,
+    "agent_percentage": 94.44444444444444
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/1ff2d640-6e79-4d39-8785-c773179c174a.jsonl"
+}

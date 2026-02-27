@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a28749e24609",
+  "strategy": "manual-commit",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/components/MessageBubble.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a2/8749e24609/0/metadata.json",
+      "transcript": "/a2/8749e24609/0/full.jsonl",
+      "context": "/a2/8749e24609/0/context.md",
+      "content_hash": "/a2/8749e24609/0/content_hash.txt",
+      "prompt": "/a2/8749e24609/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 27,
+    "cache_creation_tokens": 109974,
+    "cache_read_tokens": 1900112,
+    "output_tokens": 18745,
+    "api_call_count": 17
+  }
+}
