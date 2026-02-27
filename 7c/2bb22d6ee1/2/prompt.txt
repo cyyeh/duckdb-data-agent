@@ -1,0 +1,17 @@
+still the same
+
+---
+
+ask user question tool has issue
+
+---
+
+rename mcp server name duckdb-data-agent
+
+---
+
+make sure all repo apply this change
+
+---
+
+commit this and push
