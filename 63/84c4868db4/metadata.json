@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "6384c4868db4",
+  "strategy": "manual-commit",
+  "branch": "feat/default-tool-model-fallback",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md",
+    "backend/.env.example",
+    "backend/app/config.py",
+    "backend/app/proxy.py",
+    "backend/tests/test_proxy.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/63/84c4868db4/0/metadata.json",
+      "transcript": "/63/84c4868db4/0/full.jsonl",
+      "context": "/63/84c4868db4/0/context.md",
+      "content_hash": "/63/84c4868db4/0/content_hash.txt",
+      "prompt": "/63/84c4868db4/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 33913,
+    "cache_read_tokens": 646059,
+    "output_tokens": 5820,
+    "api_call_count": 16
+  }
+}

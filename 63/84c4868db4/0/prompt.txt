@@ -1,0 +1,46 @@
+Implement the following plan:
+
+# Plan: Add fallback model rewrite for unmapped models
+
+## Context
+
+The Claude Agent SDK's WebFetch tool internally uses `claude-haiku-4-5-20251001`. When all models are configured to route through OpenAI (e.g., `openai/gpt-5.2-2025-12-11@sonnet`), only `sonnet` is in `MODEL_REWRITES`. The haiku model passes through unchanged, and Bifrost fails with `"provider is required"` because the bare model name lacks a provider prefix and no Anthropic API key is configured.
+
+**Goal**: Add a `FALLBACK_MODEL` env var so any unmatched model gets rewritten to a configured fallback (e.g., an OpenAI model).
+
+## Files to modify
+
+1. **`backend/app/config.py`** — Add `FALLBACK_MODEL` config
+2. **`backend/app/proxy.py`** — Use fallback in `rewrite_model_in_body()`
+3. **`backend/tests/test_proxy.py`** — Add tests for fallback behavior
+4. **`backend/.env.example`** — Document the new env var
+
+## Implementation
+
+### 1. `backend/app/config.py`
+- Add `FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", "")` after the existing model configs (~line 36)
+
+### 2. `backend/app/proxy.py`
+- Import `FALLBACK_MODEL` from config
+- In `rewrite_model_in_body()`, accept a `fallback` parameter (default `""`)
+- After the rewrite loop, if no match was found and `fallback` is set, rewrite the model to the fallback value
+- Update the call site in `proxy_to_upstream()` to pass `FALLBACK_MODEL`
+
+### 3. `backend/tests/test_proxy.py`
+- Add test: fallback is applied when no rewrite matches
+- Add test: fallback is NOT applied when a rewrite matches
+- Add test: empty fallback leaves model unchanged (existing behavior preserved)
+
+### 4. `backend/.env.example`
+- Add `FALLBACK_MODEL=` with a comment explaining its purpose
+
+## Verification
+- Run `pytest backend/tests/test_proxy.py` to confirm tests pass
+- Manually test with the existing `.env` config by setting `FALLBACK_MODEL=openai/gpt-5.2-2025-12-11`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+---
+
+also update readme about DEFAULT_TOOL_MODEL
