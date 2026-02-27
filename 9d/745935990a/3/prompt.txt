@@ -1,0 +1,5 @@
+add copy icon buton to sql query and render_chart block to the top left in thinking step in order to copy the block content easily
+
+---
+
+add new branch chore:minor-updates and put all changes there and push
