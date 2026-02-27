@@ -5,8 +5,8 @@
 https://github.com/user-attachments/assets/eeb5e144-062c-444a-8232-679830b048de
 
 Or you can see examples online:
-- [example1](https://htmlpreview.github.io/?https://github.com/cyyeh/duckdb-data-agent/blob/main/examples/example1.html)
-- [example2](https://htmlpreview.github.io/?https://github.com/cyyeh/duckdb-data-agent/blob/main/examples/example2.html)
+- [example1](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example1.html)
+- [example2](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example2.html)
 
 ---
 
