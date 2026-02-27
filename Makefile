@@ -14,7 +14,7 @@ dev:
 		maximhq/bifrost:latest && \
 	echo "Bifrost started on port $${BIFROST_PORT:-8081}"; \
 	trap 'docker rm -f bifrost-dev 2>/dev/null; kill 0' EXIT; \
-	export BIFROST_BASE_URL=http://bifrost-dev:8080; \
+	export BIFROST_BASE_URL=http://localhost:8081; \
 	export BACKEND_BASE_URL=http://host.docker.internal:8000; \
 	cd backend && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 & \
 	cd frontend && npm run dev & \
