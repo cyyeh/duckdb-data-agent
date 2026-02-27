@@ -24,6 +24,8 @@
 
 /* Tool label */
 .inline-query__label {
+  display: flex;
+  align-items: center;
   padding: 3px 10px;
   font-size: 11px;
   font-weight: 600;
@@ -48,12 +50,49 @@
   border-bottom-color: var(--color-tool-generic-border);
 }
 
+/* Copy button */
+.inline-query__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  color: var(--color-text-disabled);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.inline-query__label .inline-query__copy-btn {
+  margin-left: auto;
+}
+
+.inline-query__copy-btn:hover {
+  background: var(--color-border-light);
+  color: var(--color-text-tertiary);
+}
+
 /* Tool input (SQL, command, etc.) */
 .inline-query__sql {
+  position: relative;
   padding: 6px 10px;
   background: var(--color-bg-code);
   border-bottom: 1px solid var(--color-border-light);
   overflow-x: auto;
+}
+
+.inline-query__sql .inline-query__copy-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.inline-query__sql:hover .inline-query__copy-btn {
+  opacity: 1;
 }
 
 .inline-query__sql code {
