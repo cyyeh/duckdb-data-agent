@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "864088370ca2",
+  "strategy": "manual-commit",
+  "branch": "fix/incomplete-chunked-read-and-multi-chart",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/tests/test_stream_chart_capture.py",
+    "frontend/src/agent/agentService.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/86/4088370ca2/0/metadata.json",
+      "transcript": "/86/4088370ca2/0/full.jsonl",
+      "context": "/86/4088370ca2/0/context.md",
+      "content_hash": "/86/4088370ca2/0/content_hash.txt",
+      "prompt": "/86/4088370ca2/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 30,
+    "cache_creation_tokens": 99255,
+    "cache_read_tokens": 2359594,
+    "output_tokens": 35018,
+    "api_call_count": 27
+  }
+}
