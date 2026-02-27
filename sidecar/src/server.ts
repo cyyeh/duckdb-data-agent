@@ -194,131 +194,172 @@ app.post("/query", async (req: Request, res: Response) => {
       }
     }
 
-    const sdkQuery = query({
-      prompt: body.message,
-      options: {
-        model: modelName,
-        systemPrompt: body.system_prompt,
-        allowedTools: ["Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"],
-        permissionMode: "bypassPermissions",
-        allowDangerouslySkipPermissions: true,
-        maxTurns: 20,
-        includePartialMessages: true,
-        abortController,
-        env: sdkEnv,
-        stderr: (line: string) => {
-          stderrLines.push(line);
-          console.error(`[sidecar:cli] ${line}`);
-        },
-        ...(sdkAgents ? { agents: sdkAgents } : {}),
-        ...(body.mcp_server_url
-          ? {
-              mcpServers: {
-                "duckdb-data-agent": {
-                  type: "sse" as const,
-                  url: body.mcp_server_url,
-                },
-              },
-            }
-          : {}),
-        ...(body.session_id ? { resume: body.session_id } : {}),
+    // Common SDK options (without resume/prompt — those vary on retry)
+    const baseOptions = {
+      model: modelName,
+      systemPrompt: body.system_prompt,
+      allowedTools: ["Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"] as string[],
+      permissionMode: "bypassPermissions" as const,
+      allowDangerouslySkipPermissions: true,
+      maxTurns: 20,
+      includePartialMessages: true,
+      abortController,
+      env: sdkEnv,
+      stderr: (line: string) => {
+        stderrLines.push(line);
+        console.error(`[sidecar:cli] ${line}`);
       },
-    });
+      ...(sdkAgents ? { agents: sdkAgents } : {}),
+      ...(body.mcp_server_url
+        ? {
+            mcpServers: {
+              "duckdb-data-agent": {
+                type: "sse" as const,
+                url: body.mcp_server_url,
+              },
+            },
+          }
+        : {}),
+    };
 
-    console.log(
-      `[sidecar] SDK query started model=${modelName} reqId=${requestId}`
-    );
+    // Resume fallback: try with resume first. If the SDK yields a "result"
+    // message with "No conversation found" (container was recreated and lost
+    // the session), suppress that error and retry without resume, prepending
+    // conversation history so the model has context.
+    let currentPrompt = body.message;
+    let useResume = !!body.session_id;
+    let retried = false;
 
-    // Idle-timeout: abort if no message arrives within SDK_IDLE_TIMEOUT_MS.
-    // The timer resets on every message so long-running multi-turn queries
-    // that are making progress are not interrupted.
-    idleTimer = setTimeout(() => {
-      console.error(`[sidecar] SDK idle timeout (${SDK_IDLE_TIMEOUT_MS}ms) reached, aborting reqId=${requestId}`);
-      abortController.abort();
-    }, SDK_IDLE_TIMEOUT_MS);
+    queryLoop: for (let attempt = 0; attempt < 2; attempt++) {
+      const sdkQuery = query({
+        prompt: currentPrompt,
+        options: {
+          ...baseOptions,
+          ...(useResume ? { resume: body.session_id } : {}),
+        },
+      });
 
-    for await (const message of sdkQuery) {
-      // Reset idle timer on every message
-      if (idleTimer) { clearTimeout(idleTimer); }
+      console.log(
+        `[sidecar] SDK query started model=${modelName} reqId=${requestId} attempt=${attempt} resume=${useResume}`
+      );
+
       idleTimer = setTimeout(() => {
         console.error(`[sidecar] SDK idle timeout (${SDK_IDLE_TIMEOUT_MS}ms) reached, aborting reqId=${requestId}`);
         abortController.abort();
       }, SDK_IDLE_TIMEOUT_MS);
 
-      if (responseEnded) break;
-      // Forward each SDK message as an SSE data line
-      res.write(`data: ${JSON.stringify(message)}\n\n`);
+      let resumeFailedNeedsRetry = false;
 
-      // --- Create Langfuse observations from SDK messages ---
-      if (!trace) continue;
-      const msg = message as Record<string, unknown>;
+      try {
+        for await (const message of sdkQuery) {
+          // Reset idle timer on every message
+          if (idleTimer) { clearTimeout(idleTimer); }
+          idleTimer = setTimeout(() => {
+            console.error(`[sidecar] SDK idle timeout (${SDK_IDLE_TIMEOUT_MS}ms) reached, aborting reqId=${requestId}`);
+            abortController.abort();
+          }, SDK_IDLE_TIMEOUT_MS);
 
-      if (msg.type === "stream_event") {
-        // Capture per-turn token usage from API stream events
-        const event = (msg.event as Record<string, unknown>) || {};
-        const eventType = event.type as string;
-        if (eventType === "message_start") {
-          const msgData = (event.message as Record<string, unknown>) || {};
-          const usage = (msgData.usage as Record<string, number>) || {};
-          currentGenUsage = { input: usage.input_tokens || 0 };
-        } else if (eventType === "message_delta") {
-          const usage = (event.usage as Record<string, number>) || {};
-          currentGenUsage.output = usage.output_tokens || 0;
-        }
-      } else if (msg.type === "assistant") {
-        // Create a generation observation for each assistant turn
-        const msgObj = (msg.message as Record<string, unknown>) || {};
-        const content = msgObj.content as unknown[];
+          if (responseEnded) break queryLoop;
 
-        const usage =
-          currentGenUsage.input !== undefined
-            ? {
-                input: currentGenUsage.input || 0,
-                output: currentGenUsage.output || 0,
-                total:
-                  (currentGenUsage.input || 0) +
-                  (currentGenUsage.output || 0),
-                unit: "TOKENS" as const,
+          // Intercept "No conversation found" result before forwarding
+          if (useResume && !retried) {
+            const msg = message as Record<string, unknown>;
+            if (msg.type === "result" && msg.is_error) {
+              const resultText = String(msg.result || "");
+              const errors = ((msg.errors as string[]) || []).join(" ");
+              if ((resultText + " " + errors).includes("No conversation found")
+                  && body.conversation_history && body.conversation_history.length > 0) {
+                console.log(`[sidecar] Resume failed ("No conversation found"), will retry with history reqId=${requestId}`);
+                resumeFailedNeedsRetry = true;
+                break; // Don't forward this error to the client
               }
-            : undefined;
+            }
+          }
 
-        const gen = trace.generation({
-          name: "claude.assistant.turn",
-          model: (msgObj.model as string) || modelName,
-          input: { messages: accumulatedMessages.slice(-6) },
-          output: { content, role: "assistant" },
-          usage,
-        });
-        gen.end();
-        currentGenUsage = {};
+          // Forward each SDK message as an SSE data line
+          res.write(`data: ${JSON.stringify(message)}\n\n`);
 
-        // Accumulate for next turn's input context
-        accumulatedMessages.push({ role: "assistant", content });
-      } else if (msg.type === "user") {
-        // Accumulate tool results for next turn's input context
-        const msgObj = (msg.message as Record<string, unknown>) || {};
-        accumulatedMessages.push({
-          role: "user",
-          content: msgObj.content,
-        });
-      } else if (msg.type === "result") {
-        // Finalize trace — mirrors backend's finally block:
-        //   trace_session_id = langfuse_session_id or actual_session_id
-        const actualSessionId = (msg.session_id as string | undefined) || body.session_id;
-        const traceSessionId = body.langfuse_session_id || actualSessionId;
-        trace.update({
-          ...(traceSessionId ? { sessionId: traceSessionId } : {}),
-          output: { session_id: actualSessionId },
-        });
-      } else if (msg.type === "system") {
-        // Capture session_id early — only when no langfuse_session_id override
-        // (matches backend's propagate_attributes(session_id=langfuse_session_id or session_id))
-        const sessionId = msg.session_id as string | undefined;
-        if (sessionId && !body.langfuse_session_id) {
-          trace.update({ sessionId });
+          // --- Create Langfuse observations from SDK messages ---
+          if (!trace) continue;
+          const msg = message as Record<string, unknown>;
+
+          if (msg.type === "stream_event") {
+            const event = (msg.event as Record<string, unknown>) || {};
+            const eventType = event.type as string;
+            if (eventType === "message_start") {
+              const msgData = (event.message as Record<string, unknown>) || {};
+              const usage = (msgData.usage as Record<string, number>) || {};
+              currentGenUsage = { input: usage.input_tokens || 0 };
+            } else if (eventType === "message_delta") {
+              const usage = (event.usage as Record<string, number>) || {};
+              currentGenUsage.output = usage.output_tokens || 0;
+            }
+          } else if (msg.type === "assistant") {
+            const msgObj = (msg.message as Record<string, unknown>) || {};
+            const content = msgObj.content as unknown[];
+            const usage =
+              currentGenUsage.input !== undefined
+                ? {
+                    input: currentGenUsage.input || 0,
+                    output: currentGenUsage.output || 0,
+                    total: (currentGenUsage.input || 0) + (currentGenUsage.output || 0),
+                    unit: "TOKENS" as const,
+                  }
+                : undefined;
+            const gen = trace.generation({
+              name: "claude.assistant.turn",
+              model: (msgObj.model as string) || modelName,
+              input: { messages: accumulatedMessages.slice(-6) },
+              output: { content, role: "assistant" },
+              usage,
+            });
+            gen.end();
+            currentGenUsage = {};
+            accumulatedMessages.push({ role: "assistant", content });
+          } else if (msg.type === "user") {
+            const msgObj = (msg.message as Record<string, unknown>) || {};
+            accumulatedMessages.push({ role: "user", content: msgObj.content });
+          } else if (msg.type === "result") {
+            const actualSessionId = (msg.session_id as string | undefined) || body.session_id;
+            const traceSessionId = body.langfuse_session_id || actualSessionId;
+            trace.update({
+              ...(traceSessionId ? { sessionId: traceSessionId } : {}),
+              output: { session_id: actualSessionId },
+            });
+          } else if (msg.type === "system") {
+            const sessionId = msg.session_id as string | undefined;
+            if (sessionId && !body.langfuse_session_id) {
+              trace.update({ sessionId });
+            }
+          }
+        } // end for-await
+      } catch (innerErr: unknown) {
+        // If we're retrying due to resume failure, swallow the cleanup error
+        // (e.g., "Claude Code process exited with code 1" after session not found)
+        if (resumeFailedNeedsRetry) {
+          console.log(`[sidecar] Swallowing post-resume error during retry: ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`);
+        } else {
+          throw innerErr;
         }
       }
-    }
+
+      if (resumeFailedNeedsRetry && !retried) {
+        retried = true;
+        useResume = false;
+        let messageWithHistory = "Previous conversation (for context):\n";
+        for (const entry of body.conversation_history!) {
+          const role = (entry.role || "user").charAt(0).toUpperCase() + (entry.role || "user").slice(1);
+          messageWithHistory += `\n${role}: ${entry.content}\n`;
+        }
+        messageWithHistory += `\n---\n\nMy new message:\n${body.message}`;
+        currentPrompt = messageWithHistory;
+        stderrLines.length = 0;
+        if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+        continue; // retry the queryLoop
+      }
+
+      break; // success or non-retryable error — exit queryLoop
+    } // end queryLoop
   } catch (err: unknown) {
     let errMsg = err instanceof Error ? err.message : String(err);
     // Append CLI stderr for context when the process crashes

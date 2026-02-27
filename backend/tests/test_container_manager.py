@@ -15,6 +15,7 @@ def config():
         memory_limit="256m",
         cpu_limit=0.5,
         max_lifetime_seconds=600,
+        idle_timeout_seconds=300,
         network="agent-sandbox",
     )
 
@@ -42,7 +43,8 @@ def test_container_config_has_defaults():
     assert cfg.runtime == "runsc"
     assert cfg.memory_limit == "256m"
     assert cfg.cpu_limit == 0.5
-    assert cfg.max_lifetime_seconds == 600
+    assert cfg.max_lifetime_seconds == 3600
+    assert cfg.idle_timeout_seconds == 300
     assert cfg.network == "agent-sandbox"
 
 
@@ -192,3 +194,91 @@ def test_get_url_returns_correct_format(manager, mock_docker_client):
 
     info = manager.create("session-1", {})
     assert info.url == "http://172.18.0.2:3000"
+
+
+def test_container_info_has_last_activity(manager, mock_docker_client):
+    mock_container = MagicMock()
+    mock_container.id = "abc123"
+    mock_container.attrs = {"NetworkSettings": {"Networks": {"agent-sandbox": {"IPAddress": "172.18.0.2"}}}}
+    mock_docker_client.containers.run.return_value = mock_container
+
+    info = manager.create("session-1", {})
+    assert info.last_activity is not None
+    assert info.last_activity == info.created_at
+
+
+def test_touch_updates_last_activity(manager, mock_docker_client):
+    mock_container = MagicMock()
+    mock_container.id = "abc123"
+    mock_container.attrs = {"NetworkSettings": {"Networks": {"agent-sandbox": {"IPAddress": "172.18.0.2"}}}}
+    mock_docker_client.containers.run.return_value = mock_container
+
+    manager.create("session-1", {})
+    old_activity = manager._containers["session-1"].last_activity
+
+    import time
+    time.sleep(0.01)
+
+    manager.touch("session-1")
+    new_activity = manager._containers["session-1"].last_activity
+    assert new_activity > old_activity
+
+
+def test_touch_nonexistent_session_is_safe(manager):
+    manager.touch("ghost-session")  # must not raise
+
+
+def test_cleanup_expired_removes_idle_containers(manager, mock_docker_client):
+    """Container idle longer than idle_timeout is removed."""
+    mock_container = MagicMock()
+    mock_container.id = "abc123"
+    mock_container.attrs = {"NetworkSettings": {"Networks": {"agent-sandbox": {"IPAddress": "172.18.0.2"}}}}
+    mock_docker_client.containers.run.return_value = mock_container
+
+    manager.create("idle-session", {})
+    # Created recently, but last_activity is old
+    manager._containers["idle-session"].last_activity = (
+        datetime.now(timezone.utc) - timedelta(seconds=400)
+    )
+
+    removed = manager.cleanup_expired()
+    assert removed == 1
+    assert "idle-session" not in manager._containers
+
+
+def test_cleanup_expired_keeps_active_containers(manager, mock_docker_client):
+    """Container within idle timeout is kept even if created long ago."""
+    mock_container = MagicMock()
+    mock_container.id = "abc123"
+    mock_container.attrs = {"NetworkSettings": {"Networks": {"agent-sandbox": {"IPAddress": "172.18.0.2"}}}}
+    mock_docker_client.containers.run.return_value = mock_container
+
+    manager.create("active-session", {})
+    # Created long ago, but recently active
+    manager._containers["active-session"].created_at = (
+        datetime.now(timezone.utc) - timedelta(seconds=500)
+    )
+    manager._containers["active-session"].last_activity = datetime.now(timezone.utc)
+
+    removed = manager.cleanup_expired()
+    assert removed == 0
+    assert "active-session" in manager._containers
+
+
+def test_cleanup_expired_removes_past_max_lifetime_even_if_active(manager, mock_docker_client):
+    """Container past max_lifetime is removed even if recently active."""
+    mock_container = MagicMock()
+    mock_container.id = "abc123"
+    mock_container.attrs = {"NetworkSettings": {"Networks": {"agent-sandbox": {"IPAddress": "172.18.0.2"}}}}
+    mock_docker_client.containers.run.return_value = mock_container
+
+    manager.create("old-active-session", {})
+    # Past max lifetime but recently active
+    manager._containers["old-active-session"].created_at = (
+        datetime.now(timezone.utc) - timedelta(seconds=700)
+    )
+    manager._containers["old-active-session"].last_activity = datetime.now(timezone.utc)
+
+    removed = manager.cleanup_expired()
+    assert removed == 1
+    assert "old-active-session" not in manager._containers
