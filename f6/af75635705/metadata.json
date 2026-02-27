@@ -3,7 +3,7 @@
   "checkpoint_id": "f6af75635705",
   "strategy": "manual-commit",
   "branch": "feature/idle-based-container-lifecycle",
-  "checkpoints_count": 1,
+  "checkpoints_count": 4,
   "files_touched": [
     "backend/app/agent.py",
     "frontend/src/contexts/AgentContext.tsx",
@@ -23,13 +23,20 @@
       "context": "/f6/af75635705/1/context.md",
       "content_hash": "/f6/af75635705/1/content_hash.txt",
       "prompt": "/f6/af75635705/1/prompt.txt"
+    },
+    {
+      "metadata": "/f6/af75635705/2/metadata.json",
+      "transcript": "/f6/af75635705/2/full.jsonl",
+      "context": "/f6/af75635705/2/context.md",
+      "content_hash": "/f6/af75635705/2/content_hash.txt",
+      "prompt": "/f6/af75635705/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 453,
-    "cache_creation_tokens": 250514,
-    "cache_read_tokens": 10298569,
-    "output_tokens": 28525,
-    "api_call_count": 147
+    "input_tokens": 500,
+    "cache_creation_tokens": 329803,
+    "cache_read_tokens": 12872076,
+    "output_tokens": 59223,
+    "api_call_count": 186
   }
 }
