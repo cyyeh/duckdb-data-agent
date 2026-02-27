@@ -107,7 +107,7 @@ Copy the example config and adjust provider keys as needed:
 cp bifrost/config.example.json bifrost/config.json
 ```
 
-The default config routes requests through Anthropic using `ANTHROPIC_API_KEY` from your `backend/.env`. To add other providers (OpenAI, Bedrock, etc.), edit `bifrost/config.json` — see [`bifrost/README.md`](bifrost/README.md) for multi-provider examples.
+The default config routes requests through Anthropic using `ANTHROPIC_API_KEY` from your `backend/.env`. To add other providers (OpenAI, Bedrock, etc.), edit `bifrost/config.json` — see [`bifrost/config.example.json`](bifrost/config.example.json) for multi-provider examples.
 
 #### Langfuse (optional)
 
@@ -196,7 +196,7 @@ Bifrost Gateway (/anthropic)
 1. Bifrost runs as a Docker Compose service with real API keys stored in `bifrost/config.json` (referencing environment variables).
 2. Sidecar containers receive a placeholder `ANTHROPIC_API_KEY` and point `ANTHROPIC_BASE_URL` to Bifrost's native `/anthropic` endpoint.
 3. Bifrost injects the real provider API key when forwarding requests upstream. The Claude Agent SDK works unchanged since Bifrost speaks native Anthropic Messages API.
-4. Additional providers (OpenAI, Bedrock, Vertex, etc.) can be added to `bifrost/config.json` or via Bifrost's Web UI. Use provider prefixes in model names (e.g., `openai/gpt-4o-mini`) to route subagent requests to different providers. See [`bifrost/README.md`](bifrost/README.md) for configuration examples.
+4. Additional providers (OpenAI, Bedrock, Vertex, etc.) can be added to `bifrost/config.json` or via Bifrost's Web UI. Use provider prefixes in model names (e.g., `openai/gpt-4o-mini`) to route subagent requests to different providers. See [`bifrost/config.example.json`](bifrost/config.example.json) for configuration examples.
 
 The sidecar container only ever holds a placeholder string. Even if a tool call reads the environment, it cannot obtain any real API key.
 

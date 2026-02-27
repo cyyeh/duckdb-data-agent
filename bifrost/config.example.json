@@ -1,5 +1,8 @@
 {
   "$schema": "https://www.getbifrost.ai/schema",
+  "config_store": {
+    "enabled": false
+  },
   "providers": {
     "anthropic": {
       "keys": [
@@ -24,16 +27,25 @@
         }
       ],
       "network_config": {
-        "base_url": "https://your-openai-compatible-endpoint/v1",
         "default_request_timeout_in_seconds": 300
-      },
-      "custom_provider_config": {
-        "base_provider_type": "openai",
-        "allowed_requests": {
-          "chat_completion": true,
-          "chat_completion_stream": true
-        }
       }
-    }
+    },
+		"<custom_provider_name>": {
+			"keys": [
+				{
+					"name": "<custom_provider_name>",
+					"value": "env.<custom_provider_name>_API_KEY",
+					"models": [],
+					"weight": 1.0
+				}
+			],
+			"network_config": {
+				"base_url": "<CUSTOM_PROVIDER_BASE_URL>",
+				"default_request_timeout_in_seconds": 300
+			},
+			"custom_provider_config": {
+				"base_provider_type": "openai"
+			}
+		}
   }
 }

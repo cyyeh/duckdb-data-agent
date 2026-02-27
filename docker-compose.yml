@@ -5,6 +5,7 @@ services:
     ports:
       - "${BIFROST_PORT:-8081}:8080"
     volumes:
+      - ./bifrost/data:/app/data
       - ./bifrost/config.json:/app/data/config.json
     env_file:
       - backend/.env

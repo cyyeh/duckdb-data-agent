@@ -2,7 +2,7 @@ import json
 import logging
 
 from fastapi import APIRouter, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 import httpx
 
 from app.config import MODEL_REWRITES, BIFROST_BASE_URL
@@ -69,6 +69,31 @@ async def proxy_to_upstream(path: str, request: Request):
             k: v for k, v in upstream_resp.headers.items()
             if k.lower() not in _SKIP_RESPONSE_HEADERS
         }
+
+        # For error responses, read the full body and log it so we can
+        # debug upstream failures (e.g. Anthropic API 400 errors).
+        if upstream_resp.status_code >= 400:
+            error_body = await upstream_resp.aread()
+            await upstream_resp.aclose()
+            await client.aclose()
+            # Extract model from request for context
+            req_model = ""
+            try:
+                req_data = json.loads(body)
+                req_model = req_data.get("model", "")
+            except Exception:
+                pass
+            print(
+                f"[proxy] {upstream_resp.status_code} {request.method} /{path}"
+                f" model={req_model}:"
+                f" {error_body.decode('utf-8', errors='replace')[:2000]}",
+                flush=True,
+            )
+            return Response(
+                content=error_body,
+                status_code=upstream_resp.status_code,
+                headers=response_headers,
+            )
 
         async def body_generator():
             try:
