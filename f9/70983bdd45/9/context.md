@@ -1,0 +1,38 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+how to add llm api url?
+
+### Prompt 2
+
+yes, update the config for me
+
+### Prompt 3
+
+don't need to update .env
+
+### Prompt 4
+
+only update bifrost/config.example.json, bifrost/README.md and backend/.env.example
+
+### Prompt 5
+
+commit this
+
+### Prompt 6
+
+after I setup openai compatible model, I got this error from bifrost
+
+{"level":"info","http.method":"POST","http.target":"/anthropic/v1/messages","http.status_code":200,"http.request_duration_ms":1827,"http.remote_addr":"192.168.107.1:40946","http.user_agent":"claude-cli/2.1.50 (external, sdk-ts)","trace_id":"fb5a206da2f7432d8205ed6df9f58fca","time":"2026-02-27T00:09:36Z","message":"request completed"}
+
+### Prompt 7
+
+{"level":"error","http.method":"POST","http.target":"/anthropic/v1/messages","http.status_code":500,"http.request_duration_ms":0,"http.remote_addr":"192.168.107.1:40960","http.user_agent":"claude-cli/2.1.50 (external, sdk-ts)","trace_id":"126f88b662ac4bb8ab1450ef82263cbd","time":"2026-02-27T00:09:42Z","message":"request completed"}
+
+### Prompt 8
+
+[Request interrupted by user]
+
