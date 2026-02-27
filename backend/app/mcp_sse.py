@@ -24,8 +24,8 @@ sse_transport = SseServerTransport("/messages/")
 
 
 def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
-    """Create an MCP server with execute_sql and ask_user_question tools bound to a DuckDB instance."""
-    server = MCPServer("duckdb")
+    """Create a duckdb-data-agent MCP server with execute_sql, ask_user_question, and render_chart tools bound to a DuckDB instance."""
+    server = MCPServer("duckdb-data-agent")
 
     @server.list_tools()
     async def list_tools() -> list[types.Tool]:

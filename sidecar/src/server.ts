@@ -199,7 +199,7 @@ app.post("/query", async (req: Request, res: Response) => {
       options: {
         model: modelName,
         systemPrompt: body.system_prompt,
-        allowedTools: ["Task", "mcp__duckdb__execute_sql"],
+        allowedTools: ["Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"],
         permissionMode: "bypassPermissions",
         allowDangerouslySkipPermissions: true,
         maxTurns: 20,
@@ -214,7 +214,7 @@ app.post("/query", async (req: Request, res: Response) => {
         ...(body.mcp_server_url
           ? {
               mcpServers: {
-                duckdb: {
+                "duckdb-data-agent": {
                   type: "sse" as const,
                   url: body.mcp_server_url,
                 },

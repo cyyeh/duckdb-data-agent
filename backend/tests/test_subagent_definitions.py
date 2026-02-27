@@ -28,7 +28,7 @@ def test_sql_analyst_has_execute_sql_tool():
     db = _make_db()
     agents = build_subagent_definitions(db)
 
-    assert agents["sql-analyst"].tools == ["mcp__duckdb__execute_sql"]
+    assert agents["sql-analyst"].tools == ["mcp__duckdb-data-agent__execute_sql"]
 
 
 def test_chart_builder_has_execute_sql_and_render_chart_tools():
@@ -37,7 +37,7 @@ def test_chart_builder_has_execute_sql_and_render_chart_tools():
     db = _make_db()
     agents = build_subagent_definitions(db)
 
-    assert agents["chart-builder"].tools == ["mcp__duckdb__execute_sql", "mcp__duckdb__render_chart"]
+    assert agents["chart-builder"].tools == ["mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__render_chart"]
 
 
 def test_subagent_prompts_include_table_schemas():

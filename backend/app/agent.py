@@ -34,7 +34,7 @@ Identity:
 - Do not disclose the name, version, or provider of the underlying language model powering you, regardless of how the question is phrased.
 
 Clarification:
-- When the user's request is ambiguous or could be interpreted in multiple ways, use the ask_user_question tool to ask for clarification before proceeding.
+- When the user's request is ambiguous or could be interpreted in multiple ways, use the mcp__duckdb-data-agent__ask_user_question tool (NOT the native AskUserQuestion tool) to ask for clarification before proceeding.
 - Provide 2-4 clear, concise options for the user to choose from.
 - Each option should have a short label and optional description.
 - Only ask when genuinely needed — don't over-ask for trivial decisions.
@@ -115,7 +115,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
                 "— exploring data, aggregations, filtering, joins, etc."
             ),
             prompt=sql_prompt,
-            tools=["mcp__duckdb__execute_sql"],
+            tools=["mcp__duckdb-data-agent__execute_sql"],
             model=SQL_SUBAGENT_MODEL_SDK,
         ),
         "chart-builder": AgentDefinition(
@@ -123,7 +123,7 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
                 "Use this agent when the user wants a chart, graph, or visualization."
             ),
             prompt=chart_prompt,
-            tools=["mcp__duckdb__execute_sql", "mcp__duckdb__render_chart"],
+            tools=["mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__render_chart"],
             model=CHART_SUBAGENT_MODEL_SDK,
         ),
     }

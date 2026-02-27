@@ -28,7 +28,7 @@ def test_captures_render_chart_input_as_chart_spec():
     }
     msg = _make_assistant_msg(
         parent_tool_use_id="task_001",
-        tool_use_name="mcp__duckdb__render_chart",
+        tool_use_name="mcp__duckdb-data-agent__render_chart",
         tool_input=chart_input,
     )
 
@@ -43,7 +43,7 @@ def test_ignores_non_render_chart_tool_use():
     """Other tool_use blocks in a chart-builder turn are not captured as chart_spec."""
     msg = _make_assistant_msg(
         parent_tool_use_id="task_001",
-        tool_use_name="mcp__duckdb__execute_sql",
+        tool_use_name="mcp__duckdb-data-agent__execute_sql",
         tool_input={"sql": "SELECT 1"},
     )
 
@@ -58,7 +58,7 @@ def test_ignores_messages_not_from_chart_builder():
     """Tool_use blocks from non-chart-builder subagents are ignored."""
     msg = _make_assistant_msg(
         parent_tool_use_id="task_002",
-        tool_use_name="mcp__duckdb__render_chart",
+        tool_use_name="mcp__duckdb-data-agent__render_chart",
         tool_input={"data": [], "layout": {"title": "x"}},
     )
 
