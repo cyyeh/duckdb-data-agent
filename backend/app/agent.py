@@ -247,6 +247,7 @@ async def stream_chat(
                 raise RuntimeError(f"Container creation timed out after {max_create_wait:.0f}s")
             yield ": keepalive\n\n"
         info = await create_future
+        container_manager.touch(stable_session)
 
         # Wait for container to be ready
         for attempt in range(10):

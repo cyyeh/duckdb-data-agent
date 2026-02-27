@@ -16,7 +16,8 @@ class ContainerConfig:
     runtime: str = "runsc"
     memory_limit: str = "256m"
     cpu_limit: float = 0.5
-    max_lifetime_seconds: int = 600
+    max_lifetime_seconds: int = 3600
+    idle_timeout_seconds: int = 300
     network: str = "agent-sandbox"
 
 
@@ -27,9 +28,14 @@ class ContainerInfo:
     ip_address: str
     port: int = 3000
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_activity: datetime = field(default=None)
     _container: object = field(default=None, repr=False)
 
     host_port: int | None = None
+
+    def __post_init__(self):
+        if self.last_activity is None:
+            self.last_activity = self.created_at
 
     @property
     def url(self) -> str:
@@ -195,6 +201,12 @@ class ContainerManager:
         """Get container info for a session."""
         return self._containers.get(session_id)
 
+    def touch(self, session_id: str) -> None:
+        """Update last_activity timestamp for a session's container."""
+        info = self._containers.get(session_id)
+        if info is not None:
+            info.last_activity = datetime.now(timezone.utc)
+
     def stop(self, session_id: str) -> None:
         """Stop and remove the container for a session."""
         info = self._containers.pop(session_id, None)
@@ -214,14 +226,16 @@ class ContainerManager:
         logger.info("Stopped sidecar container %s for session %s", info.container_id[:12], session_id)
 
     def cleanup_expired(self) -> int:
-        """Remove containers that have exceeded max lifetime."""
-        cutoff = datetime.now(timezone.utc) - timedelta(seconds=self._config.max_lifetime_seconds)
+        """Remove containers that are idle or have exceeded max lifetime."""
+        now = datetime.now(timezone.utc)
+        idle_cutoff = now - timedelta(seconds=self._config.idle_timeout_seconds)
+        lifetime_cutoff = now - timedelta(seconds=self._config.max_lifetime_seconds)
         expired = [
             sid for sid, info in self._containers.items()
-            if info.created_at < cutoff
+            if info.last_activity < idle_cutoff or info.created_at < lifetime_cutoff
         ]
         for sid in expired:
-            logger.info("Container for session %s exceeded max lifetime, removing", sid)
+            logger.info("Container for session %s expired (idle or max lifetime), removing", sid)
             self.stop(sid)
         return len(expired)
 
@@ -291,6 +305,7 @@ try:
         CONTAINER_MEMORY_LIMIT,
         CONTAINER_CPU_LIMIT,
         CONTAINER_MAX_LIFETIME_SECONDS,
+        CONTAINER_IDLE_TIMEOUT_SECONDS,
         CONTAINER_NETWORK,
     )
 
@@ -301,6 +316,7 @@ try:
             memory_limit=CONTAINER_MEMORY_LIMIT,
             cpu_limit=CONTAINER_CPU_LIMIT,
             max_lifetime_seconds=CONTAINER_MAX_LIFETIME_SECONDS,
+            idle_timeout_seconds=CONTAINER_IDLE_TIMEOUT_SECONDS,
             network=CONTAINER_NETWORK,
         )
     )
