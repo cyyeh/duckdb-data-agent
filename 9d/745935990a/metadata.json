@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "9d745935990a",
+  "strategy": "manual-commit",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "Makefile",
+    "docker-compose.yml",
+    "frontend/src/components/InlineQueryResult.css",
+    "frontend/src/components/InlineQueryResult.tsx",
+    "sidecar/Dockerfile"
+  ],
+  "sessions": [
+    {
+      "metadata": "/9d/745935990a/0/metadata.json",
+      "transcript": "/9d/745935990a/0/full.jsonl",
+      "context": "/9d/745935990a/0/context.md",
+      "content_hash": "/9d/745935990a/0/content_hash.txt",
+      "prompt": "/9d/745935990a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 11,
+    "cache_creation_tokens": 58536,
+    "cache_read_tokens": 289489,
+    "output_tokens": 4637,
+    "api_call_count": 7
+  }
+}
