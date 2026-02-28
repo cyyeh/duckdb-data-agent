@@ -87,13 +87,13 @@ export function AgentProvider({
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Extract /skill-name from message (can appear anywhere)
+      // Extract all /skill-name references from message
       let actualMessage = text;
-      let skill: string | undefined;
-      const slashMatch = text.match(/\/([a-z0-9-]+)/);
-      if (slashMatch) {
-        skill = slashMatch[1];
-        actualMessage = text.replace(slashMatch[0], '').trim() || text;
+      let skills: string[] | undefined;
+      const slashMatches = [...text.matchAll(/\/([a-z0-9-]+)/g)];
+      if (slashMatches.length > 0) {
+        skills = slashMatches.map((m) => m[1]);
+        actualMessage = slashMatches.reduce((msg, m) => msg.replace(m[0], ''), text).trim() || text;
       }
 
       await runAgentLoop(
@@ -304,7 +304,7 @@ export function AgentProvider({
         },
         controller.signal,
         userSessionId,
-        skill,
+        skills,
       );
     },
     [isStreaming, flushText, refreshTables, userSessionId]

@@ -15,7 +15,7 @@ class ChatRequest(BaseModel):
     session_id: str | None = None
     langfuse_session_id: str | None = None
     conversation_history: list[dict] = []
-    skill: str | None = None
+    skills: list[str] | None = None
 
 
 class ChatEditRequest(BaseModel):
@@ -44,7 +44,7 @@ async def chat(
             conversation_history=request.conversation_history or None,
             langfuse_session_id=request.langfuse_session_id,
             backend_session_id=x_session_id,
-            skill=request.skill,
+            skills=request.skills,
         ),
         media_type="text/event-stream",
         headers={

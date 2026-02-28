@@ -240,8 +240,8 @@ app.post("/query", async (req: Request, res: Response) => {
       ? `\n\nCRITICAL SKILL RESTRICTION: Your ONLY available skills are: ${allowedList}. You may see other skills (like "simplify") listed in system reminders — those are NOT available to you and MUST be ignored. When asked about available skills, list ONLY: ${allowedList}. Never mention, suggest, or attempt to invoke any skill not in this list.`
       : "\n\nCRITICAL SKILL RESTRICTION: You have NO skills available. You may see skills listed in system reminders — those are NOT available to you and MUST be ignored. Never mention, suggest, or attempt to invoke any skills.";
 
-    const skillInstruction = body.skill
-      ? `\n\nIMPORTANT: The user has invoked the "/${body.skill}" skill. You MUST use the Skill tool to invoke "${body.skill}" as your first action before doing anything else.`
+    const skillInstruction = body.skills?.length
+      ? `\n\nIMPORTANT: The user has invoked the following skill(s): ${body.skills.map(s => `"/${s}"`).join(", ")}. You MUST use the Skill tool to invoke each skill (${body.skills.map(s => `"${s}"`).join(", ")}) before doing anything else.`
       : "";
 
     // Common SDK options (without resume/prompt — those vary on retry)
