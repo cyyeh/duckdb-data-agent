@@ -5,6 +5,9 @@
   "branch": "fix/chart-no-title-answer-in-thinking",
   "checkpoints_count": 1,
   "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/mcp_sse.py",
+    "examples/conversation-2026-02-28.html",
     "frontend/src/components/MessageBubble.tsx"
   ],
   "sessions": [
@@ -14,13 +17,20 @@
       "context": "/d2/5dcceff503/0/context.md",
       "content_hash": "/d2/5dcceff503/0/content_hash.txt",
       "prompt": "/d2/5dcceff503/0/prompt.txt"
+    },
+    {
+      "metadata": "/d2/5dcceff503/1/metadata.json",
+      "transcript": "/d2/5dcceff503/1/full.jsonl",
+      "context": "/d2/5dcceff503/1/context.md",
+      "content_hash": "/d2/5dcceff503/1/content_hash.txt",
+      "prompt": "/d2/5dcceff503/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 14,
-    "cache_creation_tokens": 12076,
-    "cache_read_tokens": 424035,
-    "output_tokens": 3579,
-    "api_call_count": 12
+    "input_tokens": 57,
+    "cache_creation_tokens": 42068,
+    "cache_read_tokens": 1777581,
+    "output_tokens": 5438,
+    "api_call_count": 47
   }
 }
