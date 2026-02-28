@@ -1,0 +1,26 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+new feature is coming, please write new design doc:
+
+allow user to see current skills and invoke chosen skills in ui - please check manus ui for imitation
+allow user to create new skill on the fly
+
+### Prompt 2
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/brainstorming
+
+# Brainstorming Ideas Into Designs
+
+## Overview
+
+Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
+
+Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
+
+<HARD-GATE>
+Do NOT invoke any implemen...
+
