@@ -1,0 +1,221 @@
+scenarios:
+  # ── Skills Tab Navigation ──────────────────────────────────────
+
+  - name: "Switch to Skills tab"
+    tags: [ui, skills]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: verify
+        expected:
+          element_exists: ".skills-panel"
+
+  - name: "Default skill is listed"
+    tags: [ui, skills]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: verify
+        expected:
+          element_exists: ".skills-panel__item"
+
+  # ── Skill Detail Modal ─────────────────────────────────────────
+
+  - name: "Open skill detail modal"
+    tags: [ui, skills, modal]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: click
+        selector: ".skills-panel__item"
+
+      - action: verify
+        expected:
+          element_exists: ".skill-detail-modal"
+
+      - action: verify
+        expected:
+          element_exists: ".skill-detail-modal__name"
+
+      - action: verify
+        expected:
+          element_exists: ".skill-detail-modal__desc"
+
+  - name: "Skill detail modal shows markdown preview by default"
+    tags: [ui, skills, modal]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: click
+        selector: ".skills-panel__item"
+
+      - action: verify
+        expected:
+          element_exists: ".skill-detail-modal__tab--active"
+
+      - action: verify
+        expected:
+          element_exists: ".skill-detail-modal__content--preview"
+
+  - name: "Switch to Source tab in skill detail modal"
+    tags: [ui, skills, modal]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: click
+        selector: ".skills-panel__item"
+
+      # Click the Source tab (second tab button)
+      - action: click
+        selector: ".skill-detail-modal__tab:nth-child(2)"
+
+      - action: verify
+        expected:
+          element_exists: "pre.skill-detail-modal__content"
+
+      - action: verify
+        expected:
+          element_not_exists: ".skill-detail-modal__content--preview"
+
+  - name: "Close skill detail modal by clicking overlay"
+    tags: [ui, skills, modal]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: click
+        selector: ".skills-panel__item"
+
+      - action: verify
+        expected:
+          element_exists: ".skill-detail-overlay"
+
+      - action: click
+        selector: ".skill-detail-overlay"
+
+      - action: verify
+        expected:
+          element_not_exists: ".skill-detail-overlay"
+
+  - name: "Close skill detail modal by clicking close button"
+    tags: [ui, skills, modal]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: click
+        selector: ".skills-panel__item"
+
+      - action: click
+        selector: ".skill-detail-modal__close"
+
+      - action: verify
+        expected:
+          element_not_exists: ".skill-detail-overlay"
+
+  # ── Create Skill Dialog ────────────────────────────────────────
+
+  - name: "Open create skill dialog"
+    tags: [ui, skills, create]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: click
+        selector: ".skills-panel__create-btn"
+
+      - action: verify
+        expected:
+          element_exists: ".create-skill-dialog"
+
+      - action: verify
+        expected:
+          element_exists: ".create-skill-dialog__input"
+
+      - action: verify
+        expected:
+          element_exists: ".create-skill-dialog__textarea"
+
+  - name: "Close create skill dialog with cancel"
+    tags: [ui, skills, create]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: click
+        selector: ".skills-panel__create-btn"
+
+      - action: verify
+        expected:
+          element_exists: ".create-skill-overlay"
+
+      - action: click
+        selector: ".create-skill-dialog__cancel"
+
+      - action: verify
+        expected:
+          element_not_exists: ".create-skill-overlay"
+
+  # ── Use Skill ──────────────────────────────────────────────────
+
+  - name: "Use skill button populates chat input"
+    tags: [ui, skills, use]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      # Click the Use button on the first skill card
+      - action: click
+        selector: ".skills-panel__item .skills-panel__use-btn"
+
+      - action: verify
+        expected:
+          element_not_exists: ".skill-detail-overlay"
+
+  - name: "Use skill from detail modal closes modal"
+    tags: [ui, skills, use, modal]
+    steps:
+      - action: click
+        selector: ".sidebar__tab:nth-child(2)"
+
+      - action: click
+        selector: ".skills-panel__item"
+
+      - action: verify
+        expected:
+          element_exists: ".skill-detail-overlay"
+
+      # Click Use inside the modal
+      - action: click
+        selector: ".skill-detail-modal .skills-panel__use-btn"
+
+      - action: verify
+        expected:
+          element_not_exists: ".skill-detail-overlay"
+
+  # ── Invoke Skill via Agent ─────────────────────────────────────
+
+  - name: "Invoke default skill via chat"
+    tags: [data, skills, agent]
+    steps:
+      - action: upload_file
+        file: ./test-data/sales.csv
+
+      - action: send_message
+        input: "use this skill /analyze-data"
+
+      - action: wait_for_response
+        timeout: 120000
+
+      - action: verify
+        expected:
+          not_contains: ["error"]
+
+      - action: verify_llm
+        criteria: "The response should demonstrate that the agent used the analyze-data skill to examine the uploaded dataset, providing some kind of data analysis or summary"
+        pass_threshold: 0.7
