@@ -200,6 +200,7 @@ app.post("/query", async (req: Request, res: Response) => {
       systemPrompt: body.system_prompt,
       allowedTools: ["Skill", "Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"] as string[],
       settingSources: ["project"] as SettingSource[],
+      plugins: [],
       permissionMode: "bypassPermissions" as const,
       allowDangerouslySkipPermissions: true,
       maxTurns: 20,
