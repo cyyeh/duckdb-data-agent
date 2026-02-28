@@ -7,7 +7,7 @@ from claude_agent_sdk import AgentDefinition
 from app.database import Database
 from app.config import (
     ORCHESTRATOR_MODEL_SDK,
-    SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK,
+    SQL_SUBAGENT_MODEL_SDK,
     BACKEND_BASE_URL,
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
     SDK_IDLE_TIMEOUT_MS,
@@ -21,14 +21,35 @@ def build_system_prompt(db: Database) -> str:
     tables = db.list_tables()
     prompt = """You are a helpful data analyst assistant working with a DuckDB database.
 
-Task tool usage (CRITICAL — you MUST follow these rules):
-- When using the Task tool, you MUST set the "subagent_type" parameter to one of the named agents listed below. NEVER use generic values like "general-purpose", "code-writer", or any other value.
-- For any data question that requires SQL queries, set subagent_type to "sql-analyst"
-- For any visualization, chart, or graph request, set subagent_type to "chart-builder"
-- Do NOT set the "model" parameter on the Task tool — the named agents already have models configured. Omit the model field entirely.
-- After the chart-builder returns, describe what the visualization shows based on the data. The chart will be displayed automatically before your answer text.
+Tools at your disposal:
+- mcp__duckdb-data-agent__execute_sql — run SQL queries against DuckDB
+- mcp__duckdb-data-agent__render_chart — render a Plotly chart
+- mcp__duckdb-data-agent__ask_user_question — ask the user a clarifying question
+- Task tool with subagent_type "sql-analyst" — delegate complex multi-query data exploration
+
+Task tool usage:
+- When using the Task tool, set "subagent_type" to "sql-analyst". NEVER use generic values like "general-purpose" or any other value.
+- Do NOT set the "model" parameter on the Task tool — it is already configured.
 - After the sql-analyst returns, do NOT repeat the data tables or numbers. Simply add brief commentary on what the data means.
-- Explain findings in plain language after getting results
+
+Direct tool usage:
+- For simple SQL queries, call execute_sql directly instead of delegating to sql-analyst.
+- For charts/visualizations, call execute_sql to get the data, then call render_chart yourself with the Plotly spec. Do NOT delegate charting to a subagent.
+- When building a data story with multiple charts, interleave charts with your narrative text. After each chart, write the text that discusses it before rendering the next chart.
+
+Charting guidelines:
+- Choose the most appropriate chart type (bar, line, scatter, pie, histogram, box, heatmap, etc.).
+- For pie charts, use `labels` and `values` fields in the trace.
+- For multi-series data, group into separate traces.
+- `layout.title` is required — always provide a descriptive title.
+- Keep the chart clean and readable.
+- IMPORTANT — keep data small. Pre-aggregate in SQL instead of passing raw rows:
+  - Box plots: compute lowerfence, q1, median, q3, upperfence per group in SQL. Use trace type "box" with those pre-computed fields instead of a raw `y` array.
+  - Histograms: compute bin counts with width_bucket() or CASE in SQL, then render as a bar chart with the bin edges as `x` and counts as `y`.
+  - Scatter / line with many rows: sample (ORDER BY random() LIMIT 200) or aggregate (e.g. average per time bucket) so each trace has at most ~200 points.
+  - General rule: each trace should have at most ~200 data points.
+- Call render_chart with: `data` (array of Plotly trace objects) and `layout` (object with at minimum {"title": "<descriptive title>"}).
+- Do NOT output chart JSON as a code block. Use the render_chart tool.
 
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
@@ -66,7 +87,7 @@ def _build_table_schemas(db: Database) -> str:
 
 
 def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
-    """Build AgentDefinition objects for the sql-analyst and chart-builder subagents."""
+    """Build AgentDefinition objects for subagents."""
     table_schemas = _build_table_schemas(db)
 
     sql_prompt = (
@@ -84,50 +105,17 @@ def build_subagent_definitions(db: Database) -> dict[str, AgentDefinition]:
         + table_schemas
     )
 
-    chart_prompt = (
-        "You are a data visualization expert using Plotly. Given a user's request for "
-        "a chart or visualization, query the data with SQL and then call the "
-        "`render_chart` tool with the Plotly spec.\n\n"
-        "Guidelines:\n"
-        "- Choose the most appropriate chart type (bar, line, scatter, pie, histogram, "
-        "box, heatmap, etc.).\n"
-        "- For pie charts, use `labels` and `values` fields in the trace.\n"
-        "- For multi-series data, group into separate traces.\n"
-        "- `layout.title` is required — always provide a descriptive title.\n"
-        "- Keep the chart clean and readable.\n\n"
-        "IMPORTANT — keep data small. Pre-aggregate in SQL instead of passing raw rows:\n"
-        "- Box plots: compute lowerfence, q1, median, q3, upperfence per group in SQL. "
-        "Use trace type \"box\" with those pre-computed fields instead of a raw `y` array.\n"
-        "- Histograms: compute bin counts with width_bucket() or CASE in SQL, then "
-        "render as a bar chart with the bin edges as `x` and counts as `y`.\n"
-        "- Scatter / line with many rows: sample (ORDER BY random() LIMIT 200) or "
-        "aggregate (e.g. average per time bucket) so each trace has at most ~200 points.\n"
-        "- General rule: each trace should have at most ~200 data points. "
-        "Large tool-call inputs cause malformed JSON and validation errors.\n\n"
-        "When ready to render, call `render_chart` with:\n"
-        "- `data`: array of Plotly trace objects\n"
-        "- `layout`: object containing at minimum {\"title\": \"<descriptive title>\"}\n\n"
-        "Do NOT output a JSON code block. Use the tool.\n"
-        + table_schemas
-    )
-
     return {
         "sql-analyst": AgentDefinition(
             description=(
-                "Use this agent for any data question that requires SQL queries "
-                "— exploring data, aggregations, filtering, joins, etc."
+                "Use this agent for complex data exploration that requires multiple "
+                "SQL queries with iterative refinement — e.g. exploring an unfamiliar "
+                "dataset, multi-step aggregations, or debugging query errors. "
+                "For simple one-off queries, call execute_sql directly instead."
             ),
             prompt=sql_prompt,
             tools=["mcp__duckdb-data-agent__execute_sql"],
             model=SQL_SUBAGENT_MODEL_SDK,
-        ),
-        "chart-builder": AgentDefinition(
-            description=(
-                "Use this agent when the user wants a chart, graph, or visualization."
-            ),
-            prompt=chart_prompt,
-            tools=["mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__render_chart"],
-            model=CHART_SUBAGENT_MODEL_SDK,
         ),
     }
 
@@ -147,41 +135,6 @@ def _build_message_with_history(
     history_text += f"\n---\n\nMy updated message:\n{message}"
     return history_text
 
-
-
-def _build_chart_spec_from_stream_messages(
-    msg: dict, tool_names: dict[str, str], subagent_chart_specs: dict
-) -> None:
-    """Inspect an assistant message and capture render_chart input as chart_spec.
-
-    When the chart-builder subagent calls render_chart, the tool_use block
-    appears in an assistant message whose parent_tool_use_id is the Task
-    tool_use_id for the chart-builder.  We extract input directly so we never
-    need to parse free-text JSON.
-
-    A single chart-builder may call render_chart multiple times (e.g. for a
-    multi-chart request).  We accumulate all specs in a list keyed by the
-    parent task tool_use_id.
-    """
-    parent_id = msg.get("parent_tool_use_id")
-    if not parent_id or tool_names.get(parent_id) != "chart-builder":
-        return
-    _DATA_FIELDS = ("x", "y", "z", "values", "labels", "lat", "lon", "r", "theta",
-                     "lowerfence", "q1", "median", "q3", "upperfence")
-    for block in msg.get("message", {}).get("content", []):
-        if block.get("type") == "tool_use" and "render_chart" in block.get("name", ""):
-            spec = block.get("input", {})
-            # Skip specs with all-empty data traces to avoid rendering blank charts.
-            traces = spec.get("data", [])
-            has_data = any(
-                isinstance(trace.get(f), list) and len(trace.get(f)) > 0
-                for trace in traces if isinstance(trace, dict)
-                for f in _DATA_FIELDS
-            )
-            if not has_data:
-                return
-            subagent_chart_specs.setdefault(parent_id, []).append(spec)
-            return
 
 
 async def stream_chat(
@@ -301,14 +254,15 @@ async def stream_chat(
         waiting_for_user = False
         tool_names: dict[str, str] = {}
         tool_sqls: dict[str, str] = {}
+        # Capture render_chart tool_use inputs so we can attach chart_spec
+        # to the tool_result event (the MCP tool result itself may not echo
+        # the full spec).
+        tool_chart_specs: dict[str, dict] = {}
         # Track subagent text output from intermediate assistant messages.
         # The TypeScript SDK's Task tool_result contains only metadata (agentId,
         # usage), not the subagent's actual output.  The real output arrives in
         # assistant messages whose parent_tool_use_id matches the Task tool ID.
         subagent_texts: dict[str, str] = {}
-        subagent_chart_specs: dict[str, dict] = {}
-        pending_charts: list[dict] = []  # Buffered chart specs to emit with orchestrator answer
-        pending_subagents: set[str] = set()  # Track active subagents by tool_id
         actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -371,11 +325,6 @@ async def stream_chat(
                                         subagent_texts[stream_parent] = subagent_texts.get(stream_parent, "") + text
                                     else:
                                         event_name = "answer" if has_tool_calls else "thinking"
-                                        # Emit buffered charts before answer text when all subagents done
-                                        if event_name == "answer" and pending_charts and not pending_subagents:
-                                            for chart_spec in pending_charts:
-                                                yield f"event: chart\ndata: {json.dumps({'chart_spec': chart_spec}, default=str)}\n\n"
-                                            pending_charts.clear()
                                         yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
 
                         elif event_type == "content_block_start":
@@ -407,7 +356,6 @@ async def stream_chat(
                                     text_parts.append(block["text"])
                             if text_parts:
                                 subagent_texts[parent_tool_use_id] = "\n".join(text_parts)
-                        _build_chart_spec_from_stream_messages(msg, tool_names, subagent_chart_specs)
 
                         is_subagent_msg = bool(parent_tool_use_id and parent_tool_use_id in tool_names)
                         for block in message_obj.get("content", []):
@@ -419,18 +367,23 @@ async def stream_chat(
                                 tool_names[tool_id] = tool_name
 
                                 # Skip emitting tool_call for subagent-internal
-                                # tools (render_chart, execute_sql inside
-                                # chart-builder).  The SDK doesn't yield the
-                                # matching tool_result user message, so the
-                                # frontend would show "Executing..." forever.
+                                # tools (execute_sql inside sql-analyst).  The
+                                # SDK doesn't yield the matching tool_result
+                                # user message, so the frontend would show
+                                # "Executing..." forever.
                                 if is_subagent_msg:
                                     continue
 
                                 has_tool_calls = True
                                 is_execute_sql = "execute_sql" in tool_name
+                                is_render_chart = "render_chart" in tool_name
                                 sql = tool_input.get("sql", "") if is_execute_sql else ""
                                 if sql:
                                     tool_sqls[tool_id] = sql
+                                # Capture render_chart input so we can attach
+                                # chart_spec to the tool_result event.
+                                if is_render_chart:
+                                    tool_chart_specs[tool_id] = tool_input
                                 tool_call_data: dict = {"id": tool_id, "name": tool_name}
                                 if sql:
                                     tool_call_data["sql"] = sql
@@ -441,7 +394,6 @@ async def stream_chat(
                                     subagent_name = tool_input.get("subagent_type", "unknown")
                                     subagent_prompt = tool_input.get("prompt", "")
                                     tool_names[tool_id] = subagent_name
-                                    pending_subagents.add(tool_id)
                                     yield f"event: subagent_start\ndata: {json.dumps({'id': tool_id, 'name': subagent_name, 'prompt': subagent_prompt})}\n\n"
 
                                 # Detect ask_user_question tool
@@ -513,31 +465,19 @@ async def stream_chat(
                                     result_data["error"] = parsed_err.get("error", text)
                                 except (json.JSONDecodeError, AttributeError):
                                     result_data["error"] = text
+                            # Attach chart_spec from captured render_chart
+                            # input so the frontend can render the chart.
+                            if tool_id in tool_chart_specs and "chart_spec" not in result_data:
+                                result_data["chart_spec"] = tool_chart_specs[tool_id]
                             # Detect subagent result (Task tool)
-                            if name in ("sql-analyst", "chart-builder"):
-                                pending_subagents.discard(tool_id)
+                            if name == "sql-analyst":
                                 end_data: dict = {"id": tool_id, "name": name}
-                                if name == "chart-builder":
-                                    chart_specs = subagent_chart_specs.get(tool_id, [])
-                                    if chart_specs:
-                                        pending_charts.extend(chart_specs)
-                                    else:
-                                        logger.warning(
-                                            "[container] render_chart tool_use not found for chart-builder %s",
-                                            tool_id,
-                                        )
-                                    # Don't include chart_specs in subagent_end — charts will be emitted later
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
                     elif msg_type == "result":
-                        # Flush any remaining buffered charts before done
-                        if pending_charts:
-                            for chart_spec in pending_charts:
-                                yield f"event: chart\ndata: {json.dumps({'chart_spec': chart_spec}, default=str)}\n\n"
-                            pending_charts.clear()
                         actual_session_id = msg.get("session_id") or actual_session_id
                         if msg.get("is_error"):
                             errors = msg.get("errors", [])
@@ -562,11 +502,6 @@ async def stream_chat(
 
         # Guard: always send done even if sidecar ended without result message
         if not done_sent:
-            # Emit any remaining buffered charts before done
-            if pending_charts:
-                for chart_spec in pending_charts:
-                    yield f"event: chart\ndata: {json.dumps({'chart_spec': chart_spec}, default=str)}\n\n"
-                pending_charts.clear()
             logger.warning("Sidecar stream ended without result message; sending done event")
             yield f"event: error\ndata: {json.dumps({'message': 'Connection to agent was lost. Please try again.'})}\n\n"
             yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
