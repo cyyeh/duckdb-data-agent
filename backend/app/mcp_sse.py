@@ -80,10 +80,7 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                 name="render_chart",
                 description=(
                     "Render a Plotly chart. Call this as the final step after querying data. "
-                    "Pass all Plotly traces in `data` and a layout object with a descriptive `title`. "
-                    "IMPORTANT: After this tool returns, you MUST write narrative text explaining "
-                    "the chart BEFORE calling any other tool. Never call execute_sql or render_chart "
-                    "again until you have written explanatory text."
+                    "Pass all Plotly traces in `data` and a layout object with a descriptive `title`."
                 ),
                 inputSchema={
                     "type": "object",
@@ -170,16 +167,9 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                 }))]
             # Return success with chart_spec so the orchestrator can see
             # what was rendered and write coherent commentary about it.
-            # Include a directive to write narrative text before proceeding —
-            # this is critical for cross-model compatibility (OpenAI models
-            # tend to batch tool calls without interleaving narrative).
             return [types.TextContent(type="text", text=json.dumps({
                 "status": "success",
                 "chart_spec": {"data": data, "layout": layout},
-                "next_step": "Chart rendered successfully. You MUST now write narrative text "
-                             "explaining what this chart shows BEFORE making any more tool calls. "
-                             "Do NOT call execute_sql or render_chart until you have written "
-                             "at least 2-3 sentences of analysis about this chart.",
             }))]
         else:
             raise ValueError(f"Unknown tool: {name}")

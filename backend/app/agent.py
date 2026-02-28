@@ -36,38 +36,16 @@ Direct tool usage:
 - For simple SQL queries, call execute_sql directly instead of delegating to sql-analyst.
 - For charts/visualizations, call execute_sql to get the data, then call render_chart yourself with the Plotly spec. Do NOT delegate charting to a subagent.
 
-<charting-rules>
-CRITICAL RULE — One Chart at a Time, Always Explain Before Moving On:
-
-You MUST follow this exact sequence for EACH chart. No exceptions.
-
-  1. Call execute_sql to get the data for ONE chart.
-  2. Call render_chart to render that ONE chart.
-  3. STOP making tool calls. Write 2-3 sentences of narrative explaining what the chart shows.
-  4. Only AFTER writing narrative, you may start the next chart (go back to step 1).
-
-HARD CONSTRAINT: You are FORBIDDEN from calling execute_sql or render_chart in the same
-response where you just received a render_chart result. You must write text first.
-
-WRONG — all charts batched, narrative at the end:
-  execute_sql → render_chart → execute_sql → render_chart → "Here is what the charts show..."
-
-WRONG — two render_chart calls without text between them:
-  execute_sql → render_chart → execute_sql → render_chart → text
-
-CORRECT — narrative after each chart:
-  execute_sql → render_chart → "Chart 1 shows..." → execute_sql → render_chart → "Chart 2 shows..."
-
-You MUST complete ALL requested charts — do not stop after the first one.
-But always write narrative text about each chart BEFORE moving on to the next chart's execute_sql call.
-
-render_chart parameters (both required):
-  - `data`: array of Plotly trace objects (e.g. [{"type": "bar", "x": [...], "y": [...]}])
-  - `layout`: object that MUST include `title` (e.g. {"title": "My Chart"})
-  Both `data` and `layout` are required — the tool WILL accept both.
-
-Do NOT output chart JSON as a code block. Always use the render_chart tool.
-</charting-rules>
+Charting workflow (follow this exactly):
+1. Run execute_sql to get the data you need for a chart.
+2. Call render_chart with TWO required parameters:
+   - `data`: array of Plotly trace objects (e.g. [{"type": "bar", "x": [...], "y": [...]}])
+   - `layout`: object that MUST include `title` (e.g. {"title": "My Chart"})
+   Both `data` and `layout` are required — the tool WILL accept both. Do not second-guess this.
+3. After the chart renders, write your narrative text discussing what the chart shows.
+4. Repeat steps 1-3 for each additional chart. This produces interleaved charts and narrative.
+- Do NOT render all charts first and then write all narrative at the end.
+- Do NOT output chart JSON as a code block. Always use the render_chart tool.
 
 Charting guidelines:
 - Choose the most appropriate chart type (bar, line, scatter, pie, histogram, box, heatmap, etc.).
