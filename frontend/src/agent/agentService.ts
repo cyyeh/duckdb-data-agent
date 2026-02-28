@@ -7,6 +7,7 @@ interface AgentCallbacks {
   onToolResult: (result: ToolCallResult) => void;
   onSubagentStart?: (data: { id: string; name: string; prompt: string }) => void;
   onSubagentEnd?: (data: { id: string; name: string; result?: string; chart_spec?: { data: unknown[]; layout?: Record<string, unknown> } }) => void;
+  onChart?: (data: { chart_spec: { data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[] } }) => void;
   onDone: (sessionId: string | null) => void;
   onError: (error: string) => void;
   onUserQuestion?: (data: UserQuestionData) => void;
@@ -250,6 +251,15 @@ function handleSSEEvent(
           id: data.id as string,
           name: data.name as string,
           result: (data.result as string) ?? undefined,
+        });
+      }
+      break;
+    }
+    case 'chart': {
+      const chartSpec = data.chart_spec as { data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[] };
+      if (chartSpec) {
+        callbacks.onChart?.({
+          chart_spec: chartSpec,
         });
       }
       break;

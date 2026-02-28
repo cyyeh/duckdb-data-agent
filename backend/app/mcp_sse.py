@@ -157,10 +157,10 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                     "error": "All data traces are empty — no data to chart. "
                              "Check your SQL query results before calling render_chart."
                 }))]
-            # Return a minimal acknowledgement. The chart spec (data + layout) is captured
-            # upstream from the tool_use input block in the backend stream handler — not from
-            # this response — so we don't need to echo the payload here.
-            return [types.TextContent(type="text", text=json.dumps({"status": "rendered"}))]
+            # Return success acknowledgement. The chart-builder already knows
+            # the data (it constructed the spec). The backend stream handler
+            # captures the spec from the tool_use input block for buffered emission.
+            return [types.TextContent(type="text", text=json.dumps({"status": "success"}))]
         else:
             raise ValueError(f"Unknown tool: {name}")
 

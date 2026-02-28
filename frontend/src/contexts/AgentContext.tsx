@@ -218,6 +218,19 @@ export function AgentProvider({
               )
             );
           },
+          onChart: (data) => {
+            segmentsRef.current.push({
+              type: 'subagent_end',
+              chart_spec: data.chart_spec,
+            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
           onDone: (newSessionId) => {
             if (newSessionId) sessionIdRef.current = newSessionId;
             if (flushTimerRef.current) {
@@ -448,6 +461,19 @@ export function AgentProvider({
               subagentName: data.name,
               chart_spec: data.chart_spec,
               text: data.result,
+            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, segments: [...segmentsRef.current] }
+                  : m
+              )
+            );
+          },
+          onChart: (data) => {
+            segmentsRef.current.push({
+              type: 'subagent_end',
+              chart_spec: data.chart_spec,
             });
             setMessages((prev) =>
               prev.map((m) =>

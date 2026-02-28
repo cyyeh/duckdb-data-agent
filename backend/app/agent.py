@@ -26,7 +26,7 @@ Task tool usage (CRITICAL — you MUST follow these rules):
 - For any data question that requires SQL queries, set subagent_type to "sql-analyst"
 - For any visualization, chart, or graph request, set subagent_type to "chart-builder"
 - Do NOT set the "model" parameter on the Task tool — the named agents already have models configured. Omit the model field entirely.
-- After the chart-builder returns, do NOT repeat the chart JSON specification in your response. The chart is rendered automatically. Simply describe what the visualization shows in plain language.
+- After the chart-builder returns, describe what the visualization shows based on the data. The chart will be displayed automatically before your answer text.
 - After the sql-analyst returns, do NOT repeat the data tables or numbers. Simply add brief commentary on what the data means.
 - Explain findings in plain language after getting results
 
@@ -307,6 +307,8 @@ async def stream_chat(
         # assistant messages whose parent_tool_use_id matches the Task tool ID.
         subagent_texts: dict[str, str] = {}
         subagent_chart_specs: dict[str, dict] = {}
+        pending_charts: list[dict] = []  # Buffered chart specs to emit with orchestrator answer
+        pending_subagents: set[str] = set()  # Track active subagents by tool_id
         actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -369,6 +371,11 @@ async def stream_chat(
                                         subagent_texts[stream_parent] = subagent_texts.get(stream_parent, "") + text
                                     else:
                                         event_name = "answer" if has_tool_calls else "thinking"
+                                        # Emit buffered charts before answer text when all subagents done
+                                        if event_name == "answer" and pending_charts and not pending_subagents:
+                                            for chart_spec in pending_charts:
+                                                yield f"event: chart\ndata: {json.dumps({'chart_spec': chart_spec}, default=str)}\n\n"
+                                            pending_charts.clear()
                                         yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
 
                         elif event_type == "content_block_start":
@@ -424,6 +431,7 @@ async def stream_chat(
                                     subagent_name = tool_input.get("subagent_type", "unknown")
                                     subagent_prompt = tool_input.get("prompt", "")
                                     tool_names[tool_id] = subagent_name
+                                    pending_subagents.add(tool_id)
                                     yield f"event: subagent_start\ndata: {json.dumps({'id': tool_id, 'name': subagent_name, 'prompt': subagent_prompt})}\n\n"
 
                                 # Detect ask_user_question tool
@@ -497,22 +505,29 @@ async def stream_chat(
                                     result_data["error"] = text
                             # Detect subagent result (Task tool)
                             if name in ("sql-analyst", "chart-builder"):
+                                pending_subagents.discard(tool_id)
                                 end_data: dict = {"id": tool_id, "name": name}
                                 if name == "chart-builder":
                                     chart_specs = subagent_chart_specs.get(tool_id, [])
                                     if chart_specs:
-                                        end_data["chart_specs"] = chart_specs
+                                        pending_charts.extend(chart_specs)
                                     else:
                                         logger.warning(
                                             "[container] render_chart tool_use not found for chart-builder %s",
                                             tool_id,
                                         )
+                                    # Don't include chart_specs in subagent_end — charts will be emitted later
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
                     elif msg_type == "result":
+                        # Flush any remaining buffered charts before done
+                        if pending_charts:
+                            for chart_spec in pending_charts:
+                                yield f"event: chart\ndata: {json.dumps({'chart_spec': chart_spec}, default=str)}\n\n"
+                            pending_charts.clear()
                         actual_session_id = msg.get("session_id") or actual_session_id
                         if msg.get("is_error"):
                             errors = msg.get("errors", [])
@@ -537,6 +552,11 @@ async def stream_chat(
 
         # Guard: always send done even if sidecar ended without result message
         if not done_sent:
+            # Emit any remaining buffered charts before done
+            if pending_charts:
+                for chart_spec in pending_charts:
+                    yield f"event: chart\ndata: {json.dumps({'chart_spec': chart_spec}, default=str)}\n\n"
+                pending_charts.clear()
             logger.warning("Sidecar stream ended without result message; sending done event")
             yield f"event: error\ndata: {json.dumps({'message': 'Connection to agent was lost. Please try again.'})}\n\n"
             yield f"event: done\ndata: {json.dumps({'session_id': actual_session_id})}\n\n"
