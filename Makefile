@@ -42,7 +42,7 @@ install-frontend:
 	cd frontend && npm install
 
 sidecar-build:
-	docker build --build-arg CLAUDE_CODE_VERSION=$${CLAUDE_CODE_VERSION:-latest} -t duckdb-agent-sidecar:latest ./sidecar
+	docker build -t duckdb-agent-sidecar:latest ./sidecar
 
 sidecar-network:
 	./sidecar/setup-network.sh

@@ -19,8 +19,6 @@ RUN npx tsc
 # Production stage
 FROM python:3.12-slim
 
-ARG CLAUDE_CODE_VERSION=latest
-
 # Install Node.js 20
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl ca-certificates && \
@@ -28,9 +26,6 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Install Claude CLI globally
-RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
 WORKDIR /app
 
