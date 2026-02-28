@@ -35,8 +35,11 @@ services:
       CONTAINER_NETWORK: agent-sandbox
       BIFROST_BASE_URL: http://bifrost:8080
       BACKEND_BASE_URL: http://duckdb-data-agent:10000
+      SKILLS_DIR: /app/sidecar/.claude/skills
+      SKILLS_HOST_PATH: ${SKILLS_HOST_PATH:-./sidecar/.claude/skills}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./sidecar/.claude/skills:/app/sidecar/.claude/skills
     group_add:
       - "${DOCKER_GID:-0}"
     networks:

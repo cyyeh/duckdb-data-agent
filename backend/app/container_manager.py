@@ -110,6 +110,15 @@ class ContainerManager:
         if session_id in self._containers:
             return self._containers[session_id]
 
+        # Skills volume: mount the host skills directory into the sidecar
+        # so it can discover dynamically created skills.
+        skills_host_path = os.environ.get("SKILLS_HOST_PATH", "")
+        volumes = {}
+        if skills_host_path:
+            # Resolve relative paths against the working directory
+            abs_skills_path = os.path.abspath(skills_host_path)
+            volumes[abs_skills_path] = {"bind": "/app/.claude/skills", "mode": "ro"}
+
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
         # Resolve host.docker.internal so the sidecar can reach the host.
@@ -153,6 +162,7 @@ class ContainerManager:
             cap_drop=["ALL"],
             security_opt=["no-new-privileges"],
             tmpfs={"/tmp": "size=50m", "/home/appuser": "size=50m,uid=1000,gid=1000"},
+            **({"volumes": volumes} if volumes else {}),
             network=self._config.network,
             environment=env,
             extra_hosts=extra_hosts or None,
