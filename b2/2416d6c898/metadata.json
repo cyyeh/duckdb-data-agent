@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "b22416d6c898",
+  "strategy": "manual-commit",
+  "branch": "feat/sidecar-skill",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/main.py",
+    "backend/app/routes/skills.py",
+    "backend/tests/test_skills_routes.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b2/2416d6c898/0/metadata.json",
+      "transcript": "/b2/2416d6c898/0/full.jsonl",
+      "context": "/b2/2416d6c898/0/context.md",
+      "content_hash": "/b2/2416d6c898/0/content_hash.txt",
+      "prompt": "/b2/2416d6c898/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 78,
+    "cache_creation_tokens": 131959,
+    "cache_read_tokens": 5594986,
+    "output_tokens": 42585,
+    "api_call_count": 69
+  }
+}
