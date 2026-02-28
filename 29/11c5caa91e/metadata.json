@@ -3,7 +3,7 @@
   "checkpoint_id": "2911c5caa91e",
   "strategy": "manual-commit",
   "branch": "feat/sidecar-skill",
-  "checkpoints_count": 2,
+  "checkpoints_count": 4,
   "files_touched": [
     "README.md",
     "backend/app/container_manager.py",
@@ -24,13 +24,20 @@
       "context": "/29/11c5caa91e/1/context.md",
       "content_hash": "/29/11c5caa91e/1/content_hash.txt",
       "prompt": "/29/11c5caa91e/1/prompt.txt"
+    },
+    {
+      "metadata": "/29/11c5caa91e/2/metadata.json",
+      "transcript": "/29/11c5caa91e/2/full.jsonl",
+      "context": "/29/11c5caa91e/2/context.md",
+      "content_hash": "/29/11c5caa91e/2/content_hash.txt",
+      "prompt": "/29/11c5caa91e/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 84,
-    "cache_creation_tokens": 104319,
-    "cache_read_tokens": 4663266,
-    "output_tokens": 23924,
-    "api_call_count": 63
+    "input_tokens": 109,
+    "cache_creation_tokens": 160490,
+    "cache_read_tokens": 5787078,
+    "output_tokens": 37321,
+    "api_call_count": 82
   }
 }
