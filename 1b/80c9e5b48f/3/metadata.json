@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "1b80c9e5b48f",
+  "session_id": "78679182-462a-4dd1-b89a-54f4203317e2",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-28T23:35:54.904993Z",
+  "branch": "feat/sidecar-skill",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/container_manager.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "8224d40c6da5",
+  "transcript_identifier_at_start": "7cbcec16-5255-4d17-b2a7-902800ea9c3e",
+  "token_usage": {
+    "input_tokens": 13143,
+    "cache_creation_tokens": 42195,
+    "cache_read_tokens": 1167704,
+    "output_tokens": 8852,
+    "api_call_count": 22
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-28T23:35:54.686186Z",
+    "agent_lines": 8,
+    "human_added": 8,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 17,
+    "agent_percentage": 47.05882352941176
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-sidecar-skill/78679182-462a-4dd1-b89a-54f4203317e2.jsonl"
+}
