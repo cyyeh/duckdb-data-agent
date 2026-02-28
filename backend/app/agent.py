@@ -409,14 +409,24 @@ async def stream_chat(
                                 subagent_texts[parent_tool_use_id] = "\n".join(text_parts)
                         _build_chart_spec_from_stream_messages(msg, tool_names, subagent_chart_specs)
 
+                        is_subagent_msg = bool(parent_tool_use_id and parent_tool_use_id in tool_names)
                         for block in message_obj.get("content", []):
                             block_type = block.get("type")
                             if block_type == "tool_use":
-                                has_tool_calls = True
                                 tool_id = block.get("id", "")
                                 tool_name = block.get("name", "")
                                 tool_input = block.get("input", {})
                                 tool_names[tool_id] = tool_name
+
+                                # Skip emitting tool_call for subagent-internal
+                                # tools (render_chart, execute_sql inside
+                                # chart-builder).  The SDK doesn't yield the
+                                # matching tool_result user message, so the
+                                # frontend would show "Executing..." forever.
+                                if is_subagent_msg:
+                                    continue
+
+                                has_tool_calls = True
                                 is_execute_sql = "execute_sql" in tool_name
                                 sql = tool_input.get("sql", "") if is_execute_sql else ""
                                 if sql:
