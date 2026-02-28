@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "ef7e82bcc9a8",
+  "strategy": "manual-commit",
+  "branch": "fix/thinking-block-bold-and-chart-prompt",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/tests/test_agent_chart.py",
+    "backend/tests/test_stream_chart_capture.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ef/7e82bcc9a8/0/metadata.json",
+      "transcript": "/ef/7e82bcc9a8/0/full.jsonl",
+      "context": "/ef/7e82bcc9a8/0/context.md",
+      "content_hash": "/ef/7e82bcc9a8/0/content_hash.txt",
+      "prompt": "/ef/7e82bcc9a8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 13,
+    "cache_creation_tokens": 57633,
+    "cache_read_tokens": 465329,
+    "output_tokens": 13904,
+    "api_call_count": 10
+  }
+}
