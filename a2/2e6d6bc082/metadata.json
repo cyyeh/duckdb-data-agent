@@ -3,7 +3,7 @@
   "checkpoint_id": "a22e6d6bc082",
   "strategy": "manual-commit",
   "branch": "feat/sidecar-skill",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "e2e/scenarios/skills.yaml"
   ],
@@ -28,13 +28,20 @@
       "context": "/a2/2e6d6bc082/2/context.md",
       "content_hash": "/a2/2e6d6bc082/2/content_hash.txt",
       "prompt": "/a2/2e6d6bc082/2/prompt.txt"
+    },
+    {
+      "metadata": "/a2/2e6d6bc082/3/metadata.json",
+      "transcript": "/a2/2e6d6bc082/3/full.jsonl",
+      "context": "/a2/2e6d6bc082/3/context.md",
+      "content_hash": "/a2/2e6d6bc082/3/content_hash.txt",
+      "prompt": "/a2/2e6d6bc082/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1732,
-    "cache_creation_tokens": 498866,
-    "cache_read_tokens": 27441655,
-    "output_tokens": 120026,
-    "api_call_count": 297
+    "input_tokens": 1753,
+    "cache_creation_tokens": 547919,
+    "cache_read_tokens": 28395008,
+    "output_tokens": 126946,
+    "api_call_count": 315
   }
 }
