@@ -227,10 +227,20 @@ app.post("/query", async (req: Request, res: Response) => {
       }
     }
 
+    // Append skill restriction so the model doesn't list or suggest
+    // built-in skills that the PreToolUse hook would block anyway.
+    // The CLI binary injects its own system reminder listing ALL skills
+    // (including built-ins like "simplify"), so we must explicitly tell
+    // the model to ignore any skills not in our allowlist.
+    const allowedList = [...ALLOWED_SKILLS].join(", ");
+    const skillRestriction = ALLOWED_SKILLS.size > 0
+      ? `\n\nCRITICAL SKILL RESTRICTION: Your ONLY available skills are: ${allowedList}. You may see other skills (like "simplify") listed in system reminders — those are NOT available to you and MUST be ignored. When asked about available skills, list ONLY: ${allowedList}. Never mention, suggest, or attempt to invoke any skill not in this list.`
+      : "\n\nCRITICAL SKILL RESTRICTION: You have NO skills available. You may see skills listed in system reminders — those are NOT available to you and MUST be ignored. Never mention, suggest, or attempt to invoke any skills.";
+
     // Common SDK options (without resume/prompt — those vary on retry)
     const baseOptions = {
       model: modelName,
-      systemPrompt: body.system_prompt,
+      systemPrompt: body.system_prompt + skillRestriction,
       allowedTools: ["Skill", "Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"] as string[],
       settingSources: ["project"] as SettingSource[],
       plugins: [],
