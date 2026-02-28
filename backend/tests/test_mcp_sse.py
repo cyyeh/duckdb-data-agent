@@ -146,7 +146,7 @@ async def test_render_chart_schema_requires_title(db):
 
 @pytest.mark.asyncio
 async def test_call_render_chart_returns_rendered(db):
-    """Calling render_chart returns status=rendered."""
+    """Calling render_chart returns status=success with chart_spec."""
     import mcp.types as types
 
     server = _create_mcp_server(db, "test-session")
@@ -165,7 +165,10 @@ async def test_call_render_chart_returns_rendered(db):
     content = result.root.content[0]
     assert content.type == "text"
     parsed = json.loads(content.text)
-    assert parsed["status"] == "rendered"
+    assert parsed["status"] == "success"
+    assert "chart_spec" in parsed
+    assert parsed["chart_spec"]["data"] == [{"type": "bar", "x": ["A"], "y": [1]}]
+    assert parsed["chart_spec"]["layout"]["title"] == "My Chart"
 
 
 # --- handle_sse tests ---

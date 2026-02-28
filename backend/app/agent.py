@@ -30,26 +30,33 @@ Tools at your disposal:
 Task tool usage:
 - When using the Task tool, set "subagent_type" to "sql-analyst". NEVER use generic values like "general-purpose" or any other value.
 - Do NOT set the "model" parameter on the Task tool — it is already configured.
-- After the sql-analyst returns, do NOT repeat the data tables or numbers. Simply add brief commentary on what the data means.
+- After the sql-analyst returns, do NOT repeat the data tables, numbers, or SQL queries. Simply add brief commentary on what the data means. Never include SQL in your answer unless the user explicitly asks to see the SQL.
 
 Direct tool usage:
 - For simple SQL queries, call execute_sql directly instead of delegating to sql-analyst.
 - For charts/visualizations, call execute_sql to get the data, then call render_chart yourself with the Plotly spec. Do NOT delegate charting to a subagent.
-- When building a data story with multiple charts, interleave charts with your narrative text. After each chart, write the text that discusses it before rendering the next chart.
+
+Charting workflow (follow this exactly):
+1. Run execute_sql to get the data you need for a chart.
+2. Call render_chart with TWO required parameters:
+   - `data`: array of Plotly trace objects (e.g. [{"type": "bar", "x": [...], "y": [...]}])
+   - `layout`: object that MUST include `title` (e.g. {"title": "My Chart"})
+   Both `data` and `layout` are required — the tool WILL accept both. Do not second-guess this.
+3. After the chart renders, write your narrative text discussing what the chart shows.
+4. Repeat steps 1-3 for each additional chart. This produces interleaved charts and narrative.
+- Do NOT render all charts first and then write all narrative at the end.
+- Do NOT output chart JSON as a code block. Always use the render_chart tool.
 
 Charting guidelines:
 - Choose the most appropriate chart type (bar, line, scatter, pie, histogram, box, heatmap, etc.).
 - For pie charts, use `labels` and `values` fields in the trace.
 - For multi-series data, group into separate traces.
-- `layout.title` is required — always provide a descriptive title.
 - Keep the chart clean and readable.
 - IMPORTANT — keep data small. Pre-aggregate in SQL instead of passing raw rows:
   - Box plots: compute lowerfence, q1, median, q3, upperfence per group in SQL. Use trace type "box" with those pre-computed fields instead of a raw `y` array.
   - Histograms: compute bin counts with width_bucket() or CASE in SQL, then render as a bar chart with the bin edges as `x` and counts as `y`.
   - Scatter / line with many rows: sample (ORDER BY random() LIMIT 200) or aggregate (e.g. average per time bucket) so each trace has at most ~200 points.
   - General rule: each trace should have at most ~200 data points.
-- Call render_chart with: `data` (array of Plotly trace objects) and `layout` (object with at minimum {"title": "<descriptive title>"}).
-- Do NOT output chart JSON as a code block. Use the render_chart tool.
 
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
@@ -263,6 +270,10 @@ async def stream_chat(
         # usage), not the subagent's actual output.  The real output arrives in
         # assistant messages whose parent_tool_use_id matches the Task tool ID.
         subagent_texts: dict[str, str] = {}
+        # Track SQL queries executed inside subagents so they can be
+        # included in the subagent_end event for visibility.
+        subagent_sql_data: dict[str, list[dict]] = {}  # parent_tool_use_id -> [{tool_id, sql, columns?, rows?, rowCount?}]
+        subagent_internal_tools: dict[str, str] = {}   # tool_id -> parent_tool_use_id
         actual_session_id = session_id
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
@@ -372,6 +383,14 @@ async def stream_chat(
                                 # user message, so the frontend would show
                                 # "Executing..." forever.
                                 if is_subagent_msg:
+                                    subagent_internal_tools[tool_id] = parent_tool_use_id
+                                    # Capture SQL for subagent_end visibility
+                                    if "execute_sql" in tool_name:
+                                        sql = tool_input.get("sql", "")
+                                        if sql:
+                                            subagent_sql_data.setdefault(parent_tool_use_id, []).append(
+                                                {"tool_id": tool_id, "sql": sql}
+                                            )
                                     continue
 
                                 has_tool_calls = True
@@ -428,6 +447,36 @@ async def stream_chat(
                             if block.get("type") != "tool_result":
                                 continue
                             tool_id = block.get("tool_use_id", "")
+
+                            # Skip subagent-internal tool results; capture
+                            # structured data for inclusion in subagent_end.
+                            parent_subagent_id = subagent_internal_tools.get(tool_id)
+                            if parent_subagent_id:
+                                sa_name = tool_names.get(tool_id, "")
+                                if "execute_sql" in sa_name:
+                                    sa_parts = block.get("content", [])
+                                    sa_text = ""
+                                    if isinstance(sa_parts, list):
+                                        for part in sa_parts:
+                                            if isinstance(part, dict) and part.get("type") == "text":
+                                                sa_text = part.get("text", "")
+                                    elif isinstance(sa_parts, str):
+                                        sa_text = sa_parts
+                                    try:
+                                        sa_parsed = json.loads(sa_text)
+                                        for entry in subagent_sql_data.get(parent_subagent_id, []):
+                                            if entry.get("tool_id") == tool_id:
+                                                if sa_parsed.get("status") == "success":
+                                                    entry["columns"] = sa_parsed.get("columns", [])
+                                                    entry["rows"] = sa_parsed.get("rows", [])[:100]
+                                                    entry["rowCount"] = sa_parsed.get("rowCount", 0)
+                                                elif sa_parsed.get("status") == "error":
+                                                    entry["error"] = sa_parsed.get("error", "")
+                                                break
+                                    except (json.JSONDecodeError, AttributeError):
+                                        pass
+                                continue
+
                             name = tool_names.get(tool_id, "")
                             content_parts = block.get("content", [])
                             text = ""
@@ -472,6 +521,15 @@ async def stream_chat(
                             # Detect subagent result (Task tool)
                             if name == "sql-analyst":
                                 end_data: dict = {"id": tool_id, "name": name}
+                                sql_data = subagent_sql_data.get(tool_id, [])
+                                if sql_data:
+                                    end_data["sql_results"] = [
+                                        {k: v for k, v in entry.items() if k != "tool_id"}
+                                        for entry in sql_data
+                                    ]
+                                narrative = subagent_texts.get(tool_id, "") or tool_use_result_text
+                                if narrative:
+                                    end_data["result"] = narrative
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"

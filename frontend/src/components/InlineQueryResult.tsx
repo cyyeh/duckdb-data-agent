@@ -88,7 +88,7 @@ export function InlineQueryResult({ result }: { result: ToolCallResult }) {
     return (
       <div className="inline-query inline-query--chart">
         <div className="inline-query__label inline-query__label--generic">
-          {getToolDisplayName(result, t)}
+          {(result.chart_spec?.layout?.title as string) || getToolDisplayName(result, t)}
           <CopyButton text={JSON.stringify(result.chart_spec, null, 2)} />
         </div>
         <ChartWidget

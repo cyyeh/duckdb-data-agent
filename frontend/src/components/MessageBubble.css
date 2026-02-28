@@ -270,6 +270,11 @@
   background: var(--color-bg-secondary);
 }
 
+.message-bubble__segment-content strong {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
 /* Collapsible thinking segments */
 .message-bubble__collapsible {
   cursor: default;
