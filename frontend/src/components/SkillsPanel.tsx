@@ -73,30 +73,6 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
     );
   }
 
-  // Detail view for a selected skill
-  if (selectedSkill) {
-    return (
-      <div className="skills-panel">
-        <div className="skills-panel__detail-header">
-          <button className="skills-panel__back-btn" onClick={() => setSelectedSkill(null)}>
-            &larr;
-          </button>
-          <span className="skills-panel__detail-name">{selectedSkill.name}</span>
-          <button
-            className="skills-panel__use-btn"
-            onClick={() => onUseSkill(selectedSkill.name)}
-          >
-            {t('useSkill')}
-          </button>
-        </div>
-        <p className="skills-panel__detail-desc">{selectedSkill.description}</p>
-        {selectedSkill.content && (
-          <pre className="skills-panel__detail-content">{selectedSkill.content}</pre>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="skills-panel">
       <div className="skills-panel__actions">
@@ -132,6 +108,29 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
           </li>
         ))}
       </ul>
+
+      {selectedSkill && (
+        <div className="skill-detail-overlay" onClick={() => setSelectedSkill(null)}>
+          <div className="skill-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="skill-detail-modal__header">
+              <span className="skill-detail-modal__name">{selectedSkill.name}</span>
+              <button
+                className="skills-panel__use-btn"
+                onClick={() => onUseSkill(selectedSkill.name)}
+              >
+                {t('useSkill')}
+              </button>
+              <button className="skill-detail-modal__close" onClick={() => setSelectedSkill(null)}>
+                &times;
+              </button>
+            </div>
+            <p className="skill-detail-modal__desc">{selectedSkill.description}</p>
+            {selectedSkill.content && (
+              <pre className="skill-detail-modal__content">{selectedSkill.content}</pre>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

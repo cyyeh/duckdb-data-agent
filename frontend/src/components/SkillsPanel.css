@@ -125,31 +125,39 @@
   overflow: hidden;
 }
 
-/* Detail view */
+/* Detail modal */
 
-.skills-panel__detail-header {
+.skill-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.skill-detail-modal {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 12px;
+  padding: 24px;
+  width: 560px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.skill-detail-modal__header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
-.skills-panel__back-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
+.skill-detail-modal__name {
   font-size: 16px;
-  color: var(--color-text-muted);
-  padding: 0 4px;
-  line-height: 1;
-}
-
-.skills-panel__back-btn:hover {
-  color: var(--color-text-primary);
-}
-
-.skills-panel__detail-name {
-  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
   flex: 1;
@@ -158,25 +166,40 @@
   white-space: nowrap;
 }
 
-.skills-panel__detail-desc {
-  font-size: 12px;
+.skill-detail-modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
   color: var(--color-text-muted);
-  margin: 0 0 8px;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.skill-detail-modal__close:hover {
+  color: var(--color-text-primary);
+}
+
+.skill-detail-modal__desc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
   line-height: 1.4;
 }
 
-.skills-panel__detail-content {
+.skill-detail-modal__content {
   font-size: 12px;
   font-family: monospace;
   color: var(--color-text-secondary);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
   border-radius: 6px;
-  padding: 10px;
+  padding: 12px;
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.5;
-  max-height: calc(100vh - 250px);
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
