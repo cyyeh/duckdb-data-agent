@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from '../hooks/useTranslation';
-import { fetchSkills, fetchSkill, deleteSkill as apiDeleteSkill } from '../services/skillsService';
+import { fetchSkills, fetchSkill, deleteSkill as apiDeleteSkill, toggleSkill as apiToggleSkill } from '../services/skillsService';
 import type { SkillInfo } from '../types';
 import './SkillsPanel.css';
 
@@ -64,6 +64,16 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
     }
   };
 
+  const handleToggle = async (name: string, currentlyDisabled: boolean) => {
+    try {
+      const updated = await apiToggleSkill(name, !currentlyDisabled);
+      setSkills((prev) => prev.map((s) => s.name === name ? { ...s, disabled: updated.disabled } : s));
+      window.dispatchEvent(new CustomEvent('skills-updated'));
+    } catch {
+      // silently ignore
+    }
+  };
+
   if (skills.length === 0) {
     return (
       <div className="skills-panel">
@@ -86,25 +96,40 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
       </div>
       <ul className="skills-panel__list">
         {skills.map((skill) => (
-          <li key={skill.name} className="skills-panel__item" onClick={() => handleSkillClick(skill.name)}>
+          <li key={skill.name} className={`skills-panel__item${skill.disabled ? ' skills-panel__item--disabled' : ''}`} onClick={() => handleSkillClick(skill.name)}>
             <div className="skills-panel__item-header">
               <span className="skills-panel__name" title={skill.name}>
                 {skill.name}
               </span>
               {loadingDetail === skill.name && <span className="skills-panel__loading">...</span>}
+              {!skill.disabled && (
+                <button
+                  className="skills-panel__use-btn"
+                  onClick={(e) => { e.stopPropagation(); onUseSkill(skill.name); }}
+                >
+                  {t('useSkill')}
+                </button>
+              )}
               <button
-                className="skills-panel__use-btn"
-                onClick={(e) => { e.stopPropagation(); onUseSkill(skill.name); }}
+                className="skills-panel__toggle-btn"
+                onClick={(e) => { e.stopPropagation(); handleToggle(skill.name, !!skill.disabled); }}
+                title={skill.disabled ? t('enableSkill') : t('disableSkill')}
               >
-                {t('useSkill')}
+                {skill.disabled ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                )}
               </button>
-              <button
-                className="skills-panel__delete-btn"
-                onClick={(e) => { e.stopPropagation(); handleDelete(skill.name); }}
-                title={t('deleteSkill', { name: skill.name })}
-              >
-                &times;
-              </button>
+              {!skill.builtin && (
+                <button
+                  className="skills-panel__delete-btn"
+                  onClick={(e) => { e.stopPropagation(); handleDelete(skill.name); }}
+                  title={t('deleteSkill', { name: skill.name })}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              )}
             </div>
             <p className="skills-panel__desc skills-panel__desc--truncated">
               {skill.description}

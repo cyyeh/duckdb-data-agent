@@ -42,8 +42,11 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 
 ### Skills
 
-- **Browse skills** — A "Skills" tab in the sidebar lists available skills with name and description; click to expand, or click "Use" to insert a `/skill-name` slash command into the chat input
-- **Invoke skills via slash command** — Type `/` in the chat input to open an autocomplete dropdown of available skills; select one and append your question (e.g., `/analyze-data What is the average revenue?`); the agent uses the skill as its first action
+- **Browse skills** — A "Skills" tab in the sidebar lists available skills with name and description; click a skill to open a detail modal with Preview and Source tabs; click "Use" to append a `/skill-name` slash command to the current chat input text
+- **Invoke skills via slash command** — Type `/` anywhere in the chat input to open an autocomplete dropdown of available skills; the menu filters as you type and works at any cursor position, not just the beginning of the input
+- **Multiple skills per message** — Combine multiple skills in a single message (e.g., `use this skill /analyze-data use this skill /my-other-skill What is the average revenue?`); all referenced skills are invoked before the agent processes your question
+- **Enable/disable skills** — Toggle the eye icon on any skill to enable or disable it; disabled skills are hidden from the slash command menu and cannot be invoked
+- **Delete skills** — Remove custom skills via the delete button in the sidebar; built-in skills (like `analyze-data`) cannot be deleted
 - **Create skills from the UI** — Click the "+" button in the Skills tab to create a new skill with a name, description, and step-by-step instructions; skills are stored as `SKILL.md` files on disk
 - **Agent-created skills** — The agent can create new skills during a conversation via the `create_skill` MCP tool; new skills appear in the sidebar automatically
 - **Dynamic skill discovery** — Skills are stored at `skills/<name>/SKILL.md` and re-scanned per request; add or remove skills without restarting
@@ -424,8 +427,10 @@ scenarios:
 │       ├── test_proxy.py
 │       ├── test_session_manager.py
 │       └── ...             #   14 test modules total
+├── skills/                 # Skill definitions (SKILL.md files, volume-mounted into sidecar containers)
+│   ├── analyze-data/       #   Built-in data analysis workflow skill
+│   └── <name>/             #   Custom skills (each with a SKILL.md file)
 ├── sidecar/                # Containerized agent sidecar
-│   ├── .claude/skills/     #   Skill definitions (SKILL.md files, volume-mounted into containers)
 │   ├── src/
 │   │   ├── server.ts       #   TypeScript HTTP server using Claude Agent SDK with token-level streaming
 │   │   └── types.ts        #   Request/response type definitions

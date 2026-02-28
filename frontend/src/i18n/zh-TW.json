@@ -90,5 +90,8 @@
   "skillDeleted": "技能「{name}」已刪除。",
   "skillPreview": "預覽",
   "skillSource": "原始碼",
-  "useSkillPlaceholder": "使用此技能"
+  "useSkillPlaceholder": "使用此技能",
+  "enableSkill": "啟用技能",
+  "disableSkill": "停用技能",
+  "cannotDeleteBuiltin": "內建技能無法刪除。"
 }

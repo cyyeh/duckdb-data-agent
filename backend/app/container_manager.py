@@ -113,9 +113,18 @@ class ContainerManager:
         # Skills volume: mount the host skills directory into the sidecar
         # so it can discover dynamically created skills.
         skills_host_path = os.environ.get("SKILLS_HOST_PATH", "")
+        if not skills_host_path:
+            # When running natively on the host (not inside Docker),
+            # compute the skills directory from this file's location.
+            # container_manager.py is at backend/app/, skills/ is at project root.
+            if not os.path.exists("/.dockerenv"):
+                fallback = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "..", "..", "skills")
+                )
+                if os.path.isdir(fallback):
+                    skills_host_path = fallback
         volumes = {}
         if skills_host_path:
-            # Resolve relative paths against the working directory
             abs_skills_path = os.path.abspath(skills_host_path)
             volumes[abs_skills_path] = {"bind": "/app/skills", "mode": "ro"}
 

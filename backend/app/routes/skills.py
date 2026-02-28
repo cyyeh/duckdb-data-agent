@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from app.skills import list_skills, get_skill, create_skill, update_skill, delete_skill, SkillValidationError
+from app.skills import list_skills, get_skill, create_skill, update_skill, delete_skill, toggle_skill_disabled, SkillValidationError
 
 router = APIRouter(prefix="/api", tags=["skills"])
 
@@ -22,6 +22,10 @@ class CreateSkillRequest(BaseModel):
 class UpdateSkillRequest(BaseModel):
     description: str
     content: str
+
+
+class ToggleSkillRequest(BaseModel):
+    disabled: bool
 
 
 @router.get("/skills")
@@ -60,5 +64,15 @@ async def api_delete_skill(name: str):
     try:
         delete_skill(name, SKILLS_DIR)
     except SkillValidationError as e:
-        return JSONResponse(status_code=400, content={"error": str(e)})
+        status = 403 if "built-in" in str(e) else 400
+        return JSONResponse(status_code=status, content={"error": str(e)})
     return {"status": "deleted"}
+
+
+@router.patch("/skills/{name}/toggle")
+async def api_toggle_skill(name: str, request: ToggleSkillRequest):
+    try:
+        updated = toggle_skill_disabled(name, request.disabled, SKILLS_DIR)
+    except SkillValidationError as e:
+        return JSONResponse(status_code=400, content={"error": str(e)})
+    return updated

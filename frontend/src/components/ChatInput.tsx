@@ -21,15 +21,22 @@ export function ChatInput({ pendingSkillCommand, onSkillCommandConsumed }: ChatI
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
 
-  // Load skills once on mount
+  // Load skills on mount and refresh when toggled/updated
   useEffect(() => {
     fetchSkills().then(setSkills).catch(() => {});
+    const handler = () => { fetchSkills().then(setSkills).catch(() => {}); };
+    window.addEventListener('skills-updated', handler);
+    return () => window.removeEventListener('skills-updated', handler);
   }, []);
 
   // Consume pending skill command from sidebar "Use" button
   useEffect(() => {
     if (pendingSkillCommand) {
-      setText(`${t('useSkillPlaceholder')} /${pendingSkillCommand}`);
+      setText(prev => {
+        const trimmed = prev.trim();
+        const command = `${t('useSkillPlaceholder')} /${pendingSkillCommand}`;
+        return trimmed ? `${trimmed} ${command}` : command;
+      });
       onSkillCommandConsumed?.();
       textareaRef.current?.focus();
     }
@@ -60,14 +67,26 @@ export function ChatInput({ pendingSkillCommand, onSkillCommandConsumed }: ChatI
     }
   };
 
+  const slashStartRef = useRef<number>(-1);
+
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
+    const cursorPos = e.target.selectionStart;
     setText(val);
 
-    // Show slash menu when input starts with / and has no space yet
-    if (val.startsWith('/') && val.indexOf(' ') === -1) {
-      setShowSlashMenu(true);
-      setSlashFilter(val.slice(1));
+    // Find the slash token at or before the cursor
+    const beforeCursor = val.slice(0, cursorPos);
+    const slashIdx = beforeCursor.lastIndexOf('/');
+    if (slashIdx !== -1) {
+      const token = beforeCursor.slice(slashIdx + 1);
+      // Valid slash command: no spaces in the token
+      if (!token.includes(' ')) {
+        slashStartRef.current = slashIdx;
+        setShowSlashMenu(true);
+        setSlashFilter(token);
+      } else {
+        setShowSlashMenu(false);
+      }
     } else {
       setShowSlashMenu(false);
     }
@@ -78,9 +97,19 @@ export function ChatInput({ pendingSkillCommand, onSkillCommandConsumed }: ChatI
   };
 
   const handleSlashSelect = (skillName: string) => {
-    setText(`/${skillName} `);
+    const start = slashStartRef.current;
+    const cursorPos = textareaRef.current?.selectionStart ?? text.length;
+    const before = text.slice(0, start);
+    const after = text.slice(cursorPos);
+    setText(`${before}/${skillName} ${after}`);
     setShowSlashMenu(false);
-    textareaRef.current?.focus();
+    slashStartRef.current = -1;
+    // Set cursor after the inserted command
+    const newCursorPos = start + skillName.length + 2; // "/" + name + " "
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
+    });
   };
 
   return (

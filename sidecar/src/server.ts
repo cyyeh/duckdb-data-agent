@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { query, AgentDefinition, SettingSource, HookCallbackMatcher } from "@anthropic-ai/claude-agent-sdk";
 import { Langfuse } from "langfuse";
-import { mkdirSync, writeFileSync, existsSync, readdirSync } from "fs";
+import { mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import type { QueryRequest, HealthResponse, AgentDefinitionPayload } from "./types.js";
@@ -23,11 +23,33 @@ if (!existsSync(settingsFile)) {
 
 const SKILLS_DIR = join(process.cwd(), "skills");
 
+function isSkillDisabled(skillPath: string): boolean {
+  try {
+    const text = readFileSync(skillPath, "utf-8");
+    if (!text.startsWith("---")) return false;
+    const end = text.indexOf("---", 3);
+    if (end === -1) return false;
+    const frontmatter = text.slice(3, end);
+    for (const line of frontmatter.split("\n")) {
+      if (line.trim().startsWith("disabled:") && line.trim().endsWith("true")) {
+        return true;
+      }
+    }
+  } catch {
+    // ignore read errors
+  }
+  return false;
+}
+
 function discoverSkills(): Set<string> {
   if (!existsSync(SKILLS_DIR)) return new Set();
   return new Set(
     readdirSync(SKILLS_DIR, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && existsSync(join(SKILLS_DIR, d.name, "SKILL.md")))
+      .filter((d) => {
+        if (!d.isDirectory()) return false;
+        const skillPath = join(SKILLS_DIR, d.name, "SKILL.md");
+        return existsSync(skillPath) && !isSkillDisabled(skillPath);
+      })
       .map((d) => d.name)
   );
 }

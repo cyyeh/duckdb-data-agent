@@ -27,5 +27,21 @@ export async function createSkill(skill: SkillInfo): Promise<SkillInfo> {
 
 export async function deleteSkill(name: string): Promise<void> {
   const resp = await fetch(`/api/skills/${encodeURIComponent(name)}`, { method: 'DELETE' });
-  if (!resp.ok) throw new Error('Failed to delete skill');
+  if (!resp.ok) {
+    const err = await resp.json();
+    throw new Error(err.error || 'Failed to delete skill');
+  }
+}
+
+export async function toggleSkill(name: string, disabled: boolean): Promise<SkillInfo> {
+  const resp = await fetch(`/api/skills/${encodeURIComponent(name)}/toggle`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ disabled }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json();
+    throw new Error(err.error || 'Failed to toggle skill');
+  }
+  return resp.json();
 }

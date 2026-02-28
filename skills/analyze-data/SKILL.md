@@ -1,6 +1,8 @@
 ---
 name: analyze-data
 description: Guides structured data analysis workflows using DuckDB. Use when the user asks to analyze, explore, summarize, or understand data in uploaded tables. Covers data profiling, quality checks, aggregations, trend analysis, comparisons, and visualization recommendations.
+metadata:
+  builtin: true
 ---
 
 # Data Analysis Workflow

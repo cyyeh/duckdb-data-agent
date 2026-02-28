@@ -14,7 +14,7 @@ export function SlashCommandMenu({ skills, filter, onSelect, onClose }: SlashCom
   const listRef = useRef<HTMLUListElement>(null);
 
   const filtered = skills.filter((s) =>
-    s.name.includes(filter.toLowerCase())
+    !s.disabled && s.name.includes(filter.toLowerCase())
   );
 
   useEffect(() => {

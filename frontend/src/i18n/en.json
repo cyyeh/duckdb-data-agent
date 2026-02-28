@@ -90,5 +90,8 @@
   "skillDeleted": "Skill \"{name}\" deleted.",
   "skillPreview": "Preview",
   "skillSource": "Source",
-  "useSkillPlaceholder": "use this skill"
+  "useSkillPlaceholder": "use this skill",
+  "enableSkill": "Enable skill",
+  "disableSkill": "Disable skill",
+  "cannotDeleteBuiltin": "Built-in skills cannot be deleted."
 }

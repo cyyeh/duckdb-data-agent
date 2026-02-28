@@ -210,17 +210,12 @@
   font-size: 12px;
   padding: 2px 4px;
   border-radius: 3px;
-  opacity: 0;
-  transition: opacity 0.15s;
+  opacity: 1;
   line-height: 1;
 }
 
 .sidebar__delete:hover {
   background: var(--color-error-bg-subtle);
-}
-
-.sidebar__table-header:hover .sidebar__delete {
-  opacity: 1;
 }
 
 .sidebar__columns {

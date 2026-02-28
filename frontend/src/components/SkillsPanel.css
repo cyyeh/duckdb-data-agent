@@ -99,11 +99,6 @@
   font-size: 16px;
   color: var(--color-text-muted);
   padding: 0 2px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.skills-panel__item:hover .skills-panel__delete-btn {
   opacity: 1;
 }
 
@@ -116,6 +111,26 @@
   color: var(--color-text-muted);
   margin: 4px 0 0;
   line-height: 1.4;
+}
+
+.skills-panel__item--disabled {
+  opacity: 0.5;
+}
+
+.skills-panel__toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0 2px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.skills-panel__toggle-btn:hover {
+  color: var(--color-text-primary);
 }
 
 .skills-panel__desc--truncated {
