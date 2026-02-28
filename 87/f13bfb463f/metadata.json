@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "87f13bfb463f",
+  "strategy": "manual-commit",
+  "branch": "chore/remove-claude-code-cli-from-dockerfiles",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "Makefile",
+    "README.md",
+    "docker-compose.yml",
+    "sidecar/Dockerfile"
+  ],
+  "sessions": [
+    {
+      "metadata": "/87/f13bfb463f/0/metadata.json",
+      "transcript": "/87/f13bfb463f/0/full.jsonl",
+      "context": "/87/f13bfb463f/0/context.md",
+      "content_hash": "/87/f13bfb463f/0/content_hash.txt",
+      "prompt": "/87/f13bfb463f/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 57182,
+    "cache_read_tokens": 896575,
+    "output_tokens": 4622,
+    "api_call_count": 22
+  }
+}
