@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { query, AgentDefinition } from "@anthropic-ai/claude-agent-sdk";
+import { query, AgentDefinition, SettingSource } from "@anthropic-ai/claude-agent-sdk";
 import { Langfuse } from "langfuse";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { homedir } from "os";
@@ -198,7 +198,8 @@ app.post("/query", async (req: Request, res: Response) => {
     const baseOptions = {
       model: modelName,
       systemPrompt: body.system_prompt,
-      allowedTools: ["Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"] as string[],
+      allowedTools: ["Skill", "Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"] as string[],
+      settingSources: ["project"] as SettingSource[],
       permissionMode: "bypassPermissions" as const,
       allowDangerouslySkipPermissions: true,
       maxTurns: 20,
