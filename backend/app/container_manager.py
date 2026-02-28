@@ -117,7 +117,7 @@ class ContainerManager:
         if skills_host_path:
             # Resolve relative paths against the working directory
             abs_skills_path = os.path.abspath(skills_host_path)
-            volumes[abs_skills_path] = {"bind": "/app/.claude/skills", "mode": "ro"}
+            volumes[abs_skills_path] = {"bind": "/app/skills", "mode": "ro"}
 
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()

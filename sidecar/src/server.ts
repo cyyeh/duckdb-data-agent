@@ -21,7 +21,7 @@ if (!existsSync(settingsFile)) {
   writeFileSync(settingsFile, "{}");
 }
 
-const SKILLS_DIR = join(process.cwd(), ".claude", "skills");
+const SKILLS_DIR = join(process.cwd(), "skills");
 
 function discoverSkills(): Set<string> {
   if (!existsSync(SKILLS_DIR)) return new Set();
@@ -279,8 +279,15 @@ app.post("/query", async (req: Request, res: Response) => {
     // message with "No conversation found" (container was recreated and lost
     // the session), suppress that error and retry without resume, prepending
     // conversation history so the model has context.
-    let currentPrompt = body.message;
+    //
+    // When resuming, the SDK reuses the original session's system prompt, so
+    // skill changes (additions/deletions) since conversation start won't be
+    // reflected.  Prepend an updated skill restriction to the user message so
+    // the model always sees the current set of available skills.
     let useResume = !!body.session_id;
+    let currentPrompt = useResume
+      ? `${skillRestriction}\n\n${body.message}`
+      : body.message;
     let retried = false;
 
     queryLoop: for (let attempt = 0; attempt < 2; attempt++) {

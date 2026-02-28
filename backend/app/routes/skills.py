@@ -7,10 +7,10 @@ from app.skills import list_skills, get_skill, create_skill, update_skill, delet
 
 router = APIRouter(prefix="/api", tags=["skills"])
 
-# Skills live at sidecar/.claude/skills/ relative to the project root.
+# Skills live at skills/ relative to the project root.
 # In Docker, the backend runs from /app, and the skills directory is
 # mounted at a path configured via SKILLS_DIR env var.
-SKILLS_DIR = os.environ.get("SKILLS_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "..", "sidecar", ".claude", "skills"))
+SKILLS_DIR = os.environ.get("SKILLS_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "..", "skills"))
 
 
 class CreateSkillRequest(BaseModel):

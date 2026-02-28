@@ -46,7 +46,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Invoke skills via slash command** — Type `/` in the chat input to open an autocomplete dropdown of available skills; select one and append your question (e.g., `/analyze-data What is the average revenue?`); the agent uses the skill as its first action
 - **Create skills from the UI** — Click the "+" button in the Skills tab to create a new skill with a name, description, and step-by-step instructions; skills are stored as `SKILL.md` files on disk
 - **Agent-created skills** — The agent can create new skills during a conversation via the `create_skill` MCP tool; new skills appear in the sidebar automatically
-- **Dynamic skill discovery** — Skills are stored at `sidecar/.claude/skills/<name>/SKILL.md` and re-scanned per request; add or remove skills without restarting
+- **Dynamic skill discovery** — Skills are stored at `skills/<name>/SKILL.md` and re-scanned per request; add or remove skills without restarting
 
 ### Editor Mode
 
@@ -302,8 +302,8 @@ The data flow for a chat message is:
 | `CONTAINER_MAX_LIFETIME_SECONDS` | `3600` | Max container lifetime |
 | `CONTAINER_IDLE_TIMEOUT_SECONDS` | `300` | Idle timeout before container is stopped (5 min) |
 | `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
-| `SKILLS_DIR` | `sidecar/.claude/skills` | Path to skills directory (inside app container) |
-| `SKILLS_HOST_PATH` | `./sidecar/.claude/skills` | Host path for skills volume mount in sidecar containers |
+| `SKILLS_DIR` | `skills` | Path to skills directory (inside app container) |
+| `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount in sidecar containers |
 
 **Security properties:**
 
