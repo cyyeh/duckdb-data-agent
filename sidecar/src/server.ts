@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { query, AgentDefinition, SettingSource } from "@anthropic-ai/claude-agent-sdk";
+import { query, AgentDefinition, SettingSource, HookCallbackMatcher } from "@anthropic-ai/claude-agent-sdk";
 import { Langfuse } from "langfuse";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { homedir } from "os";
@@ -20,6 +20,30 @@ const settingsFile = join(claudeDir, "remote-settings.json");
 if (!existsSync(settingsFile)) {
   writeFileSync(settingsFile, "{}");
 }
+
+// Allowlist of skill names the agent may invoke.  Built-in skills bundled
+// with the Claude Code binary (e.g. "simplify") are blocked unless listed.
+const ALLOWED_SKILLS = new Set(["analyze-data"]);
+
+const skillAllowlistHook: HookCallbackMatcher = {
+  matcher: "Skill",
+  hooks: [
+    async (input) => {
+      const toolInput = (input as Record<string, unknown>).tool_input as Record<string, unknown> | undefined;
+      const skillName = toolInput?.skill as string | undefined;
+      if (skillName && !ALLOWED_SKILLS.has(skillName)) {
+        return {
+          hookSpecificOutput: {
+            hookEventName: "PreToolUse" as const,
+            permissionDecision: "deny" as const,
+            permissionDecisionReason: `Skill "${skillName}" is not in the allowlist.`,
+          },
+        };
+      }
+      return {};
+    },
+  ],
+};
 
 // Initialize Langfuse if credentials are available (reads from env vars
 // LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL automatically)
@@ -201,6 +225,7 @@ app.post("/query", async (req: Request, res: Response) => {
       allowedTools: ["Skill", "Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"] as string[],
       settingSources: ["project"] as SettingSource[],
       plugins: [],
+      hooks: { PreToolUse: [skillAllowlistHook] },
       permissionMode: "bypassPermissions" as const,
       allowDangerouslySkipPermissions: true,
       maxTurns: 20,
