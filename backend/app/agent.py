@@ -516,7 +516,12 @@ async def stream_chat(
                                     result_data["error"] = text
                             # Attach chart_spec from captured render_chart
                             # input so the frontend can render the chart.
-                            if tool_id in tool_chart_specs and "chart_spec" not in result_data:
+                            # Only attach when the tool returned success — do
+                            # NOT render a chart when the tool returned an
+                            # error (e.g. empty traces), as the LLM expects
+                            # the chart to have failed and may put its
+                            # analysis in thinking instead of text output.
+                            if tool_id in tool_chart_specs and "chart_spec" not in result_data and "error" not in result_data:
                                 result_data["chart_spec"] = tool_chart_specs[tool_id]
                             # Detect subagent result (Task tool)
                             if name == "sql-analyst":

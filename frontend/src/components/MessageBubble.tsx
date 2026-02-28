@@ -20,12 +20,12 @@ function stripChartSpecBlocks(text: string): string {
 }
 
 /**
- * Fix missing line breaks before bold section headers in thinking text.
+ * Fix missing line breaks before bold section headers in text.
  * The model sometimes concatenates bold headers directly after the previous
  * sentence (e.g. "...for arrays.**Preparing data arrays**"). This inserts
  * paragraph breaks so they render on new lines.
  */
-function fixThinkingLineBreaks(text: string): string {
+function fixBoldHeaderLineBreaks(text: string): string {
   // Insert \n\n before **Header** when preceded by sentence-ending punctuation
   // with no whitespace. The [A-Z] ensures we only match section-header-style
   // bold (starting with a capital letter), avoiding inline bold like **data**.
@@ -95,7 +95,7 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
           if (seg.type === 'thinking' && seg.text?.trim()) {
             return (
               <div key={i} className="message-bubble__segment-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixThinkingLineBreaks(seg.text)}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixBoldHeaderLineBreaks(seg.text)}</ReactMarkdown>
               </div>
             );
           }
@@ -147,7 +147,7 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
         })}
         {streamingRemainder?.trim() && (
           <div className="message-bubble__segment-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixThinkingLineBreaks(streamingRemainder)}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixBoldHeaderLineBreaks(streamingRemainder)}</ReactMarkdown>
           </div>
         )}
       </div>
@@ -378,7 +378,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
                 // Text segment (answer or subagent_end without chart_spec)
                 return (
                   <div key={`answer-${i}`} className="message-bubble__segment-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text!}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixBoldHeaderLineBreaks(seg.text!)}</ReactMarkdown>
                   </div>
                 );
               })}
@@ -387,7 +387,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
                 const displayText = hasCharts ? stripChartSpecBlocks(streamingRemainder) : streamingRemainder;
                 return displayText?.trim() ? (
                   <div className="message-bubble__segment-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayText}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixBoldHeaderLineBreaks(displayText)}</ReactMarkdown>
                   </div>
                 ) : null;
               })()}
@@ -400,7 +400,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
               <div className="message-bubble__segment message-bubble__segment--answer">
                 <div className="message-bubble__segment-label message-bubble__segment-label--answer">{t('answer')}</div>
                 <div className="message-bubble__segment-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayText}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixBoldHeaderLineBreaks(displayText)}</ReactMarkdown>
                 </div>
               </div>
             ) : null;
@@ -418,7 +418,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
         <>
           <div className="message-bubble__content">
             {message.content ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixBoldHeaderLineBreaks(message.content)}</ReactMarkdown>
             ) : message.isStreaming ? (
               <span className="message-bubble__typing">{t('thinking')}</span>
             ) : null}

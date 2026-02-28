@@ -131,9 +131,9 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
         elif name == "render_chart":
             data = arguments.get("data")
             layout = arguments.get("layout", {})
-            if not isinstance(data, list) or not layout.get("title"):
-                logger.warning("render_chart called with missing data or layout.title: %s", arguments)
-                return [types.TextContent(type="text", text=json.dumps({"status": "error", "error": "data and layout.title are required"}))]
+            if not isinstance(data, list):
+                logger.warning("render_chart called with missing data: %s", arguments)
+                return [types.TextContent(type="text", text=json.dumps({"status": "error", "error": "data (array of Plotly traces) is required"}))]
 
             # Reject specs where every trace has empty data arrays.
             # Data-bearing fields vary by chart type (x, y, z, values, labels, etc.).
