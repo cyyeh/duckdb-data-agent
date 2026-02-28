@@ -72,5 +72,20 @@
   "submit": "Submit",
   "errorOccurred": "Something went wrong",
   "tryAgain": "Try Again",
-  "chartNoData": "No data available to display chart."
+  "chartNoData": "No data available to display chart.",
+  "tablesTab": "Tables",
+  "skillsTab": "Skills",
+  "noSkills": "No skills yet. Create one from a conversation or click + to add.",
+  "useSkill": "Use",
+  "deleteSkill": "Delete skill \"{name}\"",
+  "deleteSkillConfirm": "Delete skill \"{name}\"?",
+  "createSkill": "Create Skill",
+  "skillNameLabel": "Name",
+  "skillNamePlaceholder": "my-skill-name",
+  "skillDescriptionLabel": "Description",
+  "skillDescriptionPlaceholder": "What this skill does...",
+  "skillContentLabel": "Instructions",
+  "skillContentPlaceholder": "Step-by-step instructions for the agent...",
+  "skillCreated": "Skill \"{name}\" created.",
+  "skillDeleted": "Skill \"{name}\" deleted."
 }
