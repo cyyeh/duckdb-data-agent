@@ -8,7 +8,7 @@ Or you can see examples online: [example1](https://raw.githack.com/cyyeh/duckdb-
 
 ---
 
-An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English — the agent delegates to specialized subagents for SQL queries and chart generation — or switch to the SQL editor for direct queries. Powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
+An AI-powered data analysis agent with a built-in SQL playground. Upload data files (CSV, JSON, Parquet, Excel) and ask questions in plain English — the agent delegates to a specialized subagent for SQL queries and renders charts inline — or switch to the SQL editor for direct queries. Powered by [DuckDB](https://duckdb.org/) on a lightweight [FastAPI](https://fastapi.tiangolo.com/) backend with a React frontend. The app opens in Agent Mode by default so you can start analyzing data immediately.
 
 Each browser tab gets its own isolated DuckDB session — uploaded data and query state are fully isolated between users and tabs. Sessions are persisted to disk so your tables survive idle timeouts; the session file is only deleted when you close the tab explicitly.
 
@@ -289,7 +289,7 @@ The data flow for a chat message is:
 |----------|---------|-------------|
 | `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar Docker image |
 | `CONTAINER_RUNTIME` | `runc` | Docker runtime (runc for non-gVisor, runsc for gVisor) |
-| `CONTAINER_MEMORY_LIMIT` | `256m` | Memory limit per container |
+| `CONTAINER_MEMORY_LIMIT` | `512m` | Memory limit per container |
 | `CONTAINER_CPU_LIMIT` | `0.5` | CPU limit per container |
 | `CONTAINER_MAX_LIFETIME_SECONDS` | `600` | Max container lifetime |
 | `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
@@ -403,12 +403,11 @@ scenarios:
 │   │       ├── config.py   #     Runtime configuration
 │   │       └── langfuse_status.py  #   Langfuse tracing status and link
 │   └── tests/              #   Unit tests (pytest)
-│       ├── test_agent_chart.py
 │       ├── test_container_manager.py
 │       ├── test_mcp_sse.py
 │       ├── test_proxy.py
 │       ├── test_session_manager.py
-│       └── ...             #   14 test modules total
+│       └── ...             #   12 test modules total
 ├── sidecar/                # Containerized agent sidecar
 │   ├── src/
 │   │   ├── server.ts       #   TypeScript HTTP server using Claude Agent SDK with token-level streaming
