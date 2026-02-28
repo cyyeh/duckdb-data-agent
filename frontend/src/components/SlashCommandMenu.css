@@ -1,0 +1,48 @@
+.slash-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 4px;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.slash-menu__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+
+.slash-menu__item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.slash-menu__item--selected {
+  background: var(--color-bg-hover-strong);
+}
+
+.slash-menu__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent-primary);
+  white-space: nowrap;
+}
+
+.slash-menu__desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
