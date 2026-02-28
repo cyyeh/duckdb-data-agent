@@ -266,7 +266,7 @@ The data flow for a chat message is:
 6. The sidecar streams SSE events back to the backend, which forwards them to the frontend.
 7. On session end, the container is stopped and removed.
 
-**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no Docker socket access, and a non-root user. The host `skills/` directory is bind-mounted read-only at `~/.claude/skills/` so the SDK's built-in Skill tool can discover and invoke them.
+**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no Docker socket access, and a non-root user. The host `skills/` directory is bind-mounted read-only at `/app/.claude/skills/` (the project-level path) so the SDK's built-in Skill tool can discover and invoke them.
 
 **MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, and `create_skill` for agent-driven skill creation. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
 
@@ -306,7 +306,7 @@ The data flow for a chat message is:
 | `CONTAINER_IDLE_TIMEOUT_SECONDS` | `300` | Idle timeout before container is stopped (5 min) |
 | `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
 | `SKILLS_DIR` | `skills` | Path to skills directory (inside backend container) |
-| `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount (bind-mounted read-only at `~/.claude/skills/` in sidecar containers) |
+| `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount (bind-mounted read-only at `/app/.claude/skills/` in sidecar containers) |
 
 **Security properties:**
 

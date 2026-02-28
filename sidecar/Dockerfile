@@ -34,7 +34,10 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 
-# Skills are volume-mounted at runtime at ~/.claude/skills/
+# Skills are volume-mounted at runtime at /app/.claude/skills/
+# Pre-create the directory so Docker can bind-mount onto it even with
+# read_only=True (the directory must exist in the image layer).
+RUN mkdir -p /app/.claude/skills
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser

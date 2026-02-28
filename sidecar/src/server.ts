@@ -21,7 +21,9 @@ if (!existsSync(settingsFile)) {
   writeFileSync(settingsFile, "{}");
 }
 
-const SKILLS_DIR = join(homedir(), ".claude", "skills");
+// Skills are bind-mounted at the project-level path (/app/.claude/skills/)
+// so the CLI subprocess (spawned by the SDK with cwd=/app/) discovers them.
+const SKILLS_DIR = join(process.cwd(), ".claude", "skills");
 
 function isSkillDisabled(skillPath: string): boolean {
   try {
