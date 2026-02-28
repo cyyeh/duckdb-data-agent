@@ -3,7 +3,7 @@
   "checkpoint_id": "1b80c9e5b48f",
   "strategy": "manual-commit",
   "branch": "feat/sidecar-skill",
-  "checkpoints_count": 3,
+  "checkpoints_count": 6,
   "files_touched": [
     ".gitignore",
     "README.md",
@@ -39,13 +39,20 @@
       "context": "/1b/80c9e5b48f/3/context.md",
       "content_hash": "/1b/80c9e5b48f/3/content_hash.txt",
       "prompt": "/1b/80c9e5b48f/3/prompt.txt"
+    },
+    {
+      "metadata": "/1b/80c9e5b48f/4/metadata.json",
+      "transcript": "/1b/80c9e5b48f/4/full.jsonl",
+      "context": "/1b/80c9e5b48f/4/context.md",
+      "content_hash": "/1b/80c9e5b48f/4/content_hash.txt",
+      "prompt": "/1b/80c9e5b48f/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 14918,
-    "cache_creation_tokens": 608345,
-    "cache_read_tokens": 30750734,
-    "output_tokens": 142946,
-    "api_call_count": 350
+    "input_tokens": 14964,
+    "cache_creation_tokens": 681444,
+    "cache_read_tokens": 33302168,
+    "output_tokens": 159577,
+    "api_call_count": 387
   }
 }
