@@ -1,0 +1,55 @@
+check examples/conversation-2026-02-28.html, the text below first streams in the answer block, then disappears and show in thinking block.
+
+The user hasn't said anything - they just seem to have triggered a system reminder about TodoWrite. Let me continue with the charts I was making. I was in the middle of rendering charts about the Titanic dataset. I had rendered 3 charts so far:
+
+Survival Rate by Passenger Class
+Survival Rate by Sex
+Passenger Age Distribution
+I should continue with the 4th chart about Embarked ports, and maybe add a narrative for the Age Distribution chart that I haven't done yet.
+
+Let me render the Embarked chart and write narratives.
+
+I need them simply showing in thinking block
+
+---
+
+I still see the issue
+
+---
+
+after I ask a question, frontend breaks
+
+console error:
+index-BZIt8oCX.js:40 TypeError: Cannot read properties of undefined (reading 'filter')
+    at Yie (index-BZIt8oCX.js:3933:7731)
+    at UM (index-BZIt8oCX.js:38:18111)
+    at xD (index-BZIt8oCX.js:40:45936)
+    at gD (index-BZIt8oCX.js:40:41522)
+    at IY (index-BZIt8oCX.js:40:41450)
+    at S2 (index-BZIt8oCX.js:40:41299)
+    at XS (index-BZIt8oCX.js:40:37509)
+    at l8 (index-BZIt8oCX.js:40:38329)
+    at gm (index-BZIt8oCX.js:38:3316)
+    at index-BZIt8oCX.js:40:35766
+zS @ index-BZIt8oCX.js:40
+index-BZIt8oCX.js:38 Uncaught TypeError: Cannot read properties of undefined (reading 'filter')
+    at Yie (index-BZIt8oCX.js:3933:7731)
+    at UM (index-BZIt8oCX.js:38:18111)
+    at xD (index-BZIt8oCX.js:40:45936)
+    at gD (index-BZIt8oCX.js:40:41522)
+    at IY (index-BZIt8oCX.js:40:41450)
+    at S2 (index-BZIt8oCX.js:40:41299)
+    at XS (index-BZIt8oCX.js:40:37509)
+    at l8 (index-BZIt8oCX.js:40:38329)
+    at gm (index-BZIt8oCX.js:38:3316)
+    at index-BZIt8oCX.js:40:35766
+
+---
+
+I still find intermediate text from orchestrator shows them in answerblock for a few seconds then disappear
+
+The user hasn't said anything new - they just received the charts. Let me continue with the final chart (the box plot for fare by class) and then provide a summary.
+
+---
+
+revert this change
