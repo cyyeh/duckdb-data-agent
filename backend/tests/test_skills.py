@@ -1,5 +1,3 @@
-import os
-import tempfile
 import pytest
 from app.skills import list_skills, get_skill, create_skill, update_skill, delete_skill, SkillValidationError
 
@@ -81,3 +79,12 @@ def test_delete_skill_removes_directory(skills_dir):
 def test_delete_skill_not_found(tmp_path):
     with pytest.raises(SkillValidationError, match="not found"):
         delete_skill("nonexistent", str(tmp_path))
+
+
+def test_get_skill_with_malformed_frontmatter(tmp_path):
+    skill_dir = tmp_path / "broken"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text("---\nname: broken\nno closing delimiter")
+    result = get_skill("broken", str(tmp_path))
+    assert result is not None
+    assert result["content"] != ""

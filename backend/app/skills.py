@@ -21,7 +21,10 @@ def _parse_skill_md(text: str) -> dict:
     """Parse a SKILL.md file into {name, description, content}."""
     if not text.startswith("---"):
         return {"name": "", "description": "", "content": text}
-    end = text.index("---", 3)
+    try:
+        end = text.index("---", 3)
+    except ValueError:
+        return {"name": "", "description": "", "content": text}
     frontmatter = text[3:end].strip()
     body = text[end + 3:].strip()
     meta: dict[str, str] = {}
