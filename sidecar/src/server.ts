@@ -21,26 +21,28 @@ if (!existsSync(settingsFile)) {
   writeFileSync(settingsFile, "{}");
 }
 
-// Discover allowed skills from .claude/skills/ directory at startup.
-// Only these skills may be invoked — built-in skills bundled with the
-// Claude Code binary (e.g. "simplify") are blocked.
-const skillsDir = join(process.cwd(), ".claude", "skills");
-const ALLOWED_SKILLS = new Set(
-  existsSync(skillsDir)
-    ? readdirSync(skillsDir, { withFileTypes: true })
-        .filter((d) => d.isDirectory() && existsSync(join(skillsDir, d.name, "SKILL.md")))
-        .map((d) => d.name)
-    : []
-);
-console.log(`[sidecar] Allowed skills: ${[...ALLOWED_SKILLS].join(", ") || "(none)"}`);
+const SKILLS_DIR = join(process.cwd(), ".claude", "skills");
+
+function discoverSkills(): Set<string> {
+  if (!existsSync(SKILLS_DIR)) return new Set();
+  return new Set(
+    readdirSync(SKILLS_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && existsSync(join(SKILLS_DIR, d.name, "SKILL.md")))
+      .map((d) => d.name)
+  );
+}
+
+// Log initial skills at startup
+console.log(`[sidecar] Initial skills: ${[...discoverSkills()].join(", ") || "(none)"}`);
 
 const skillAllowlistHook: HookCallbackMatcher = {
   matcher: "Skill",
   hooks: [
     async (input) => {
+      const currentSkills = discoverSkills();
       const toolInput = (input as Record<string, unknown>).tool_input as Record<string, unknown> | undefined;
       const skillName = toolInput?.skill as string | undefined;
-      if (skillName && !ALLOWED_SKILLS.has(skillName)) {
+      if (skillName && !currentSkills.has(skillName)) {
         return {
           hookSpecificOutput: {
             hookEventName: "PreToolUse" as const,
@@ -232,16 +234,21 @@ app.post("/query", async (req: Request, res: Response) => {
     // The CLI binary injects its own system reminder listing ALL skills
     // (including built-ins like "simplify"), so we must explicitly tell
     // the model to ignore any skills not in our allowlist.
-    const allowedList = [...ALLOWED_SKILLS].join(", ");
-    const skillRestriction = ALLOWED_SKILLS.size > 0
+    const currentSkills = discoverSkills();
+    const allowedList = [...currentSkills].join(", ");
+    const skillRestriction = currentSkills.size > 0
       ? `\n\nCRITICAL SKILL RESTRICTION: Your ONLY available skills are: ${allowedList}. You may see other skills (like "simplify") listed in system reminders — those are NOT available to you and MUST be ignored. When asked about available skills, list ONLY: ${allowedList}. Never mention, suggest, or attempt to invoke any skill not in this list.`
       : "\n\nCRITICAL SKILL RESTRICTION: You have NO skills available. You may see skills listed in system reminders — those are NOT available to you and MUST be ignored. Never mention, suggest, or attempt to invoke any skills.";
+
+    const skillInstruction = body.skill
+      ? `\n\nIMPORTANT: The user has invoked the "/${body.skill}" skill. You MUST use the Skill tool to invoke "${body.skill}" as your first action before doing anything else.`
+      : "";
 
     // Common SDK options (without resume/prompt — those vary on retry)
     const baseOptions = {
       model: modelName,
-      systemPrompt: body.system_prompt + skillRestriction,
-      allowedTools: ["Skill", "Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"] as string[],
+      systemPrompt: body.system_prompt + skillInstruction + skillRestriction,
+      allowedTools: ["Skill", "Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart", "mcp__duckdb-data-agent__create_skill"] as string[],
       settingSources: ["project"] as SettingSource[],
       plugins: [],
       hooks: { PreToolUse: [skillAllowlistHook] },
