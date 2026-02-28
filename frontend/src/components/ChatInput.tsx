@@ -29,7 +29,7 @@ export function ChatInput({ pendingSkillCommand, onSkillCommandConsumed }: ChatI
   // Consume pending skill command from sidebar "Use" button
   useEffect(() => {
     if (pendingSkillCommand) {
-      setText(`/${pendingSkillCommand} `);
+      setText(`/${pendingSkillCommand} ${t('useSkillPlaceholder')}`);
       onSkillCommandConsumed?.();
       textareaRef.current?.focus();
     }

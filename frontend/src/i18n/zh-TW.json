@@ -89,5 +89,6 @@
   "skillCreated": "技能「{name}」已建立。",
   "skillDeleted": "技能「{name}」已刪除。",
   "skillPreview": "預覽",
-  "skillSource": "原始碼"
+  "skillSource": "原始碼",
+  "useSkillPlaceholder": "使用此技能"
 }

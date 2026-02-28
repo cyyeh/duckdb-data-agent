@@ -89,5 +89,6 @@
   "skillCreated": "Skill \"{name}\" created.",
   "skillDeleted": "Skill \"{name}\" deleted.",
   "skillPreview": "Preview",
-  "skillSource": "Source"
+  "skillSource": "Source",
+  "useSkillPlaceholder": "use this skill"
 }
