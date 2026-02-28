@@ -3,9 +3,12 @@
   "checkpoint_id": "33a8141a12f4",
   "strategy": "manual-commit",
   "branch": "feat/sidecar-skill",
-  "checkpoints_count": 6,
+  "checkpoints_count": 8,
   "files_touched": [
     "README.md",
+    "backend/app/container_manager.py",
+    "backend/app/skills.py",
+    "docker-compose.yml",
     "frontend/src/components/ChatInput.tsx",
     "frontend/src/components/Sidebar.css",
     "frontend/src/components/SkillsPanel.css",
@@ -25,13 +28,20 @@
       "context": "/33/a8141a12f4/1/context.md",
       "content_hash": "/33/a8141a12f4/1/content_hash.txt",
       "prompt": "/33/a8141a12f4/1/prompt.txt"
+    },
+    {
+      "metadata": "/33/a8141a12f4/2/metadata.json",
+      "transcript": "/33/a8141a12f4/2/full.jsonl",
+      "context": "/33/a8141a12f4/2/context.md",
+      "content_hash": "/33/a8141a12f4/2/content_hash.txt",
+      "prompt": "/33/a8141a12f4/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4601,
-    "cache_creation_tokens": 70152,
-    "cache_read_tokens": 1476759,
-    "output_tokens": 8599,
-    "api_call_count": 34
+    "input_tokens": 4626,
+    "cache_creation_tokens": 123911,
+    "cache_read_tokens": 2515650,
+    "output_tokens": 20029,
+    "api_call_count": 52
   }
 }
