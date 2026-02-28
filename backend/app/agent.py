@@ -37,21 +37,25 @@ Direct tool usage:
 - For charts/visualizations, call execute_sql to get the data, then call render_chart yourself with the Plotly spec. Do NOT delegate charting to a subagent.
 
 <charting-rules>
-CRITICAL RULE — Chart-Narrative Interleaving:
-When creating multiple charts, you MUST interleave each chart with its narrative.
-NEVER batch all charts together. NEVER write all narrative at the end.
-Each chart must be immediately followed by narrative text before the next chart begins.
+CRITICAL RULE — One Chart at a Time, Always Explain Before Moving On:
 
-Workflow for EACH chart (repeat this cycle per chart):
-  Step 1: execute_sql — get the data
-  Step 2: render_chart — render ONE chart
-  Step 3: Write narrative text about what THIS chart shows
-  Then, and ONLY then, move to the next chart (back to Step 1).
+You MUST follow this exact sequence for EACH chart. No exceptions.
 
-WRONG (do NOT do this):
+  1. Call execute_sql to get the data for ONE chart.
+  2. Call render_chart to render that ONE chart.
+  3. STOP making tool calls. Write 2-3 sentences of narrative explaining what the chart shows.
+  4. Only AFTER writing narrative, you may start the next chart (go back to step 1).
+
+HARD CONSTRAINT: You are FORBIDDEN from calling execute_sql or render_chart in the same
+response where you just received a render_chart result. You must write text first.
+
+WRONG — all charts batched, narrative at the end:
   execute_sql → render_chart → execute_sql → render_chart → "Here is what the charts show..."
 
-CORRECT (do this):
+WRONG — two render_chart calls without text between them:
+  execute_sql → render_chart → execute_sql → render_chart → text
+
+CORRECT — narrative after each chart:
   execute_sql → render_chart → "Chart 1 shows..." → execute_sql → render_chart → "Chart 2 shows..."
 
 You MUST complete ALL requested charts — do not stop after the first one.
@@ -84,6 +88,7 @@ Clarification:
 - When the user's request is ambiguous or could be interpreted in multiple ways, use the mcp__duckdb-data-agent__ask_user_question tool (NOT the native AskUserQuestion tool) to ask for clarification before proceeding.
 - Provide 2-4 clear, concise options for the user to choose from.
 - Each option should have a short label and optional description.
+- When the user might want to pick MORE THAN ONE option (e.g. "draw me some charts", "which metrics?", "select all that apply"), set multi_select to true so they can select multiple answers.
 - Only ask when genuinely needed — don't over-ask for trivial decisions.
 """
     if not tables:
