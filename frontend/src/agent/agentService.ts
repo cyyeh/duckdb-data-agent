@@ -6,7 +6,7 @@ interface AgentCallbacks {
   onToolCall: (pending: ToolCallResult) => void;
   onToolResult: (result: ToolCallResult) => void;
   onSubagentStart?: (data: { id: string; name: string; prompt: string }) => void;
-  onSubagentEnd?: (data: { id: string; name: string; result?: string; chart_spec?: { data: unknown[]; layout?: Record<string, unknown> } }) => void;
+  onSubagentEnd?: (data: { id: string; name: string; result?: string; sql_results?: Array<{ sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }>; chart_spec?: { data: unknown[]; layout?: Record<string, unknown> } }) => void;
   onDone: (sessionId: string | null) => void;
   onError: (error: string) => void;
   onUserQuestion?: (data: UserQuestionData) => void;
@@ -250,6 +250,7 @@ function handleSSEEvent(
           id: data.id as string,
           name: data.name as string,
           result: (data.result as string) ?? undefined,
+          sql_results: (data.sql_results as Array<{ sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }>) ?? undefined,
         });
       }
       break;

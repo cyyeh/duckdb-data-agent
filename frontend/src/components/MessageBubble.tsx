@@ -69,13 +69,14 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
   hasAnswer: boolean;
 }) {
   const { t } = useTranslation();
-  // All non-answer, non-chart, non-user_question segments go inside the thinking block
-  // When hasAnswer is true, subagent_end text segments are shown here instead of in the answer block
+  // All non-answer, non-chart, non-user_question segments go inside the thinking block.
+  // subagent_end with sqlResults always stays in thinking; text-only subagent_end without
+  // answer goes to the answer block as a preliminary result.
   const thinkingSegments = segments.filter(
-    (s) => s.type !== 'answer' && s.type !== 'user_question' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && (s.chart_spec || (s.text?.trim() && !hasAnswer)))
+    (s) => s.type !== 'answer' && s.type !== 'user_question' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && (s.chart_spec || (!s.sqlResults?.length && s.text?.trim() && !hasAnswer)))
   );
   const hasContent = thinkingSegments.some(
-    (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start' || (s.type === 'subagent_end' && !s.chart_spec && s.text?.trim())
+    (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start' || (s.type === 'subagent_end' && !s.chart_spec && (s.text?.trim() || s.sqlResults?.length))
   ) || streamingRemainder?.trim();
 
   if (!hasContent) return null;
@@ -115,10 +116,30 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
               </div>
             );
           }
-          if (seg.type === 'subagent_end' && !seg.chart_spec && seg.text?.trim()) {
+          if (seg.type === 'subagent_end' && !seg.chart_spec && (seg.sqlResults?.length || seg.text?.trim())) {
+            // Render SQL results using InlineQueryResult — same as direct tool calls
+            if (seg.sqlResults?.length) {
+              return (
+                <div key={i}>
+                  {seg.sqlResults.map((sqlResult, qi) => (
+                    <div key={qi} className="message-bubble__tool-segment">
+                      <InlineQueryResult result={{
+                        toolCallId: `${seg.subagentId}-sql-${qi}`,
+                        toolName: 'execute_sql',
+                        sql: sqlResult.sql,
+                        columns: sqlResult.columns ?? [],
+                        rows: sqlResult.rows ?? [],
+                        rowCount: sqlResult.rowCount ?? 0,
+                        error: sqlResult.error,
+                      }} />
+                    </div>
+                  ))}
+                </div>
+              );
+            }
             return (
               <div key={i} className="message-bubble__segment-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text!}</ReactMarkdown>
               </div>
             );
           }
@@ -226,7 +247,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
     ? message.segments!
         .filter((s) =>
           (s.type === 'answer' && s.text?.trim()) ||
-          (s.type === 'subagent_end' && !s.chart_spec && s.text?.trim() && !hasAnswer) ||
+          (s.type === 'subagent_end' && !s.chart_spec && !s.sqlResults?.length && s.text?.trim() && !hasAnswer) ||
           (s.type === 'tool' && s.toolResult?.chart_spec) ||
           (s.type === 'subagent_end' && s.chart_spec)
         )

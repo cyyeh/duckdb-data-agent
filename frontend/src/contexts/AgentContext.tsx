@@ -208,6 +208,7 @@ export function AgentProvider({
               subagentId: data.id,
               subagentName: data.name,
               chart_spec: data.chart_spec,
+              sqlResults: data.sql_results,
               text: data.result,
             });
             setMessages((prev) =>
@@ -447,6 +448,7 @@ export function AgentProvider({
               subagentId: data.id,
               subagentName: data.name,
               chart_spec: data.chart_spec,
+              sqlResults: data.sql_results,
               text: data.result,
             });
             setMessages((prev) =>

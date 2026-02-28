@@ -54,6 +54,13 @@ export interface ContentSegment {
   toolResult?: ToolCallResult;
   subagentId?: string;
   subagentName?: string;
+  sqlResults?: Array<{
+    sql: string;
+    columns?: string[];
+    rows?: Record<string, unknown>[];
+    rowCount?: number;
+    error?: string;
+  }>;
   chart_spec?: {
     data: unknown[];
     layout?: Record<string, unknown>;
