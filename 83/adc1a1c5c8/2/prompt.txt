@@ -1,0 +1,43 @@
+Implement the following plan:
+
+# Plan: Audit and Fix README.md + .env.example
+
+## Context
+The project has evolved — notably the chart subagent was removed and charting moved to the orchestrator — but README.md and `.env.example` were not fully updated to reflect the current state. A thorough audit found several discrepancies.
+
+## Discrepancies Found
+
+### README.md
+
+| # | Section | Issue | Current (wrong) | Should be |
+|---|---------|-------|------------------|-----------|
+| 1 | Env vars table (line 292) | `CONTAINER_MEMORY_LIMIT` default | `256m` | `512m` (per `config.py:53` and `.env.example:38`) |
+| 2 | Project structure (line 406) | `test_agent_chart.py` listed | Listed in tree | File doesn't exist — remove from tree |
+| 3 | Project structure (line 411) | Test module count | "14 test modules total" | "12 test modules total" (actual count) |
+| 4 | `.env.example` comment block (line 5) | References `CHART_SUBAGENT_MODEL` | `REDACTED@haiku` | Remove this line |
+| 5 | Tech stack (line 454) | Claude Agent SDK GitHub URL | `https://github.com/anthropics/claude-agent-sdk-typescript` | Verify correct URL or remove broken link |
+
+### .env.example
+
+| # | Issue | Current (wrong) | Should be |
+|---|-------|------------------|-----------|
+| 6 | Line 5: comment references chart subagent | `REDACTED@haiku` comment | Remove |
+| 7 | Line 15: dead env var | `CHART_SUBAGENT_MODEL=haiku` | Remove (no code references it) |
+
+## Files to Modify
+
+1. `/Users/cyyeh/Desktop/duckdb-data-agent/README.md` — fixes #1-5
+2. `/Users/cyyeh/Desktop/duckdb-data-agent/backend/.env.example` — fixes #6-7
+
+## Verification
+
+- `grep -r CHART_SUBAGENT` in backend/ should return no results after cleanup
+- Count test files: `ls backend/tests/test_*.py | wc -l` should be 12
+- Review README env table matches `config.py` defaults
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+---
+
+create new branch and push and raise pr and merge
