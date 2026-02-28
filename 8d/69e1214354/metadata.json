@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8d69e1214354",
+  "strategy": "manual-commit",
+  "branch": "feat/sidecar-skill",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/routes/chat.py",
+    "frontend/src/agent/agentService.ts",
+    "frontend/src/contexts/AgentContext.tsx",
+    "sidecar/src/server.ts",
+    "sidecar/src/types.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8d/69e1214354/0/metadata.json",
+      "transcript": "/8d/69e1214354/0/full.jsonl",
+      "context": "/8d/69e1214354/0/context.md",
+      "content_hash": "/8d/69e1214354/0/content_hash.txt",
+      "prompt": "/8d/69e1214354/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1620,
+    "cache_creation_tokens": 329357,
+    "cache_read_tokens": 18581282,
+    "output_tokens": 94883,
+    "api_call_count": 202
+  }
+}
