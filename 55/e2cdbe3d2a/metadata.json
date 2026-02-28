@@ -3,7 +3,7 @@
   "checkpoint_id": "55e2cdbe3d2a",
   "strategy": "manual-commit",
   "branch": "fix/cross-model-chart-interleaving",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "backend/app/agent.py"
   ],
@@ -21,13 +21,20 @@
       "context": "/55/e2cdbe3d2a/1/context.md",
       "content_hash": "/55/e2cdbe3d2a/1/content_hash.txt",
       "prompt": "/55/e2cdbe3d2a/1/prompt.txt"
+    },
+    {
+      "metadata": "/55/e2cdbe3d2a/2/metadata.json",
+      "transcript": "/55/e2cdbe3d2a/2/full.jsonl",
+      "context": "/55/e2cdbe3d2a/2/context.md",
+      "content_hash": "/55/e2cdbe3d2a/2/content_hash.txt",
+      "prompt": "/55/e2cdbe3d2a/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 61,
-    "cache_creation_tokens": 35810,
-    "cache_read_tokens": 1878117,
-    "output_tokens": 4868,
-    "api_call_count": 47
+    "input_tokens": 87,
+    "cache_creation_tokens": 82186,
+    "cache_read_tokens": 3151192,
+    "output_tokens": 21385,
+    "api_call_count": 70
   }
 }
