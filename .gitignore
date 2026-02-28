@@ -24,6 +24,7 @@ frontend/dist-ssr
 *.sw?
 .claude/settings.local.json
 .claude/worktrees/
+.worktrees/
 .env
 .pytest_cache
 sidecar/node_modules/
