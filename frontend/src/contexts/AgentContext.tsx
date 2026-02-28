@@ -87,8 +87,17 @@ export function AgentProvider({
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // Extract /skill-name prefix if present
+      let actualMessage = text;
+      let skill: string | undefined;
+      const slashMatch = text.match(/^\/([a-z0-9-]+)\s/);
+      if (slashMatch) {
+        skill = slashMatch[1];
+        actualMessage = text.slice(slashMatch[0].length).trim() || text;
+      }
+
       await runAgentLoop(
-        text,
+        actualMessage,
         sessionIdRef.current,
         langfuseSessionId,
         pendingHistory ?? (history.length > 0 ? history : null),
@@ -176,6 +185,10 @@ export function AgentProvider({
               )
             );
             refreshTables();
+            // When a skill is created, notify SkillsPanel to refresh
+            if (result.toolName === 'create_skill') {
+              window.dispatchEvent(new CustomEvent('skills-updated'));
+            }
           },
           onSubagentStart: (data) => {
             if (flushTimerRef.current) {
@@ -291,6 +304,7 @@ export function AgentProvider({
         },
         controller.signal,
         userSessionId,
+        skill,
       );
     },
     [isStreaming, flushText, refreshTables, userSessionId]

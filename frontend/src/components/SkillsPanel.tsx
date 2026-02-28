@@ -26,6 +26,12 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
 
   useEffect(() => { loadSkills(); }, [loadSkills, refreshKey]);
 
+  useEffect(() => {
+    const handler = () => loadSkills();
+    window.addEventListener('skills-updated', handler);
+    return () => window.removeEventListener('skills-updated', handler);
+  }, [loadSkills]);
+
   const handleDelete = async (name: string) => {
     if (!confirm(t('deleteSkillConfirm', { name }))) return;
     try {
