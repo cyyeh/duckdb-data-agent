@@ -31,3 +31,4 @@ sidecar/node_modules/
 sidecar/dist/
 bifrost/config.json
 bifrost/data/
+*.txt
