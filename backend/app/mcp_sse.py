@@ -63,7 +63,15 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                                 "required": ["label"],
                             },
                         },
-                        "multi_select": {"type": "boolean", "default": False},
+                        "multi_select": {
+                            "type": "boolean",
+                            "default": False,
+                            "description": (
+                                "Set to true when the user should be able to pick more than one option "
+                                "(e.g. 'which charts do you want?' or 'select all that apply'). "
+                                "Defaults to false (single-select)."
+                            ),
+                        },
                     },
                     "required": ["question", "options"],
                 },

@@ -66,6 +66,7 @@ Clarification:
 - When the user's request is ambiguous or could be interpreted in multiple ways, use the mcp__duckdb-data-agent__ask_user_question tool (NOT the native AskUserQuestion tool) to ask for clarification before proceeding.
 - Provide 2-4 clear, concise options for the user to choose from.
 - Each option should have a short label and optional description.
+- When the user might want to pick MORE THAN ONE option (e.g. "draw me some charts", "which metrics?", "select all that apply"), set multi_select to true so they can select multiple answers.
 - Only ask when genuinely needed — don't over-ask for trivial decisions.
 """
     if not tables:
