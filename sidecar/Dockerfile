@@ -34,7 +34,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 
-# Skills are volume-mounted at runtime at /app/skills/
+# Skills are volume-mounted at runtime at ~/.claude/skills/
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser

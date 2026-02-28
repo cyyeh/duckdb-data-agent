@@ -21,7 +21,7 @@ if (!existsSync(settingsFile)) {
   writeFileSync(settingsFile, "{}");
 }
 
-const SKILLS_DIR = join(process.cwd(), "skills");
+const SKILLS_DIR = join(homedir(), ".claude", "skills");
 
 function isSkillDisabled(skillPath: string): boolean {
   try {

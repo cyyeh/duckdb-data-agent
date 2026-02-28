@@ -126,7 +126,7 @@ class ContainerManager:
         volumes = {}
         if skills_host_path:
             abs_skills_path = os.path.abspath(skills_host_path)
-            volumes[abs_skills_path] = {"bind": "/app/skills", "mode": "ro"}
+            volumes[abs_skills_path] = {"bind": "/home/appuser/.claude/skills", "mode": "ro"}
 
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
@@ -170,7 +170,14 @@ class ContainerManager:
             read_only=True,
             cap_drop=["ALL"],
             security_opt=["no-new-privileges"],
-            tmpfs={"/tmp": "size=50m", "/home/appuser": "size=50m,uid=1000,gid=1000"},
+            tmpfs={
+                "/tmp": "size=50m",
+                "/home/appuser": "size=50m,uid=1000,gid=1000",
+                # Separate tmpfs for .claude so it stays owned by appuser even
+                # when Docker creates mount-point directories (e.g. for the
+                # skills bind mount) as root inside /home/appuser.
+                "/home/appuser/.claude": "size=10m,uid=1000,gid=1000",
+            },
             **({"volumes": volumes} if volumes else {}),
             network=self._config.network,
             environment=env,
