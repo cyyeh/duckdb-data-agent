@@ -158,6 +158,7 @@ async def stream_chat(
     conversation_history: list[dict] | None = None,
     langfuse_session_id: str | None = None,
     backend_session_id: str | None = None,
+    skill: str | None = None,
 ) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events via containerized sidecar."""
     from app.container_manager import container_manager
@@ -261,6 +262,8 @@ async def stream_chat(
         if conversation_history:
             payload["original_message"] = message
         payload["conversation_history"] = conversation_history or []
+        if skill:
+            payload["skill"] = skill
 
         has_tool_calls = False
         has_thinking = False
