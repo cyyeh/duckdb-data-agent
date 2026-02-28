@@ -3,7 +3,7 @@
   "checkpoint_id": "d25dcceff503",
   "strategy": "manual-commit",
   "branch": "fix/chart-no-title-answer-in-thinking",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "backend/app/agent.py",
     "backend/app/mcp_sse.py",
@@ -24,13 +24,20 @@
       "context": "/d2/5dcceff503/1/context.md",
       "content_hash": "/d2/5dcceff503/1/content_hash.txt",
       "prompt": "/d2/5dcceff503/1/prompt.txt"
+    },
+    {
+      "metadata": "/d2/5dcceff503/2/metadata.json",
+      "transcript": "/d2/5dcceff503/2/full.jsonl",
+      "context": "/d2/5dcceff503/2/context.md",
+      "content_hash": "/d2/5dcceff503/2/content_hash.txt",
+      "prompt": "/d2/5dcceff503/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 57,
-    "cache_creation_tokens": 42068,
-    "cache_read_tokens": 1777581,
-    "output_tokens": 5438,
-    "api_call_count": 47
+    "input_tokens": 83,
+    "cache_creation_tokens": 88444,
+    "cache_read_tokens": 3050656,
+    "output_tokens": 21955,
+    "api_call_count": 70
   }
 }
