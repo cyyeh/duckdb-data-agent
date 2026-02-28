@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { query, AgentDefinition, SettingSource, HookCallbackMatcher } from "@anthropic-ai/claude-agent-sdk";
 import { Langfuse } from "langfuse";
-import { mkdirSync, writeFileSync, existsSync } from "fs";
+import { mkdirSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import type { QueryRequest, HealthResponse, AgentDefinitionPayload } from "./types.js";
@@ -21,9 +21,18 @@ if (!existsSync(settingsFile)) {
   writeFileSync(settingsFile, "{}");
 }
 
-// Allowlist of skill names the agent may invoke.  Built-in skills bundled
-// with the Claude Code binary (e.g. "simplify") are blocked unless listed.
-const ALLOWED_SKILLS = new Set(["analyze-data"]);
+// Discover allowed skills from .claude/skills/ directory at startup.
+// Only these skills may be invoked — built-in skills bundled with the
+// Claude Code binary (e.g. "simplify") are blocked.
+const skillsDir = join(process.cwd(), ".claude", "skills");
+const ALLOWED_SKILLS = new Set(
+  existsSync(skillsDir)
+    ? readdirSync(skillsDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory() && existsSync(join(skillsDir, d.name, "SKILL.md")))
+        .map((d) => d.name)
+    : []
+);
+console.log(`[sidecar] Allowed skills: ${[...ALLOWED_SKILLS].join(", ") || "(none)"}`);
 
 const skillAllowlistHook: HookCallbackMatcher = {
   matcher: "Skill",
