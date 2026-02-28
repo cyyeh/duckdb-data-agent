@@ -59,6 +59,7 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
       await apiDeleteSkill(name);
       setSkills((prev) => prev.filter((s) => s.name !== name));
       if (selectedSkill?.name === name) setSelectedSkill(null);
+      window.dispatchEvent(new CustomEvent('skills-updated'));
     } catch {
       // silently ignore
     }

@@ -178,7 +178,7 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
     {showCreateDialog && (
       <CreateSkillDialog
         onClose={() => setShowCreateDialog(false)}
-        onCreated={() => setSkillsRefreshKey((k) => k + 1)}
+        onCreated={() => { setSkillsRefreshKey((k) => k + 1); window.dispatchEvent(new CustomEvent('skills-updated')); }}
       />
     )}
     </>
