@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
-import { fetchSkills, deleteSkill as apiDeleteSkill } from '../services/skillsService';
+import { fetchSkills, fetchSkill, deleteSkill as apiDeleteSkill } from '../services/skillsService';
 import type { SkillInfo } from '../types';
 import './SkillsPanel.css';
 
@@ -13,7 +13,8 @@ interface SkillsPanelProps {
 export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPanelProps) {
   const { t } = useTranslation();
   const [skills, setSkills] = useState<SkillInfo[]>([]);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [selectedSkill, setSelectedSkill] = useState<SkillInfo | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
 
   const loadSkills = useCallback(async () => {
     try {
@@ -32,11 +33,28 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
     return () => window.removeEventListener('skills-updated', handler);
   }, [loadSkills]);
 
+  const handleSkillClick = async (name: string) => {
+    if (selectedSkill?.name === name) {
+      setSelectedSkill(null);
+      return;
+    }
+    setLoadingDetail(name);
+    try {
+      const detail = await fetchSkill(name);
+      setSelectedSkill(detail);
+    } catch {
+      // silently ignore
+    } finally {
+      setLoadingDetail(null);
+    }
+  };
+
   const handleDelete = async (name: string) => {
     if (!confirm(t('deleteSkillConfirm', { name }))) return;
     try {
       await apiDeleteSkill(name);
       setSkills((prev) => prev.filter((s) => s.name !== name));
+      if (selectedSkill?.name === name) setSelectedSkill(null);
     } catch {
       // silently ignore
     }
@@ -55,6 +73,30 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
     );
   }
 
+  // Detail view for a selected skill
+  if (selectedSkill) {
+    return (
+      <div className="skills-panel">
+        <div className="skills-panel__detail-header">
+          <button className="skills-panel__back-btn" onClick={() => setSelectedSkill(null)}>
+            &larr;
+          </button>
+          <span className="skills-panel__detail-name">{selectedSkill.name}</span>
+          <button
+            className="skills-panel__use-btn"
+            onClick={() => onUseSkill(selectedSkill.name)}
+          >
+            {t('useSkill')}
+          </button>
+        </div>
+        <p className="skills-panel__detail-desc">{selectedSkill.description}</p>
+        {selectedSkill.content && (
+          <pre className="skills-panel__detail-content">{selectedSkill.content}</pre>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="skills-panel">
       <div className="skills-panel__actions">
@@ -64,30 +106,27 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
       </div>
       <ul className="skills-panel__list">
         {skills.map((skill) => (
-          <li key={skill.name} className="skills-panel__item">
+          <li key={skill.name} className="skills-panel__item" onClick={() => handleSkillClick(skill.name)}>
             <div className="skills-panel__item-header">
-              <button
-                className="skills-panel__name"
-                onClick={() => setExpanded((prev) => ({ ...prev, [skill.name]: !prev[skill.name] }))}
-                title={skill.name}
-              >
+              <span className="skills-panel__name" title={skill.name}>
                 {skill.name}
-              </button>
+              </span>
+              {loadingDetail === skill.name && <span className="skills-panel__loading">...</span>}
               <button
                 className="skills-panel__use-btn"
-                onClick={() => onUseSkill(skill.name)}
+                onClick={(e) => { e.stopPropagation(); onUseSkill(skill.name); }}
               >
                 {t('useSkill')}
               </button>
               <button
                 className="skills-panel__delete-btn"
-                onClick={() => handleDelete(skill.name)}
+                onClick={(e) => { e.stopPropagation(); handleDelete(skill.name); }}
                 title={t('deleteSkill', { name: skill.name })}
               >
                 &times;
               </button>
             </div>
-            <p className={`skills-panel__desc ${expanded[skill.name] ? '' : 'skills-panel__desc--truncated'}`}>
+            <p className="skills-panel__desc skills-panel__desc--truncated">
               {skill.description}
             </p>
           </li>
