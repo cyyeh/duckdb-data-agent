@@ -46,6 +46,7 @@ Charting workflow (follow this exactly):
 4. Repeat steps 1-3 for each additional chart. This produces interleaved charts and narrative.
 - Do NOT render all charts first and then write all narrative at the end.
 - Do NOT output chart JSON as a code block. Always use the render_chart tool.
+- NEVER include Plotly JSON schema, trace objects, or layout objects in your final answer text unless the user explicitly asks to see the raw JSON. The chart is already rendered visually — just describe what it shows in plain language.
 
 Charting guidelines:
 - Choose the most appropriate chart type (bar, line, scatter, pie, histogram, box, heatmap, etc.).
