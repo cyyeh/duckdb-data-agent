@@ -87,13 +87,13 @@ export function AgentProvider({
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Extract /skill-name prefix if present
+      // Extract /skill-name from message (can appear anywhere)
       let actualMessage = text;
       let skill: string | undefined;
-      const slashMatch = text.match(/^\/([a-z0-9-]+)\s/);
+      const slashMatch = text.match(/\/([a-z0-9-]+)/);
       if (slashMatch) {
         skill = slashMatch[1];
-        actualMessage = text.slice(slashMatch[0].length).trim() || text;
+        actualMessage = text.replace(slashMatch[0], '').trim() || text;
       }
 
       await runAgentLoop(
