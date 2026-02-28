@@ -13,7 +13,7 @@ uvicorn = {extras = ["standard"], version = "^0.41.0"}
 duckdb = "^1.4.4"
 python-dotenv = "^1.2.1"
 python-multipart = "^0.0.22"
-claude-agent-sdk = "^0.1.38"
+claude-agent-sdk = "^0.1.44"
 langfuse = "^3.0.0"
 langsmith = {extras = ["claude-agent-sdk", "otel"], version = ">=0.3.0"}
 openpyxl = "^3.1.0"
