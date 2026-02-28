@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "6bca73b65900",
+  "strategy": "manual-commit",
+  "branch": "feat/sidecar-skill",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md",
+    "backend/.env.example"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6b/ca73b65900/0/metadata.json",
+      "transcript": "/6b/ca73b65900/0/full.jsonl",
+      "context": "/6b/ca73b65900/0/context.md",
+      "content_hash": "/6b/ca73b65900/0/content_hash.txt",
+      "prompt": "/6b/ca73b65900/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1512,
+    "cache_creation_tokens": 251804,
+    "cache_read_tokens": 10268400,
+    "output_tokens": 69853,
+    "api_call_count": 112
+  }
+}
