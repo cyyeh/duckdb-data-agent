@@ -87,5 +87,7 @@
   "skillContentLabel": "指令",
   "skillContentPlaceholder": "給代理的逐步指令...",
   "skillCreated": "技能「{name}」已建立。",
-  "skillDeleted": "技能「{name}」已刪除。"
+  "skillDeleted": "技能「{name}」已刪除。",
+  "skillPreview": "預覽",
+  "skillSource": "原始碼"
 }

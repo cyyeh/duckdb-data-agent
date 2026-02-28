@@ -187,6 +187,38 @@
   line-height: 1.4;
 }
 
+.skill-detail-modal__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.skill-detail-modal__tab {
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.skill-detail-modal__tab:hover {
+  background: var(--color-bg-hover-strong);
+  color: var(--color-text-primary);
+}
+
+.skill-detail-modal__tab--active {
+  background: var(--color-accent-primary);
+  color: #fff;
+  border-color: var(--color-accent-primary);
+}
+
+.skill-detail-modal__tab--active:hover {
+  background: var(--color-accent-primary-hover);
+}
+
 .skill-detail-modal__content {
   font-size: 12px;
   font-family: monospace;
@@ -202,4 +234,73 @@
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+}
+
+.skill-detail-modal__content--preview {
+  font-family: inherit;
+  white-space: normal;
+}
+
+.skill-detail-modal__content--preview h1,
+.skill-detail-modal__content--preview h2,
+.skill-detail-modal__content--preview h3 {
+  margin: 12px 0 6px;
+  color: var(--color-text-primary);
+}
+
+.skill-detail-modal__content--preview h1 { font-size: 18px; }
+.skill-detail-modal__content--preview h2 { font-size: 15px; }
+.skill-detail-modal__content--preview h3 { font-size: 13px; }
+
+.skill-detail-modal__content--preview p {
+  margin: 6px 0;
+}
+
+.skill-detail-modal__content--preview ul,
+.skill-detail-modal__content--preview ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.skill-detail-modal__content--preview code {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.skill-detail-modal__content--preview pre {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  padding: 8px;
+  margin: 6px 0;
+  overflow-x: auto;
+}
+
+.skill-detail-modal__content--preview pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.skill-detail-modal__content--preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 6px 0;
+  font-size: 12px;
+}
+
+.skill-detail-modal__content--preview th,
+.skill-detail-modal__content--preview td {
+  border: 1px solid var(--color-border-light);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.skill-detail-modal__content--preview th {
+  background: var(--color-bg-primary);
+  font-weight: 600;
 }

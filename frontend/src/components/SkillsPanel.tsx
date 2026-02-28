@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useTranslation } from '../hooks/useTranslation';
 import { fetchSkills, fetchSkill, deleteSkill as apiDeleteSkill } from '../services/skillsService';
 import type { SkillInfo } from '../types';
@@ -15,6 +17,7 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [selectedSkill, setSelectedSkill] = useState<SkillInfo | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
+  const [detailTab, setDetailTab] = useState<'preview' | 'source'>('preview');
 
   const loadSkills = useCallback(async () => {
     try {
@@ -39,6 +42,7 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
       return;
     }
     setLoadingDetail(name);
+    setDetailTab('preview');
     try {
       const detail = await fetchSkill(name);
       setSelectedSkill(detail);
@@ -126,7 +130,29 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
             </div>
             <p className="skill-detail-modal__desc">{selectedSkill.description}</p>
             {selectedSkill.content && (
-              <pre className="skill-detail-modal__content">{selectedSkill.content}</pre>
+              <>
+                <div className="skill-detail-modal__tabs">
+                  <button
+                    className={`skill-detail-modal__tab${detailTab === 'preview' ? ' skill-detail-modal__tab--active' : ''}`}
+                    onClick={() => setDetailTab('preview')}
+                  >
+                    {t('skillPreview')}
+                  </button>
+                  <button
+                    className={`skill-detail-modal__tab${detailTab === 'source' ? ' skill-detail-modal__tab--active' : ''}`}
+                    onClick={() => setDetailTab('source')}
+                  >
+                    {t('skillSource')}
+                  </button>
+                </div>
+                {detailTab === 'preview' ? (
+                  <div className="skill-detail-modal__content skill-detail-modal__content--preview">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedSkill.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <pre className="skill-detail-modal__content">{selectedSkill.content}</pre>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -87,5 +87,7 @@
   "skillContentLabel": "Instructions",
   "skillContentPlaceholder": "Step-by-step instructions for the agent...",
   "skillCreated": "Skill \"{name}\" created.",
-  "skillDeleted": "Skill \"{name}\" deleted."
+  "skillDeleted": "Skill \"{name}\" deleted.",
+  "skillPreview": "Preview",
+  "skillSource": "Source"
 }
