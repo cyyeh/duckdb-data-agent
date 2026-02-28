@@ -1,6 +1,6 @@
 from app.config import (
     ORCHESTRATOR_MODEL_SDK,
-    SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK,
+    SQL_SUBAGENT_MODEL_SDK,
     MODEL_REWRITES,
 )
 
@@ -13,7 +13,7 @@ def test_orchestrator_model_has_default():
 
 def test_sdk_aliases_are_valid():
     """SDK aliases must be values the Claude Agent SDK accepts."""
-    for alias in [ORCHESTRATOR_MODEL_SDK, SQL_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_SDK]:
+    for alias in [ORCHESTRATOR_MODEL_SDK, SQL_SUBAGENT_MODEL_SDK]:
         assert isinstance(alias, str) and len(alias) > 0
 
 

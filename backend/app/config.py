@@ -28,16 +28,13 @@ def build_model_rewrites(pairs: list[tuple[str, str]]) -> dict[str, str]:
 
 _raw_model = os.getenv("ORCHESTRATOR_MODEL", "claude-sonnet-4-6")
 _raw_sql = os.getenv("SQL_SUBAGENT_MODEL", "inherit")
-_raw_chart = os.getenv("CHART_SUBAGENT_MODEL", "inherit")
 
 ORCHESTRATOR_MODEL_SDK, ORCHESTRATOR_MODEL_REAL = parse_model(_raw_model)
 SQL_SUBAGENT_MODEL_SDK, SQL_SUBAGENT_MODEL_REAL = parse_model(_raw_sql)
-CHART_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_REAL = parse_model(_raw_chart)
 
 MODEL_REWRITES = build_model_rewrites([
     (ORCHESTRATOR_MODEL_SDK, ORCHESTRATOR_MODEL_REAL),
     (SQL_SUBAGENT_MODEL_SDK, SQL_SUBAGENT_MODEL_REAL),
-    (CHART_SUBAGENT_MODEL_SDK, CHART_SUBAGENT_MODEL_REAL),
 ])
 
 DEFAULT_TOOL_MODEL = parse_model(os.getenv("DEFAULT_TOOL_MODEL", ""))[1]

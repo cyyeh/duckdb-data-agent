@@ -19,18 +19,42 @@ function stripChartSpecBlocks(text: string): string {
   return text.replace(/```(?:json)?\s*\n?\s*\{[\s\S]*?"(?:chart_spec|data)"[\s\S]*?\}\s*\n?\s*```/g, '').trim();
 }
 
+/**
+ * Fix missing line breaks before bold section headers in thinking text.
+ * The model sometimes concatenates bold headers directly after the previous
+ * sentence (e.g. "...for arrays.**Preparing data arrays**"). This inserts
+ * paragraph breaks so they render on new lines.
+ */
+function fixThinkingLineBreaks(text: string): string {
+  // Insert \n\n before **Header** when preceded by sentence-ending punctuation
+  // with no whitespace. The [A-Z] ensures we only match section-header-style
+  // bold (starting with a capital letter), avoiding inline bold like **data**.
+  return text.replace(/([.!?:])(\*\*[A-Z])/g, '$1\n\n$2');
+}
+
+/** Strip markdown formatting for plain-text preview display. */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold**
+    .replace(/__(.+?)__/g, '$1')        // __bold__
+    .replace(/\*(.+?)\*/g, '$1')        // *italic*
+    .replace(/_(.+?)_/g, '$1')          // _italic_
+    .replace(/`(.+?)`/g, '$1')          // `code`
+    .replace(/^#+\s+/gm, '');           // # headings
+}
+
 function getLastThinkingLine(segments: ContentSegment[], streamingRemainder: string | undefined, t: (key: string) => string): string {
   // Use streaming remainder if available
   if (streamingRemainder?.trim()) {
     const lines = streamingRemainder.trim().split('\n').filter((l) => l.trim());
-    const last = lines[lines.length - 1] || '';
+    const last = stripMarkdown(lines[lines.length - 1] || '');
     return last.length > 100 ? last.slice(0, 100) + '...' : last;
   }
   // Otherwise use last thinking segment's last line
   for (let i = segments.length - 1; i >= 0; i--) {
     if (segments[i].type === 'thinking' && segments[i].text?.trim()) {
       const lines = segments[i].text!.trim().split('\n').filter((l) => l.trim());
-      const last = lines[lines.length - 1] || '';
+      const last = stripMarkdown(lines[lines.length - 1] || '');
       return last.length > 100 ? last.slice(0, 100) + '...' : last;
     }
   }
@@ -70,7 +94,7 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
           if (seg.type === 'thinking' && seg.text?.trim()) {
             return (
               <div key={i} className="message-bubble__segment-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixThinkingLineBreaks(seg.text)}</ReactMarkdown>
               </div>
             );
           }
@@ -84,8 +108,6 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
           if (seg.type === 'subagent_start') {
             const displayName = seg.subagentName === 'sql-analyst'
               ? t('sqlAnalystWorking')
-              : seg.subagentName === 'chart-builder'
-              ? t('chartBuilderWorking')
               : `${seg.subagentName} working...`;
             return (
               <div key={i} className="message-bubble__subagent-indicator">
@@ -104,7 +126,7 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
         })}
         {streamingRemainder?.trim() && (
           <div className="message-bubble__segment-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingRemainder}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixThinkingLineBreaks(streamingRemainder)}</ReactMarkdown>
           </div>
         )}
       </div>

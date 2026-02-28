@@ -29,11 +29,11 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 ### Agent Mode (default mode)
 
 - **Natural language queries** — Ask questions about your data in plain English; the orchestrator delegates to specialized subagents that write and execute SQL for you
-- **Subagent architecture** — An orchestrator agent delegates to a **sql-analyst** subagent for data queries and a **chart-builder** subagent for visualizations, each with focused prompts and configurable models (via `SQL_SUBAGENT_MODEL` and `CHART_SUBAGENT_MODEL` env vars, defaulting to `haiku`)
+- **Subagent architecture** — An orchestrator agent delegates to a **sql-analyst** subagent for data queries, with a configurable model (via `SQL_SUBAGENT_MODEL` env var, defaulting to `haiku`); the orchestrator itself handles chart rendering via `render_chart` for coherent interleaved text-and-chart answers
 - **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python); subagent internal reasoning is filtered from the main stream
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
-- **Chart generation** — Ask for a chart or visualization and the chart-builder subagent generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly; animated charts with frames, sliders, and play/pause controls are also supported
+- **Chart generation** — Ask for a chart or visualization and the orchestrator generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly; animated charts with frames, sliders, and play/pause controls are also supported
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Bifrost LLM gateway** — A [Bifrost](https://github.com/maximhq/bifrost) gateway service manages API keys centrally and routes LLM requests to multiple providers; sidecar containers never have access to real API keys (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
@@ -75,7 +75,6 @@ Edit `backend/.env` and set your Anthropic API key:
 ANTHROPIC_API_KEY=sk-ant-...
 ORCHESTRATOR_MODEL=claude-sonnet-4-6           # optional, defaults to sonnet
 SQL_SUBAGENT_MODEL=haiku           # optional, model for SQL analyst subagent (default: haiku)
-CHART_SUBAGENT_MODEL=haiku         # optional, model for chart builder subagent (default: haiku)
 DEFAULT_TOOL_MODEL=                # optional, fallback model for SDK built-in tools (see below)
 MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (default: 500 MB)
 ```
@@ -84,12 +83,11 @@ MAX_TOTAL_SIZE_BYTES=524288000      # optional, max upload size in bytes (defaul
 
 #### Per-Subagent Model Routing
 
-You can route each agent (orchestrator, SQL subagent, chart subagent) to a different LLM provider by using the `@suffix` syntax:
+You can route each agent (orchestrator, SQL subagent) to a different LLM provider by using the `@suffix` syntax:
 
 ```
 ORCHESTRATOR_MODEL=openai/gpt-4o@sonnet
 SQL_SUBAGENT_MODEL=openai/gpt-4o-mini@haiku
-CHART_SUBAGENT_MODEL=openai/gpt-4o-mini@haiku
 ```
 
 The format is `real_model@sdk_alias`. The SDK alias (after `@`) is the model name the Claude Agent SDK sees; the real model (before `@`) is what the backend proxy rewrites it to before forwarding to Bifrost. This lets you use any provider Bifrost supports (OpenAI, Bedrock, etc.) while keeping the SDK configuration unchanged.
@@ -446,7 +444,7 @@ scenarios:
 - [DuckDB](https://duckdb.org/) (Python)
 - [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
 - [MCP](https://modelcontextprotocol.io/) SSE transport (DuckDB tool bridge for containers)
-- Subagent architecture via Claude Agent SDK `AgentDefinition` API (sql-analyst + chart-builder)
+- Subagent architecture via Claude Agent SDK `AgentDefinition` API (sql-analyst)
 - [Docker SDK for Python](https://docker-py.readthedocs.io/) + [gVisor](https://gvisor.dev/) (container isolation)
 - [Langfuse](https://langfuse.com/) (optional, for observability)
 
