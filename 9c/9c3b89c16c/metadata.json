@@ -3,7 +3,7 @@
   "checkpoint_id": "9c9c3b89c16c",
   "strategy": "manual-commit",
   "branch": "feat/sidecar-skill",
-  "checkpoints_count": 1,
+  "checkpoints_count": 4,
   "files_touched": [
     "frontend/src/components/Sidebar.tsx",
     "frontend/src/components/SkillsPanel.tsx"
@@ -15,13 +15,20 @@
       "context": "/9c/9c3b89c16c/0/context.md",
       "content_hash": "/9c/9c3b89c16c/0/content_hash.txt",
       "prompt": "/9c/9c3b89c16c/0/prompt.txt"
+    },
+    {
+      "metadata": "/9c/9c3b89c16c/1/metadata.json",
+      "transcript": "/9c/9c3b89c16c/1/full.jsonl",
+      "context": "/9c/9c3b89c16c/1/context.md",
+      "content_hash": "/9c/9c3b89c16c/1/content_hash.txt",
+      "prompt": "/9c/9c3b89c16c/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 12,
-    "cache_creation_tokens": 20400,
-    "cache_read_tokens": 383452,
-    "output_tokens": 2883,
-    "api_call_count": 10
+    "input_tokens": 54,
+    "cache_creation_tokens": 87331,
+    "cache_read_tokens": 2417006,
+    "output_tokens": 16918,
+    "api_call_count": 40
   }
 }
