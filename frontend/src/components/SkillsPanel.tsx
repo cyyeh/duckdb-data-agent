@@ -120,7 +120,7 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
               <span className="skill-detail-modal__name">{selectedSkill.name}</span>
               <button
                 className="skills-panel__use-btn"
-                onClick={() => onUseSkill(selectedSkill.name)}
+                onClick={() => { onUseSkill(selectedSkill.name); setSelectedSkill(null); }}
               >
                 {t('useSkill')}
               </button>
