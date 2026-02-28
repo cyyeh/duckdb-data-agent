@@ -14,7 +14,7 @@ from app.pending_questions import pending_question_store
 import os
 from app.skills import create_skill as _create_skill_file, SkillValidationError
 
-SKILLS_DIR = os.environ.get("SKILLS_DIR", os.path.join(os.path.dirname(__file__), "..", "sidecar", ".claude", "skills"))
+SKILLS_DIR = os.environ.get("SKILLS_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "sidecar", ".claude", "skills"))
 
 logger = logging.getLogger(__name__)
 
