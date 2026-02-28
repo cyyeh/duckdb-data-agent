@@ -1,0 +1,9 @@
+why duplicate "SQL Query" title? sql query result should be data table not text summary
+
+---
+
+don't show sql query result text in thinking block, only sends to orchestrator, if using subagent, and no sql shows in final answer text unless user explicitly ask for
+
+---
+
+commit and push
