@@ -34,6 +34,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 
+# Copy skill files for Claude Agent SDK discovery
+COPY .claude/ ./.claude/
+
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser
 
