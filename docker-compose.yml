@@ -50,8 +50,6 @@ services:
     build:
       context: ./sidecar
       dockerfile: Dockerfile
-      args:
-        CLAUDE_CODE_VERSION: ${CLAUDE_CODE_VERSION:-latest}
     image: duckdb-agent-sidecar:latest
     profiles:
       - sidecar

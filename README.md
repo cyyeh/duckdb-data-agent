@@ -250,14 +250,14 @@ The data flow for a chat message is:
 1. Frontend sends a chat message to the FastAPI backend.
 2. Backend spins up a gVisor container (or reuses an existing one for the session) via `ContainerManager`, configured to route LLM calls through the Bifrost gateway.
 3. Backend sends the query to the sidecar's `POST /query` endpoint. The sidecar calls the Claude Agent SDK's `query()` function with `includePartialMessages: true` for token-level streaming, configured with the host's MCP SSE endpoint.
-4. Claude CLI talks to the Bifrost gateway (`/anthropic`) for LLM API access (using a placeholder key; Bifrost injects the real key).
-5. Claude CLI's `execute_sql` tool calls reach the host DuckDB via the **MCP SSE bridge** (`/mcp/sse?session_id=...`), which routes each connection to the correct per-user DuckDB instance through the existing `SessionManager`.
+4. The agent talks to the Bifrost gateway (`/anthropic`) for LLM API access (using a placeholder key; Bifrost injects the real key).
+5. The agent's `execute_sql` tool calls reach the host DuckDB via the **MCP SSE bridge** (`/mcp/sse?session_id=...`), which routes each connection to the correct per-user DuckDB instance through the existing `SessionManager`.
 6. The sidecar streams SSE events back to the backend, which forwards them to the frontend.
 7. On session end, the container is stopped and removed.
 
-**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, the Agent SDK, and the `@anthropic-ai/claude-code` CLI (required by the SDK internally). Containers run with a read-only root filesystem, all Linux capabilities dropped, no volume mounts, no Docker socket access, and a non-root user.
+**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no volume mounts, no Docker socket access, and a non-root user.
 
-**MCP SSE bridge:** The backend exposes the DuckDB `execute_sql` tool at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`). Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized Claude CLI reaches DuckDB on the host without any direct database access inside the container.
+**MCP SSE bridge:** The backend exposes the DuckDB `execute_sql` tool at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`). Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
 
 **Prerequisites:**
 
@@ -412,7 +412,7 @@ scenarios:
 │   ├── src/
 │   │   ├── server.ts       #   TypeScript HTTP server using Claude Agent SDK with token-level streaming
 │   │   └── types.ts        #   Request/response type definitions
-│   ├── Dockerfile          #   Sidecar image: Node.js 20 + Python 3.12 + Claude CLI
+│   ├── Dockerfile          #   Sidecar image: Node.js 20 + Python 3.12
 │   ├── package.json        #   npm config
 │   └── setup-network.sh    #   Docker network setup script
 ├── e2e/                    # Playwright E2E tests
@@ -451,7 +451,6 @@ scenarios:
 - [Node.js](https://nodejs.org/) 20 + [TypeScript](https://www.typescriptlang.org/)
 - [Express](https://expressjs.com/) HTTP server
 - [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript) (`@anthropic-ai/claude-agent-sdk`) with token-level streaming
-- [Claude CLI](https://docs.anthropic.com/en/docs/claude-code) (`@anthropic-ai/claude-code`) — required by the SDK internally
 
 **LLM Gateway**
 - [Bifrost](https://github.com/maximhq/bifrost) — centralized API key management and multi-provider LLM routing (Anthropic, OpenAI, Bedrock, etc.)
