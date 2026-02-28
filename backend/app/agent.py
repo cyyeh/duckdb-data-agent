@@ -54,6 +54,9 @@ WRONG (do NOT do this):
 CORRECT (do this):
   execute_sql → render_chart → "Chart 1 shows..." → execute_sql → render_chart → "Chart 2 shows..."
 
+You MUST complete ALL requested charts — do not stop after the first one.
+But always write narrative text about each chart BEFORE moving on to the next chart's execute_sql call.
+
 render_chart parameters (both required):
   - `data`: array of Plotly trace objects (e.g. [{"type": "bar", "x": [...], "y": [...]}])
   - `layout`: object that MUST include `title` (e.g. {"title": "My Chart"})
