@@ -5,11 +5,19 @@
   "branch": "fix/thinking-block-bold-and-chart-prompt",
   "checkpoints_count": 3,
   "files_touched": [
+    "README.md",
     "backend/app/agent.py",
+    "backend/app/config.py",
     "backend/tests/test_agent_chart.py",
+    "backend/tests/test_mcp_sse.py",
     "backend/tests/test_stream_chart_capture.py",
+    "backend/tests/test_subagent_config.py",
+    "backend/tests/test_subagent_definitions.py",
+    "frontend/src/components/InlineQueryResult.tsx",
     "frontend/src/components/MessageBubble.css",
-    "frontend/src/components/MessageBubble.tsx"
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
   ],
   "sessions": [
     {
@@ -25,13 +33,20 @@
       "context": "/ef/7e82bcc9a8/1/context.md",
       "content_hash": "/ef/7e82bcc9a8/1/content_hash.txt",
       "prompt": "/ef/7e82bcc9a8/1/prompt.txt"
+    },
+    {
+      "metadata": "/ef/7e82bcc9a8/2/metadata.json",
+      "transcript": "/ef/7e82bcc9a8/2/full.jsonl",
+      "context": "/ef/7e82bcc9a8/2/context.md",
+      "content_hash": "/ef/7e82bcc9a8/2/content_hash.txt",
+      "prompt": "/ef/7e82bcc9a8/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 46,
-    "cache_creation_tokens": 123922,
-    "cache_read_tokens": 2133621,
-    "output_tokens": 38850,
-    "api_call_count": 35
+    "input_tokens": 89,
+    "cache_creation_tokens": 153914,
+    "cache_read_tokens": 3487167,
+    "output_tokens": 40709,
+    "api_call_count": 70
   }
 }
