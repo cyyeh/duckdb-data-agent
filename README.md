@@ -291,7 +291,8 @@ The data flow for a chat message is:
 | `CONTAINER_RUNTIME` | `runc` | Docker runtime (runc for non-gVisor, runsc for gVisor) |
 | `CONTAINER_MEMORY_LIMIT` | `512m` | Memory limit per container |
 | `CONTAINER_CPU_LIMIT` | `0.5` | CPU limit per container |
-| `CONTAINER_MAX_LIFETIME_SECONDS` | `600` | Max container lifetime |
+| `CONTAINER_MAX_LIFETIME_SECONDS` | `3600` | Max container lifetime |
+| `CONTAINER_IDLE_TIMEOUT_SECONDS` | `300` | Idle timeout before container is stopped (5 min) |
 | `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
 
 **Security properties:**
