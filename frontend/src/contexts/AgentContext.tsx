@@ -51,7 +51,7 @@ export function AgentProvider({
   const streamStatesRef = useRef<Map<string, StreamState>>(new Map());
   const [streamingConversationIds, setStreamingConversationIds] = useState<Set<string>>(new Set());
 
-  const flushTextForStream = useCallback((state: StreamState, conversationId: string) => {
+  const flushTextForStream = useCallback((state: StreamState, conversationId: string | null) => {
     const text = state.textBuffer;
     if (!text) return;
     state.currentText += text;
@@ -150,7 +150,7 @@ export function AgentProvider({
       const scheduleFlush = () => {
         if (!state.flushTimer) {
           state.flushTimer = setTimeout(() => {
-            flushTextForStream(state, convId!);
+            flushTextForStream(state, convId);
             state.flushTimer = null;
           }, 50);
         }
@@ -162,7 +162,7 @@ export function AgentProvider({
           clearTimeout(state.flushTimer);
           state.flushTimer = null;
         }
-        flushTextForStream(state, convId!);
+        flushTextForStream(state, convId);
       };
 
       // Helper to finalize stream (called by onDone and onError)
@@ -313,12 +313,12 @@ export function AgentProvider({
                   : m
               )
             );
+            if (convId && activeConversationIdRef.current !== convId) {
+              messagesCacheRef.current.set(convId, state.messages);
+            }
             cleanupStream();
             if (activeConversationIdRef.current === convId) {
               setIsStreaming(false);
-            } else if (convId) {
-              // Cache final messages so switching back shows completed response
-              messagesCacheRef.current.set(convId, state.messages);
             }
           },
           onError: (error) => {
@@ -336,11 +336,12 @@ export function AgentProvider({
                   : m
               )
             );
+            if (convId && activeConversationIdRef.current !== convId) {
+              messagesCacheRef.current.set(convId, state.messages);
+            }
             cleanupStream();
             if (activeConversationIdRef.current === convId) {
               setIsStreaming(false);
-            } else if (convId) {
-              messagesCacheRef.current.set(convId, state.messages);
             }
           },
           onUserQuestion: (data) => {
@@ -373,8 +374,10 @@ export function AgentProvider({
       const convId = activeConversationIdRef.current;
 
       // If this conversation has an active stream, abort it first
+      let existingMessages: ChatMessage[] | null = null;
       if (convId && streamStatesRef.current.has(convId)) {
         const existingState = streamStatesRef.current.get(convId)!;
+        existingMessages = existingState.messages;
         existingState.abortController.abort();
         if (existingState.flushTimer) {
           clearTimeout(existingState.flushTimer);
@@ -400,7 +403,7 @@ export function AgentProvider({
       }
 
       // Build conversation history from messages before the edit point
-      const currentMsgs = messagesRef.current;
+      const currentMsgs = existingMessages || messagesRef.current;
       const conversationHistory: { role: string; content: string }[] = [];
       for (let i = 0; i < messageIndex; i++) {
         const msg = currentMsgs[i];
@@ -461,7 +464,7 @@ export function AgentProvider({
       const scheduleFlush = () => {
         if (!state.flushTimer) {
           state.flushTimer = setTimeout(() => {
-            flushTextForStream(state, convId!);
+            flushTextForStream(state, convId);
             state.flushTimer = null;
           }, 50);
         }
@@ -473,7 +476,7 @@ export function AgentProvider({
           clearTimeout(state.flushTimer);
           state.flushTimer = null;
         }
-        flushTextForStream(state, convId!);
+        flushTextForStream(state, convId);
       };
 
       // Helper to finalize stream
@@ -616,11 +619,12 @@ export function AgentProvider({
                   : m
               )
             );
+            if (convId && activeConversationIdRef.current !== convId) {
+              messagesCacheRef.current.set(convId, state.messages);
+            }
             cleanupStream();
             if (activeConversationIdRef.current === convId) {
               setIsStreaming(false);
-            } else if (convId) {
-              messagesCacheRef.current.set(convId, state.messages);
             }
           },
           onError: (error) => {
@@ -638,11 +642,12 @@ export function AgentProvider({
                   : m
               )
             );
+            if (convId && activeConversationIdRef.current !== convId) {
+              messagesCacheRef.current.set(convId, state.messages);
+            }
             cleanupStream();
             if (activeConversationIdRef.current === convId) {
               setIsStreaming(false);
-            } else if (convId) {
-              messagesCacheRef.current.set(convId, state.messages);
             }
           },
           onUserQuestion: (data) => {
