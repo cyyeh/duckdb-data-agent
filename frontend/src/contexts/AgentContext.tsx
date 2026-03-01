@@ -633,7 +633,7 @@ export function AgentProvider({
     let finalMsgs = msgs;
     if (incomingConversationId) {
       const cached = messagesCacheRef.current.get(incomingConversationId);
-      if (cached && cached.length > 0) {
+      if (cached && cached.length > 0 && cached.length >= msgs.length) {
         finalMsgs = cached;
       }
       // Clear used cache entry so stale data doesn't persist forever
@@ -669,7 +669,13 @@ export function AgentProvider({
           }
           return m;
         });
-        messagesCacheRef.current.set(outgoingConversationId, cleaned);
+        const toCache = cleaned.filter(m => {
+          if (m.role === 'assistant' && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
+            return false;
+          }
+          return true;
+        });
+        messagesCacheRef.current.set(outgoingConversationId, toCache);
       }
       return finalMsgs;
     });
@@ -717,7 +723,13 @@ export function AgentProvider({
           }
           return m.isStreaming ? { ...m, isStreaming: false, currentPhase: undefined } : m;
         });
-        messagesCacheRef.current.set(outgoingConversationId, cleaned);
+        const toCache = cleaned.filter(m => {
+          if (m.role === 'assistant' && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
+            return false;
+          }
+          return true;
+        });
+        messagesCacheRef.current.set(outgoingConversationId, toCache);
       }
       return [];
     });
