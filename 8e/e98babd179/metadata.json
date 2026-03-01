@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8ee98babd179",
+  "strategy": "manual-commit",
+  "branch": "fix/skill-restriction-blocks-create-skill",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "sidecar/src/server.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8e/e98babd179/0/metadata.json",
+      "transcript": "/8e/e98babd179/0/full.jsonl",
+      "context": "/8e/e98babd179/0/context.md",
+      "content_hash": "/8e/e98babd179/0/content_hash.txt",
+      "prompt": "/8e/e98babd179/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 29992,
+    "cache_read_tokens": 1353546,
+    "output_tokens": 1859,
+    "api_call_count": 35
+  }
+}
