@@ -3,9 +3,10 @@
   "checkpoint_id": "37d172f5b118",
   "strategy": "manual-commit",
   "branch": "worktree-implement-memory",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "backend/app/agent.py",
+    "docs/plans/2026-03-01-session-scoped-conversations-design.md",
     "docs/plans/2026-03-01-session-scoped-conversations.md",
     "frontend/src/components/MessageBubble.tsx",
     "frontend/src/hooks/useAgent.ts"
@@ -24,13 +25,20 @@
       "context": "/37/d172f5b118/1/context.md",
       "content_hash": "/37/d172f5b118/1/content_hash.txt",
       "prompt": "/37/d172f5b118/1/prompt.txt"
+    },
+    {
+      "metadata": "/37/d172f5b118/2/metadata.json",
+      "transcript": "/37/d172f5b118/2/full.jsonl",
+      "context": "/37/d172f5b118/2/context.md",
+      "content_hash": "/37/d172f5b118/2/content_hash.txt",
+      "prompt": "/37/d172f5b118/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 228,
-    "cache_creation_tokens": 324464,
-    "cache_read_tokens": 18760613,
-    "output_tokens": 111181,
-    "api_call_count": 193
+    "input_tokens": 323,
+    "cache_creation_tokens": 474819,
+    "cache_read_tokens": 26037090,
+    "output_tokens": 136074,
+    "api_call_count": 277
   }
 }
