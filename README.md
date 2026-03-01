@@ -2,7 +2,7 @@
 
 > **Note:** This project is built with [Claude Code](https://claude.com/product/claude-code)(using Opus 4.6 and [superpowers](https://github.com/obra/superpowers)) by **more than 99%** and human-reviewed by author.
 
-https://github.com/user-attachments/assets/eeb5e144-062c-444a-8232-679830b048de
+https://github.com/user-attachments/assets/32066f7d-a6b8-41bc-bde2-c85a19cf2e8c
 
 Or you can see examples online: [example1](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example1.html), [example2](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example2.html), [example3](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example3.html), [example4](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example4.html), [example5](https://raw.githack.com/cyyeh/duckdb-data-agent/main/examples/example5.html)
 
