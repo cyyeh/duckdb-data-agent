@@ -296,7 +296,10 @@ async def stream_chat(
         subagent_internal_tools: dict[str, str] = {}   # tool_id -> parent_tool_use_id
         actual_session_id = session_id
 
-        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
+        # Timeout must exceed SDK_IDLE_TIMEOUT_MS so the sidecar's own
+        # idle abort fires first; add a 60s buffer.
+        httpx_timeout = (SDK_IDLE_TIMEOUT_MS / 1000) + 60
+        async with httpx.AsyncClient(timeout=httpx.Timeout(httpx_timeout)) as client:
             async with client.stream("POST", f"{info.url}/query", json=payload) as response:
                 line_iter = response.aiter_lines().__aiter__()
                 while True:
@@ -329,6 +332,10 @@ async def stream_chat(
                         msg = json.loads(raw)
                     except json.JSONDecodeError:
                         continue
+
+                    # Reset container idle timer on every message so
+                    # long-running queries don't trigger the reaper.
+                    container_manager.touch(stable_session)
 
                     msg_type = msg.get("type")
                     # --- Token-level streaming events from SDK ---

@@ -102,7 +102,7 @@ const activeAborts = new Map<number, AbortController>();
 // aborting.  Resets on every message so active multi-turn queries are not
 // interrupted.  Covers cases where the CLI subprocess hangs on startup
 // (e.g. broken session resume, unreachable MCP server).
-const SDK_IDLE_TIMEOUT_MS = parseInt(process.env.SDK_IDLE_TIMEOUT_MS || "120000", 10);
+const SDK_IDLE_TIMEOUT_MS = parseInt(process.env.SDK_IDLE_TIMEOUT_MS || "600000", 10);
 
 // Timeout (ms) for pre-flight reachability checks against MCP / API URLs.
 const PREFLIGHT_TIMEOUT_MS = 10_000; // 10 seconds
