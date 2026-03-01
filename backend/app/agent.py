@@ -12,6 +12,8 @@ from app.config import (
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
     SDK_IDLE_TIMEOUT_MS,
 )
+from app.memory_store import memory_store
+from app.agent_memory import read_memories
 from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,9 @@ Tools at your disposal:
 - mcp__duckdb-data-agent__render_chart — render a Plotly chart
 - mcp__duckdb-data-agent__ask_user_question — ask the user a clarifying question
 - mcp__duckdb-data-agent__create_skill — create a reusable skill (workflow template) that can be invoked later via /skill-name
+- mcp__duckdb-data-agent__save_memory — save a fact, preference, or pattern to long-term memory
+- mcp__duckdb-data-agent__recall_memories — retrieve stored memories
+- mcp__duckdb-data-agent__forget_memory — remove a specific memory
 - Task tool with subagent_type "sql-analyst" — delegate complex multi-query data exploration
 
 Skill creation workflow (follow this exactly):
@@ -93,6 +98,26 @@ Clarification:
             prompt += f'\nTable: "{table["name"]}" ({table["rowCount"]} rows)\nColumns:\n'
             for col in table["columns"]:
                 prompt += f'  - "{col["name"]}" ({col["type"]})\n'
+
+    # Inject agent memory
+    memories = read_memories(user_id="default")
+    if memories:
+        prompt += "\n\n--- Agent Memory ---\n"
+        prompt += (
+            "The following are facts, preferences, and patterns you have learned from previous conversations with this user.\n"
+            "IMPORTANT: User preferences stored here represent explicit choices the user has made. "
+            "You MUST follow them — they take priority over your default behaviors. "
+            "For example, if memory says the user wants emojis, always include emojis even if your default would be to omit them.\n\n"
+        )
+        prompt += memories
+        prompt += "\n--- End Agent Memory ---\n"
+
+    # Memory management instructions
+    prompt += "\n\nMemory management:"
+    prompt += "\n- After answering, if the user expressed a preference or you learned an important fact about their data, use save_memory to store it."
+    prompt += "\n- When the user explicitly asks you to remember something, use save_memory."
+    prompt += "\n- When the user asks you to forget something, use forget_memory."
+    prompt += "\n- Do not save trivial or obvious information. Only save things that would be useful in future conversations."
 
     return prompt
 
@@ -169,8 +194,16 @@ async def stream_chat(
     langfuse_session_id: str | None = None,
     backend_session_id: str | None = None,
     skills: list[str] | None = None,
+    conversation_id: str | None = None,
 ) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events via containerized sidecar."""
+    # Persist user message if conversation_id provided
+    if conversation_id:
+        try:
+            memory_store.add_message(conversation_id, "user", message)
+        except Exception:
+            logger.warning("Failed to persist user message", exc_info=True)
+
     from app.container_manager import container_manager
     if container_manager is None:
         raise RuntimeError("Docker is not available. Container mode requires Docker.")
@@ -204,6 +237,16 @@ async def stream_chat(
     #    requests from the same browser tab (the Claude agent session_id
     #    changes after the first response, which would orphan the container)
     stable_session = backend_session_id or session_id or "default"
+
+    # Declare persistence variables before try so they're accessible in finally
+    assistant_text_parts: list[str] = []
+    all_text_parts: list[str] = []
+    assistant_metadata: dict = {"sql_queries": [], "chart_specs": []}
+    persisted_segments: list[dict] = []
+    seg_thinking_buf: list[str] = []
+    seg_answer_buf: list[str] = []
+    seg_phase = "thinking"
+    actual_session_id = session_id
 
     try:
         # Send SSE keepalive immediately so the HTTP response starts and
@@ -294,7 +337,6 @@ async def stream_chat(
         # included in the subagent_end event for visibility.
         subagent_sql_data: dict[str, list[dict]] = {}  # parent_tool_use_id -> [{tool_id, sql, columns?, rows?, rowCount?}]
         subagent_internal_tools: dict[str, str] = {}   # tool_id -> parent_tool_use_id
-        actual_session_id = session_id
 
         # Timeout must exceed SDK_IDLE_TIMEOUT_MS so the sidecar's own
         # idle abort fires first; add a 60s buffer.
@@ -351,6 +393,7 @@ async def stream_chat(
                             if delta_type == "thinking_delta":
                                 text = delta.get("thinking", "")
                                 if text and not is_subagent_event:
+                                    seg_thinking_buf.append(text)
                                     yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
                             elif delta_type == "text_delta":
                                 text = delta.get("text", "")
@@ -363,6 +406,14 @@ async def stream_chat(
                                         subagent_texts[stream_parent] = subagent_texts.get(stream_parent, "") + text
                                     else:
                                         event_name = "answer" if has_tool_calls else "thinking"
+                                        all_text_parts.append(text)
+                                        # Track text in segment buffers based on actual phase
+                                        if seg_phase == "thinking":
+                                            seg_thinking_buf.append(text)
+                                        else:
+                                            seg_answer_buf.append(text)
+                                        if event_name == "answer":
+                                            assistant_text_parts.append(text)
                                         yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
 
                         elif event_type == "content_block_start":
@@ -373,9 +424,19 @@ async def stream_chat(
                                     has_thinking = True
                             elif block_type == "text":
                                 if has_thinking and not is_subagent_event:
+                                    # Flush thinking buffer into a segment
+                                    if seg_thinking_buf:
+                                        persisted_segments.append({"type": "thinking", "text": "".join(seg_thinking_buf)})
+                                        seg_thinking_buf.clear()
+                                    seg_phase = "answer"
                                     yield f"event: thinking_done\ndata: {json.dumps({})}\n\n"
                             elif block_type == "tool_use":
                                 if not is_subagent_event:
+                                    # Flush thinking buffer before tool calls
+                                    if seg_thinking_buf:
+                                        persisted_segments.append({"type": "thinking", "text": "".join(seg_thinking_buf)})
+                                        seg_thinking_buf.clear()
+                                    seg_phase = "answer"
                                     has_thinking = False
                                     has_tool_calls = True
 
@@ -436,10 +497,23 @@ async def stream_chat(
                                 else:
                                     tool_call_data["input"] = tool_input
                                 yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
+                                # Track tool segment for persistence (placeholder, updated on result)
+                                persisted_segments.append({
+                                    "type": "tool",
+                                    "toolCallId": tool_id,
+                                    "toolName": tool_name,
+                                    "sql": sql or None,
+                                })
                                 if tool_name == "Task":
                                     subagent_name = tool_input.get("subagent_type", "unknown")
                                     subagent_prompt = tool_input.get("prompt", "")
                                     tool_names[tool_id] = subagent_name
+                                    # Replace tool segment with subagent_start for subagent tools
+                                    persisted_segments[-1] = {
+                                        "type": "subagent_start",
+                                        "subagentId": tool_id,
+                                        "subagentName": subagent_name,
+                                    }
                                     yield f"event: subagent_start\ndata: {json.dumps({'id': tool_id, 'name': subagent_name, 'prompt': subagent_prompt})}\n\n"
 
                                 # Detect ask_user_question tool
@@ -562,8 +636,33 @@ async def stream_chat(
                                 narrative = subagent_texts.get(tool_id, "") or tool_use_result_text
                                 if narrative:
                                     end_data["result"] = narrative
+                                # Track subagent_end segment for persistence
+                                persisted_segments.append({
+                                    "type": "subagent_end",
+                                    "subagentId": tool_id,
+                                    "subagentName": name,
+                                    "text": narrative or None,
+                                    "sqlResults": end_data.get("sql_results"),
+                                })
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue
+                            # Accumulate SQL and chart data for persistence
+                            if "columns" in result_data and "rows" in result_data:
+                                assistant_metadata["sql_queries"].append({
+                                    "sql": result_data.get("sql", ""),
+                                    "columns": result_data.get("columns", []),
+                                    "rowCount": result_data.get("rowCount", 0),
+                                })
+                            if "chart_spec" in result_data:
+                                assistant_metadata["chart_specs"].append(result_data["chart_spec"])
+                            # Update tool segment with result summary
+                            for seg in persisted_segments:
+                                if seg.get("type") == "tool" and seg.get("toolCallId") == tool_id:
+                                    seg["rowCount"] = result_data.get("rowCount")
+                                    seg["error"] = result_data.get("error")
+                                    if "chart_spec" in result_data:
+                                        seg["chart_spec"] = result_data["chart_spec"]
+                                    break
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
@@ -599,6 +698,35 @@ async def stream_chat(
     except Exception as e:
         logger.error("Container agent error: %s", str(e))
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
+    finally:
+        # Persist assistant message even when the client disconnects
+        # (e.g. user switched conversations mid-stream).  Without this,
+        # the assistant response would be lost on reload.
+        text_to_persist = assistant_text_parts or all_text_parts
+        if conversation_id and text_to_persist:
+            try:
+                # Finalize segments: flush remaining buffers
+                if seg_thinking_buf:
+                    persisted_segments.append({"type": "thinking", "text": "".join(seg_thinking_buf)})
+                    seg_thinking_buf.clear()
+                # Answer text: use seg_answer_buf (tracks post-thinking text)
+                # or assistant_text_parts (tracks post-tool text), or fallback
+                answer_text = "".join(seg_answer_buf) if seg_answer_buf else "".join(assistant_text_parts)
+                if answer_text:
+                    persisted_segments.append({"type": "answer", "text": answer_text})
+                elif all_text_parts and not persisted_segments:
+                    # No thinking blocks, no tool calls — all text is the answer
+                    persisted_segments.append({"type": "answer", "text": "".join(all_text_parts)})
+
+                meta = assistant_metadata.copy() if (assistant_metadata["sql_queries"] or assistant_metadata["chart_specs"]) else {}
+                if persisted_segments:
+                    meta["segments"] = persisted_segments
+                memory_store.add_message(
+                    conversation_id, "assistant", "".join(text_to_persist),
+                    metadata=meta if meta else None,
+                )
+            except Exception:
+                logger.warning("Failed to persist assistant message", exc_info=True)
     # Note: Container is kept alive for session resume (--resume flag) and is
     # cleaned up by the background cleanup loop after
     # CONTAINER_MAX_LIFETIME_SECONDS, or on application shutdown.

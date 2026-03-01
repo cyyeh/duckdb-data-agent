@@ -63,7 +63,7 @@ def test_cleanup_stale_removes_old_sessions():
     from datetime import datetime, timedelta, timezone
     mgr._sessions["old"].last_seen_at = datetime.now(timezone.utc) - timedelta(seconds=400)
     removed = mgr.cleanup_stale(ttl_seconds=300)
-    assert removed == 1
+    assert removed == ["old"]
     assert "old" not in mgr._sessions
 
 
@@ -71,7 +71,7 @@ def test_cleanup_stale_keeps_recent_sessions():
     mgr = SessionManager()
     mgr.get_or_create("recent")
     removed = mgr.cleanup_stale(ttl_seconds=300)
-    assert removed == 0
+    assert removed == []
     assert "recent" in mgr._sessions
 
 

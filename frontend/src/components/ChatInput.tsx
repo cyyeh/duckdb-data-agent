@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAgent } from '../hooks/useAgent';
+import { useConversation } from '../contexts/ConversationContext';
 import { SlashCommandMenu } from './SlashCommandMenu';
 import { fetchSkills } from '../services/skillsService';
 import type { SkillInfo } from '../types';
@@ -14,6 +15,7 @@ interface ChatInputProps {
 export function ChatInput({ pendingSkillCommand, onSkillCommandConsumed }: ChatInputProps) {
   const { t } = useTranslation();
   const { sendMessage, isStreaming } = useAgent();
+  const { activeConversationId, createConversation, triggerRefresh } = useConversation();
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,15 +44,21 @@ export function ChatInput({ pendingSkillCommand, onSkillCommandConsumed }: ChatI
     }
   }, [pendingSkillCommand, onSkillCommandConsumed]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = text.trim();
     if (!trimmed || isStreaming) return;
-    sendMessage(trimmed);
     setText('');
     setShowSlashMenu(false);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
+
+    let convId = activeConversationId;
+    if (!convId) {
+      convId = await createConversation(trimmed);
+    }
+    await sendMessage(trimmed, convId);
+    triggerRefresh();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

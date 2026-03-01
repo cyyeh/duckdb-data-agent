@@ -1,0 +1,86 @@
+.memories-panel {
+  padding: 0;
+}
+
+.memories-panel__empty {
+  font-size: 13px;
+  color: var(--color-text-faint);
+  padding: 0;
+  margin: 0;
+}
+
+.memories-panel__section {
+  margin-bottom: 12px;
+}
+
+.memories-panel__section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  margin: 0 0 6px;
+  padding: 0;
+}
+
+.memories-panel__section-empty {
+  font-size: 12px;
+  color: var(--color-text-faint);
+  font-style: italic;
+  margin: 0;
+  padding: 4px 8px;
+}
+
+.memories-panel__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.memories-panel__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-light);
+  margin-bottom: 4px;
+}
+
+.memories-panel__item:hover {
+  border-color: var(--color-border-medium);
+}
+
+.memories-panel__text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.memories-panel__delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0 2px;
+  flex-shrink: 0;
+  opacity: 1;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.memories-panel__delete-btn:hover {
+  color: var(--color-error);
+}
+
+/* Mobile touch targets */
+@media (pointer: coarse) {
+  .memories-panel__delete-btn {
+    min-width: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

@@ -25,12 +25,14 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Internationalization (i18n)** — Switch between English and Traditional Chinese with the EN/中 toggle in the header; auto-detects your OS language on first visit and remembers your choice across sessions
 - **Interactive clarification** — When your request is ambiguous, the agent asks a clarifying question with selectable options displayed inline in the chat; pick an option or type a free-text response to continue
 - **Export conversation** — Click the Export button to download the full conversation as a single self-contained HTML file; the export preserves the current theme, collapsible thinking blocks, interactive Plotly charts (via CDN), and styled query result tables; interactive-only elements (edit/delete buttons, retry buttons) are stripped for a clean read-only view
+- **Conversation history** — The bottom half of the sidebar lists past conversations for the current browser tab, ordered by most recent; click to reload a previous conversation, rename it inline, or delete it; conversations are scoped to the browser tab's session and automatically cleaned up when the tab is closed; backed by a SQLite database for durability within a session; a new conversation is created automatically when you send the first message
 
 ### Agent Mode (default mode)
 
 - **Natural language queries** — Ask questions about your data in plain English; the orchestrator delegates to specialized subagents that write and execute SQL for you
 - **Subagent architecture** — An orchestrator agent delegates to a **sql-analyst** subagent for data queries, with a configurable model (via `SQL_SUBAGENT_MODEL` env var, defaulting to `haiku`); the orchestrator itself handles chart rendering via `render_chart` for coherent interleaved text-and-chart answers
 - **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python); subagent internal reasoning is filtered from the main stream
+- **Live cross-conversation streaming** — Start a query in one conversation, switch to another, and both streams run concurrently; a pulsing dot in the sidebar indicates which conversations are actively streaming; switch back to a streaming conversation for instant re-attachment with no lost tokens
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
 - **Chart generation** — Ask for a chart or visualization and the orchestrator generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly; animated charts with frames, sliders, and play/pause controls are also supported
@@ -39,6 +41,18 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
 - **Container isolation** — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
+
+### Editor Mode
+
+- **SQL query editor** — Write and execute queries with Ctrl/Cmd+Enter
+- **Interactive results** — Sortable columns, per-column filters, and global search across results
+- **EXPLAIN support** — Markdown-rendered output for `EXPLAIN` and `EXPLAIN ANALYZE` queries
+
+### Memories
+
+- **Persistent agent memory** — The agent remembers facts, preferences, and patterns across conversations; memories are stored as markdown files on disk (`data/memories/{user_id}/MEMORY.md`) and injected into the system prompt at the start of each conversation, with stored user preferences taking priority over default model behaviors
+- **MCP-based memory tools** — The agent saves, recalls, and forgets memories via MCP tools (`save_memory`, `recall_memories`, `forget_memory`); duplicate detection prevents storing the same memory twice
+- **Memory management UI** — A Memories tab in the sidebar lets you view and delete individual memories
 
 ### Skills
 
@@ -50,12 +64,6 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Create skills from the UI** — Click the "+" button in the Skills tab to create a new skill with a name, description, and step-by-step instructions; skills are stored as `SKILL.md` files on disk
 - **Agent-created skills** — The agent can create new skills during a conversation via the `create_skill` MCP tool; new skills appear in the sidebar automatically
 - **Dynamic skill discovery** — Skills are stored at `skills/<name>/SKILL.md` and re-scanned per request; add or remove skills without restarting
-
-### Editor Mode
-
-- **SQL query editor** — Write and execute queries with Ctrl/Cmd+Enter
-- **Interactive results** — Sortable columns, per-column filters, and global search across results
-- **EXPLAIN support** — Markdown-rendered output for `EXPLAIN` and `EXPLAIN ANALYZE` queries
 
 ## Getting Started
 
@@ -273,7 +281,7 @@ The data flow for a chat message is:
 
 **Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no Docker socket access, and a non-root user. The host `skills/` directory is bind-mounted read-only at `/app/.claude/skills/` (the project-level path) so the SDK's built-in Skill tool can discover and invoke them.
 
-**MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, and `create_skill` for agent-driven skill creation. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
+**MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, `create_skill` for agent-driven skill creation, and `save_memory` / `recall_memories` / `forget_memory` for persistent agent memory. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
 
 **Prerequisites:**
 
@@ -313,6 +321,8 @@ The data flow for a chat message is:
 | `SKILLS_DIR` | `skills` | Path to skills directory (inside backend container) |
 | `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount (bind-mounted read-only at `/app/.claude/skills/` in sidecar containers) |
 | `APP_UID` | `1000` | UID for the container user (set to `$(id -u)` on Linux so skills directory writes work; not needed on macOS) |
+| `MEMORY_DB_PATH` | `data/memory.db` | SQLite database for conversation history |
+| `MEMORIES_DIR` | `data/memories` | Directory for agent memory files |
 
 **Security properties:**
 
@@ -390,13 +400,13 @@ scenarios:
 ```
 ├── frontend/               # React frontend
 │   ├── src/
-│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, skills, user-question)
-│   │   ├── contexts/       #   React context providers (theme, language, agent, config, session)
+│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, skills, memories, conversations, user-question)
+│   │   ├── contexts/       #   React context providers (theme, language, agent, config, session, conversation)
 │   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig, useSessionId)
 │   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
-│   │   ├── services/       #   API clients (skillsService.ts)
+│   │   ├── services/       #   API clients (skillsService.ts, memoriesService.ts)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
-│   │   ├── utils/          #   Utility functions (UUID generation, conversation export)
+│   │   ├── utils/          #   Utility functions (UUID generation, conversation export, message building)
 │   │   └── types.ts        #   Shared TypeScript interfaces
 │   ├── index.html          #   HTML entry point
 │   ├── package.json        #   npm config
@@ -409,8 +419,10 @@ scenarios:
 │   │   ├── database.py     #   DuckDB connection and query execution
 │   │   ├── session_manager.py  #   Per-user DuckDB session lifecycle (create, cleanup, disk persistence)
 │   │   ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming via container sidecar
+│   │   ├── memory_store.py #   SQLite-backed conversation and message persistence (WAL mode, thread-safe)
+│   │   ├── agent_memory.py #   File-based agent memory (read/save/forget markdown memories, thread-safe)
 │   │   ├── skills.py       #   Skill CRUD operations (read/write SKILL.md files)
-│   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB, chart, and create_skill tools over HTTP
+│   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB, chart, create_skill, and memory tools over HTTP
 │   │   ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
 │   │   ├── proxy.py        #   Reverse proxy for per-subagent model routing (@suffix rewriting)
 │   │   ├── pending_questions.py  #   Interactive clarification (agent asks user for disambiguation)
@@ -423,6 +435,8 @@ scenarios:
 │   │       ├── tables.py   #     Table inspection (schema, columns, sample data)
 │   │       ├── session.py  #     Session creation and deletion
 │   │       ├── skills.py   #     Skills CRUD REST API (/api/skills)
+│   │       ├── conversations.py  #  Conversation history CRUD REST API (/api/conversations)
+│   │       ├── memories.py #     Agent memory REST API (/api/memories)
 │   │       ├── config.py   #     Runtime configuration
 │   │       └── langfuse_status.py  #   Langfuse tracing status and link
 │   └── tests/              #   Unit tests (pytest)
@@ -430,9 +444,10 @@ scenarios:
 │       ├── test_skills_routes.py
 │       ├── test_container_manager.py
 │       ├── test_mcp_sse.py
+│       ├── test_memory_store.py
 │       ├── test_proxy.py
 │       ├── test_session_manager.py
-│       └── ...             #   14 test modules total
+│       └── ...             #   15 test modules total
 ├── skills/                 # Skill definitions (SKILL.md files, volume-mounted into sidecar containers)
 │   ├── analyze-data/       #   Built-in data analysis workflow skill
 │   └── <name>/             #   Custom skills (each with a SKILL.md file)
@@ -485,4 +500,4 @@ scenarios:
 
 ## License
 
-[MIT](LICENSE.txt)
+[MIT](LICENSE)

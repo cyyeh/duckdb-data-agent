@@ -85,7 +85,7 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
   const summary = isAgentStreaming ? getLastThinkingLine(segments, streamingRemainder, t) : '';
 
   return (
-    <details className="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible" open={isThinkingPhase || undefined}>
+    <details className="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible" open={isThinkingPhase || (!hasAnswer && !isAgentStreaming) || undefined}>
       <summary className="message-bubble__collapsible-summary">
         <span className="message-bubble__segment-label">{t('thinkingLabel')}</span>
         {summary && <span className="message-bubble__collapsible-preview">{summary}</span>}

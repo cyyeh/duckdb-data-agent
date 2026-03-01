@@ -7,6 +7,7 @@ import { FileUpload } from './FileUpload';
 import type { TableInfo } from '../types';
 import './AgentPanel.css';
 import { exportConversation } from '../utils/exportConversation';
+import { useConversation } from '../contexts/ConversationContext';
 
 interface AgentPanelProps {
   tables: TableInfo[];
@@ -19,6 +20,7 @@ interface AgentPanelProps {
 export function AgentPanel({ tables, onUpload, onLoadSample, pendingSkillCommand, onSkillCommandConsumed }: AgentPanelProps) {
   const { t } = useTranslation();
   const { messages, clearMessages } = useAgent();
+  const { activeConversationId, startNewConversation } = useConversation();
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
@@ -50,7 +52,7 @@ export function AgentPanel({ tables, onUpload, onLoadSample, pendingSkillCommand
             </button>
           )}
           {messages.length > 0 && (
-            <button className="agent-panel__clear" onClick={() => { if (confirm(t('clearConfirm'))) clearMessages(); }}>
+            <button className="agent-panel__clear" onClick={() => { if (confirm(t('clearConfirm'))) { clearMessages(activeConversationId); startNewConversation(); } }}>
               {t('clear')}
             </button>
           )}

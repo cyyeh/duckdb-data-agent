@@ -56,6 +56,8 @@ CONTAINER_MAX_LIFETIME_SECONDS = int(os.getenv("CONTAINER_MAX_LIFETIME_SECONDS",
 CONTAINER_IDLE_TIMEOUT_SECONDS = int(os.getenv("CONTAINER_IDLE_TIMEOUT_SECONDS", "900"))
 CONTAINER_NETWORK = os.getenv("CONTAINER_NETWORK", "agent-sandbox")
 SDK_IDLE_TIMEOUT_MS = int(os.getenv("SDK_IDLE_TIMEOUT_MS", "600000"))
+MEMORY_DB_PATH = os.getenv("MEMORY_DB_PATH", os.path.join(PROJECT_DIR, "data", "memory.db"))
+MEMORIES_DIR = os.getenv("MEMORIES_DIR", os.path.join(PROJECT_DIR, "data", "memories"))
 # CORS: comma-separated list of allowed origins, or "*" for all (no credentials).
 # In production set to your actual frontend origin, e.g. "https://myapp.example.com".
 CORS_ALLOWED_ORIGINS = [

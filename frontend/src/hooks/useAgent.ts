@@ -4,20 +4,24 @@ import type { ChatMessage } from '../types';
 interface AgentContextValue {
   messages: ChatMessage[];
   isStreaming: boolean;
-  sendMessage: (text: string) => void;
+  streamingConversationIds: Set<string>;
+  sendMessage: (text: string, conversationId?: string | null) => void;
   editMessage: (messageIndex: number, newContent: string) => void;
   deleteMessage: (messageIndex: number) => void;
-  clearMessages: () => void;
+  clearMessages: (outgoingConversationId?: string | null) => void;
+  loadMessages: (msgs: ChatMessage[], outgoingConversationId?: string | null, incomingConversationId?: string | null) => void;
   respondToQuestion: (questionId: string, answers: string[], freeText?: string) => void;
 }
 
 export const AgentContext = createContext<AgentContextValue>({
   messages: [],
   isStreaming: false,
+  streamingConversationIds: new Set(),
   sendMessage: () => {},
   editMessage: () => {},
   deleteMessage: () => {},
   clearMessages: () => {},
+  loadMessages: () => {},
   respondToQuestion: () => {},
 });
 

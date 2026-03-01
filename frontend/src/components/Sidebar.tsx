@@ -2,7 +2,9 @@ import { useRef, useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import type { TableInfo } from '../types';
 import { SkillsPanel } from './SkillsPanel';
+import { MemoriesPanel } from './MemoriesPanel';
 import { CreateSkillDialog } from './CreateSkillDialog';
+import { ConversationHistory } from './ConversationHistory';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -14,15 +16,24 @@ interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
   onUseSkill?: (skillName: string) => void;
+  activeConversationId: string | null;
+  onConversationSelect: (id: string) => void;
+  onConversationNew: () => void;
+  onConversationDelete: (id: string) => void;
+  onConversationRename: (id: string, title: string) => void;
+  conversationRefreshTrigger: number;
+  sessionId: string;
+  streamingConversationIds: Set<string>;
 }
 
-export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDeleteAll, collapsed, onToggle, onUseSkill }: SidebarProps) {
+export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDeleteAll, collapsed, onToggle, onUseSkill, activeConversationId, onConversationSelect, onConversationNew, onConversationDelete, onConversationRename, conversationRefreshTrigger, sessionId, streamingConversationIds }: SidebarProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<'tables' | 'skills'>('tables');
+  const [activeTab, setActiveTab] = useState<'tables' | 'skills' | 'memories'>('tables');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
+  const [memoriesRefreshKey, setMemoriesRefreshKey] = useState(0);
 
   const toggle = (name: string) => {
     setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -56,6 +67,12 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
             >
               {t('skillsTab')}
             </button>
+            <button
+              className={`sidebar__tab ${activeTab === 'memories' ? 'sidebar__tab--active' : ''}`}
+              onClick={() => { setActiveTab('memories'); setMemoriesRefreshKey((k) => k + 1); }}
+            >
+              {t('memoriesTab')}
+            </button>
           </div>
           <button
             className="sidebar__collapse-toggle"
@@ -65,44 +82,44 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
             <span className="sidebar__hamburger" />
           </button>
         </div>
-        {activeTab === 'tables' && <div className="sidebar__actions">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".csv,.json,.parquet,.xlsx"
-            onChange={handleFileChange}
-            hidden
-          />
-          <button
-            className="sidebar__action-btn"
-            onClick={() => fileInputRef.current?.click()}
-            title={t('uploadFiles')}
-            aria-label={t('uploadFiles')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-          </button>
-          <button
-            className="sidebar__action-btn sidebar__action-btn--danger"
-            onClick={onDeleteAll}
-            title={t('deleteAllTables')}
-            aria-label={t('deleteAllTables')}
-            disabled={tables.length === 0}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-          </button>
-        </div>}
       </div>
       <div className="sidebar__content">
         {activeTab === 'tables' ? (
           <>
+            <div className="sidebar__actions">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".csv,.json,.parquet,.xlsx"
+                onChange={handleFileChange}
+                hidden
+              />
+              <button
+                className="sidebar__action-btn"
+                onClick={() => fileInputRef.current?.click()}
+                title={t('uploadFiles')}
+                aria-label={t('uploadFiles')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </button>
+              <button
+                className="sidebar__action-btn sidebar__action-btn--danger"
+                onClick={onDeleteAll}
+                title={t('deleteAllTables')}
+                aria-label={t('deleteAllTables')}
+                disabled={tables.length === 0}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+            </div>
             {tables.length === 0 && (
               <p className="sidebar__empty">{t('noTables')}</p>
             )}
@@ -135,7 +152,7 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
                       title={t('deleteTable', { name: table.name })}
                       aria-label={t('deleteTable', { name: table.name })}
                     >
-                      🗑
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
                   {expanded[table.name] && (
@@ -152,13 +169,27 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
               ))}
             </ul>
           </>
-        ) : (
+        ) : activeTab === 'skills' ? (
           <SkillsPanel
             onUseSkill={onUseSkill ?? (() => {})}
             onCreateClick={() => setShowCreateDialog(true)}
             refreshKey={skillsRefreshKey}
           />
+        ) : (
+          <MemoriesPanel refreshKey={memoriesRefreshKey} />
         )}
+      </div>
+      <div className="sidebar__conversations">
+        <ConversationHistory
+          activeConversationId={activeConversationId}
+          onSelect={onConversationSelect}
+          onNew={onConversationNew}
+          onDelete={onConversationDelete}
+          onRename={onConversationRename}
+          refreshTrigger={conversationRefreshTrigger}
+          sessionId={sessionId}
+          streamingConversationIds={streamingConversationIds}
+        />
       </div>
       <div className="sidebar__footer">
         <a

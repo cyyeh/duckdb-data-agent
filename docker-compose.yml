@@ -42,6 +42,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./skills:/app/skills
+      - ./data:/app/data
     group_add:
       - "${DOCKER_GID:-0}"
     networks:

@@ -6,6 +6,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { useTranslation } from './hooks/useTranslation';
 import { AgentProvider } from './contexts/AgentContext';
 import { ConfigProvider } from './contexts/ConfigContext';
+import { ConversationProvider, useConversation } from './contexts/ConversationContext';
 import { FileUpload } from './components/FileUpload';
 import { QueryEditor } from './components/QueryEditor';
 import { ResultsTable } from './components/ResultsTable';
@@ -13,6 +14,7 @@ import { ResultMarkdown } from './components/ResultMarkdown';
 import { Sidebar } from './components/Sidebar';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AgentPanel } from './components/AgentPanel';
+import { useAgent } from './hooks/useAgent';
 import type { TableInfo, QueryResult } from './types';
 import './App.css';
 
@@ -47,6 +49,32 @@ function AppContent({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [agentOpen, setAgentOpen] = useState(true);
   const [pendingSkillCommand, setPendingSkillCommand] = useState<string | null>(null);
+
+  const conversation = useConversation();
+  const { clearMessages, loadMessages, streamingConversationIds } = useAgent();
+
+  const handleConversationSelect = useCallback(async (id: string) => {
+    const outgoingId = conversation.activeConversationId;
+    const messages = await conversation.selectConversation(id);
+    loadMessages(messages, outgoingId, id);
+  }, [conversation, loadMessages]);
+
+  const handleNewConversation = useCallback(() => {
+    const outgoingId = conversation.activeConversationId;
+    conversation.startNewConversation();
+    clearMessages(outgoingId);
+  }, [conversation, clearMessages]);
+
+  const handleConversationDelete = useCallback(async (id: string) => {
+    await conversation.deleteConversation(id);
+    if (conversation.activeConversationId === id) {
+      clearMessages();
+    }
+  }, [conversation, clearMessages]);
+
+  const handleConversationRename = useCallback(async (id: string, title: string) => {
+    await conversation.renameConversation(id, title);
+  }, [conversation]);
 
   useEffect(() => {
     document.title = t('appTitle');
@@ -227,7 +255,24 @@ function AppContent({
   return (
     <div className={appClass}>
       <div className="app__sidebar-wrapper">
-        <Sidebar tables={tables} onTableClick={handleTableClick} onTableDelete={handleTableDelete} onUpload={handleFileUpload} onDeleteAll={handleDeleteAll} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} onUseSkill={(name) => setPendingSkillCommand(name)} />
+        <Sidebar
+          tables={tables}
+          onTableClick={handleTableClick}
+          onTableDelete={handleTableDelete}
+          onUpload={handleFileUpload}
+          onDeleteAll={handleDeleteAll}
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed((prev) => !prev)}
+          onUseSkill={(name) => setPendingSkillCommand(name)}
+          activeConversationId={conversation.activeConversationId}
+          onConversationSelect={handleConversationSelect}
+          onConversationNew={handleNewConversation}
+          onConversationDelete={handleConversationDelete}
+          onConversationRename={handleConversationRename}
+          conversationRefreshTrigger={conversation.refreshTrigger}
+          sessionId={sessionId}
+          streamingConversationIds={streamingConversationIds}
+        />
       </div>
       {agentOpen ? (
         <div className="app__agent-wrapper">
@@ -375,9 +420,11 @@ export default function App() {
     <ConfigProvider>
       <LanguageProvider>
         <ThemeProvider>
-          <AgentProvider refreshTables={refreshTables}>
-            <AppContent tables={tables} refreshTables={refreshTables} sessionId={sessionId} />
-          </AgentProvider>
+          <ConversationProvider sessionId={sessionId}>
+            <AgentProvider refreshTables={refreshTables}>
+              <AppContent tables={tables} refreshTables={refreshTables} sessionId={sessionId} />
+            </AgentProvider>
+          </ConversationProvider>
         </ThemeProvider>
       </LanguageProvider>
     </ConfigProvider>
