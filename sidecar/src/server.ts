@@ -4,7 +4,7 @@ import { Langfuse } from "langfuse";
 import { mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
-import type { QueryRequest, HealthResponse, AgentDefinitionPayload } from "./types.js";
+import type { QueryRequest, HealthResponse } from "./types.js";
 
 // Claude CLI requires certain directories/files under ~/.claude to exist.
 // The container uses a tmpfs mount at ~/.claude which starts empty, so we

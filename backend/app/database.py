@@ -1,7 +1,6 @@
 import asyncio
 import csv
 import duckdb
-import functools
 import os
 import re
 import tempfile

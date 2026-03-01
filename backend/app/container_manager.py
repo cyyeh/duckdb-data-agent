@@ -3,7 +3,6 @@ import os
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse
 
 import docker
 
