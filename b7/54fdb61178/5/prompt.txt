@@ -1,0 +1,9 @@
+change sidebar width to 290px
+
+---
+
+change sidebar width to 280px
+
+---
+
+commit and push
