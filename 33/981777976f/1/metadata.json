@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "33981777976f",
+  "session_id": "884e803f-2b65-4dad-b591-93bc486afdf0",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-01T21:03:19.553766Z",
+  "branch": "feat/memory-file-viewer",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md",
+    "frontend/src/components/MemoriesPanel.css",
+    "frontend/src/components/MemoriesPanel.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "7ae27f351f4c",
+  "transcript_identifier_at_start": "383750cb-ba00-4065-8b5c-5e4a060a82ca",
+  "token_usage": {
+    "input_tokens": 34,
+    "cache_creation_tokens": 77377,
+    "cache_read_tokens": 1455166,
+    "output_tokens": 7183,
+    "api_call_count": 28
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-01T21:03:19.298043Z",
+    "agent_lines": 93,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 93,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/884e803f-2b65-4dad-b591-93bc486afdf0.jsonl"
+}
