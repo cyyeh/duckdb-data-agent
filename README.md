@@ -32,6 +32,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Natural language queries** — Ask questions about your data in plain English; the orchestrator delegates to specialized subagents that write and execute SQL for you
 - **Subagent architecture** — An orchestrator agent delegates to a **sql-analyst** subagent for data queries, with a configurable model (via `SQL_SUBAGENT_MODEL` env var, defaulting to `haiku`); the orchestrator itself handles chart rendering via `render_chart` for coherent interleaved text-and-chart answers
 - **Streaming responses** — Real-time token streaming powered by Claude via the [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python); subagent internal reasoning is filtered from the main stream
+- **Live cross-conversation streaming** — Start a query in one conversation, switch to another, and both streams run concurrently; a pulsing dot in the sidebar indicates which conversations are actively streaming; switch back to a streaming conversation for instant re-attachment with no lost tokens
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
 - **Chart generation** — Ask for a chart or visualization and the orchestrator generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly; animated charts with frames, sliders, and play/pause controls are also supported
@@ -399,13 +400,13 @@ scenarios:
 ```
 ├── frontend/               # React frontend
 │   ├── src/
-│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, skills, user-question)
+│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, skills, memories, conversations, user-question)
 │   │   ├── contexts/       #   React context providers (theme, language, agent, config, session, conversation)
 │   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig, useSessionId)
 │   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
-│   │   ├── services/       #   API clients (skillsService.ts)
+│   │   ├── services/       #   API clients (skillsService.ts, memoriesService.ts)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
-│   │   ├── utils/          #   Utility functions (UUID generation, conversation export)
+│   │   ├── utils/          #   Utility functions (UUID generation, conversation export, message building)
 │   │   └── types.ts        #   Shared TypeScript interfaces
 │   ├── index.html          #   HTML entry point
 │   ├── package.json        #   npm config
@@ -435,6 +436,7 @@ scenarios:
 │   │       ├── session.py  #     Session creation and deletion
 │   │       ├── skills.py   #     Skills CRUD REST API (/api/skills)
 │   │       ├── conversations.py  #  Conversation history CRUD REST API (/api/conversations)
+│   │       ├── memories.py #     Agent memory REST API (/api/memories)
 │   │       ├── config.py   #     Runtime configuration
 │   │       └── langfuse_status.py  #   Langfuse tracing status and link
 │   └── tests/              #   Unit tests (pytest)
@@ -442,9 +444,10 @@ scenarios:
 │       ├── test_skills_routes.py
 │       ├── test_container_manager.py
 │       ├── test_mcp_sse.py
+│       ├── test_memory_store.py
 │       ├── test_proxy.py
 │       ├── test_session_manager.py
-│       └── ...             #   14 test modules total
+│       └── ...             #   15 test modules total
 ├── skills/                 # Skill definitions (SKILL.md files, volume-mounted into sidecar containers)
 │   ├── analyze-data/       #   Built-in data analysis workflow skill
 │   └── <name>/             #   Custom skills (each with a SKILL.md file)
