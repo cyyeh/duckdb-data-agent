@@ -67,7 +67,7 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
             </button>
             <button
               className={`sidebar__tab ${activeTab === 'memories' ? 'sidebar__tab--active' : ''}`}
-              onClick={() => setActiveTab('memories')}
+              onClick={() => { setActiveTab('memories'); setMemoriesRefreshKey((k) => k + 1); }}
             >
               {t('memoriesTab')}
             </button>
