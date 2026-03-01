@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a0520b10cd9b",
+  "strategy": "manual-commit",
+  "branch": "fix/container-idle-timeout-during-query",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "README.md",
+    "backend/.env.example",
+    "backend/app/agent.py",
+    "backend/app/config.py",
+    "sidecar/src/server.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a0/520b10cd9b/0/metadata.json",
+      "transcript": "/a0/520b10cd9b/0/full.jsonl",
+      "context": "/a0/520b10cd9b/0/context.md",
+      "content_hash": "/a0/520b10cd9b/0/content_hash.txt",
+      "prompt": "/a0/520b10cd9b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 29992,
+    "cache_read_tokens": 1353546,
+    "output_tokens": 1859,
+    "api_call_count": 35
+  }
+}
