@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e93798ddc5e7",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/Sidebar.css",
+    "frontend/src/components/Sidebar.tsx",
+    "frontend/src/components/SkillsPanel.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e9/3798ddc5e7/0/metadata.json",
+      "transcript": "/e9/3798ddc5e7/0/full.jsonl",
+      "context": "/e9/3798ddc5e7/0/context.md",
+      "content_hash": "/e9/3798ddc5e7/0/content_hash.txt",
+      "prompt": "/e9/3798ddc5e7/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 64,
+    "cache_creation_tokens": 72659,
+    "cache_read_tokens": 4008202,
+    "output_tokens": 28466,
+    "api_call_count": 57
+  }
+}
