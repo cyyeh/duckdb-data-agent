@@ -3,7 +3,7 @@
   "checkpoint_id": "50c08fb3c0a9",
   "strategy": "manual-commit",
   "branch": "worktree-implement-memory",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "frontend/src/components/Sidebar.css"
   ],
@@ -21,13 +21,20 @@
       "context": "/50/c08fb3c0a9/1/context.md",
       "content_hash": "/50/c08fb3c0a9/1/content_hash.txt",
       "prompt": "/50/c08fb3c0a9/1/prompt.txt"
+    },
+    {
+      "metadata": "/50/c08fb3c0a9/2/metadata.json",
+      "transcript": "/50/c08fb3c0a9/2/full.jsonl",
+      "context": "/50/c08fb3c0a9/2/context.md",
+      "content_hash": "/50/c08fb3c0a9/2/content_hash.txt",
+      "prompt": "/50/c08fb3c0a9/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 28,
-    "cache_creation_tokens": 77211,
-    "cache_read_tokens": 751807,
-    "output_tokens": 11414,
-    "api_call_count": 17
+    "input_tokens": 92,
+    "cache_creation_tokens": 149870,
+    "cache_read_tokens": 4760009,
+    "output_tokens": 39880,
+    "api_call_count": 74
   }
 }
