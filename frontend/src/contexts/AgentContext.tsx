@@ -120,6 +120,12 @@ export function AgentProvider({
         setStreamingConversationIds(prev => new Set(prev).add(convId));
       }
 
+      // Sync the ref when sending to a newly-created conversation whose ID
+      // hasn't propagated through loadMessages/clearMessages yet.
+      if (convId && activeConversationIdRef.current !== convId) {
+        activeConversationIdRef.current = convId;
+      }
+
       // If this is the active conversation, update React state
       if (activeConversationIdRef.current === convId) {
         setMessages(streamMessages);
