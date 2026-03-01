@@ -10,7 +10,18 @@ import { runAgentLoop, runAgentEditLoop } from '../agent/agentService';
 import type { ChatMessage, ContentSegment, ToolCallResult } from '../types';
 import { useSessionId } from '../hooks/useSessionId';
 import { generateUUID } from '../utils/uuid';
-import { buildChatMessages } from '../utils/buildChatMessages';
+
+interface StreamState {
+  assistantId: string;
+  segments: ContentSegment[];
+  currentText: string;
+  textBuffer: string;
+  phase: 'thinking' | 'answer';
+  abortController: AbortController;
+  sessionId: string | null;
+  messages: ChatMessage[];
+  flushTimer: ReturnType<typeof setTimeout> | null;
+}
 
 function generateId() {
   return generateUUID();
@@ -26,13 +37,6 @@ export function AgentProvider({
   const userSessionId = useSessionId();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
-  const textBufferRef = useRef('');
-  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const assistantIdRef = useRef('');
-  const segmentsRef = useRef<ContentSegment[]>([]);
-  const currentTextRef = useRef('');
-  const phaseRef = useRef<'thinking' | 'answer'>('thinking');
   const sessionIdRef = useRef<string | null>(null);
   const pendingHistoryRef = useRef<{ role: string; content: string }[] | null>(null);
   // Keep a ref in sync with messages so sendMessage always reads the latest
@@ -42,41 +46,42 @@ export function AgentProvider({
   const messagesCacheRef = useRef<Map<string, ChatMessage[]>>(new Map());
   // Track which conversation is currently displayed so background streams can detect they're stale
   const activeConversationIdRef = useRef<string | null>(null);
-  // Track which conversation owns the current SSE stream (set in sendMessage).
-  // Used as a fallback when React state is stale (e.g. user switches before re-render).
-  const streamConversationIdRef = useRef<string | null>(null);
-  // Generation counter: incremented on every stream-disrupting event (sendMessage,
-  // loadMessages, clearMessages).  Callbacks capture the generation at creation time
-  // and bail out if the ref has since advanced, preventing cross-conversation leaks.
-  const streamGenerationRef = useRef(0);
 
-  const flushText = useCallback(() => {
-    const text = textBufferRef.current;
+  // Per-conversation stream state map (replaces all singleton streaming refs)
+  const streamStatesRef = useRef<Map<string, StreamState>>(new Map());
+  const [streamingConversationIds, setStreamingConversationIds] = useState<Set<string>>(new Set());
+
+  const flushTextForStream = useCallback((state: StreamState, conversationId: string) => {
+    const text = state.textBuffer;
     if (!text) return;
-    const id = assistantIdRef.current;
-    currentTextRef.current += text;
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, content: m.content + text } : m
-      )
+    state.currentText += text;
+    state.textBuffer = '';
+
+    // Update the stream's own messages
+    state.messages = state.messages.map((m) =>
+      m.id === state.assistantId ? { ...m, content: m.content + text } : m
     );
-    textBufferRef.current = '';
+
+    // If this conversation is currently being viewed, update React state
+    if (activeConversationIdRef.current === conversationId) {
+      setMessages(state.messages);
+    }
   }, []);
 
   const sendMessage = useCallback(
     async (text: string, conversationId?: string | null) => {
-      if (isStreaming) return;
-      streamConversationIdRef.current = conversationId || null;
-      const generation = ++streamGenerationRef.current;
+      const convId = conversationId || null;
+      // Per-conversation guard: don't double-send in same conversation
+      if (convId && streamStatesRef.current.has(convId)) return;
+
+      const controller = new AbortController();
+      const assistantId = generateId();
 
       const userMsg: ChatMessage = {
         id: generateId(),
         role: 'user',
         content: text,
       };
-
-      const assistantId = generateId();
-      assistantIdRef.current = assistantId;
       const assistantMsg: ChatMessage = {
         id: assistantId,
         role: 'assistant',
@@ -85,29 +90,46 @@ export function AgentProvider({
         isStreaming: true,
       };
 
-      setMessages((prev) => [...prev, userMsg, assistantMsg]);
-      setIsStreaming(true);
-      textBufferRef.current = '';
-      segmentsRef.current = [];
-      currentTextRef.current = '';
-      phaseRef.current = 'thinking';
-
-      // Build conversation history from current messages for resume fallback.
-      // Read from messagesRef (not the stale closure `messages`) so that
-      // switching conversations is reflected immediately.
-      const history = messagesRef.current
+      // Build conversation history from current messages or cached messages
+      const currentMsgs = convId && activeConversationIdRef.current === convId
+        ? messagesRef.current
+        : (convId ? messagesCacheRef.current.get(convId) : messagesRef.current) || messagesRef.current;
+      const history = currentMsgs
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .map((m) => ({ role: m.role, content: m.content }));
 
-      // If there's pending history from a delete, start a new Langfuse session with that context
+      const streamMessages = [...currentMsgs, userMsg, assistantMsg];
+
+      // Create per-conversation stream state
+      const state: StreamState = {
+        assistantId,
+        segments: [],
+        currentText: '',
+        textBuffer: '',
+        phase: 'thinking',
+        abortController: controller,
+        sessionId: sessionIdRef.current,
+        messages: streamMessages,
+        flushTimer: null,
+      };
+
+      if (convId) {
+        streamStatesRef.current.set(convId, state);
+        setStreamingConversationIds(prev => new Set(prev).add(convId));
+      }
+
+      // If this is the active conversation, update React state
+      if (activeConversationIdRef.current === convId) {
+        setMessages(streamMessages);
+        setIsStreaming(true);
+      }
+
+      // If there's pending history from a delete, start a new Langfuse session
       const pendingHistory = pendingHistoryRef.current;
       pendingHistoryRef.current = null;
       const langfuseSessionId = pendingHistory ? generateUUID() : null;
 
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      // Extract all /skill-name references from message
+      // Extract skill references
       let actualMessage = text;
       let skills: string[] | undefined;
       const slashMatches = [...text.matchAll(/\/([a-z0-9-]+)/g)];
@@ -116,79 +138,98 @@ export function AgentProvider({
         actualMessage = slashMatches.reduce((msg, m) => msg.replace(m[0], ''), text).trim() || text;
       }
 
+      // Helper to update stream messages and optionally React state
+      const updateMessages = (updater: (msgs: ChatMessage[]) => ChatMessage[]) => {
+        state.messages = updater(state.messages);
+        if (activeConversationIdRef.current === convId) {
+          setMessages(state.messages);
+        }
+      };
+
+      // Helper to schedule text flush
+      const scheduleFlush = () => {
+        if (!state.flushTimer) {
+          state.flushTimer = setTimeout(() => {
+            flushTextForStream(state, convId!);
+            state.flushTimer = null;
+          }, 50);
+        }
+      };
+
+      // Helper to flush pending text immediately
+      const flushNow = () => {
+        if (state.flushTimer) {
+          clearTimeout(state.flushTimer);
+          state.flushTimer = null;
+        }
+        flushTextForStream(state, convId!);
+      };
+
+      // Helper to finalize stream (called by onDone and onError)
+      const cleanupStream = () => {
+        if (state.flushTimer) {
+          clearTimeout(state.flushTimer);
+          state.flushTimer = null;
+        }
+        if (convId) {
+          streamStatesRef.current.delete(convId);
+          setStreamingConversationIds(prev => {
+            const next = new Set(prev);
+            next.delete(convId);
+            return next;
+          });
+        }
+      };
+
       await runAgentLoop(
         actualMessage,
-        sessionIdRef.current,
+        state.sessionId,
         langfuseSessionId,
         pendingHistory ?? (history.length > 0 ? history : null),
         conversationId,
         {
           onTextChunk: (chunk) => {
-            if (streamGenerationRef.current !== generation) return;
-            textBufferRef.current += chunk;
-            if (!flushTimerRef.current) {
-              flushTimerRef.current = setTimeout(() => {
-                flushText();
-                flushTimerRef.current = null;
-              }, 50);
-            }
+            state.textBuffer += chunk;
+            scheduleFlush();
           },
           onThinkingDone: () => {
-            if (streamGenerationRef.current !== generation) return;
-            // Extended thinking just ended and a text block is starting.
-            // Create a thinking segment from accumulated thinking text.
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              state.segments.push({ type: 'thinking', text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            phaseRef.current = 'answer';
-            setMessages((prev) =>
-              prev.map((m) =>
+            state.phase = 'answer';
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
+                  ? { ...m, currentPhase: 'answer', segments: [...state.segments] }
                   : m
               )
             );
           },
           onToolCall: (pending: ToolCallResult) => {
-            if (streamGenerationRef.current !== generation) return;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              const segType = state.phase === 'answer' ? 'answer' : 'thinking';
+              state.segments.push({ type: segType, text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
-              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            // Add a pending tool segment so the input is shown immediately
-            segmentsRef.current.push({
-              type: 'tool',
-              toolResult: pending,
-            });
-            setMessages((prev) =>
-              prev.map((m) =>
+            state.segments.push({ type: 'tool', toolResult: pending });
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
+                  ? { ...m, currentPhase: 'answer', segments: [...state.segments] }
                   : m
               )
             );
           },
           onToolResult: (result: ToolCallResult) => {
-            if (streamGenerationRef.current !== generation) return;
-            // Merge result into pending tool segment (keep input info, add output)
-            const pendingIdx = segmentsRef.current.findIndex(
-              (s) => s.type === 'tool' && s.toolResult?.toolCallId === result.toolCallId
+            const pendingIdx = state.segments.findIndex(
+              s => s.type === 'tool' && s.toolResult?.toolCallId === result.toolCallId
             );
             if (pendingIdx !== -1) {
-              const pending = segmentsRef.current[pendingIdx].toolResult!;
-              segmentsRef.current[pendingIdx] = {
+              const pending = state.segments[pendingIdx].toolResult!;
+              state.segments[pendingIdx] = {
                 type: 'tool',
                 toolResult: {
                   ...pending,
@@ -200,54 +241,46 @@ export function AgentProvider({
                 },
               };
             } else {
-              segmentsRef.current.push({ type: 'tool', toolResult: result });
+              state.segments.push({ type: 'tool', toolResult: result });
             }
-            setMessages((prev) =>
-              prev.map((m) =>
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, toolCalls: [...(m.toolCalls || []), result], segments: [...segmentsRef.current] }
+                  ? { ...m, toolCalls: [...(m.toolCalls || []), result], segments: [...state.segments] }
                   : m
               )
             );
             refreshTables();
-            // When a skill is created, notify SkillsPanel to refresh
             if (result.toolName?.includes('create_skill')) {
               window.dispatchEvent(new CustomEvent('skills-updated'));
             }
-            // When a memory is saved or forgotten, notify MemoriesPanel to refresh
             if (result.toolName?.includes('save_memory') || result.toolName?.includes('forget_memory')) {
               window.dispatchEvent(new CustomEvent('memories-updated'));
             }
           },
           onSubagentStart: (data) => {
-            if (streamGenerationRef.current !== generation) return;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              const segType = state.phase === 'answer' ? 'answer' : 'thinking';
+              state.segments.push({ type: segType, text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
-              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            segmentsRef.current.push({
+            state.segments.push({
               type: 'subagent_start',
               subagentId: data.id,
               subagentName: data.name,
               text: data.prompt,
             });
-            setMessages((prev) =>
-              prev.map((m) =>
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, segments: [...state.segments] }
                   : m
               )
             );
           },
           onSubagentEnd: (data) => {
-            if (streamGenerationRef.current !== generation) return;
-            segmentsRef.current.push({
+            state.segments.push({
               type: 'subagent_end',
               subagentId: data.id,
               subagentName: data.name,
@@ -255,121 +288,73 @@ export function AgentProvider({
               sqlResults: data.sql_results,
               text: data.result,
             });
-            setMessages((prev) =>
-              prev.map((m) =>
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, segments: [...state.segments] }
                   : m
               )
             );
           },
           onDone: (newSessionId) => {
-            // If this stream's generation is stale (user switched conversations
-            // or started a new stream), don't touch shared state — just clear
-            // the stale cache so the next switch loads the full backend response.
-            if (streamGenerationRef.current !== generation) {
-              if (conversationId) messagesCacheRef.current.delete(conversationId);
-              // If user is currently viewing this conversation, re-fetch from
-              // backend so the completed response appears automatically.
-              if (conversationId && activeConversationIdRef.current === conversationId) {
-                // Small delay to let the backend's finally block persist the response.
-                setTimeout(() => {
-                  if (activeConversationIdRef.current !== conversationId) return;
-                  fetch(`/api/conversations/${conversationId}`)
-                    .then(res => res.ok ? res.json() : null)
-                    .then(conv => {
-                      if (!conv?.messages || activeConversationIdRef.current !== conversationId) return;
-                      setMessages(buildChatMessages(conv.messages));
-                      setIsStreaming(false);
-                    })
-                    .catch(() => {});
-                }, 300);
-              }
-              return;
+            if (newSessionId) {
+              state.sessionId = newSessionId;
+              sessionIdRef.current = newSessionId;
             }
-            if (newSessionId) sessionIdRef.current = newSessionId;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              state.segments.push({ type: 'answer', text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({
-                type: 'answer',
-                text: currentTextRef.current,
-              });
-              currentTextRef.current = '';
-            }
-            setMessages((prev) =>
-              prev.map((m) =>
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...segmentsRef.current] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments] }
                   : m
               )
             );
-            setIsStreaming(false);
-            abortRef.current = null;
+            cleanupStream();
+            if (activeConversationIdRef.current === convId) {
+              setIsStreaming(false);
+            } else if (convId) {
+              // Cache final messages so switching back shows completed response
+              messagesCacheRef.current.set(convId, state.messages);
+            }
           },
           onError: (error) => {
-            if (streamGenerationRef.current !== generation) {
-              if (conversationId) messagesCacheRef.current.delete(conversationId);
-              // Re-fetch if user is viewing this conversation
-              if (conversationId && activeConversationIdRef.current === conversationId) {
-                setTimeout(() => {
-                  if (activeConversationIdRef.current !== conversationId) return;
-                  fetch(`/api/conversations/${conversationId}`)
-                    .then(res => res.ok ? res.json() : null)
-                    .then(conv => {
-                      if (!conv?.messages || activeConversationIdRef.current !== conversationId) return;
-                      setMessages(buildChatMessages(conv.messages));
-                      setIsStreaming(false);
-                    })
-                    .catch(() => {});
-                }, 300);
-              }
-              return;
+            flushNow();
+            if (state.currentText.trim()) {
+              const segType = state.phase === 'answer' ? 'answer' : 'thinking';
+              state.segments.push({ type: segType, text: state.currentText });
+              state.currentText = '';
             }
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
-            }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
-              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            segmentsRef.current.push({ type: 'error', errorMessage: error });
-            setMessages((prev) =>
-              prev.map((m) =>
+            state.segments.push({ type: 'error', errorMessage: error });
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...segmentsRef.current] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments] }
                   : m
               )
             );
-            setIsStreaming(false);
-            abortRef.current = null;
+            cleanupStream();
+            if (activeConversationIdRef.current === convId) {
+              setIsStreaming(false);
+            } else if (convId) {
+              messagesCacheRef.current.set(convId, state.messages);
+            }
           },
           onUserQuestion: (data) => {
-            if (streamGenerationRef.current !== generation) return;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              const segType = state.phase === 'answer' ? 'answer' : 'thinking';
+              state.segments.push({ type: segType, text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
-              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            segmentsRef.current.push({
-              type: 'user_question',
-              questionData: data,
-            });
-            setMessages((prev) =>
-              prev.map((m) =>
+            state.segments.push({ type: 'user_question', questionData: data });
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, segments: [...state.segments] }
                   : m
               )
             );
@@ -380,14 +365,27 @@ export function AgentProvider({
         skills,
       );
     },
-    [isStreaming, flushText, refreshTables, userSessionId]
+    [flushTextForStream, refreshTables, userSessionId]
   );
 
   const editMessage = useCallback(
     async (messageIndex: number, newContent: string) => {
-      if (isStreaming) return;
-      const generation = ++streamGenerationRef.current;
       const convId = activeConversationIdRef.current;
+
+      // If this conversation has an active stream, abort it first
+      if (convId && streamStatesRef.current.has(convId)) {
+        const existingState = streamStatesRef.current.get(convId)!;
+        existingState.abortController.abort();
+        if (existingState.flushTimer) {
+          clearTimeout(existingState.flushTimer);
+        }
+        streamStatesRef.current.delete(convId);
+        setStreamingConversationIds(prev => {
+          const next = new Set(prev);
+          if (convId) next.delete(convId);
+          return next;
+        });
+      }
 
       // Truncate messages at the edit point in the backend
       if (convId) {
@@ -402,16 +400,17 @@ export function AgentProvider({
       }
 
       // Build conversation history from messages before the edit point
+      const currentMsgs = messagesRef.current;
       const conversationHistory: { role: string; content: string }[] = [];
       for (let i = 0; i < messageIndex; i++) {
-        const msg = messages[i];
+        const msg = currentMsgs[i];
         if (msg.role === 'user' || msg.role === 'assistant') {
           conversationHistory.push({ role: msg.role, content: msg.content });
         }
       }
 
+      const controller = new AbortController();
       const assistantId = generateId();
-      assistantIdRef.current = assistantId;
 
       const userMsg: ChatMessage = {
         id: generateId(),
@@ -426,15 +425,72 @@ export function AgentProvider({
         isStreaming: true,
       };
 
-      setMessages((prev) => [...prev.slice(0, messageIndex), userMsg, assistantMsg]);
-      setIsStreaming(true);
-      textBufferRef.current = '';
-      segmentsRef.current = [];
-      currentTextRef.current = '';
-      phaseRef.current = 'thinking';
+      const truncatedMessages = currentMsgs.slice(0, messageIndex);
+      const streamMessages = [...truncatedMessages, userMsg, assistantMsg];
 
-      const controller = new AbortController();
-      abortRef.current = controller;
+      // Create per-conversation stream state
+      const state: StreamState = {
+        assistantId,
+        segments: [],
+        currentText: '',
+        textBuffer: '',
+        phase: 'thinking',
+        abortController: controller,
+        sessionId: null, // Edit starts a fresh session
+        messages: streamMessages,
+        flushTimer: null,
+      };
+
+      if (convId) {
+        streamStatesRef.current.set(convId, state);
+        setStreamingConversationIds(prev => new Set(prev).add(convId));
+      }
+
+      setMessages(streamMessages);
+      setIsStreaming(true);
+
+      // Helper to update stream messages and optionally React state
+      const updateMessages = (updater: (msgs: ChatMessage[]) => ChatMessage[]) => {
+        state.messages = updater(state.messages);
+        if (activeConversationIdRef.current === convId) {
+          setMessages(state.messages);
+        }
+      };
+
+      // Helper to schedule text flush
+      const scheduleFlush = () => {
+        if (!state.flushTimer) {
+          state.flushTimer = setTimeout(() => {
+            flushTextForStream(state, convId!);
+            state.flushTimer = null;
+          }, 50);
+        }
+      };
+
+      // Helper to flush pending text immediately
+      const flushNow = () => {
+        if (state.flushTimer) {
+          clearTimeout(state.flushTimer);
+          state.flushTimer = null;
+        }
+        flushTextForStream(state, convId!);
+      };
+
+      // Helper to finalize stream
+      const cleanupStream = () => {
+        if (state.flushTimer) {
+          clearTimeout(state.flushTimer);
+          state.flushTimer = null;
+        }
+        if (convId) {
+          streamStatesRef.current.delete(convId);
+          setStreamingConversationIds(prev => {
+            const next = new Set(prev);
+            if (convId) next.delete(convId);
+            return next;
+          });
+        }
+      };
 
       await runAgentEditLoop(
         newContent,
@@ -442,64 +498,47 @@ export function AgentProvider({
         generateUUID(),
         {
           onTextChunk: (chunk) => {
-            if (streamGenerationRef.current !== generation) return;
-            textBufferRef.current += chunk;
-            if (!flushTimerRef.current) {
-              flushTimerRef.current = setTimeout(() => {
-                flushText();
-                flushTimerRef.current = null;
-              }, 50);
-            }
+            state.textBuffer += chunk;
+            scheduleFlush();
           },
           onThinkingDone: () => {
-            if (streamGenerationRef.current !== generation) return;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              state.segments.push({ type: 'thinking', text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'thinking', text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            phaseRef.current = 'answer';
-            setMessages((prev) =>
-              prev.map((m) =>
+            state.phase = 'answer';
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
+                  ? { ...m, currentPhase: 'answer', segments: [...state.segments] }
                   : m
               )
             );
           },
           onToolCall: (pending: ToolCallResult) => {
-            if (streamGenerationRef.current !== generation) return;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              const segType = state.phase === 'answer' ? 'answer' : 'thinking';
+              state.segments.push({ type: segType, text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
-              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            segmentsRef.current.push({ type: 'tool', toolResult: pending });
-            setMessages((prev) =>
-              prev.map((m) =>
+            state.segments.push({ type: 'tool', toolResult: pending });
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, currentPhase: 'answer', segments: [...segmentsRef.current] }
+                  ? { ...m, currentPhase: 'answer', segments: [...state.segments] }
                   : m
               )
             );
           },
           onToolResult: (result: ToolCallResult) => {
-            if (streamGenerationRef.current !== generation) return;
-            const pendingIdx = segmentsRef.current.findIndex(
-              (s) => s.type === 'tool' && s.toolResult?.toolCallId === result.toolCallId
+            const pendingIdx = state.segments.findIndex(
+              s => s.type === 'tool' && s.toolResult?.toolCallId === result.toolCallId
             );
             if (pendingIdx !== -1) {
-              const pending = segmentsRef.current[pendingIdx].toolResult!;
-              segmentsRef.current[pendingIdx] = {
+              const pending = state.segments[pendingIdx].toolResult!;
+              state.segments[pendingIdx] = {
                 type: 'tool',
                 toolResult: {
                   ...pending,
@@ -511,46 +550,40 @@ export function AgentProvider({
                 },
               };
             } else {
-              segmentsRef.current.push({ type: 'tool', toolResult: result });
+              state.segments.push({ type: 'tool', toolResult: result });
             }
-            setMessages((prev) =>
-              prev.map((m) =>
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, toolCalls: [...(m.toolCalls || []), result], segments: [...segmentsRef.current] }
+                  ? { ...m, toolCalls: [...(m.toolCalls || []), result], segments: [...state.segments] }
                   : m
               )
             );
             refreshTables();
           },
           onSubagentStart: (data) => {
-            if (streamGenerationRef.current !== generation) return;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              const segType = state.phase === 'answer' ? 'answer' : 'thinking';
+              state.segments.push({ type: segType, text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
-              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            segmentsRef.current.push({
+            state.segments.push({
               type: 'subagent_start',
               subagentId: data.id,
               subagentName: data.name,
               text: data.prompt,
             });
-            setMessages((prev) =>
-              prev.map((m) =>
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, segments: [...state.segments] }
                   : m
               )
             );
           },
           onSubagentEnd: (data) => {
-            if (streamGenerationRef.current !== generation) return;
-            segmentsRef.current.push({
+            state.segments.push({
               type: 'subagent_end',
               subagentId: data.id,
               subagentName: data.name,
@@ -558,79 +591,72 @@ export function AgentProvider({
               sqlResults: data.sql_results,
               text: data.result,
             });
-            setMessages((prev) =>
-              prev.map((m) =>
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, segments: [...state.segments] }
                   : m
               )
             );
           },
           onDone: (newSessionId) => {
-            if (streamGenerationRef.current !== generation) return;
-            if (newSessionId) sessionIdRef.current = newSessionId;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            if (newSessionId) {
+              state.sessionId = newSessionId;
+              sessionIdRef.current = newSessionId;
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              segmentsRef.current.push({ type: 'answer', text: currentTextRef.current });
-              currentTextRef.current = '';
+            flushNow();
+            if (state.currentText.trim()) {
+              state.segments.push({ type: 'answer', text: state.currentText });
+              state.currentText = '';
             }
-            setMessages((prev) =>
-              prev.map((m) =>
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...segmentsRef.current] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments] }
                   : m
               )
             );
-            setIsStreaming(false);
-            abortRef.current = null;
+            cleanupStream();
+            if (activeConversationIdRef.current === convId) {
+              setIsStreaming(false);
+            } else if (convId) {
+              messagesCacheRef.current.set(convId, state.messages);
+            }
           },
           onError: (error) => {
-            if (streamGenerationRef.current !== generation) return;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              const segType = state.phase === 'answer' ? 'answer' : 'thinking';
+              state.segments.push({ type: segType, text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
-              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            segmentsRef.current.push({ type: 'error', errorMessage: error });
-            setMessages((prev) =>
-              prev.map((m) =>
+            state.segments.push({ type: 'error', errorMessage: error });
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...segmentsRef.current] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments] }
                   : m
               )
             );
-            setIsStreaming(false);
-            abortRef.current = null;
+            cleanupStream();
+            if (activeConversationIdRef.current === convId) {
+              setIsStreaming(false);
+            } else if (convId) {
+              messagesCacheRef.current.set(convId, state.messages);
+            }
           },
           onUserQuestion: (data) => {
-            if (streamGenerationRef.current !== generation) return;
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
+            flushNow();
+            if (state.currentText.trim()) {
+              const segType = state.phase === 'answer' ? 'answer' : 'thinking';
+              state.segments.push({ type: segType, text: state.currentText });
+              state.currentText = '';
             }
-            flushText();
-            if (currentTextRef.current.trim()) {
-              const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
-              segmentsRef.current.push({ type: segType, text: currentTextRef.current });
-              currentTextRef.current = '';
-            }
-            segmentsRef.current.push({
-              type: 'user_question',
-              questionData: data,
-            });
-            setMessages((prev) =>
-              prev.map((m) =>
+            state.segments.push({ type: 'user_question', questionData: data });
+            updateMessages(msgs =>
+              msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, segments: [...segmentsRef.current] }
+                  ? { ...m, segments: [...state.segments] }
                   : m
               )
             );
@@ -641,12 +667,14 @@ export function AgentProvider({
         convId,
       );
     },
-    [isStreaming, messages, flushText, refreshTables, userSessionId]
+    [flushTextForStream, refreshTables, userSessionId]
   );
 
   const deleteMessage = useCallback(
     (messageIndex: number) => {
-      if (isStreaming) return;
+      const convId = activeConversationIdRef.current;
+      // Only block if this specific conversation is streaming
+      if (convId && streamStatesRef.current.has(convId)) return;
 
       // Store remaining messages as history for Langfuse context on next send
       setMessages((prev) => {
@@ -658,7 +686,6 @@ export function AgentProvider({
       });
 
       // Persist the truncation to the backend
-      const convId = activeConversationIdRef.current;
       if (convId) {
         fetch(`/api/conversations/${convId}/messages?from_sort_order=${messageIndex}`, {
           method: 'DELETE',
@@ -672,28 +699,43 @@ export function AgentProvider({
       // Clear session so next message starts fresh
       sessionIdRef.current = null;
     },
-    [isStreaming]
+    []
   );
 
   const respondToQuestion = useCallback(
     async (questionId: string, answers: string[], freeText?: string) => {
-      // Update the segment to show the user's answer
-      const segIdx = segmentsRef.current.findIndex(
-        (s) => s.type === 'user_question' && s.questionData?.questionId === questionId
-      );
-      if (segIdx !== -1) {
-        segmentsRef.current[segIdx] = {
-          ...segmentsRef.current[segIdx],
-          userAnswer: answers,
-          userFreeText: freeText,
-        };
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantIdRef.current
-              ? { ...m, segments: [...segmentsRef.current] }
-              : m
-          )
+      // Find the stream state that contains this question
+      let targetState: StreamState | undefined;
+      let targetConvId: string | null = null;
+
+      // Search all active streams for the question
+      for (const [cid, state] of streamStatesRef.current) {
+        if (state.segments.some(s => s.type === 'user_question' && s.questionData?.questionId === questionId)) {
+          targetState = state;
+          targetConvId = cid;
+          break;
+        }
+      }
+
+      if (targetState) {
+        const segIdx = targetState.segments.findIndex(
+          s => s.type === 'user_question' && s.questionData?.questionId === questionId
         );
+        if (segIdx !== -1) {
+          targetState.segments[segIdx] = {
+            ...targetState.segments[segIdx],
+            userAnswer: answers,
+            userFreeText: freeText,
+          };
+          targetState.messages = targetState.messages.map(m =>
+            m.id === targetState!.assistantId
+              ? { ...m, segments: [...targetState!.segments] }
+              : m
+          );
+          if (activeConversationIdRef.current === targetConvId) {
+            setMessages(targetState.messages);
+          }
+        }
       }
 
       // POST to backend
@@ -718,164 +760,68 @@ export function AgentProvider({
   );
 
   const loadMessages = useCallback((msgs: ChatMessage[], outgoingConversationId?: string | null, incomingConversationId?: string | null) => {
-    // Invalidate any in-flight stream so its callbacks become no-ops.
-    ++streamGenerationRef.current;
+    const outgoing = outgoingConversationId || null;
+    const incoming = incomingConversationId || null;
+    activeConversationIdRef.current = incoming;
 
-    // Fall back to the stream's conversation ID when React state is stale
-    // (e.g. user switches before re-render after createConversation).
-    const outgoing = outgoingConversationId || streamConversationIdRef.current;
-    activeConversationIdRef.current = incomingConversationId || null;
-
-    // Do NOT abort the SSE stream — let the agent finish in the background.
-    // The generation counter ensures stale callbacks are no-ops.
-    // The backend's finally block will persist the full response.
-    // When the user switches back, the backend has the complete data.
-    if (flushTimerRef.current) {
-      clearTimeout(flushTimerRef.current);
-      flushTimerRef.current = null;
+    // Save outgoing conversation's messages to cache (only if not streaming --
+    // streaming conversations keep their state in streamStatesRef)
+    if (outgoing && !streamStatesRef.current.has(outgoing)) {
+      const currentMsgs = messagesRef.current;
+      if (currentMsgs.length > 0) {
+        messagesCacheRef.current.set(outgoing, currentMsgs);
+      }
     }
 
-    // Use cache only when it has MORE messages than backend (meaning the
-    // backend hasn't persisted the assistant response yet).  When counts
-    // are equal, prefer backend — it has the final persisted data which
-    // may be more complete than the frozen cache snapshot.
+    // Check if incoming conversation has an active stream (re-attachment)
+    if (incoming) {
+      const streamState = streamStatesRef.current.get(incoming);
+      if (streamState) {
+        // Re-attach: use live stream messages
+        setMessages(streamState.messages);
+        setIsStreaming(true);
+        return;
+      }
+    }
+
+    // No active stream -- use backend data or cache
     let finalMsgs = msgs;
-    if (incomingConversationId) {
-      const cached = messagesCacheRef.current.get(incomingConversationId);
+    if (incoming) {
+      const cached = messagesCacheRef.current.get(incoming);
       if (cached && cached.length > 0 && cached.length > msgs.length) {
         finalMsgs = cached;
       }
-      // Clear used cache entry so stale data doesn't persist forever
-      messagesCacheRef.current.delete(incomingConversationId);
+      messagesCacheRef.current.delete(incoming);
     }
 
-    // Capture ref values NOW — React 18 batching may defer the updater
-    // function below until after the ref resets at the bottom of this
-    // function, so reading refs inside the updater would see empty values.
-    const capturedTextBuffer = textBufferRef.current;
-    const capturedAssistantId = assistantIdRef.current;
-    const capturedSegments = [...segmentsRef.current];
-    const capturedCurrentText = currentTextRef.current;
-    const capturedPhase = phaseRef.current;
-
-    // Save current messages to cache before replacing them.
-    setMessages(prev => {
-      if (outgoing && prev.length > 0) {
-        const pendingText = capturedTextBuffer;
-        const aId = capturedAssistantId;
-
-        // Build finalized segments including any unflushed text
-        let finalSegments = [...capturedSegments];
-        const pendingSegmentText = capturedCurrentText + pendingText;
-        if (pendingSegmentText.trim()) {
-          const segType = capturedPhase === 'answer' ? 'answer' : 'thinking';
-          finalSegments.push({ type: segType as ContentSegment['type'], text: pendingSegmentText });
-        }
-
-        const cleaned = prev.map(m => {
-          if (m.id === aId && m.isStreaming) {
-            return {
-              ...m,
-              content: m.content + pendingText,
-              // Keep isStreaming flag — the background stream continues.
-              segments: finalSegments.length > 0 ? finalSegments : m.segments,
-            };
-          }
-          return m;
-        });
-        // Filter out empty NON-streaming assistant messages.
-        // Keep streaming ones even if empty — they show a "thinking" indicator.
-        const toCache = cleaned.filter(m => {
-          if (m.role === 'assistant' && !m.isStreaming && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
-            return false;
-          }
-          return true;
-        });
-        messagesCacheRef.current.set(outgoing, toCache);
-      }
-      return finalMsgs;
-    });
-
-    // If the loaded messages include a streaming assistant (background stream
-    // still running), keep isStreaming = true so the ChatInput shows "waiting".
-    // The stale onDone will set isStreaming = false when the stream completes.
+    setMessages(finalMsgs);
     const hasStreamingMsg = finalMsgs.some(m => m.isStreaming);
     setIsStreaming(hasStreamingMsg);
-    textBufferRef.current = '';
-    currentTextRef.current = '';
-    segmentsRef.current = [];
-    assistantIdRef.current = '';
-    phaseRef.current = 'thinking';
     sessionIdRef.current = null;
     pendingHistoryRef.current = null;
   }, []);
 
   const clearMessages = useCallback((outgoingConversationId?: string | null) => {
-    ++streamGenerationRef.current;
-    const outgoing = outgoingConversationId || streamConversationIdRef.current;
+    const outgoing = outgoingConversationId || null;
     activeConversationIdRef.current = null;
-    // Do NOT abort the SSE stream — let the agent finish in the background.
-    // The generation counter ensures stale callbacks are no-ops.
-    // The backend's finally block will persist the full response.
-    // When the user switches back, the backend has the complete data.
-    if (flushTimerRef.current) {
-      clearTimeout(flushTimerRef.current);
-      flushTimerRef.current = null;
+
+    // Save outgoing messages to cache if not streaming
+    if (outgoing && !streamStatesRef.current.has(outgoing)) {
+      const currentMsgs = messagesRef.current;
+      if (currentMsgs.length > 0) {
+        messagesCacheRef.current.set(outgoing, currentMsgs);
+      }
     }
 
-    // Capture refs before setMessages (React 18 batching may defer the updater)
-    const capturedTextBuffer = textBufferRef.current;
-    const capturedAssistantId = assistantIdRef.current;
-    const capturedSegments = [...segmentsRef.current];
-    const capturedCurrentText = currentTextRef.current;
-    const capturedPhase = phaseRef.current;
-
-    setMessages(prev => {
-      if (outgoing && prev.length > 0) {
-        const pendingText = capturedTextBuffer;
-        const aId = capturedAssistantId;
-        let finalSegments = [...capturedSegments];
-        const pendingSegmentText = capturedCurrentText + pendingText;
-        if (pendingSegmentText.trim()) {
-          const segType = capturedPhase === 'answer' ? 'answer' : 'thinking';
-          finalSegments.push({ type: segType as ContentSegment['type'], text: pendingSegmentText });
-        }
-        const cleaned = prev.map(m => {
-          if (m.id === aId && m.isStreaming) {
-            return {
-              ...m,
-              content: m.content + pendingText,
-              // Keep isStreaming flag — the background stream continues.
-              segments: finalSegments.length > 0 ? finalSegments : m.segments,
-            };
-          }
-          return m;
-        });
-        // Filter out empty NON-streaming assistant messages.
-        // Keep streaming ones even if empty — they show a "thinking" indicator.
-        const toCache = cleaned.filter(m => {
-          if (m.role === 'assistant' && !m.isStreaming && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
-            return false;
-          }
-          return true;
-        });
-        messagesCacheRef.current.set(outgoing, toCache);
-      }
-      return [];
-    });
+    setMessages([]);
     setIsStreaming(false);
-    textBufferRef.current = '';
-    currentTextRef.current = '';
-    segmentsRef.current = [];
-    assistantIdRef.current = '';
-    phaseRef.current = 'thinking';
     sessionIdRef.current = null;
     pendingHistoryRef.current = null;
   }, []);
 
   return (
     <AgentContext.Provider
-      value={{ messages, isStreaming, sendMessage, editMessage, deleteMessage, clearMessages, loadMessages, respondToQuestion }}
+      value={{ messages, isStreaming, sendMessage, editMessage, deleteMessage, clearMessages, loadMessages, respondToQuestion, streamingConversationIds }}
     >
       {children}
     </AgentContext.Provider>
