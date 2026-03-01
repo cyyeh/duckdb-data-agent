@@ -3,7 +3,7 @@
   "checkpoint_id": "d73131cef858",
   "strategy": "manual-commit",
   "branch": "fix/mobile-skill-toggle-touch-targets",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "frontend/package.json",
     "frontend/src/components/SkillsPanel.css"
@@ -22,6 +22,13 @@
       "context": "/d7/3131cef858/1/context.md",
       "content_hash": "/d7/3131cef858/1/content_hash.txt",
       "prompt": "/d7/3131cef858/1/prompt.txt"
+    },
+    {
+      "metadata": "/d7/3131cef858/2/metadata.json",
+      "transcript": "/d7/3131cef858/2/full.jsonl",
+      "context": "",
+      "content_hash": "/d7/3131cef858/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
