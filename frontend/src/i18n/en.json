@@ -104,5 +104,14 @@
   "timeJustNow": "just now",
   "timeMinutesAgo": "{count}m ago",
   "timeHoursAgo": "{count}h ago",
-  "timeDaysAgo": "{count}d ago"
+  "timeDaysAgo": "{count}d ago",
+  "memoriesTab": "Memories",
+  "noMemories": "No memories yet. The agent saves preferences, facts, and patterns as it learns from conversations.",
+  "deleteMemory": "Delete memory",
+  "deleteMemoryConfirm": "Delete this memory?",
+  "memoryDeleted": "Memory deleted.",
+  "preferencesCategory": "Preferences",
+  "factsCategory": "Facts",
+  "patternsCategory": "Patterns",
+  "memoryContext": "Full Memory File"
 }

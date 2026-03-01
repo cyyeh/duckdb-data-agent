@@ -104,5 +104,14 @@
   "timeJustNow": "剛剛",
   "timeMinutesAgo": "{count} 分鐘前",
   "timeHoursAgo": "{count} 小時前",
-  "timeDaysAgo": "{count} 天前"
+  "timeDaysAgo": "{count} 天前",
+  "memoriesTab": "記憶",
+  "noMemories": "尚無記憶。代理會在對話中學習並儲存偏好、事實和模式。",
+  "deleteMemory": "刪除記憶",
+  "deleteMemoryConfirm": "確定刪除此記憶？",
+  "memoryDeleted": "記憶已刪除。",
+  "preferencesCategory": "偏好",
+  "factsCategory": "事實",
+  "patternsCategory": "模式",
+  "memoryContext": "完整記憶檔案"
 }
