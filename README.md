@@ -25,7 +25,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Internationalization (i18n)** — Switch between English and Traditional Chinese with the EN/中 toggle in the header; auto-detects your OS language on first visit and remembers your choice across sessions
 - **Interactive clarification** — When your request is ambiguous, the agent asks a clarifying question with selectable options displayed inline in the chat; pick an option or type a free-text response to continue
 - **Export conversation** — Click the Export button to download the full conversation as a single self-contained HTML file; the export preserves the current theme, collapsible thinking blocks, interactive Plotly charts (via CDN), and styled query result tables; interactive-only elements (edit/delete buttons, retry buttons) are stripped for a clean read-only view
-- **Conversation history** — The bottom half of the sidebar lists past conversations ordered by most recent; click to reload a previous conversation, rename it inline, or delete it; conversations are persisted to a SQLite database so they survive page reloads and server restarts; a new conversation is created automatically when you send the first message
+- **Conversation history** — The bottom half of the sidebar lists past conversations for the current browser tab, ordered by most recent; click to reload a previous conversation, rename it inline, or delete it; conversations are scoped to the browser tab's session and automatically cleaned up when the tab is closed; backed by a SQLite database for durability within a session; a new conversation is created automatically when you send the first message
 
 ### Agent Mode (default mode)
 
@@ -40,7 +40,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
 - **Container isolation** — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
-- **Agent memory** — The agent remembers facts, preferences, and patterns across conversations; memories are stored as markdown files on disk (`data/memories/{user_id}/MEMORY.md`) and injected into the system prompt at the start of each conversation; the agent can also save, recall, and forget memories on demand via MCP tools (`save_memory`, `recall_memories`, `forget_memory`)
+- **Agent memory** — The agent remembers facts, preferences, and patterns across conversations; memories are stored as markdown files on disk (`data/memories/{user_id}/MEMORY.md`) and injected into the system prompt at the start of each conversation, with stored user preferences taking priority over default model behaviors; the agent saves, recalls, and forgets memories via MCP tools (`save_memory`, `recall_memories`, `forget_memory`); a Memories tab in the sidebar lets you view and delete individual memories; duplicate detection prevents storing the same memory twice
 
 ### Skills
 

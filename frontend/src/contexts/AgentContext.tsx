@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
@@ -33,8 +34,13 @@ export function AgentProvider({
   const phaseRef = useRef<'thinking' | 'answer'>('thinking');
   const sessionIdRef = useRef<string | null>(null);
   const pendingHistoryRef = useRef<{ role: string; content: string }[] | null>(null);
+  // Keep a ref in sync with messages so sendMessage always reads the latest
+  const messagesRef = useRef<ChatMessage[]>(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
   // Cache messages per conversation so switching away doesn't lose in-progress data
   const messagesCacheRef = useRef<Map<string, ChatMessage[]>>(new Map());
+  // Track which conversation is currently displayed so background streams can detect they're stale
+  const activeConversationIdRef = useRef<string | null>(null);
 
   const flushText = useCallback(() => {
     const text = textBufferRef.current;
@@ -76,8 +82,10 @@ export function AgentProvider({
       currentTextRef.current = '';
       phaseRef.current = 'thinking';
 
-      // Build conversation history from current messages for resume fallback
-      const history = messages
+      // Build conversation history from current messages for resume fallback.
+      // Read from messagesRef (not the stale closure `messages`) so that
+      // switching conversations is reflected immediately.
+      const history = messagesRef.current
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .map((m) => ({ role: m.role, content: m.content }));
 
@@ -240,6 +248,13 @@ export function AgentProvider({
             );
           },
           onDone: (newSessionId) => {
+            // If the user switched conversations, this stream is now
+            // backgrounded.  Don't touch shared state — just clear the
+            // stale cache so the next switch loads the full backend response.
+            if (activeConversationIdRef.current !== conversationId) {
+              if (conversationId) messagesCacheRef.current.delete(conversationId);
+              return;
+            }
             if (newSessionId) sessionIdRef.current = newSessionId;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
@@ -264,6 +279,10 @@ export function AgentProvider({
             abortRef.current = null;
           },
           onError: (error) => {
+            if (activeConversationIdRef.current !== conversationId) {
+              if (conversationId) messagesCacheRef.current.delete(conversationId);
+              return;
+            }
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -481,6 +500,8 @@ export function AgentProvider({
             );
           },
           onDone: (newSessionId) => {
+            // Guard: if refs were taken over by another stream, bail out
+            if (assistantIdRef.current !== assistantId) return;
             if (newSessionId) sessionIdRef.current = newSessionId;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
@@ -502,6 +523,7 @@ export function AgentProvider({
             abortRef.current = null;
           },
           onError: (error) => {
+            if (assistantIdRef.current !== assistantId) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -616,20 +638,20 @@ export function AgentProvider({
   );
 
   const loadMessages = useCallback((msgs: ChatMessage[], outgoingConversationId?: string | null, incomingConversationId?: string | null) => {
-    // Abort any ongoing stream before loading a different conversation
-    if (abortRef.current) {
-      abortRef.current.abort();
-      abortRef.current = null;
-    }
+    activeConversationIdRef.current = incomingConversationId || null;
+
+    // Don't abort the SSE stream — let the backend agent continue running
+    // in the background.  The onDone/onError callbacks detect that the
+    // conversation has changed and handle cleanup (cache invalidation).
+    // Only clear the flush timer so it doesn't interfere with the new
+    // conversation's state.
     if (flushTimerRef.current) {
       clearTimeout(flushTimerRef.current);
       flushTimerRef.current = null;
     }
 
-    // Always prefer cached messages over API when available.  The cache
-    // represents the most recent in-memory state (with rich segments,
-    // streaming data, etc.) which is always fresher and more complete
-    // than what the backend persisted to SQLite.
+    // Prefer cached messages when the cache is at least as complete as
+    // the backend response (cache keeps rich segments / streaming data).
     let finalMsgs = msgs;
     if (incomingConversationId) {
       const cached = messagesCacheRef.current.get(incomingConversationId);
@@ -640,20 +662,26 @@ export function AgentProvider({
       messagesCacheRef.current.delete(incomingConversationId);
     }
 
+    // Capture ref values NOW — React 18 batching may defer the updater
+    // function below until after the ref resets at the bottom of this
+    // function, so reading refs inside the updater would see empty values.
+    const capturedTextBuffer = textBufferRef.current;
+    const capturedAssistantId = assistantIdRef.current;
+    const capturedSegments = [...segmentsRef.current];
+    const capturedCurrentText = currentTextRef.current;
+    const capturedPhase = phaseRef.current;
+
     // Save current messages to cache before replacing them.
-    // Uses functional setMessages to read the latest state without
-    // needing `messages` in the dependency array.
     setMessages(prev => {
       if (outgoingConversationId && prev.length > 0) {
-        // Flush any pending text buffer into the streaming assistant message
-        const pendingText = textBufferRef.current;
-        const aId = assistantIdRef.current;
+        const pendingText = capturedTextBuffer;
+        const aId = capturedAssistantId;
 
         // Build finalized segments including any unflushed text
-        let finalSegments = [...segmentsRef.current];
-        const pendingSegmentText = currentTextRef.current + pendingText;
+        let finalSegments = [...capturedSegments];
+        const pendingSegmentText = capturedCurrentText + pendingText;
         if (pendingSegmentText.trim()) {
-          const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+          const segType = capturedPhase === 'answer' ? 'answer' : 'thinking';
           finalSegments.push({ type: segType as ContentSegment['type'], text: pendingSegmentText });
         }
 
@@ -662,15 +690,17 @@ export function AgentProvider({
             return {
               ...m,
               content: m.content + pendingText,
-              isStreaming: false,
-              currentPhase: undefined,
+              // Keep isStreaming: true — the SSE stream continues in
+              // the background so the UI should show a thinking indicator.
               segments: finalSegments.length > 0 ? finalSegments : m.segments,
             };
           }
           return m;
         });
+        // Filter out completed-but-empty assistant messages. Streaming
+        // messages are always kept so the thinking indicator stays visible.
         const toCache = cleaned.filter(m => {
-          if (m.role === 'assistant' && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
+          if (m.role === 'assistant' && !m.isStreaming && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
             return false;
           }
           return true;
@@ -691,6 +721,7 @@ export function AgentProvider({
   }, []);
 
   const clearMessages = useCallback((outgoingConversationId?: string | null) => {
+    activeConversationIdRef.current = null;
     if (abortRef.current) {
       abortRef.current.abort();
       abortRef.current = null;
@@ -699,16 +730,22 @@ export function AgentProvider({
       clearTimeout(flushTimerRef.current);
       flushTimerRef.current = null;
     }
+
+    // Capture refs before setMessages (React 18 batching may defer the updater)
+    const capturedTextBuffer = textBufferRef.current;
+    const capturedAssistantId = assistantIdRef.current;
+    const capturedSegments = [...segmentsRef.current];
+    const capturedCurrentText = currentTextRef.current;
+    const capturedPhase = phaseRef.current;
+
     setMessages(prev => {
       if (outgoingConversationId && prev.length > 0) {
-        // Flush pending text and segments into the cached messages
-        // (same logic as loadMessages cache save)
-        const pendingText = textBufferRef.current;
-        const aId = assistantIdRef.current;
-        let finalSegments = [...segmentsRef.current];
-        const pendingSegmentText = currentTextRef.current + pendingText;
+        const pendingText = capturedTextBuffer;
+        const aId = capturedAssistantId;
+        let finalSegments = [...capturedSegments];
+        const pendingSegmentText = capturedCurrentText + pendingText;
         if (pendingSegmentText.trim()) {
-          const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+          const segType = capturedPhase === 'answer' ? 'answer' : 'thinking';
           finalSegments.push({ type: segType as ContentSegment['type'], text: pendingSegmentText });
         }
         const cleaned = prev.map(m => {
