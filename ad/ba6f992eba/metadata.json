@@ -3,7 +3,7 @@
   "checkpoint_id": "adba6f992eba",
   "strategy": "manual-commit",
   "branch": "fix/modal-z-index-portal",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "backend/app/agent.py",
     "frontend/src/components/CreateSkillDialog.tsx",
@@ -24,13 +24,20 @@
       "context": "",
       "content_hash": "/ad/ba6f992eba/1/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/ad/ba6f992eba/2/metadata.json",
+      "transcript": "/ad/ba6f992eba/2/full.jsonl",
+      "context": "/ad/ba6f992eba/2/context.md",
+      "content_hash": "/ad/ba6f992eba/2/content_hash.txt",
+      "prompt": "/ad/ba6f992eba/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 43,
-    "cache_creation_tokens": 29992,
-    "cache_read_tokens": 1353546,
-    "output_tokens": 1859,
-    "api_call_count": 35
+    "input_tokens": 75,
+    "cache_creation_tokens": 57220,
+    "cache_read_tokens": 2254424,
+    "output_tokens": 5248,
+    "api_call_count": 56
   }
 }
