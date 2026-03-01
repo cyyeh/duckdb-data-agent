@@ -72,44 +72,44 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
             <span className="sidebar__hamburger" />
           </button>
         </div>
-        {activeTab === 'tables' && <div className="sidebar__actions">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".csv,.json,.parquet,.xlsx"
-            onChange={handleFileChange}
-            hidden
-          />
-          <button
-            className="sidebar__action-btn"
-            onClick={() => fileInputRef.current?.click()}
-            title={t('uploadFiles')}
-            aria-label={t('uploadFiles')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-          </button>
-          <button
-            className="sidebar__action-btn sidebar__action-btn--danger"
-            onClick={onDeleteAll}
-            title={t('deleteAllTables')}
-            aria-label={t('deleteAllTables')}
-            disabled={tables.length === 0}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-          </button>
-        </div>}
       </div>
       <div className="sidebar__content">
         {activeTab === 'tables' ? (
           <>
+            <div className="sidebar__actions">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".csv,.json,.parquet,.xlsx"
+                onChange={handleFileChange}
+                hidden
+              />
+              <button
+                className="sidebar__action-btn"
+                onClick={() => fileInputRef.current?.click()}
+                title={t('uploadFiles')}
+                aria-label={t('uploadFiles')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </button>
+              <button
+                className="sidebar__action-btn sidebar__action-btn--danger"
+                onClick={onDeleteAll}
+                title={t('deleteAllTables')}
+                aria-label={t('deleteAllTables')}
+                disabled={tables.length === 0}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+            </div>
             {tables.length === 0 && (
               <p className="sidebar__empty">{t('noTables')}</p>
             )}
