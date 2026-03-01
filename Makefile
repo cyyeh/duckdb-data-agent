@@ -52,6 +52,7 @@ compose-build:
 	APP_UID=$$(id -u) docker compose --profile sidecar build
 
 compose-up: sidecar-network
+	@mkdir -p data
 	docker compose up
 
 compose-down:
