@@ -13,6 +13,7 @@ from app.database import Database
 from app.pending_questions import pending_question_store
 import os
 from app.skills import create_skill as _create_skill_file, SkillValidationError
+from app.agent_memory import read_memories, save_memory, forget_memory
 
 SKILLS_DIR = os.environ.get("SKILLS_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "skills"))
 
@@ -131,6 +132,60 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                     "required": ["name", "description", "content"],
                 },
             ),
+            types.Tool(
+                name="save_memory",
+                description=(
+                    "Save a piece of information to long-term memory so it persists across conversations. "
+                    "Use this to remember user preferences, important facts, or recurring patterns."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "content": {
+                            "type": "string",
+                            "description": "The memory content to save (e.g. 'User prefers bar charts')",
+                        },
+                        "category": {
+                            "type": "string",
+                            "enum": ["preference", "fact", "pattern"],
+                            "description": "Category of the memory: preference (user likes/dislikes), fact (important information), or pattern (recurring behavior)",
+                        },
+                    },
+                    "required": ["content", "category"],
+                },
+            ),
+            types.Tool(
+                name="recall_memories",
+                description=(
+                    "Recall all saved memories, optionally filtered by a keyword query. "
+                    "Use this at the start of a conversation to check for relevant context."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Optional keyword to filter memories (case-insensitive substring match)",
+                        },
+                    },
+                },
+            ),
+            types.Tool(
+                name="forget_memory",
+                description=(
+                    "Remove a specific memory entry. The content must match an existing memory exactly."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "content": {
+                            "type": "string",
+                            "description": "The exact memory content to forget (without the leading '- ')",
+                        },
+                    },
+                    "required": ["content"],
+                },
+            ),
         ]
 
     @server.call_tool()
@@ -215,6 +270,23 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                     "success": False,
                     "error": str(e),
                 }))]
+        elif name == "save_memory":
+            content = arguments.get("content", "")
+            category = arguments.get("category", "fact")
+            result = save_memory(content, category)
+            return [types.TextContent(type="text", text=json.dumps({"status": "success", "message": result}))]
+        elif name == "recall_memories":
+            query = arguments.get("query", "")
+            memories = read_memories()
+            if query and memories:
+                lines = memories.split("\n")
+                filtered = [line for line in lines if query.lower() in line.lower() or line.startswith("#")]
+                memories = "\n".join(filtered)
+            return [types.TextContent(type="text", text=json.dumps({"status": "success", "memories": memories}))]
+        elif name == "forget_memory":
+            content = arguments.get("content", "")
+            result = forget_memory(content)
+            return [types.TextContent(type="text", text=json.dumps({"status": "success", "message": result}))]
         else:
             raise ValueError(f"Unknown tool: {name}")
 
