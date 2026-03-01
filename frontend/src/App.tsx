@@ -14,7 +14,6 @@ import { ResultMarkdown } from './components/ResultMarkdown';
 import { Sidebar } from './components/Sidebar';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AgentPanel } from './components/AgentPanel';
-import { ConversationHistory } from './components/ConversationHistory';
 import { useAgent } from './hooks/useAgent';
 import type { TableInfo, QueryResult } from './types';
 import './App.css';
@@ -253,18 +252,23 @@ function AppContent({
 
   return (
     <div className={appClass}>
-      <div className="app__conv-wrapper">
-        <ConversationHistory
-          activeConversationId={conversation.activeConversationId}
-          onSelect={handleConversationSelect}
-          onNew={handleNewConversation}
-          onDelete={handleConversationDelete}
-          onRename={handleConversationRename}
-          refreshTrigger={conversation.refreshTrigger}
-        />
-      </div>
       <div className="app__sidebar-wrapper">
-        <Sidebar tables={tables} onTableClick={handleTableClick} onTableDelete={handleTableDelete} onUpload={handleFileUpload} onDeleteAll={handleDeleteAll} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} onUseSkill={(name) => setPendingSkillCommand(name)} />
+        <Sidebar
+          tables={tables}
+          onTableClick={handleTableClick}
+          onTableDelete={handleTableDelete}
+          onUpload={handleFileUpload}
+          onDeleteAll={handleDeleteAll}
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed((prev) => !prev)}
+          onUseSkill={(name) => setPendingSkillCommand(name)}
+          activeConversationId={conversation.activeConversationId}
+          onConversationSelect={handleConversationSelect}
+          onConversationNew={handleNewConversation}
+          onConversationDelete={handleConversationDelete}
+          onConversationRename={handleConversationRename}
+          conversationRefreshTrigger={conversation.refreshTrigger}
+        />
       </div>
       {agentOpen ? (
         <div className="app__agent-wrapper">

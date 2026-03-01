@@ -3,6 +3,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import type { TableInfo } from '../types';
 import { SkillsPanel } from './SkillsPanel';
 import { CreateSkillDialog } from './CreateSkillDialog';
+import { ConversationHistory } from './ConversationHistory';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -14,9 +15,15 @@ interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
   onUseSkill?: (skillName: string) => void;
+  activeConversationId: string | null;
+  onConversationSelect: (id: string) => void;
+  onConversationNew: () => void;
+  onConversationDelete: (id: string) => void;
+  onConversationRename: (id: string, title: string) => void;
+  conversationRefreshTrigger: number;
 }
 
-export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDeleteAll, collapsed, onToggle, onUseSkill }: SidebarProps) {
+export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDeleteAll, collapsed, onToggle, onUseSkill, activeConversationId, onConversationSelect, onConversationNew, onConversationDelete, onConversationRename, conversationRefreshTrigger }: SidebarProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -159,6 +166,16 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
             refreshKey={skillsRefreshKey}
           />
         )}
+      </div>
+      <div className="sidebar__conversations">
+        <ConversationHistory
+          activeConversationId={activeConversationId}
+          onSelect={onConversationSelect}
+          onNew={onConversationNew}
+          onDelete={onConversationDelete}
+          onRename={onConversationRename}
+          refreshTrigger={conversationRefreshTrigger}
+        />
       </div>
       <div className="sidebar__footer">
         <a
