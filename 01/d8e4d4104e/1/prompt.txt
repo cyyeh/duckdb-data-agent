@@ -1,0 +1,9 @@
+move the line(tables/skills) to the top of buttons in sidebar list, make sure tables/skills ui is the same
+
+---
+
+upload delete buttons should also put below hamburger, the same as skills tab, also put skill add button to the left
+
+---
+
+commit this
