@@ -13,6 +13,7 @@ from app.config import (
     SDK_IDLE_TIMEOUT_MS,
 )
 from app.memory_store import memory_store
+from app.agent_memory import read_memories
 from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,9 @@ Tools at your disposal:
 - mcp__duckdb-data-agent__render_chart — render a Plotly chart
 - mcp__duckdb-data-agent__ask_user_question — ask the user a clarifying question
 - mcp__duckdb-data-agent__create_skill — create a reusable skill (workflow template) that can be invoked later via /skill-name
+- mcp__duckdb-data-agent__save_memory — save a fact, preference, or pattern to long-term memory
+- mcp__duckdb-data-agent__recall_memories — retrieve stored memories
+- mcp__duckdb-data-agent__forget_memory — remove a specific memory
 - Task tool with subagent_type "sql-analyst" — delegate complex multi-query data exploration
 
 Skill creation workflow (follow this exactly):
@@ -94,6 +98,21 @@ Clarification:
             prompt += f'\nTable: "{table["name"]}" ({table["rowCount"]} rows)\nColumns:\n'
             for col in table["columns"]:
                 prompt += f'  - "{col["name"]}" ({col["type"]})\n'
+
+    # Inject agent memory
+    memories = read_memories(user_id="default")
+    if memories:
+        prompt += "\n\n--- Agent Memory ---\n"
+        prompt += "The following are facts, preferences, and patterns you have learned from previous conversations. Use them to provide better, more personalized responses.\n\n"
+        prompt += memories
+        prompt += "\n--- End Agent Memory ---\n"
+
+    # Memory management instructions
+    prompt += "\n\nMemory management:"
+    prompt += "\n- After answering, if the user expressed a preference or you learned an important fact about their data, use save_memory to store it."
+    prompt += "\n- When the user explicitly asks you to remember something, use save_memory."
+    prompt += "\n- When the user asks you to forget something, use forget_memory."
+    prompt += "\n- Do not save trivial or obvious information. Only save things that would be useful in future conversations."
 
     return prompt
 
