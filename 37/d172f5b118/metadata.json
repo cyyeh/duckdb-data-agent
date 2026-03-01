@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "37d172f5b118",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/hooks/useAgent.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/37/d172f5b118/0/metadata.json",
+      "transcript": "/37/d172f5b118/0/full.jsonl",
+      "context": "/37/d172f5b118/0/context.md",
+      "content_hash": "/37/d172f5b118/0/content_hash.txt",
+      "prompt": "/37/d172f5b118/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 88,
+    "cache_creation_tokens": 211031,
+    "cache_read_tokens": 7941008,
+    "output_tokens": 77627,
+    "api_call_count": 71
+  }
+}
