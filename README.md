@@ -197,6 +197,11 @@ make compose-down
   DOCKER_GID=$(getent group docker | cut -d: -f3) make compose-up
   ```
   On macOS with Docker Desktop, the default (`0`) works out of the box.
+- **Linux users (skills write permission):** `make compose-build` automatically passes your host UID (`APP_UID`) so the container user can write to the bind-mounted `skills/` directory. If you build manually without the Makefile, pass it explicitly:
+  ```bash
+  APP_UID=$(id -u) docker compose --profile sidecar build
+  ```
+  On macOS with Docker Desktop, this is not needed as Docker handles file permissions transparently.
 - **Custom port:** Set `APP_PORT` to expose the app on a different host port (e.g., `APP_PORT=8080 make compose-up`).
 
 ## Security
@@ -307,6 +312,7 @@ The data flow for a chat message is:
 | `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
 | `SKILLS_DIR` | `skills` | Path to skills directory (inside backend container) |
 | `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount (bind-mounted read-only at `/app/.claude/skills/` in sidecar containers) |
+| `APP_UID` | `1000` | UID for the container user (set to `$(id -u)` on Linux so skills directory writes work; not needed on macOS) |
 
 **Security properties:**
 
