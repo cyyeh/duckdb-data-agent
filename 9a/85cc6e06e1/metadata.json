@@ -3,8 +3,12 @@
   "checkpoint_id": "9a85cc6e06e1",
   "strategy": "manual-commit",
   "branch": "worktree-implement-memory",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
+    "backend/app/memory_store.py",
+    "backend/app/routes/chat.py",
+    "backend/app/routes/conversations.py",
+    "frontend/src/agent/agentService.ts",
     "frontend/src/components/ConversationHistory.tsx",
     "frontend/src/components/Sidebar.tsx",
     "frontend/src/contexts/AgentContext.tsx",
@@ -38,13 +42,20 @@
       "context": "/9a/85cc6e06e1/3/context.md",
       "content_hash": "/9a/85cc6e06e1/3/content_hash.txt",
       "prompt": "/9a/85cc6e06e1/3/prompt.txt"
+    },
+    {
+      "metadata": "/9a/85cc6e06e1/4/metadata.json",
+      "transcript": "/9a/85cc6e06e1/4/full.jsonl",
+      "context": "/9a/85cc6e06e1/4/context.md",
+      "content_hash": "/9a/85cc6e06e1/4/content_hash.txt",
+      "prompt": "/9a/85cc6e06e1/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 283,
-    "cache_creation_tokens": 389363,
-    "cache_read_tokens": 20613025,
-    "output_tokens": 123702,
-    "api_call_count": 234
+    "input_tokens": 315,
+    "cache_creation_tokens": 436942,
+    "cache_read_tokens": 22454783,
+    "output_tokens": 131768,
+    "api_call_count": 264
   }
 }

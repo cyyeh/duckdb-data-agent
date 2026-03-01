@@ -1,0 +1,76 @@
+Implement the following plan:
+
+# Fix: Persist message edit/delete across conversation switches
+
+## Context
+
+When a user edits or deletes a message in a conversation, then switches to another conversation and switches back, the changes are lost. The edit/delete only modifies React state but never persists to the backend database. When switching back, `selectConversation` fetches from `GET /api/conversations/:id`, which returns the original unmodified messages.
+
+## Root Cause
+
+1. **`deleteMessage`** (AgentContext.tsx:602-619) — only truncates React state, makes no backend call
+2. **`editMessage`** (AgentContext.tsx:355-600) — truncates React state and calls `/api/chat/edit`, but that endpoint has no `conversation_id` parameter, so new messages aren't persisted to the conversation either, and old messages aren't removed
+3. **Backend** — has no endpoint to delete/truncate individual messages within a conversation
+
+## Plan
+
+### Step 1: Add `truncate_messages` method to MemoryStore
+
+**File:** `backend/app/memory_store.py`
+
+Add a method that deletes all messages in a conversation with `sort_order >= from_sort_order` and returns the count of deleted messages. This handles both edit (truncate at edit point) and delete (truncate at delete point) cases.
+
+```python
+def truncate_messages(self, conversation_id: str, from_sort_order: int) -> int:
+    # DELETE FROM messages WHERE conversation_id = ? AND sort_order >= ?
+    # UPDATE conversations SET updated_at = ? WHERE id = ?
+    # Return number of deleted rows
+```
+
+### Step 2: Add truncate endpoint to conversations router
+
+**File:** `backend/app/routes/conversations.py`
+
+Add `DELETE /api/conversations/{conversation_id}/messages` with query param `from_sort_order`. This removes all messages at and after the given sort_order.
+
+### Step 3: Pass `conversation_id` to `/api/chat/edit` and persist the edit
+
+**File:** `backend/app/routes/chat.py` — add `conversation_id` to `ChatEditRequest`
+
+**File:** `backend/app/agent.py` — the `/api/chat/edit` handler already calls `stream_chat`. Just pass `conversation_id` through so the edited user message and new assistant response get persisted.
+
+### Step 4: Frontend `deleteMessage` — call truncate API
+
+**File:** `frontend/src/contexts/AgentContext.tsx` (deleteMessage, ~line 602)
+
+After truncating React state, call `DELETE /api/conversations/{id}/messages?from_sort_order={sortOrder}` to persist the deletion. We need the sort_order of the message being deleted. Since messages are 0-indexed in the array and sort_order is auto-incremented from 0, `messageIndex` maps directly to `sort_order`.
+
+### Step 5: Frontend `editMessage` — call truncate API and pass conversation_id
+
+**File:** `frontend/src/contexts/AgentContext.tsx` (editMessage, ~line 355)
+
+Before sending the edit request:
+1. Call the truncate API to remove messages at and after `messageIndex` sort_order
+2. Pass `conversation_id` through to `runAgentEditLoop` so the new messages get persisted
+
+**File:** `frontend/src/agent/agentService.ts` (runAgentEditLoop, ~line 143)
+
+Add `conversation_id` parameter, include it in the request body sent to `/api/chat/edit`.
+
+## Files to modify
+
+1. `backend/app/memory_store.py` — add `truncate_messages()`
+2. `backend/app/routes/conversations.py` — add truncate endpoint
+3. `backend/app/routes/chat.py` — add `conversation_id` to `ChatEditRequest`
+4. `frontend/src/agent/agentService.ts` — add `conversation_id` param to `runAgentEditLoop`
+5. `frontend/src/contexts/AgentContext.tsx` — update `editMessage` and `deleteMessage` to call truncate API
+
+## Verification
+
+1. Start the app, create a conversation with a few messages
+2. Delete a message, switch to another conversation, switch back — deleted messages should stay deleted
+3. Edit a message, switch away and back — edited version should persist
+4. Verify new conversations still work correctly (no regression)
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
