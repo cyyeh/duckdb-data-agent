@@ -1,0 +1,5 @@
+the size and style of add button of new conversation should be the same as add skill in the sidebar
+
+---
+
+also trashcan of delete each table should be the same as trashcan icon of delete memory in sidecar
