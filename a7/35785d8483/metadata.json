@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a735785d8483",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "frontend/src/App.tsx",
+    "frontend/src/contexts/ConversationContext.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a7/35785d8483/0/metadata.json",
+      "transcript": "/a7/35785d8483/0/full.jsonl",
+      "context": "/a7/35785d8483/0/context.md",
+      "content_hash": "/a7/35785d8483/0/content_hash.txt",
+      "prompt": "/a7/35785d8483/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 88,
+    "cache_creation_tokens": 211031,
+    "cache_read_tokens": 7941008,
+    "output_tokens": 77627,
+    "api_call_count": 71
+  }
+}
