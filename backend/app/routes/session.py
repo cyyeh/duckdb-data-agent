@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Header, Request, Response
 
+from app.memory_store import memory_store
 from app.session_manager import session_manager
 
 router = APIRouter(prefix="/api", tags=["session"])
@@ -30,4 +31,5 @@ async def cleanup_session(
         effective_id = request.query_params.get("session_id")
     if effective_id:
         session_manager.destroy(effective_id)
+        memory_store.delete_conversations_by_session(effective_id)
     return {"ok": True}

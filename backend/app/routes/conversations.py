@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Header, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -17,13 +17,25 @@ class UpdateConversationRequest(BaseModel):
 
 
 @router.get("")
-async def list_conversations(user_id: str = Query("default"), limit: int = Query(50), offset: int = Query(0)):
-    return memory_store.list_conversations(user_id=user_id, limit=limit, offset=offset)
+async def list_conversations(
+    user_id: str = Query("default"),
+    limit: int = Query(50),
+    offset: int = Query(0),
+    x_session_id: str = Header(""),
+):
+    return memory_store.list_conversations(
+        user_id=user_id, limit=limit, offset=offset, session_id=x_session_id,
+    )
 
 
 @router.post("")
-async def create_conversation(request: CreateConversationRequest):
-    return memory_store.create_conversation(user_id=request.user_id, title=request.title)
+async def create_conversation(
+    request: CreateConversationRequest,
+    x_session_id: str = Header(""),
+):
+    return memory_store.create_conversation(
+        user_id=request.user_id, title=request.title, session_id=x_session_id,
+    )
 
 
 @router.get("/{conversation_id}")
