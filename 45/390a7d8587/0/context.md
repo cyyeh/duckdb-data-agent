@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+change disable button to more clear icon, also after disable skill, I could still see skills in skill autocomplete list
+
