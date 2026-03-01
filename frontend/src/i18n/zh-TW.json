@@ -32,7 +32,7 @@
   "langfuseNotConfigured": "Langfuse 未設定",
   "clear": "開始新對話",
   "export": "匯出",
-  "clearConfirm": "開始新對話？這將清除代理對此對話的記憶。",
+  "clearConfirm": "開始新對話？",
   "agentEmptyState": "詢問有關您資料的問題，代理將撰寫並執行 SQL 查詢為您找到答案。",
   "chatPlaceholderWaiting": "等待回應中...",
   "chatPlaceholder": "詢問有關您的資料...",

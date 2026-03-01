@@ -32,7 +32,14 @@ class MemoryStore:
     # ------------------------------------------------------------------
 
     def _ensure_dir(self) -> None:
-        os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
+        db_dir = os.path.dirname(self._db_path)
+        os.makedirs(db_dir, exist_ok=True)
+        if not os.access(db_dir, os.W_OK):
+            raise PermissionError(
+                f"Directory '{db_dir}' is not writable by uid {os.getuid()}. "
+                f"On Linux, run 'mkdir -p data' on the host before 'docker compose up' "
+                f"so the bind-mount is owned by your user instead of root."
+            )
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self._db_path)
