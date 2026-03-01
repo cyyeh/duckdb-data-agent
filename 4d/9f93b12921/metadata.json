@@ -3,7 +3,7 @@
   "checkpoint_id": "4d9f93b12921",
   "strategy": "manual-commit",
   "branch": "worktree-implement-memory",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "README.md",
     "frontend/src/contexts/AgentContext.tsx"
@@ -29,13 +29,20 @@
       "context": "/4d/9f93b12921/2/context.md",
       "content_hash": "/4d/9f93b12921/2/content_hash.txt",
       "prompt": "/4d/9f93b12921/2/prompt.txt"
+    },
+    {
+      "metadata": "/4d/9f93b12921/3/metadata.json",
+      "transcript": "/4d/9f93b12921/3/full.jsonl",
+      "context": "/4d/9f93b12921/3/context.md",
+      "content_hash": "/4d/9f93b12921/3/content_hash.txt",
+      "prompt": "/4d/9f93b12921/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 250,
-    "cache_creation_tokens": 352688,
-    "cache_read_tokens": 19713981,
-    "output_tokens": 116489,
-    "api_call_count": 211
+    "input_tokens": 256,
+    "cache_creation_tokens": 376677,
+    "cache_read_tokens": 19857416,
+    "output_tokens": 117970,
+    "api_call_count": 215
   }
 }

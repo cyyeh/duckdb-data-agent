@@ -1,0 +1,1 @@
+update readme about conversation history, memory
