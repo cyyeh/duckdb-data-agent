@@ -279,9 +279,41 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
             query = arguments.get("query", "")
             memories = read_memories()
             if query and memories:
+                query_lower = query.lower()
                 lines = memories.split("\n")
-                filtered = [line for line in lines if query.lower() in line.lower() or line.startswith("#")]
-                memories = "\n".join(filtered)
+                result_lines: list[str] = []
+                current_header: str | None = None
+                section_entries: list[str] = []
+                for line in lines:
+                    if line.startswith("# "):
+                        # Top-level header always included
+                        if current_header and section_entries:
+                            result_lines.append(current_header)
+                            result_lines.append("")
+                            result_lines.extend(section_entries)
+                            result_lines.append("")
+                        current_header = None
+                        section_entries = []
+                        result_lines.append(line)
+                        result_lines.append("")
+                    elif line.startswith("## "):
+                        # Flush previous section if it had matches
+                        if current_header and section_entries:
+                            result_lines.append(current_header)
+                            result_lines.append("")
+                            result_lines.extend(section_entries)
+                            result_lines.append("")
+                        current_header = line
+                        section_entries = []
+                    elif line.startswith("- ") and query_lower in line.lower():
+                        section_entries.append(line)
+                # Flush last section
+                if current_header and section_entries:
+                    result_lines.append(current_header)
+                    result_lines.append("")
+                    result_lines.extend(section_entries)
+                    result_lines.append("")
+                memories = "\n".join(result_lines).strip()
             return [types.TextContent(type="text", text=json.dumps({"status": "success", "memories": memories}))]
         elif name == "forget_memory":
             content = arguments.get("content", "")
