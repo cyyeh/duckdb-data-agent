@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DuckDB Data Agent — Conversation Export</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+.file-upload-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0px; }
+.file-upload { border: 2px dashed var(--color-border-dashed); border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background-color 0.2s; width: 100%; box-sizing: border-box; }
+.file-upload:hover, .file-upload--dragging { border-color: var(--color-accent-secondary); background-color: var(--color-bg-hover); }
+.file-upload__input { display: none; }
+.file-upload__text { margin: 0px; color: var(--color-text-muted); font-size: 14px; }
+.file-upload-divider { display: flex; align-items: center; width: 100%; margin: 12px 0px; }
+.file-upload-divider::before, .file-upload-divider::after { content: ""; flex: 1 1 0%; border-bottom: 1px solid var(--color-border-medium); }
+.file-upload-divider span { padding: 0px 12px; color: var(--color-text-faint); font-size: 13px; }
+.file-upload-sample-btn { padding: 8px 20px; border: 1px solid var(--color-accent-secondary); border-radius: 6px; background: transparent; color: var(--color-accent-secondary); font-size: 14px; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
+.file-upload-sample-btn:hover:not(:disabled) { background-color: var(--color-accent-secondary); color: rgb(255, 255, 255); }
+.file-upload-sample-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.query-editor { display: flex; flex-direction: column; gap: 8px; }
+.query-editor__textarea { font-family: "Courier New", Courier, monospace; font-size: 14px; padding: 12px; border: 1px solid var(--color-border-medium); border-radius: 6px; resize: vertical; outline: none; line-height: 1.5; background: var(--color-bg-primary); color: var(--color-text-primary); }
+.query-editor__textarea:focus { border-color: var(--color-accent-secondary); box-shadow: 0 0 0 2px var(--color-accent-secondary-shadow); }
+.query-editor__actions { display: flex; justify-content: flex-end; }
+.query-editor__run-btn { padding: 8px 20px; background: var(--color-accent-secondary); color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+.query-editor__run-btn:hover:not(:disabled) { background: var(--color-accent-secondary-hover); }
+.query-editor__run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.results-table { display: flex; flex-direction: column; gap: 8px; }
+.results-table__toolbar { display: flex; align-items: center; }
+.results-table__global-search { width: 100%; max-width: 360px; padding: 6px 10px; font-size: 13px; border: 1px solid var(--color-border-medium); border-radius: 4px; outline: none; background: var(--color-bg-primary); color: var(--color-text-primary); }
+.results-table__global-search:focus { border-color: var(--color-accent-secondary); box-shadow: 0 0 0 2px var(--color-accent-secondary-shadow); }
+.results-table__summary { font-size: 13px; color: var(--color-text-muted); }
+.results-table__scroll { overflow-x: auto; border: 1px solid var(--color-border-medium); border-radius: 6px; }
+.results-table__table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--color-bg-primary); color: var(--color-text-primary); }
+.results-table__table th, .results-table__table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--color-border-faint); white-space: nowrap; }
+.results-table__table th { background: var(--color-bg-tertiary); font-weight: 600; position: sticky; top: 0px; padding: 4px; vertical-align: top; }
+.results-table__col-header { display: flex; align-items: center; width: 100%; padding: 4px 8px; background: none; border: none; font-style: inherit; font-variant: inherit; font-stretch: inherit; font-size: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-weight: 600; cursor: pointer; border-radius: 3px; white-space: nowrap; color: var(--color-text-primary); }
+.results-table__col-header:hover { background: var(--color-bg-hover-strong); }
+.results-table__sort-icon { color: var(--color-text-faint); font-size: 12px; flex-shrink: 0; }
+.results-table__sort-icon--active { color: var(--color-accent-secondary); }
+.results-table__col-filter { display: block; width: calc(100% - 8px); margin: 4px auto 2px; padding: 3px 6px; font-size: 11px; border: 1px solid var(--color-border-medium); border-radius: 3px; outline: none; background: var(--color-bg-primary); color: var(--color-text-primary); }
+.results-table__col-filter:focus { border-color: var(--color-accent-secondary); box-shadow: 0 0 0 1px var(--color-accent-secondary-shadow); }
+.results-table__table tbody tr:hover { background: var(--color-bg-secondary); }
+.result-markdown { display: flex; flex-direction: column; gap: 8px; }
+.result-markdown__summary { font-size: 13px; color: var(--color-text-muted); }
+.result-markdown__content { border: 1px solid var(--color-border-medium); border-radius: 6px; overflow-x: auto; }
+.result-markdown__content pre { margin: 0px; padding: 16px; font-size: 13px; line-height: 1.5; white-space: pre; overflow-x: auto; }
+.result-markdown__content code { font-family: "SF Mono", "Cascadia Code", "Fira Code", Menlo, Consolas, monospace; }
+.skills-panel { padding: 0px; }
+.skills-panel__actions { display: flex; justify-content: flex-end; padding: 0px 0px 8px; }
+.skills-panel__create-btn { background: none; border: 1px solid var(--color-border-medium); cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--color-text-muted); font-size: 18px; line-height: 1; transition: background 0.15s, color 0.15s; }
+.skills-panel__create-btn:hover { background: var(--color-bg-hover-strong); color: var(--color-text-primary); }
+.skills-panel__empty { font-size: 13px; color: var(--color-text-faint); padding: 0px; margin: 0px; }
+.skills-panel__list { list-style: none; padding: 0px; margin: 0px; }
+.skills-panel__item { margin-bottom: 8px; padding: 8px; border-radius: 6px; border: 1px solid var(--color-border-light); cursor: pointer; }
+.skills-panel__item:hover { border-color: var(--color-border-medium); }
+.skills-panel__item-header { display: flex; align-items: center; gap: 6px; }
+.skills-panel__name { font-size: 13px; font-weight: 600; color: var(--color-text-primary); padding: 0px; text-align: left; flex: 1 1 0%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skills-panel__loading { font-size: 12px; color: var(--color-text-muted); }
+.skills-panel__use-btn { background: var(--color-accent-primary); color: rgb(255, 255, 255); border: none; border-radius: 4px; font-size: 11px; padding: 2px 8px; cursor: pointer; white-space: nowrap; touch-action: manipulation; }
+.skills-panel__use-btn:hover { background: var(--color-accent-primary-hover); }
+.skills-panel__delete-btn { background: none; border: none; cursor: pointer; font-size: 16px; color: var(--color-text-muted); padding: 0px 2px; opacity: 1; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.skills-panel__delete-btn:hover { color: var(--color-error); }
+.skills-panel__desc { font-size: 12px; color: var(--color-text-muted); margin: 4px 0px 0px; line-height: 1.4; }
+.skills-panel__item--disabled { opacity: 0.5; }
+.skills-panel__toggle-btn { background: none; border: none; cursor: pointer; color: var(--color-text-muted); padding: 0px 2px; line-height: 1; display: flex; align-items: center; transition: color 0.15s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.skills-panel__toggle-btn:hover { color: var(--color-text-primary); }
+.skills-panel__desc--truncated { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.skill-detail-overlay { position: fixed; inset: 0px; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.skill-detail-modal { background: var(--color-bg-primary); border: 1px solid var(--color-border-medium); border-radius: 12px; padding: 24px; width: 560px; max-width: 90vw; max-height: 80vh; display: flex; flex-direction: column; }
+.skill-detail-modal__header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.skill-detail-modal__name { font-size: 16px; font-weight: 600; color: var(--color-text-primary); flex: 1 1 0%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-detail-modal__close { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--color-text-muted); padding: 0px 4px; line-height: 1; }
+.skill-detail-modal__close:hover { color: var(--color-text-primary); }
+.skill-detail-modal__desc { font-size: 13px; color: var(--color-text-muted); margin: 0px 0px 12px; line-height: 1.4; }
+.skill-detail-modal__tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.skill-detail-modal__tab { background: none; border: 1px solid var(--color-border-light); border-radius: 4px; padding: 4px 12px; font-size: 12px; color: var(--color-text-muted); cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.skill-detail-modal__tab:hover { background: var(--color-bg-hover-strong); color: var(--color-text-primary); }
+.skill-detail-modal__tab--active { background: var(--color-accent-primary); color: rgb(255, 255, 255); border-color: var(--color-accent-primary); }
+.skill-detail-modal__tab--active:hover { background: var(--color-accent-primary-hover); }
+.skill-detail-modal__content { font-size: 12px; font-family: monospace; color: var(--color-text-secondary); background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: 6px; padding: 12px; margin: 0px; white-space: pre-wrap; word-break: break-word; line-height: 1.5; overflow-y: auto; flex: 1 1 0%; min-height: 0px; }
+.skill-detail-modal__content--preview { font-family: inherit; white-space: normal; }
+.skill-detail-modal__content--preview h1, .skill-detail-modal__content--preview h2, .skill-detail-modal__content--preview h3 { margin: 12px 0px 6px; color: var(--color-text-primary); }
+.skill-detail-modal__content--preview h1 { font-size: 18px; }
+.skill-detail-modal__content--preview h2 { font-size: 15px; }
+.skill-detail-modal__content--preview h3 { font-size: 13px; }
+.skill-detail-modal__content--preview p { margin: 6px 0px; }
+.skill-detail-modal__content--preview ul, .skill-detail-modal__content--preview ol { margin: 6px 0px; padding-left: 20px; }
+.skill-detail-modal__content--preview code { background: var(--color-bg-primary); border: 1px solid var(--color-border-light); border-radius: 3px; padding: 1px 4px; font-size: 11px; font-family: monospace; }
+.skill-detail-modal__content--preview pre { background: var(--color-bg-primary); border: 1px solid var(--color-border-light); border-radius: 6px; padding: 8px; margin: 6px 0px; overflow-x: auto; }
+.skill-detail-modal__content--preview pre code { background: none; border: none; padding: 0px; }
+.skill-detail-modal__content--preview table { border-collapse: collapse; width: 100%; margin: 6px 0px; font-size: 12px; }
+.skill-detail-modal__content--preview th, .skill-detail-modal__content--preview td { border: 1px solid var(--color-border-light); padding: 4px 8px; text-align: left; }
+.skill-detail-modal__content--preview th { background: var(--color-bg-primary); font-weight: 600; }
+@media (pointer: coarse) {
+  .skills-panel__toggle-btn, .skills-panel__delete-btn { min-width: 36px; min-height: 36px; justify-content: center; }
+  .skills-panel__use-btn { min-height: 36px; padding: 4px 12px; font-size: 12px; }
+}
+.create-skill-overlay { position: fixed; inset: 0px; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.create-skill-dialog { background: var(--color-bg-primary); border: 1px solid var(--color-border-medium); border-radius: 12px; padding: 24px; width: 480px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+.create-skill-dialog__title { margin: 0px 0px 16px; font-size: 16px; color: var(--color-text-primary); }
+.create-skill-dialog__error { color: var(--color-error); font-size: 13px; margin: 0px 0px 12px; }
+.create-skill-dialog__label { display: block; font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.create-skill-dialog__input { display: block; width: 100%; padding: 8px 12px; border: 1px solid var(--color-border-dark); border-radius: 6px; font-size: 14px; font-family: inherit; background: var(--color-bg-primary); color: var(--color-text-primary); margin-bottom: 12px; box-sizing: border-box; }
+.create-skill-dialog__textarea { display: block; width: 100%; padding: 8px 12px; border: 1px solid var(--color-border-dark); border-radius: 6px; font-size: 13px; font-family: monospace; background: var(--color-bg-primary); color: var(--color-text-primary); margin-bottom: 16px; resize: vertical; box-sizing: border-box; }
+.create-skill-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.create-skill-dialog__cancel { background: none; border: 1px solid var(--color-border-medium); border-radius: 6px; padding: 6px 16px; font-size: 14px; cursor: pointer; color: var(--color-text-primary); }
+.create-skill-dialog__save { background: var(--color-accent-primary); color: rgb(255, 255, 255); border: none; border-radius: 6px; padding: 6px 16px; font-size: 14px; cursor: pointer; }
+.create-skill-dialog__save:hover:not(:disabled) { background: var(--color-accent-primary-hover); }
+.create-skill-dialog__save:disabled { opacity: 0.5; }
+.sidebar { background: var(--color-bg-tertiary); border-right: 1px solid var(--color-border-medium); padding: 0px; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+.sidebar--collapsed { border-right: 1px solid var(--color-border-medium); width: 44px; min-width: 44px; }
+.sidebar__top { flex-shrink: 0; background: var(--color-bg-tertiary); border-bottom: 1px solid var(--color-border-medium); position: sticky; top: 0px; z-index: 1; }
+.sidebar__header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
+.sidebar--collapsed .sidebar__top { border-bottom: none; }
+.sidebar--collapsed .sidebar__header { justify-content: center; padding: 8px; }
+.sidebar__actions { display: flex; align-items: center; gap: 4px; padding: 0px 16px 10px; }
+.sidebar--collapsed .sidebar__actions { display: none; }
+.sidebar__action-btn { background: none; border: 1px solid var(--color-border-medium); cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--color-text-muted); transition: background 0.15s, color 0.15s; }
+.sidebar__action-btn:hover { background: var(--color-bg-hover-strong); color: var(--color-text-primary); }
+.sidebar__action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.sidebar__action-btn--danger:hover:not(:disabled) { background: var(--color-error-bg-subtle); color: var(--color-error); }
+.sidebar__title { margin: 0px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted); }
+.sidebar--collapsed .sidebar__title { display: none; }
+.sidebar__content { flex: 1 1 0%; overflow-y: auto; padding: 12px 16px; }
+.sidebar--collapsed .sidebar__content { display: none; }
+.sidebar__collapse-toggle { background: none; border: none; cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0; }
+.sidebar__collapse-toggle:hover { background: var(--color-bg-hover-strong); }
+.sidebar__hamburger { display: block; width: 16px; height: 2px; background: var(--color-text-muted); position: relative; }
+.sidebar__hamburger::before, .sidebar__hamburger::after { content: ""; display: block; width: 16px; height: 2px; background: var(--color-text-muted); position: absolute; left: 0px; }
+.sidebar__hamburger::before { top: -5px; }
+.sidebar__hamburger::after { top: 5px; }
+.sidebar__empty { font-size: 13px; color: var(--color-text-faint); }
+.sidebar__list { list-style: none; padding: 0px; margin: 0px; }
+.sidebar__item { margin-bottom: 4px; }
+.sidebar__table-header { display: flex; align-items: center; gap: 4px; min-width: 0px; }
+.sidebar__toggle { background: none; border: none; cursor: pointer; font-size: 10px; padding: 2px 4px; color: var(--color-text-muted); }
+.sidebar__table-name { background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--color-text-primary); padding: 2px 4px; border-radius: 3px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0px; flex: 1 1 0%; }
+.sidebar__table-name:hover { background: var(--color-bg-hover-strong); }
+.sidebar__row-count { font-size: 11px; color: var(--color-text-faint); margin-left: auto; }
+.sidebar__delete { background: none; border: none; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; opacity: 1; line-height: 1; }
+.sidebar__delete:hover { background: var(--color-error-bg-subtle); }
+.sidebar__columns { list-style: none; padding: 4px 0px 4px 24px; margin: 0px; }
+.sidebar__column { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0px; }
+.sidebar__col-name { color: var(--color-text-primary); }
+.sidebar__col-type { color: var(--color-text-faint); font-style: italic; }
+.sidebar__footer { flex-shrink: 0; border-top: 1px solid var(--color-border-medium); padding: 8px 16px; display: flex; align-items: center; }
+.sidebar--collapsed .sidebar__footer { justify-content: center; padding: 8px; }
+.sidebar__github-link { color: var(--color-text-muted); display: flex; align-items: center; text-decoration: none; border-radius: 4px; padding: 4px; transition: color 0.15s, background 0.15s; }
+.sidebar__github-link:hover { color: var(--color-text-primary); background: var(--color-bg-hover-strong); }
+.sidebar__tabs { display: flex; gap: 0px; flex: 1 1 0%; }
+.sidebar__tab { background: none; border-top: none; border-right: none; border-left: none; border-image: initial; cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted); padding: 4px 8px; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
+.sidebar__tab--active { color: var(--color-accent-primary); border-bottom-color: var(--color-accent-primary); }
+.sidebar__tab:hover:not(.sidebar__tab--active) { color: var(--color-text-primary); }
+.sidebar--collapsed .sidebar__tabs { display: none; }
+.error-message { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--color-error-bg); border: 1px solid var(--color-error-border); border-radius: 6px; color: var(--color-error-text); font-size: 14px; }
+.error-message__text { flex: 1 1 0%; white-space: pre-wrap; word-break: break-word; }
+.error-message__dismiss { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--color-error-text); padding: 0px 4px; line-height: 1; }
+.error-message__dismiss:hover { opacity: 0.7; }
+.slash-menu { position: absolute; bottom: 100%; left: 0px; right: 0px; margin-bottom: 4px; background: var(--color-bg-primary); border: 1px solid var(--color-border-medium); border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.15) 0px 4px 12px; max-height: 200px; overflow-y: auto; z-index: 100; }
+.slash-menu__list { list-style: none; margin: 0px; padding: 4px; }
+.slash-menu__item { display: flex; align-items: baseline; gap: 8px; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+.slash-menu__item--selected { background: var(--color-bg-hover-strong); }
+.slash-menu__name { font-size: 13px; font-weight: 600; color: var(--color-accent-primary); white-space: nowrap; }
+.slash-menu__desc { font-size: 12px; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--color-border-light); background: var(--color-bg-primary); }
+.chat-input__textarea-wrapper { flex: 1 1 0%; position: relative; }
+.chat-input__textarea { display: block; width: 100%; padding: 8px 12px; border: 1px solid var(--color-border-dark); border-radius: 8px; font-size: 14px; font-family: inherit; resize: none; line-height: 1.4; max-height: 150px; background: var(--color-bg-primary); color: var(--color-text-primary); box-sizing: border-box; }
+.chat-input__shimmer { position: absolute; top: 1px; left: 1px; padding: 8px 12px; font-size: 14px; font-style: italic; line-height: 1.4; pointer-events: none; background-image: ; background-position-x: ; background-position-y: ; background-repeat: ; background-attachment: ; background-origin: ; background-color: ; background-size: 200% 100%; background-clip: text; -webkit-text-fill-color: transparent; animation: 2s ease-in-out 0s infinite normal none running chat-input-shimmer; }
+@keyframes chat-input-shimmer { 
+  0% { background-position: 100% 0px; }
+  100% { background-position: -100% 0px; }
+}
+.chat-input__textarea:focus { outline: none; border-color: var(--color-accent-primary); box-shadow: 0 0 0 2px var(--color-accent-primary-shadow); }
+.chat-input__textarea:disabled { background: var(--color-bg-secondary); color: var(--color-text-disabled); }
+.chat-input__send { align-self: flex-end; height: 38px; padding: 0px 16px; background: var(--color-accent-primary); color: rgb(255, 255, 255); border: none; border-radius: 8px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.chat-input__send:hover:not(:disabled) { background: var(--color-accent-primary-hover); }
+.chat-input__send:disabled { opacity: 0.5; cursor: not-allowed; }
+.inline-query { margin: 8px 0px; border: 1px solid var(--color-border-light); border-radius: 8px; overflow: hidden; font-size: 12px; }
+.inline-query--error { border-color: var(--color-error-border); }
+.inline-query--bash { border-color: var(--color-tool-bash-border); }
+.inline-query--generic { border-color: var(--color-tool-generic-border); }
+.inline-query--chart { overflow: visible; }
+.inline-query__label { display: flex; align-items: center; padding: 3px 10px; font-size: 11px; font-weight: 600; border-bottom: 1px solid var(--color-border-light); }
+.inline-query__label--sql { color: var(--color-success-text-dark); background: var(--color-success-bg-alt); border-bottom-color: var(--color-success-border-light); }
+.inline-query__label--bash { color: var(--color-tool-bash-text); background: var(--color-tool-bash-bg); border-bottom-color: var(--color-tool-bash-border); }
+.inline-query__label--generic { color: var(--color-tool-generic-text); background: var(--color-tool-generic-bg); border-bottom-color: var(--color-tool-generic-border); }
+.inline-query__copy-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; padding: 2px; border-radius: 3px; color: var(--color-text-disabled); line-height: 1; flex-shrink: 0; }
+.inline-query__label .inline-query__copy-btn { margin-left: auto; }
+.inline-query__copy-btn:hover { background: var(--color-border-light); color: var(--color-text-tertiary); }
+.inline-query__sql { position: relative; padding: 6px 10px; background: var(--color-bg-code); border-bottom: 1px solid var(--color-border-light); overflow-x: auto; }
+.inline-query__sql .inline-query__copy-btn { position: absolute; top: 4px; right: 4px; opacity: 0; transition: opacity 0.15s; }
+.inline-query__sql:hover .inline-query__copy-btn { opacity: 1; }
+.inline-query__sql code { font-size: 12px; color: var(--color-text-code); white-space: pre-wrap; word-break: break-all; }
+.inline-query__error { padding: 8px 10px; color: var(--color-error-text); background: var(--color-error-bg); }
+.inline-query__table-wrapper { overflow: auto; max-height: 300px; }
+.inline-query__table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.inline-query__table th, .inline-query__table td { padding: 4px 8px; text-align: left; border-bottom: 1px solid var(--color-bg-code); white-space: nowrap; }
+.inline-query__table th { background: var(--color-bg-secondary); font-weight: 600; color: var(--color-text-tertiary); position: sticky; top: 0px; }
+.inline-query__table td { color: var(--color-text-code); }
+.inline-query__meta { padding: 4px 10px; font-size: 11px; color: var(--color-text-disabled); background: var(--color-bg-secondary); border-top: 1px solid var(--color-border-light); }
+.inline-query__output { padding: 8px 10px; overflow: auto; max-height: 300px; background: var(--color-bg-secondary); }
+.inline-query__output pre { margin: 0px; font-size: 12px; color: var(--color-text-tertiary); white-space: pre-wrap; word-break: break-word; }
+.inline-query__raw { padding: 8px 10px; overflow-x: auto; }
+.inline-query__raw pre { margin: 0px; font-size: 12px; color: var(--color-text-code); white-space: pre-wrap; word-break: break-word; }
+.user-question { padding: 10px 12px; margin: 4px 0px; border: 1px solid var(--color-accent-primary-border); border-radius: 8px; background: var(--color-bg-secondary); }
+.user-question--answered { opacity: 0.8; border-color: var(--color-border-dark); }
+.user-question__label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-accent-primary-light); margin-bottom: 6px; }
+.user-question--answered .user-question__label { color: var(--color-text-disabled); }
+.user-question__question { font-size: 14px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; }
+.user-question__options { display: flex; flex-direction: column; gap: 6px; }
+.user-question__option { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; border: 1px solid var(--color-border-dark); border-radius: 6px; background: var(--color-bg-primary); cursor: pointer; text-align: left; font-size: 13px; color: var(--color-text-secondary); transition: border-color 0.15s, background 0.15s; }
+.user-question__option:hover { border-color: var(--color-accent-primary-border); background: var(--color-accent-primary-bg); }
+.user-question__option--selected { border-color: var(--color-accent-primary-light); background: var(--color-accent-primary-bg); }
+.user-question__checkbox { flex-shrink: 0; font-size: 16px; }
+.user-question__option-label { font-weight: 500; }
+.user-question__option-desc { display: block; font-size: 12px; color: var(--color-text-disabled); margin-top: 2px; }
+.user-question__free-text-toggle { margin-top: 8px; }
+.user-question__other-btn { background: none; border: none; cursor: pointer; font-size: 12px; color: var(--color-accent-primary-light); padding: 2px 0px; text-decoration: underline; }
+.user-question__free-text { display: flex; gap: 8px; margin-top: 6px; }
+.user-question__free-text-input { flex: 1 1 0%; padding: 6px 10px; border: 1px solid var(--color-border-dark); border-radius: 6px; font-size: 13px; background: var(--color-bg-primary); color: var(--color-text-secondary); }
+.user-question__free-text-input:focus { outline: none; border-color: var(--color-accent-primary-light); }
+.user-question__submit-btn { padding: 6px 14px; border: none; border-radius: 6px; background: var(--color-accent-primary-hover); color: var(--color-bg-primary); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+.user-question__submit-btn:hover { background: var(--color-accent-primary-active); }
+.user-question__submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.user-question__submit-multi { margin-top: 10px; width: 100%; }
+.user-question__selected-answers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.user-question__selected-chip { padding: 3px 10px; border-radius: 12px; background: var(--color-success-bg); color: var(--color-success-text); font-size: 12px; font-weight: 500; }
+.message-bubble { padding: 10px 14px; border-radius: 10px; margin-bottom: 10px; }
+.message-bubble--user { background: var(--color-bg-user-msg); margin-left: 32px; }
+.message-bubble--assistant { background: var(--color-bg-primary); border: 1px solid var(--color-border-light); margin-right: 32px; }
+.message-bubble__header { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--color-text-subtle); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.message-bubble__content { font-size: 14px; line-height: 1.5; color: var(--color-text-secondary); }
+.message-bubble__content p { margin: 0px 0px 8px; }
+.message-bubble__content p:last-child { margin-bottom: 0px; }
+.message-bubble__content pre { background: var(--color-bg-code); padding: 8px 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+.message-bubble__content code { background: var(--color-bg-code); padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+.message-bubble__content pre code { background: none; padding: 0px; }
+.message-bubble__content a { color: var(--color-accent-secondary); text-decoration: underline; }
+.message-bubble__content a:hover { color: var(--color-accent-secondary-hover); }
+.message-bubble__content table { border-collapse: collapse; width: 100%; margin: 8px 0px; font-size: 13px; overflow-x: auto; display: block; }
+.message-bubble__content th, .message-bubble__content td { border: 1px solid var(--color-border-dark); padding: 6px 10px; text-align: left; white-space: nowrap; }
+.message-bubble__content th { background: var(--color-bg-code); font-weight: 600; }
+.message-bubble__content tr:nth-child(2n) { background: var(--color-bg-secondary); }
+.message-bubble__typing { font-style: italic; background-image: ; background-position-x: ; background-position-y: ; background-repeat: ; background-attachment: ; background-origin: ; background-color: ; background-size: 200% 100%; background-clip: text; -webkit-text-fill-color: transparent; animation: 2s ease-in-out 0s infinite normal none running shimmer; }
+@keyframes shimmer { 
+  0% { background-position: 100% 0px; }
+  100% { background-position: -100% 0px; }
+}
+.message-bubble__tools { margin-top: 8px; }
+.message-bubble__segments { display: flex; flex-direction: column; gap: 10px; }
+.message-bubble__segment { border-radius: 6px; padding: 8px 12px; }
+.message-bubble__segment--thinking { background: var(--color-bg-secondary); border-left: 3px solid var(--color-border-dark); }
+.message-bubble__segment--question { padding: 0px; }
+.message-bubble__segment--answer { background: var(--color-success-bg); border-left: 3px solid var(--color-success-border); }
+.message-bubble__segment--error { background: var(--color-error-bg); border-left: 3px solid var(--color-error); display: flex; flex-direction: column; gap: 6px; }
+.message-bubble__error-header { font-size: 12px; font-weight: 700; color: var(--color-error-text-dark); }
+.message-bubble__error-message { font-size: 13px; color: var(--color-error-text); }
+.message-bubble__error-retry { align-self: flex-start; padding: 4px 12px; font-size: 12px; font-weight: 600; color: rgb(255, 255, 255); background: var(--color-error); border: none; border-radius: 4px; cursor: pointer; margin-top: 2px; }
+.message-bubble__error-retry:hover { background: var(--color-error-hover); }
+.message-bubble__segment-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-disabled); margin-bottom: 4px; }
+.message-bubble__segment-label--answer { color: var(--color-success-text); }
+.message-bubble__segment-content { font-size: 14px; line-height: 1.5; color: var(--color-text-secondary); }
+.message-bubble__segment-content p { margin: 0px 0px 8px; }
+.message-bubble__segment-content p:last-child { margin-bottom: 0px; }
+.message-bubble__segment-content pre { background: var(--color-bg-code); padding: 8px 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+.message-bubble__segment-content code { background: var(--color-bg-code); padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+.message-bubble__segment-content pre code { background: none; padding: 0px; }
+.message-bubble__segment-content a { color: var(--color-accent-secondary); text-decoration: underline; }
+.message-bubble__segment-content a:hover { color: var(--color-accent-secondary-hover); }
+.message-bubble__segment-content table { border-collapse: collapse; width: 100%; margin: 8px 0px; font-size: 13px; overflow-x: auto; display: block; }
+.message-bubble__segment-content th, .message-bubble__segment-content td { border: 1px solid var(--color-border-dark); padding: 6px 10px; text-align: left; white-space: nowrap; }
+.message-bubble__segment-content th { background: var(--color-bg-code); font-weight: 600; }
+.message-bubble__segment-content tr:nth-child(2n) { background: var(--color-bg-secondary); }
+.message-bubble__segment-content strong { font-weight: 700; color: var(--color-text-primary); }
+.message-bubble__collapsible { cursor: default; }
+.message-bubble__collapsible-summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; user-select: none; }
+.message-bubble__collapsible-summary::-webkit-details-marker { display: none; }
+.message-bubble__collapsible-summary::before { content: "▶"; font-size: 9px; color: var(--color-text-disabled); transition: transform 0.15s; flex-shrink: 0; }
+.message-bubble__collapsible[open] > .message-bubble__collapsible-summary::before { transform: rotate(90deg); }
+.message-bubble__collapsible-summary .message-bubble__segment-label { margin-bottom: 0px; flex-shrink: 0; }
+.message-bubble__collapsible-preview { font-size: 12px; color: var(--color-text-disabled); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0px; }
+.message-bubble__collapsible[open] > .message-bubble__collapsible-summary .message-bubble__collapsible-preview { display: none; }
+.message-bubble__thinking-body { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.message-bubble__tool-segment { margin: 2px 0px; }
+.message-bubble__actions { display: inline-flex; visibility: hidden; margin-left: auto; gap: 4px; }
+.message-bubble--user:hover .message-bubble__actions { visibility: visible; }
+.message-bubble__action-btn { background: none; border: none; cursor: pointer; padding: 0px; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; color: var(--color-text-disabled); border-radius: 4px; line-height: 1; }
+.message-bubble__action-btn--delete { font-size: 14px; }
+.message-bubble__action-btn:hover { background: var(--color-border-light); color: var(--color-text-tertiary); }
+.message-bubble__action-btn--delete:hover { background: var(--color-error-bg-hover); color: var(--color-error); }
+.message-bubble__edit-mode { margin-top: 4px; }
+.message-bubble__edit-textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--color-accent-primary-border); border-radius: 6px; font-size: 14px; font-family: inherit; line-height: 1.5; resize: vertical; background: var(--color-bg-primary); color: var(--color-text-secondary); box-sizing: border-box; }
+.message-bubble__edit-textarea:focus { outline: none; border-color: var(--color-accent-primary-light); box-shadow: 0 0 0 2px var(--color-accent-primary-shadow-strong); }
+.message-bubble__edit-actions { display: flex; gap: 8px; margin-top: 6px; }
+.message-bubble__edit-btn { padding: 4px 12px; border: 1px solid var(--color-border-dark); border-radius: 6px; font-size: 12px; cursor: pointer; background: var(--color-bg-primary); color: var(--color-text-tertiary); }
+.message-bubble__edit-btn:hover { background: var(--color-bg-code); }
+.message-bubble__edit-btn--save { background: var(--color-accent-primary-hover); color: var(--color-bg-primary); border-color: var(--color-accent-primary-hover); }
+.message-bubble__edit-btn--save:hover { background: var(--color-accent-primary-active); }
+.message-bubble__confirm-delete { margin-top: 4px; padding: 8px 10px; background: var(--color-error-bg); border: 1px solid var(--color-error-border-light); border-radius: 6px; font-size: 13px; color: var(--color-error-text-dark); }
+.message-bubble__confirm-actions { display: flex; gap: 8px; margin-top: 6px; }
+.message-bubble__confirm-btn { padding: 4px 12px; border: 1px solid var(--color-border-dark); border-radius: 6px; font-size: 12px; cursor: pointer; background: var(--color-bg-primary); color: var(--color-text-tertiary); }
+.message-bubble__confirm-btn:hover { background: var(--color-bg-code); }
+.message-bubble__confirm-btn--delete { background: var(--color-error); color: var(--color-bg-primary); border-color: var(--color-error); }
+.message-bubble__confirm-btn--delete:hover { background: var(--color-error-hover); }
+.message-bubble__subagent-indicator { padding: 6px 10px; margin: 4px 0px; border-left: 3px solid var(--color-border, #e0e0e0); font-size: 0.85em; color: var(--color-text-secondary, #666); }
+.message-bubble__subagent-label { font-style: italic; }
+.message-bubble__chart-in-answer { margin: 20px 0px; }
+.message-bubble__chart-in-answer:first-child { margin-top: 8px; }
+.message-bubble__chart-in-answer:last-child { margin-bottom: 8px; }
+.agent-panel { display: flex; flex-direction: column; flex: 1 1 0%; min-height: 0px; background: var(--color-bg-secondary); }
+.agent-panel__header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--color-border-light); background: var(--color-bg-primary); }
+.agent-panel__title { font-size: 15px; font-weight: 700; color: var(--color-text-secondary); }
+.agent-panel__clear { height: 28px; padding: 0px 10px; font-size: 12px; background: none; border: 1px solid var(--color-border-dark); border-radius: 6px; color: var(--color-text-subtle); cursor: pointer; }
+.agent-panel__clear:hover { background: var(--color-bg-code); color: var(--color-text-tertiary); }
+.agent-panel__actions { display: flex; align-items: center; gap: 8px; }
+.agent-panel__langfuse { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0px 10px; font-size: 12px; background: none; border: 1px solid var(--color-border-dark); border-radius: 6px; color: var(--color-text-subtle); cursor: pointer; }
+.agent-panel__langfuse-icon { width: 14px; height: 14px; }
+.agent-panel__langfuse:hover:not(:disabled) { background: var(--color-bg-code); color: var(--color-text-tertiary); }
+.agent-panel__langfuse--disabled { opacity: 0.4; cursor: not-allowed; }
+.agent-panel__messages { flex: 1 1 0%; overflow-y: auto; padding: 16px; }
+.agent-panel__empty { text-align: center; color: var(--color-text-disabled); font-size: 14px; margin-top: 40px; padding: 0px 20px; line-height: 1.5; }
+.app { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+.app--sidebar-collapsed { grid-template-columns: auto 1fr; }
+.app__sidebar-wrapper { position: sticky; top: 0px; height: 100vh; overflow: visible; }
+.app__header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--color-border-light); flex-shrink: 0; }
+.app__header-actions { display: flex; align-items: center; gap: 8px; }
+.app__main { display: flex; flex-direction: column; gap: 16px; padding: 24px; flex: 1 1 0%; min-height: 0px; overflow: hidden auto; }
+.app__empty { text-align: center; color: var(--color-text-disabled); font-size: 14px; margin-top: 32px; padding: 0px 12px; line-height: 1.5; }
+.app__title { margin: 0px; font-size: 22px; font-weight: 700; color: var(--color-text-primary); }
+.app__theme-toggle { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0px; background: none; border: none; border-radius: 8px; color: var(--color-text-muted); cursor: pointer; }
+.app__theme-toggle:hover { background: var(--color-bg-hover-strong); color: var(--color-text-primary); }
+.app__lang-toggle { display: flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0px 6px; background: none; border: none; border-radius: 8px; color: var(--color-text-muted); cursor: pointer; font-size: 13px; font-weight: 600; }
+.app__lang-toggle:hover { background: var(--color-bg-hover-strong); color: var(--color-text-primary); }
+.app__agent-toggle { height: 34px; padding: 0px 14px; font-size: 13px; font-weight: 600; border: 1px solid var(--color-accent-primary); border-radius: 8px; background: var(--color-bg-primary); color: var(--color-accent-primary); cursor: pointer; white-space: nowrap; }
+.app__agent-toggle:hover { background: var(--color-bg-user-msg); }
+.app__agent-toggle--active { background: var(--color-accent-primary); color: rgb(255, 255, 255); }
+.app__agent-toggle--active:hover { background: var(--color-accent-primary-hover); }
+.app__agent-wrapper, .app__editor-wrapper { display: flex; flex-direction: column; height: 100vh; min-width: 0px; }
+.app__mode-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--color-border-light); background: var(--color-bg-primary); }
+.app__mode-title { font-size: 15px; font-weight: 700; color: var(--color-text-secondary); }
+.app-loading, .app-error { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 16px; color: var(--color-text-muted); }
+.app-error { color: var(--color-error-text); }
+:root { --color-bg-primary: #fff; --color-bg-secondary: #f9fafb; --color-bg-tertiary: #f5f5f5; --color-bg-code: #f3f4f6; --color-bg-hover: #f0f7ff; --color-bg-hover-strong: #e8e8e8; --color-bg-user-msg: #eef2ff; --color-text-primary: #333; --color-text-secondary: #1f2937; --color-text-tertiary: #374151; --color-text-code: #4b5563; --color-text-muted: #666; --color-text-subtle: #6b7280; --color-text-disabled: #9ca3af; --color-text-faint: #999; --color-border-faint: #eee; --color-border-light: #e5e7eb; --color-border-medium: #ddd; --color-border-dark: #d1d5db; --color-border-dashed: #ccc; --color-accent-primary: #6366f1; --color-accent-primary-hover: #4f46e5; --color-accent-primary-active: #4338ca; --color-accent-primary-light: #818cf8; --color-accent-primary-border: #c7d2fe; --color-accent-primary-shadow: rgba(99, 102, 241, 0.15); --color-accent-primary-shadow-strong: rgba(129, 140, 248, 0.2); --color-accent-secondary: #4a90d9; --color-accent-secondary-hover: #357abd; --color-accent-secondary-shadow: rgba(74, 144, 217, 0.2); --color-error: #dc2626; --color-error-hover: #b91c1c; --color-error-text: #b91c1c; --color-error-text-dark: #991b1b; --color-error-bg: #fef2f2; --color-error-bg-hover: #fee2e2; --color-error-bg-subtle: #fee; --color-error-border: #fca5a5; --color-error-border-light: #fecaca; --color-success-bg: #f0fdf4; --color-success-bg-alt: #ecfdf5; --color-success-border: #22c55e; --color-success-border-light: #a7f3d0; --color-success-text: #16a34a; --color-success-text-dark: #065f46; --color-tool-bash-text: #6d28d9; --color-tool-bash-bg: #ede9fe; --color-tool-bash-border: #c4b5fd; --color-tool-generic-text: #1e40af; --color-tool-generic-bg: #eff6ff; --color-tool-generic-border: #93c5fd; }
+[data-theme="dark"] { --color-bg-primary: #1a1a2e; --color-bg-secondary: #16213e; --color-bg-tertiary: #1a1a2e; --color-bg-code: #1e293b; --color-bg-hover: #1e3a5f; --color-bg-hover-strong: #2d3748; --color-bg-user-msg: #2d2b55; --color-text-primary: #e2e8f0; --color-text-secondary: #cbd5e1; --color-text-tertiary: #94a3b8; --color-text-code: #a0aec0; --color-text-muted: #94a3b8; --color-text-subtle: #8892a4; --color-text-disabled: #64748b; --color-text-faint: #64748b; --color-border-faint: #1e293b; --color-border-light: #2d3748; --color-border-medium: #374151; --color-border-dark: #4b5563; --color-border-dashed: #4b5563; --color-accent-primary: #818cf8; --color-accent-primary-hover: #6366f1; --color-accent-primary-active: #4f46e5; --color-accent-primary-light: #a5b4fc; --color-accent-primary-border: #4338ca; --color-accent-primary-shadow: rgba(129, 140, 248, 0.2); --color-accent-primary-shadow-strong: rgba(129, 140, 248, 0.3); --color-accent-secondary: #60a5fa; --color-accent-secondary-hover: #3b82f6; --color-accent-secondary-shadow: rgba(96, 165, 250, 0.2); --color-error: #f87171; --color-error-hover: #ef4444; --color-error-text: #fca5a5; --color-error-text-dark: #fca5a5; --color-error-bg: #3b1111; --color-error-bg-hover: #5c1a1a; --color-error-bg-subtle: #3b1111; --color-error-border: #7f1d1d; --color-error-border-light: #991b1b; --color-success-bg: #0d3320; --color-success-bg-alt: #0d3320; --color-success-border: #16a34a; --color-success-border-light: #15803d; --color-success-text: #6ee7b7; --color-success-text-dark: #a7f3d0; --color-tool-bash-text: #c4b5fd; --color-tool-bash-bg: #2e1065; --color-tool-bash-border: #6d28d9; --color-tool-generic-text: #93c5fd; --color-tool-generic-bg: #1e3a5f; --color-tool-generic-border: #1e40af; }
+*, ::before, ::after { box-sizing: border-box; }
+body { margin: 0px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; color: var(--color-text-primary); background: var(--color-bg-primary); -webkit-font-smoothing: antialiased; }
+#root { min-height: 100vh; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-logo { display: block; width: 21px; height: 21px; background-image: url("data:image/svg+xml;charset=utf-8,%3C?xml version=\"1.0\" encoding=\"utf-8\"?%3E %3Csvg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 21 21\" style=\"enable-background:new 0 0 21 21;\" xml:space=\"preserve\"%3E%3Cg transform=\"translate(0,0.01)\"%3E%3Cpath d=\"m 10.5,1.24 c -5.11,0 -9.25,4.15 -9.25,9.25 0,5.1 4.15,9.25 9.25,9.25 5.1,0 9.25,-4.15 9.25,-9.25 0,-5.11 -4.14,-9.25 -9.25,-9.25 z m 4.39,11.53 c -1.93,1.93 -4.78,2.31 -6.7,2.31 -0.7,0 -1.41,-0.05 -2.1,-0.16 0,0 -1.02,-5.64 2.14,-8.81 0.83,-0.83 1.95,-1.28 3.13,-1.28 1.27,0 2.49,0.51 3.39,1.42 1.84,1.84 1.89,4.75 0.14,6.52 z\" style=\"opacity:0.9;fill:%23ffffff;enable-background:new\" class=\"st0\"/%3E%3Cpath d=\"M 10.5,-0.01 C 4.7,-0.01 0,4.7 0,10.49 c 0,5.79 4.7,10.5 10.5,10.5 5.8,0 10.5,-4.7 10.5,-10.5 C 20.99,4.7 16.3,-0.01 10.5,-0.01 Z m 0,19.75 c -5.11,0 -9.25,-4.15 -9.25,-9.25 0,-5.1 4.14,-9.26 9.25,-9.26 5.11,0 9.25,4.15 9.25,9.25 0,5.13 -4.14,9.26 -9.25,9.26 z\" style=\"opacity:0.35;enable-background:new\" class=\"st1\"/%3E%3Cpath d=\"M 14.74,6.25 C 12.9,4.41 9.98,4.35 8.23,6.1 5.07,9.27 6.09,14.91 6.09,14.91 c 0,0 5.64,1.02 8.81,-2.14 C 16.64,11 16.59,8.09 14.74,6.25 Z m -2.27,4.09 -0.91,1.87 -0.9,-1.87 -1.86,-0.91 1.86,-0.9 0.9,-1.87 0.91,1.87 1.86,0.9 z\" style=\"opacity:0.35;enable-background:new\" class=\"st1\"/%3E%3Cpolygon points=\"11.56,12.21 10.66,10.34 8.8,9.43 10.66,8.53 11.56,6.66 12.47,8.53 14.33,9.43 12.47,10.34 \" style=\"opacity:0.9;fill:%23ffffff;enable-background:new\" class=\"st0\"/%3E%3C/g%3E%3C/svg%3E"); }
+.js-plotly-plot .plotly .mapboxgl-attrib-empty { display: none; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib .mapbox-improve-map { font-weight: bold; margin-left: 2px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib a:hover { color: inherit; text-decoration: underline; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib a { color: rgba(0, 0, 0, 0.75); text-decoration: none; font-size: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib { color: rgba(0, 0, 0, 0.75); text-decoration: none; font-size: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl { margin: 0px 10px 10px 0px; float: right; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl { margin: 0px 0px 10px 10px; float: left; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left > .mapboxgl-ctrl-attrib.mapboxgl-compact::after { bottom: 0px; left: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right > .mapboxgl-ctrl-attrib.mapboxgl-compact::after { bottom: 0px; right: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact { min-height: 20px; padding: 0px; margin: 10px; position: relative; background-color: rgb(255, 255, 255); border-radius: 3px 12px 12px 3px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact::after { content: ""; cursor: pointer; position: absolute; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox=\"0 0 20 20\" xmlns=\"http://www.w3.org/2000/svg\"%3E %3Cpath fill=\"%23333333\" fill-rule=\"evenodd\" d=\"M4,10a6,6 0 1,0 12,0a6,6 0 1,0 -12,0 M9,7a1,1 0 1,0 2,0a1,1 0 1,0 -2,0 M9,10a1,1 0 1,1 2,0l0,3a1,1 0 1,1 -2,0\"/%3E %3C/svg%3E"); background-color: rgba(255, 255, 255, 0.5); width: 24px; height: 24px; box-sizing: border-box; border-radius: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact:hover { padding: 2px 24px 2px 4px; visibility: visible; margin-top: 6px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact:hover .mapboxgl-ctrl-attrib-inner { display: block; margin-top: 2px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact .mapboxgl-ctrl-attrib-inner { display: none; }
+.js-plotly-plot .plotly .mapboxgl-ctrl { clear: both; pointer-events: auto; transform: translate(0px, 0px); }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right { position: absolute; pointer-events: none; z-index: 2; right: 0px; bottom: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left { position: absolute; pointer-events: none; z-index: 2; bottom: 0px; left: 0px; }
+.js-plotly-plot .plotly .mapboxgl-canary { background-color: salmon; }
+.js-plotly-plot .plotly .mapboxgl-missing-css { display: none; }
+.js-plotly-plot .plotly .mapboxgl-map { overflow: hidden; position: relative; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-logo { display: block; width: 21px; height: 21px; background-image: url("data:image/svg+xml;charset=utf-8,%3C?xml version=\"1.0\" encoding=\"utf-8\"?%3E %3Csvg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 21 21\" style=\"enable-background:new 0 0 21 21;\" xml:space=\"preserve\"%3E%3Cg transform=\"translate(0,0.01)\"%3E%3Cpath d=\"m 10.5,1.24 c -5.11,0 -9.25,4.15 -9.25,9.25 0,5.1 4.15,9.25 9.25,9.25 5.1,0 9.25,-4.15 9.25,-9.25 0,-5.11 -4.14,-9.25 -9.25,-9.25 z m 4.39,11.53 c -1.93,1.93 -4.78,2.31 -6.7,2.31 -0.7,0 -1.41,-0.05 -2.1,-0.16 0,0 -1.02,-5.64 2.14,-8.81 0.83,-0.83 1.95,-1.28 3.13,-1.28 1.27,0 2.49,0.51 3.39,1.42 1.84,1.84 1.89,4.75 0.14,6.52 z\" style=\"opacity:0.9;fill:%23ffffff;enable-background:new\" class=\"st0\"/%3E%3Cpath d=\"M 10.5,-0.01 C 4.7,-0.01 0,4.7 0,10.49 c 0,5.79 4.7,10.5 10.5,10.5 5.8,0 10.5,-4.7 10.5,-10.5 C 20.99,4.7 16.3,-0.01 10.5,-0.01 Z m 0,19.75 c -5.11,0 -9.25,-4.15 -9.25,-9.25 0,-5.1 4.14,-9.26 9.25,-9.26 5.11,0 9.25,4.15 9.25,9.25 0,5.13 -4.14,9.26 -9.25,9.26 z\" style=\"opacity:0.35;enable-background:new\" class=\"st1\"/%3E%3Cpath d=\"M 14.74,6.25 C 12.9,4.41 9.98,4.35 8.23,6.1 5.07,9.27 6.09,14.91 6.09,14.91 c 0,0 5.64,1.02 8.81,-2.14 C 16.64,11 16.59,8.09 14.74,6.25 Z m -2.27,4.09 -0.91,1.87 -0.9,-1.87 -1.86,-0.91 1.86,-0.9 0.9,-1.87 0.91,1.87 1.86,0.9 z\" style=\"opacity:0.35;enable-background:new\" class=\"st1\"/%3E%3Cpolygon points=\"11.56,12.21 10.66,10.34 8.8,9.43 10.66,8.53 11.56,6.66 12.47,8.53 14.33,9.43 12.47,10.34 \" style=\"opacity:0.9;fill:%23ffffff;enable-background:new\" class=\"st0\"/%3E%3C/g%3E%3C/svg%3E"); }
+.js-plotly-plot .plotly .mapboxgl-attrib-empty { display: none; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib .mapbox-improve-map { font-weight: bold; margin-left: 2px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib a:hover { color: inherit; text-decoration: underline; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib a { color: rgba(0, 0, 0, 0.75); text-decoration: none; font-size: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib { color: rgba(0, 0, 0, 0.75); text-decoration: none; font-size: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl { margin: 0px 10px 10px 0px; float: right; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl { margin: 0px 0px 10px 10px; float: left; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left > .mapboxgl-ctrl-attrib.mapboxgl-compact::after { bottom: 0px; left: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right > .mapboxgl-ctrl-attrib.mapboxgl-compact::after { bottom: 0px; right: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact { min-height: 20px; padding: 0px; margin: 10px; position: relative; background-color: rgb(255, 255, 255); border-radius: 3px 12px 12px 3px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact::after { content: ""; cursor: pointer; position: absolute; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox=\"0 0 20 20\" xmlns=\"http://www.w3.org/2000/svg\"%3E %3Cpath fill=\"%23333333\" fill-rule=\"evenodd\" d=\"M4,10a6,6 0 1,0 12,0a6,6 0 1,0 -12,0 M9,7a1,1 0 1,0 2,0a1,1 0 1,0 -2,0 M9,10a1,1 0 1,1 2,0l0,3a1,1 0 1,1 -2,0\"/%3E %3C/svg%3E"); background-color: rgba(255, 255, 255, 0.5); width: 24px; height: 24px; box-sizing: border-box; border-radius: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact:hover { padding: 2px 24px 2px 4px; visibility: visible; margin-top: 6px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact:hover .mapboxgl-ctrl-attrib-inner { display: block; margin-top: 2px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact .mapboxgl-ctrl-attrib-inner { display: none; }
+.js-plotly-plot .plotly .mapboxgl-ctrl { clear: both; pointer-events: auto; transform: translate(0px, 0px); }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right { position: absolute; pointer-events: none; z-index: 2; right: 0px; bottom: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left { position: absolute; pointer-events: none; z-index: 2; bottom: 0px; left: 0px; }
+.js-plotly-plot .plotly .mapboxgl-canary { background-color: salmon; }
+.js-plotly-plot .plotly .mapboxgl-missing-css { display: none; }
+.js-plotly-plot .plotly .mapboxgl-map { overflow: hidden; position: relative; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-logo { display: block; width: 21px; height: 21px; background-image: url("data:image/svg+xml;charset=utf-8,%3C?xml version=\"1.0\" encoding=\"utf-8\"?%3E %3Csvg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 21 21\" style=\"enable-background:new 0 0 21 21;\" xml:space=\"preserve\"%3E%3Cg transform=\"translate(0,0.01)\"%3E%3Cpath d=\"m 10.5,1.24 c -5.11,0 -9.25,4.15 -9.25,9.25 0,5.1 4.15,9.25 9.25,9.25 5.1,0 9.25,-4.15 9.25,-9.25 0,-5.11 -4.14,-9.25 -9.25,-9.25 z m 4.39,11.53 c -1.93,1.93 -4.78,2.31 -6.7,2.31 -0.7,0 -1.41,-0.05 -2.1,-0.16 0,0 -1.02,-5.64 2.14,-8.81 0.83,-0.83 1.95,-1.28 3.13,-1.28 1.27,0 2.49,0.51 3.39,1.42 1.84,1.84 1.89,4.75 0.14,6.52 z\" style=\"opacity:0.9;fill:%23ffffff;enable-background:new\" class=\"st0\"/%3E%3Cpath d=\"M 10.5,-0.01 C 4.7,-0.01 0,4.7 0,10.49 c 0,5.79 4.7,10.5 10.5,10.5 5.8,0 10.5,-4.7 10.5,-10.5 C 20.99,4.7 16.3,-0.01 10.5,-0.01 Z m 0,19.75 c -5.11,0 -9.25,-4.15 -9.25,-9.25 0,-5.1 4.14,-9.26 9.25,-9.26 5.11,0 9.25,4.15 9.25,9.25 0,5.13 -4.14,9.26 -9.25,9.26 z\" style=\"opacity:0.35;enable-background:new\" class=\"st1\"/%3E%3Cpath d=\"M 14.74,6.25 C 12.9,4.41 9.98,4.35 8.23,6.1 5.07,9.27 6.09,14.91 6.09,14.91 c 0,0 5.64,1.02 8.81,-2.14 C 16.64,11 16.59,8.09 14.74,6.25 Z m -2.27,4.09 -0.91,1.87 -0.9,-1.87 -1.86,-0.91 1.86,-0.9 0.9,-1.87 0.91,1.87 1.86,0.9 z\" style=\"opacity:0.35;enable-background:new\" class=\"st1\"/%3E%3Cpolygon points=\"11.56,12.21 10.66,10.34 8.8,9.43 10.66,8.53 11.56,6.66 12.47,8.53 14.33,9.43 12.47,10.34 \" style=\"opacity:0.9;fill:%23ffffff;enable-background:new\" class=\"st0\"/%3E%3C/g%3E%3C/svg%3E"); }
+.js-plotly-plot .plotly .mapboxgl-attrib-empty { display: none; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib .mapbox-improve-map { font-weight: bold; margin-left: 2px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib a:hover { color: inherit; text-decoration: underline; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib a { color: rgba(0, 0, 0, 0.75); text-decoration: none; font-size: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib { color: rgba(0, 0, 0, 0.75); text-decoration: none; font-size: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl { margin: 0px 10px 10px 0px; float: right; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl { margin: 0px 0px 10px 10px; float: left; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left > .mapboxgl-ctrl-attrib.mapboxgl-compact::after { bottom: 0px; left: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right > .mapboxgl-ctrl-attrib.mapboxgl-compact::after { bottom: 0px; right: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact { min-height: 20px; padding: 0px; margin: 10px; position: relative; background-color: rgb(255, 255, 255); border-radius: 3px 12px 12px 3px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact::after { content: ""; cursor: pointer; position: absolute; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox=\"0 0 20 20\" xmlns=\"http://www.w3.org/2000/svg\"%3E %3Cpath fill=\"%23333333\" fill-rule=\"evenodd\" d=\"M4,10a6,6 0 1,0 12,0a6,6 0 1,0 -12,0 M9,7a1,1 0 1,0 2,0a1,1 0 1,0 -2,0 M9,10a1,1 0 1,1 2,0l0,3a1,1 0 1,1 -2,0\"/%3E %3C/svg%3E"); background-color: rgba(255, 255, 255, 0.5); width: 24px; height: 24px; box-sizing: border-box; border-radius: 12px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact:hover { padding: 2px 24px 2px 4px; visibility: visible; margin-top: 6px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact:hover .mapboxgl-ctrl-attrib-inner { display: block; margin-top: 2px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-attrib.mapboxgl-compact .mapboxgl-ctrl-attrib-inner { display: none; }
+.js-plotly-plot .plotly .mapboxgl-ctrl { clear: both; pointer-events: auto; transform: translate(0px, 0px); }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-right { position: absolute; pointer-events: none; z-index: 2; right: 0px; bottom: 0px; }
+.js-plotly-plot .plotly .mapboxgl-ctrl-bottom-left { position: absolute; pointer-events: none; z-index: 2; bottom: 0px; left: 0px; }
+.js-plotly-plot .plotly .mapboxgl-canary { background-color: salmon; }
+.js-plotly-plot .plotly .mapboxgl-missing-css { display: none; }
+.js-plotly-plot .plotly .mapboxgl-map { overflow: hidden; position: relative; }
+.plotly-notifier .notifier-close:hover { color: rgb(68, 68, 68); text-decoration: none; cursor: pointer; }
+.plotly-notifier .notifier-close { color: rgb(255, 255, 255); opacity: 0.8; float: right; padding: 0px 5px; background: none; border: none; font-size: 20px; font-weight: bold; line-height: 20px; }
+.plotly-notifier .notifier-note { min-width: 180px; max-width: 250px; border: 1px solid rgb(255, 255, 255); z-index: 3000; margin: 0px; background-color: rgba(140, 151, 175, 0.9); color: rgb(255, 255, 255); padding: 10px; overflow-wrap: break-word; hyphens: auto; }
+.plotly-notifier p { margin: 0px; }
+.plotly-notifier { font-family: "Open Sans", verdana, arial, sans-serif; position: fixed; top: 50px; right: 20px; z-index: 10000; font-size: 10pt; max-width: 180px; }
+.js-plotly-plot .plotly .vertical [data-title]::before { border-width: 6px; border-style: solid; border-color: rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) rgb(105, 115, 138); border-image: initial; margin-top: 8px; margin-right: -30px; }
+.js-plotly-plot .plotly .vertical [data-title]::before, .js-plotly-plot .plotly .vertical [data-title]::after { top: 0%; right: 200%; }
+.js-plotly-plot .plotly [data-title]::after { content: attr(data-title); background: rgb(105, 115, 138); color: rgb(255, 255, 255); padding: 8px 10px; font-size: 12px; line-height: 12px; white-space: nowrap; margin-right: -18px; border-radius: 2px; }
+.js-plotly-plot .plotly [data-title]::before { content: ""; position: absolute; background: rgba(0, 0, 0, 0); border-width: 6px; border-style: solid; border-color: rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) rgb(105, 115, 138); border-image: initial; z-index: 1002; margin-top: -12px; margin-right: -6px; }
+.js-plotly-plot .plotly [data-title]:hover::before, .js-plotly-plot .plotly [data-title]:hover::after { display: block; opacity: 1; }
+.js-plotly-plot .plotly [data-title]::before, .js-plotly-plot .plotly [data-title]::after { position: absolute; transform: translate3d(0px, 0px, 0px); display: none; opacity: 0; z-index: 1001; pointer-events: none; top: 110%; right: 50%; }
+.js-plotly-plot .plotly .modebar.vertical .modebar-group .modebar-btn { display: block; text-align: center; }
+.js-plotly-plot .plotly .modebar.vertical .modebar-group { display: block; float: none; padding-left: 0px; padding-bottom: 8px; }
+.js-plotly-plot .plotly .modebar.vertical svg { top: -1px; }
+.js-plotly-plot .plotly .modebar.vertical { display: flex; flex-flow: column wrap; align-content: flex-end; max-height: 100%; }
+.js-plotly-plot .plotly .modebar-btn:focus-visible { outline: rgb(0, 0, 0) solid 1px; outline-offset: 1px; border-radius: 3px; }
+.js-plotly-plot .plotly .modebar-btn svg { position: relative; }
+.js-plotly-plot .plotly .modebar-btn { position: relative; font-size: 16px; padding: 3px 4px; height: 22px; cursor: pointer; line-height: normal; box-sizing: border-box; border: none; background: rgba(0, 0, 0, 0); }
+.js-plotly-plot .plotly .modebar-group a { display: grid; place-content: center; }
+.js-plotly-plot .plotly .modebar-group { float: left; display: inline-block; box-sizing: border-box; padding-left: 8px; position: relative; vertical-align: middle; white-space: nowrap; }
+.js-plotly-plot .plotly:focus-within .modebar--hover .modebar-group { opacity: 1; }
+.js-plotly-plot .plotly:hover .modebar--hover .modebar-group { opacity: 1; }
+.js-plotly-plot .plotly .modebar--hover > :not(.watermark) { opacity: 0; transition: opacity 0.3s; }
+.js-plotly-plot .plotly .ease-bg { transition: background-color 0.3s; }
+.js-plotly-plot .plotly .modebar { position: absolute; top: 2px; right: 2px; }
+.js-plotly-plot .plotly .cursor-grab { cursor: grab; }
+.js-plotly-plot .plotly .cursor-ne-resize { cursor: ne-resize; }
+.js-plotly-plot .plotly .cursor-n-resize { cursor: n-resize; }
+.js-plotly-plot .plotly .cursor-nw-resize { cursor: nw-resize; }
+.js-plotly-plot .plotly .cursor-e-resize { cursor: e-resize; }
+.js-plotly-plot .plotly .cursor-w-resize { cursor: w-resize; }
+.js-plotly-plot .plotly .cursor-se-resize { cursor: se-resize; }
+.js-plotly-plot .plotly .cursor-s-resize { cursor: s-resize; }
+.js-plotly-plot .plotly .cursor-sw-resize { cursor: sw-resize; }
+.js-plotly-plot .plotly .cursor-ew-resize { cursor: ew-resize; }
+.js-plotly-plot .plotly .cursor-ns-resize { cursor: ns-resize; }
+.js-plotly-plot .plotly .cursor-row-resize { cursor: row-resize; }
+.js-plotly-plot .plotly .cursor-col-resize { cursor: col-resize; }
+.js-plotly-plot .plotly .cursor-move { cursor: move; }
+.js-plotly-plot .plotly .cursor-crosshair { cursor: crosshair; }
+.js-plotly-plot .plotly .cursor-pointer { cursor: pointer; }
+.js-plotly-plot .plotly .cursor-default { cursor: default; }
+.js-plotly-plot .plotly .main-svg .draglayer { pointer-events: all; }
+.js-plotly-plot .plotly .main-svg { position: absolute; top: 0px; left: 0px; pointer-events: none; }
+.js-plotly-plot .plotly svg a:hover { fill: rgb(60, 109, 197); }
+.js-plotly-plot .plotly svg a { fill: rgb(68, 122, 219); }
+.js-plotly-plot .plotly .user-select-none { user-select: none; }
+.js-plotly-plot .plotly .crisp { shape-rendering: crispedges; }
+.js-plotly-plot .plotly a:hover { text-decoration: none; }
+.js-plotly-plot .plotly a { text-decoration: none; }
+.js-plotly-plot .plotly input:focus, .js-plotly-plot .plotly button:focus { outline: none; }
+.js-plotly-plot .plotly input, .js-plotly-plot .plotly button { font-family: "Open Sans", verdana, arial, sans-serif; }
+.js-plotly-plot .plotly, .js-plotly-plot .plotly div { direction: ltr; font-family: "Open Sans", verdana, arial, sans-serif; margin: 0px; padding: 0px; border: 0px; }
+.maplibregl-map { font: 12px / 20px "Helvetica Neue", Arial, Helvetica, sans-serif; overflow: hidden; position: relative; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
+.maplibregl-canvas { left: 0px; position: absolute; top: 0px; }
+.maplibregl-map:fullscreen { height: 100%; width: 100%; }
+.maplibregl-ctrl-group button.maplibregl-ctrl-compass { touch-action: none; }
+.maplibregl-canvas-container.maplibregl-interactive, .maplibregl-ctrl-group button.maplibregl-ctrl-compass { cursor: grab; user-select: none; }
+.maplibregl-canvas-container.maplibregl-interactive.maplibregl-track-pointer { cursor: pointer; }
+.maplibregl-canvas-container.maplibregl-interactive:active, .maplibregl-ctrl-group button.maplibregl-ctrl-compass:active { cursor: grabbing; }
+.maplibregl-canvas-container.maplibregl-touch-zoom-rotate, .maplibregl-canvas-container.maplibregl-touch-zoom-rotate .maplibregl-canvas { touch-action: pan-x pan-y; }
+.maplibregl-canvas-container.maplibregl-touch-drag-pan, .maplibregl-canvas-container.maplibregl-touch-drag-pan .maplibregl-canvas { touch-action: pinch-zoom; }
+.maplibregl-canvas-container.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan, .maplibregl-canvas-container.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan .maplibregl-canvas { touch-action: none; }
+.maplibregl-canvas-container.maplibregl-touch-drag-pan.maplibregl-cooperative-gestures, .maplibregl-canvas-container.maplibregl-touch-drag-pan.maplibregl-cooperative-gestures .maplibregl-canvas { touch-action: pan-x pan-y; }
+.maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right, .maplibregl-ctrl-top-left, .maplibregl-ctrl-top-right { pointer-events: none; position: absolute; z-index: 2; }
+.maplibregl-ctrl-top-left { left: 0px; top: 0px; }
+.maplibregl-ctrl-top-right { right: 0px; top: 0px; }
+.maplibregl-ctrl-bottom-left { bottom: 0px; left: 0px; }
+.maplibregl-ctrl-bottom-right { bottom: 0px; right: 0px; }
+.maplibregl-ctrl { clear: both; pointer-events: auto; transform: translate(0px); }
+.maplibregl-ctrl-top-left .maplibregl-ctrl { float: left; margin: 10px 0px 0px 10px; }
+.maplibregl-ctrl-top-right .maplibregl-ctrl { float: right; margin: 10px 10px 0px 0px; }
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl { float: left; margin: 0px 0px 10px 10px; }
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl { float: right; margin: 0px 10px 10px 0px; }
+.maplibregl-ctrl-group { background: rgb(255, 255, 255); border-radius: 4px; }
+.maplibregl-ctrl-group:not(:empty) { box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 0px 2px; }
+@media (forced-colors: active) {
+  .maplibregl-ctrl-group:not(:empty) { box-shadow: buttontext 0px 0px 0px 2px; }
+}
+.maplibregl-ctrl-group button { background-color: transparent; border: 0px; box-sizing: border-box; cursor: pointer; display: block; height: 29px; outline: none; padding: 0px; width: 29px; }
+.maplibregl-ctrl-group button + button { border-top: 1px solid rgb(221, 221, 221); }
+.maplibregl-ctrl button .maplibregl-ctrl-icon { background-position: 50% center; background-repeat: no-repeat; display: block; height: 100%; width: 100%; }
+@media (forced-colors: active) {
+  .maplibregl-ctrl-icon { background-color: transparent; }
+  .maplibregl-ctrl-group button + button { border-top: 1px solid buttontext; }
+}
+.maplibregl-ctrl-attrib-button:focus, .maplibregl-ctrl-group button:focus { box-shadow: rgb(0, 150, 255) 0px 0px 2px 2px; }
+.maplibregl-ctrl button:disabled { cursor: not-allowed; }
+.maplibregl-ctrl button:disabled .maplibregl-ctrl-icon { opacity: 0.25; }
+.maplibregl-ctrl button:not(:disabled):hover { background-color: rgba(0, 0, 0, 0.05); }
+.maplibregl-ctrl-group button:focus:focus-visible { box-shadow: rgb(0, 150, 255) 0px 0px 2px 2px; }
+.maplibregl-ctrl-group button:focus:not(:focus-visible) { box-shadow: none; }
+.maplibregl-ctrl-group button:focus:first-child { border-radius: 4px 4px 0px 0px; }
+.maplibregl-ctrl-group button:focus:last-child { border-radius: 0px 0px 4px 4px; }
+.maplibregl-ctrl-group button:focus:only-child { border-radius: inherit; }
+.maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 29 29'%3E%3Cpath d='M10 13c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h9c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13z'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 29 29'%3E%3Cpath d='M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5'/%3E%3C/svg%3E"); }
+@media (forced-colors: active) {
+  .maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='M10 13c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h9c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13z'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5'/%3E%3C/svg%3E"); }
+}
+@media (forced-colors: active) and (prefers-color-scheme: light) {
+  .maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M10 13c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h9c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13z'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5'/%3E%3C/svg%3E"); }
+}
+.maplibregl-ctrl button.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 29 29'%3E%3Cpath d='M24 16v5.5c0 1.75-.75 2.5-2.5 2.5H16v-1l3-1.5-4-5.5 1-1 5.5 4 1.5-3zM6 16l1.5 3 5.5-4 1 1-4 5.5 3 1.5v1H7.5C5.75 24 5 23.25 5 21.5V16zm7-11v1l-3 1.5 4 5.5-1 1-5.5-4L6 13H5V7.5C5 5.75 5.75 5 7.5 5zm11 2.5c0-1.75-.75-2.5-2.5-2.5H16v1l3 1.5-4 5.5 1 1 5.5-4 1.5 3h1z'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-shrink .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M18.5 16c-1.75 0-2.5.75-2.5 2.5V24h1l1.5-3 5.5 4 1-1-4-5.5 3-1.5v-1zM13 18.5c0-1.75-.75-2.5-2.5-2.5H5v1l3 1.5L4 24l1 1 5.5-4 1.5 3h1zm3-8c0 1.75.75 2.5 2.5 2.5H24v-1l-3-1.5L25 5l-1-1-5.5 4L17 5h-1zM10.5 13c1.75 0 2.5-.75 2.5-2.5V5h-1l-1.5 3L5 4 4 5l4 5.5L5 12v1z'/%3E%3C/svg%3E"); }
+@media (forced-colors: active) {
+  .maplibregl-ctrl button.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='M24 16v5.5c0 1.75-.75 2.5-2.5 2.5H16v-1l3-1.5-4-5.5 1-1 5.5 4 1.5-3zM6 16l1.5 3 5.5-4 1 1-4 5.5 3 1.5v1H7.5C5.75 24 5 23.25 5 21.5V16zm7-11v1l-3 1.5 4 5.5-1 1-5.5-4L6 13H5V7.5C5 5.75 5.75 5 7.5 5zm11 2.5c0-1.75-.75-2.5-2.5-2.5H16v1l3 1.5-4 5.5 1 1 5.5-4 1.5 3h1z'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-shrink .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='M18.5 16c-1.75 0-2.5.75-2.5 2.5V24h1l1.5-3 5.5 4 1-1-4-5.5 3-1.5v-1zM13 18.5c0-1.75-.75-2.5-2.5-2.5H5v1l3 1.5L4 24l1 1 5.5-4 1.5 3h1zm3-8c0 1.75.75 2.5 2.5 2.5H24v-1l-3-1.5L25 5l-1-1-5.5 4L17 5h-1zM10.5 13c1.75 0 2.5-.75 2.5-2.5V5h-1l-1.5 3L5 4 4 5l4 5.5L5 12v1z'/%3E%3C/svg%3E"); }
+}
+@media (forced-colors: active) and (prefers-color-scheme: light) {
+  .maplibregl-ctrl button.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M24 16v5.5c0 1.75-.75 2.5-2.5 2.5H16v-1l3-1.5-4-5.5 1-1 5.5 4 1.5-3zM6 16l1.5 3 5.5-4 1 1-4 5.5 3 1.5v1H7.5C5.75 24 5 23.25 5 21.5V16zm7-11v1l-3 1.5 4 5.5-1 1-5.5-4L6 13H5V7.5C5 5.75 5.75 5 7.5 5zm11 2.5c0-1.75-.75-2.5-2.5-2.5H16v1l3 1.5-4 5.5 1 1 5.5-4 1.5 3h1z'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-shrink .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M18.5 16c-1.75 0-2.5.75-2.5 2.5V24h1l1.5-3 5.5 4 1-1-4-5.5 3-1.5v-1zM13 18.5c0-1.75-.75-2.5-2.5-2.5H5v1l3 1.5L4 24l1 1 5.5-4 1.5 3h1zm3-8c0 1.75.75 2.5 2.5 2.5H24v-1l-3-1.5L25 5l-1-1-5.5 4L17 5h-1zM10.5 13c1.75 0 2.5-.75 2.5-2.5V5h-1l-1.5 3L5 4 4 5l4 5.5L5 12v1z'/%3E%3C/svg%3E"); }
+}
+.maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 29 29'%3E%3Cpath d='m10.5 14 4-8 4 8z'/%3E%3Cpath fill='%23ccc' d='m10.5 16 4 8 4-8z'/%3E%3C/svg%3E"); }
+@media (forced-colors: active) {
+  .maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='m10.5 14 4-8 4 8z'/%3E%3Cpath fill='%23ccc' d='m10.5 16 4 8 4-8z'/%3E%3C/svg%3E"); }
+}
+@media (forced-colors: active) and (prefers-color-scheme: light) {
+  .maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='m10.5 14 4-8 4 8z'/%3E%3Cpath fill='%23ccc' d='m10.5 16 4 8 4-8z'/%3E%3C/svg%3E"); }
+}
+.maplibregl-ctrl button.maplibregl-ctrl-terrain .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='%23333' viewBox='0 0 22 22'%3E%3Cpath d='m1.754 13.406 4.453-4.851 3.09 3.09 3.281 3.277.969-.969-3.309-3.312 3.844-4.121 6.148 6.886h1.082v-.855l-7.207-8.07-4.84 5.187L6.169 6.57l-5.48 5.965v.871ZM.688 16.844h20.625v1.375H.688Zm0 0'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-terrain-enabled .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='%2333b5e5' viewBox='0 0 22 22'%3E%3Cpath d='m1.754 13.406 4.453-4.851 3.09 3.09 3.281 3.277.969-.969-3.309-3.312 3.844-4.121 6.148 6.886h1.082v-.855l-7.207-8.07-4.84 5.187L6.169 6.57l-5.48 5.965v.871ZM.688 16.844h20.625v1.375H.688Zm0 0'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23aaa' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Cpath fill='red' d='m14 5 1 1-9 9-1-1z'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%2333b5e5' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-active-error .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23e58978' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%2333b5e5' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-background-error .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23e54e33' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3C/svg%3E"); }
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-waiting .maplibregl-ctrl-icon { animation: 2s linear 0s infinite normal none running maplibregl-spin; }
+@media (forced-colors: active) {
+  .maplibregl-ctrl button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23999' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Cpath fill='red' d='m14 5 1 1-9 9-1-1z'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%2333b5e5' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-active-error .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23e58978' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%2333b5e5' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-background-error .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23e54e33' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3C/svg%3E"); }
+}
+@media (forced-colors: active) and (prefers-color-scheme: light) {
+  .maplibregl-ctrl button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E"); }
+  .maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23666' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Cpath fill='red' d='m14 5 1 1-9 9-1-1z'/%3E%3C/svg%3E"); }
+}
+@keyframes maplibregl-spin { 
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(1turn); }
+}
+a.maplibregl-ctrl-logo { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='23' fill='none'%3E%3Cpath fill='%23000' fill-opacity='.4' fill-rule='evenodd' d='M17.408 16.796h-1.827l2.501-12.095h.198l3.324 6.533.988 2.19.988-2.19 3.258-6.533h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.929 5.644h-.098l-2.914-5.644-.757-1.71-.345 1.71zm1.958-3.42-.726 3.663a1.255 1.255 0 0 1-1.232 1.011h-1.827a1.255 1.255 0 0 1-1.229-1.509l2.501-12.095a1.255 1.255 0 0 1 1.23-1.001h.197a1.25 1.25 0 0 1 1.12.685l3.19 6.273 3.125-6.263a1.25 1.25 0 0 1 1.123-.695h.181a1.255 1.255 0 0 1 1.227.991l1.443 6.71a5 5 0 0 1 .314-.787l.009-.016a4.6 4.6 0 0 1 1.777-1.887c.782-.46 1.668-.667 2.611-.667a4.6 4.6 0 0 1 1.7.32l.306.134c.21-.16.474-.256.759-.256h1.694a1.255 1.255 0 0 1 1.212.925 1.255 1.255 0 0 1 1.212-.925h1.711c.284 0 .545.094.755.252.613-.3 1.312-.45 2.075-.45 1.356 0 2.557.445 3.482 1.4q.47.48.763 1.064V4.701a1.255 1.255 0 0 1 1.255-1.255h1.86A1.255 1.255 0 0 1 54.44 4.7v9.194h2.217c.19 0 .37.043.532.118v-4.77c0-.356.147-.678.385-.906a2.42 2.42 0 0 1-.682-1.71c0-.665.267-1.253.735-1.7a2.45 2.45 0 0 1 1.722-.674 2.43 2.43 0 0 1 1.705.675q.318.302.504.683V4.7a1.255 1.255 0 0 1 1.255-1.255h1.744A1.255 1.255 0 0 1 65.812 4.7v3.335a4.8 4.8 0 0 1 1.526-.246c.938 0 1.817.214 2.59.69a4.47 4.47 0 0 1 1.67 1.743v-.98a1.255 1.255 0 0 1 1.256-1.256h1.777c.233 0 .451.064.639.174a3.4 3.4 0 0 1 1.567-.372c.346 0 .861.02 1.285.232a1.25 1.25 0 0 1 .689 1.004 4.7 4.7 0 0 1 .853-.588c.795-.44 1.675-.647 2.61-.647 1.385 0 2.65.39 3.525 1.396.836.938 1.168 2.173 1.168 3.528q-.001.515-.056 1.051a1.255 1.255 0 0 1-.947 1.09l.408.952a1.255 1.255 0 0 1-.477 1.552c-.418.268-.92.463-1.458.612-.613.171-1.304.244-2.049.244-1.06 0-2.043-.207-2.886-.698l-.015-.008c-.798-.48-1.419-1.135-1.818-1.963l-.004-.008a5.8 5.8 0 0 1-.548-2.512q0-.429.053-.843a1.3 1.3 0 0 1-.333-.086l-.166-.004c-.223 0-.426.062-.643.228-.03.024-.142.139-.142.59v3.883a1.255 1.255 0 0 1-1.256 1.256h-1.777a1.255 1.255 0 0 1-1.256-1.256V15.69l-.032.057a4.8 4.8 0 0 1-1.86 1.833 5.04 5.04 0 0 1-2.484.634 4.5 4.5 0 0 1-1.935-.424 1.25 1.25 0 0 1-.764.258h-1.71a1.255 1.255 0 0 1-1.256-1.255V7.687a2.4 2.4 0 0 1-.428.625c.253.23.412.561.412.93v7.553a1.255 1.255 0 0 1-1.256 1.255h-1.843a1.25 1.25 0 0 1-.894-.373c-.228.23-.544.373-.894.373H51.32a1.255 1.255 0 0 1-1.256-1.255v-1.251l-.061.117a4.7 4.7 0 0 1-1.782 1.884 4.77 4.77 0 0 1-2.485.67 5.6 5.6 0 0 1-1.485-.188l.009 2.764a1.255 1.255 0 0 1-1.255 1.259h-1.729a1.255 1.255 0 0 1-1.255-1.255v-3.537a1.255 1.255 0 0 1-1.167.793h-1.679a1.25 1.25 0 0 1-.77-.263 4.5 4.5 0 0 1-1.945.429c-.885 0-1.724-.21-2.495-.632l-.017-.01a5 5 0 0 1-1.081-.836 1.255 1.255 0 0 1-1.254 1.312h-1.81a1.255 1.255 0 0 1-1.228-.99l-.782-3.625-2.044 3.939a1.25 1.25 0 0 1-1.115.676h-.098a1.25 1.25 0 0 1-1.116-.68l-2.061-3.994zM35.92 16.63l.207-.114.223-.15q.493-.356.735-.785l.061-.118.033 1.332h1.678V9.242h-1.694l-.033 1.267q-.133-.329-.526-.658l-.032-.028a3.2 3.2 0 0 0-.668-.428l-.27-.12a3.3 3.3 0 0 0-1.235-.23q-1.136-.001-1.974.493a3.36 3.36 0 0 0-1.3 1.382q-.445.89-.444 2.074 0 1.2.51 2.107a3.8 3.8 0 0 0 1.382 1.381 3.9 3.9 0 0 0 1.893.477q.795 0 1.455-.33zm-2.789-5.38q-.576.675-.575 1.762 0 1.102.559 1.794.576.675 1.645.675a2.25 2.25 0 0 0 .934-.19 2.2 2.2 0 0 0 .468-.29l.178-.161a2.2 2.2 0 0 0 .397-.561q.244-.5.244-1.15v-.115q0-.708-.296-1.267l-.043-.077a2.2 2.2 0 0 0-.633-.709l-.13-.086-.047-.028a2.1 2.1 0 0 0-1.073-.285q-1.052 0-1.629.692zm2.316 2.706c.163-.17.28-.407.28-.83v-.114c0-.292-.06-.508-.15-.68a.96.96 0 0 0-.353-.389.85.85 0 0 0-.464-.127c-.4 0-.56.114-.664.239l-.01.012c-.148.174-.275.45-.275.945 0 .506.122.801.27.99.097.11.266.224.68.224.303 0 .504-.09.687-.269zm7.545 1.705a2.6 2.6 0 0 0 .331.423q.319.33.755.548l.173.074q.65.255 1.49.255 1.02 0 1.844-.493a3.45 3.45 0 0 0 1.316-1.4q.493-.904.493-2.089 0-1.909-.988-2.913-.988-1.02-2.584-1.02-.898 0-1.575.347a3 3 0 0 0-.415.262l-.199.166a3.4 3.4 0 0 0-.64.82V9.242h-1.712v11.553h1.729l-.017-5.134zm.53-1.138q.206.29.48.5l.155.11.053.034q.51.296 1.119.297 1.07 0 1.645-.675.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.435 0-.835.16a2 2 0 0 0-.284.136 2 2 0 0 0-.363.254 2.2 2.2 0 0 0-.46.569l-.082.162a2.6 2.6 0 0 0-.213 1.072v.115q0 .707.296 1.267l.135.211zm.964-.818a1.1 1.1 0 0 0 .367.385.94.94 0 0 0 .476.118c.423 0 .59-.117.687-.23.159-.194.28-.478.28-.95 0-.53-.133-.8-.266-.952l-.021-.025c-.078-.094-.231-.221-.68-.221a1 1 0 0 0-.503.135l-.012.007a.86.86 0 0 0-.335.343c-.073.133-.132.324-.132.614v.115a1.4 1.4 0 0 0 .14.66zm15.7-6.222q.347-.346.346-.856a1.05 1.05 0 0 0-.345-.79 1.18 1.18 0 0 0-.84-.329q-.51 0-.855.33a1.05 1.05 0 0 0-.346.79q0 .51.346.855.345.346.856.346.51 0 .839-.346zm4.337 9.314.033-1.332q.191.403.59.747l.098.081a4 4 0 0 0 .316.224l.223.122a3.2 3.2 0 0 0 1.44.322 3.8 3.8 0 0 0 1.875-.477 3.5 3.5 0 0 0 1.382-1.366q.527-.89.526-2.09 0-1.184-.444-2.073a3.24 3.24 0 0 0-1.283-1.399q-.823-.51-1.942-.51a3.5 3.5 0 0 0-1.527.344l-.086.043-.165.09a3 3 0 0 0-.33.214q-.432.315-.656.707a2 2 0 0 0-.099.198l.082-1.283V4.701h-1.744v12.095zm.473-2.509a2.5 2.5 0 0 0 .566.7q.117.098.245.18l.144.08a2.1 2.1 0 0 0 .975.232q1.07 0 1.645-.675.576-.69.576-1.778 0-1.102-.576-1.777-.56-.691-1.645-.692a2.2 2.2 0 0 0-1.015.235q-.22.113-.415.282l-.15.142a2.1 2.1 0 0 0-.42.594q-.223.479-.223 1.1v.115q0 .705.293 1.26zm2.616-.293c.157-.191.28-.479.28-.967 0-.51-.13-.79-.276-.961l-.021-.026c-.082-.1-.232-.225-.67-.225a.87.87 0 0 0-.681.279l-.012.011c-.154.155-.274.38-.274.807v.115c0 .285.057.499.144.669a1.1 1.1 0 0 0 .367.405c.137.082.28.123.455.123.423 0 .59-.118.686-.23zm8.266-3.013q.345-.13.724-.14l.069-.002q.493 0 .642.099l.247-1.794q-.196-.099-.717-.099a2.3 2.3 0 0 0-.545.063 2 2 0 0 0-.411.148 2.2 2.2 0 0 0-.4.249 2.5 2.5 0 0 0-.485.499 2.7 2.7 0 0 0-.32.581l-.05.137v-1.48h-1.778v7.553h1.777v-3.884q0-.546.159-.943a1.5 1.5 0 0 1 .466-.636 2.5 2.5 0 0 1 .399-.253 2 2 0 0 1 .224-.099zm9.784 2.656.05-.922q0-1.743-.856-2.698-.838-.97-2.584-.97-1.119-.001-2.007.493a3.46 3.46 0 0 0-1.4 1.382q-.493.906-.493 2.106 0 1.07.428 1.975.428.89 1.332 1.432.906.526 2.255.526.973 0 1.668-.185l.044-.012.135-.04q.613-.184.984-.421l-.542-1.267q-.3.162-.642.274l-.297.087q-.51.131-1.3.131-.954 0-1.497-.444a1.6 1.6 0 0 1-.192-.193q-.366-.44-.512-1.234l-.004-.021zm-5.427-1.256-.003.022h3.752v-.138q-.011-.727-.288-1.118a1 1 0 0 0-.156-.176q-.46-.428-1.316-.428-.986 0-1.494.604-.379.45-.494 1.234zm-27.053 2.77V4.7h-1.86v12.095h5.333V15.15zm7.103-5.908v7.553h-1.843V9.242h1.843z'/%3E%3Cpath fill='%23fff' d='m19.63 11.151-.757-1.71-.345 1.71-1.12 5.644h-1.827L18.083 4.7h.197l3.325 6.533.988 2.19.988-2.19L26.839 4.7h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.93 5.644h-.098l-2.913-5.644zm14.836 5.81q-1.02 0-1.893-.478a3.8 3.8 0 0 1-1.381-1.382q-.51-.906-.51-2.106 0-1.185.444-2.074a3.36 3.36 0 0 1 1.3-1.382q.839-.494 1.974-.494a3.3 3.3 0 0 1 1.234.231 3.3 3.3 0 0 1 .97.575q.396.33.527.659l.033-1.267h1.694v7.553H37.18l-.033-1.332q-.279.593-1.02 1.053a3.17 3.17 0 0 1-1.662.444zm.296-1.482q.938 0 1.58-.642.642-.66.642-1.711v-.115q0-.708-.296-1.267a2.2 2.2 0 0 0-.807-.872 2.1 2.1 0 0 0-1.119-.313q-1.053 0-1.629.692-.575.675-.575 1.76 0 1.103.559 1.795.577.675 1.645.675zm6.521-6.237h1.711v1.4q.906-1.597 2.83-1.597 1.596 0 2.584 1.02.988 1.005.988 2.914 0 1.185-.493 2.09a3.46 3.46 0 0 1-1.316 1.399 3.5 3.5 0 0 1-1.844.493q-.954 0-1.662-.329a2.67 2.67 0 0 1-1.086-.97l.017 5.134h-1.728zm4.048 6.22q1.07 0 1.645-.674.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.592 0-1.12.296-.51.28-.822.823-.296.527-.296 1.234v.115q0 .708.296 1.267.313.543.823.855.51.296 1.119.297z'/%3E%3Cpath fill='%23e1e3e9' d='M51.325 4.7h1.86v10.45h3.473v1.646h-5.333zm7.12 4.542h1.843v7.553h-1.843zm.905-1.415a1.16 1.16 0 0 1-.856-.346 1.17 1.17 0 0 1-.346-.856 1.05 1.05 0 0 1 .346-.79q.346-.329.856-.329.494 0 .839.33a1.05 1.05 0 0 1 .345.79 1.16 1.16 0 0 1-.345.855q-.33.346-.84.346zm7.875 9.133a3.17 3.17 0 0 1-1.662-.444q-.723-.46-1.004-1.053l-.033 1.332h-1.71V4.701h1.743v4.657l-.082 1.283q.279-.658 1.086-1.119a3.5 3.5 0 0 1 1.778-.477q1.119 0 1.942.51a3.24 3.24 0 0 1 1.283 1.4q.445.888.444 2.072 0 1.201-.526 2.09a3.5 3.5 0 0 1-1.382 1.366 3.8 3.8 0 0 1-1.876.477zm-.296-1.481q1.069 0 1.645-.675.577-.69.577-1.778 0-1.102-.577-1.776-.56-.691-1.645-.692a2.12 2.12 0 0 0-1.58.659q-.642.641-.642 1.694v.115q0 .71.296 1.267a2.4 2.4 0 0 0 .807.872 2.1 2.1 0 0 0 1.119.313zm5.927-6.237h1.777v1.481q.263-.757.856-1.217a2.14 2.14 0 0 1 1.349-.46q.527 0 .724.098l-.247 1.794q-.149-.099-.642-.099-.774 0-1.416.494-.626.493-.626 1.58v3.883h-1.777V9.242zm9.534 7.718q-1.35 0-2.255-.526-.904-.543-1.332-1.432a4.6 4.6 0 0 1-.428-1.975q0-1.2.493-2.106a3.46 3.46 0 0 1 1.4-1.382q.889-.495 2.007-.494 1.744 0 2.584.97.855.956.856 2.7 0 .444-.05.92h-5.43q.18 1.005.708 1.45.542.443 1.497.443.79 0 1.3-.131a4 4 0 0 0 .938-.362l.542 1.267q-.411.263-1.119.46-.708.198-1.711.197zm1.596-4.558q.016-1.02-.444-1.432-.46-.428-1.316-.428-1.728 0-1.991 1.86z'/%3E%3Cpath d='M5.074 15.948a.484.657 0 0 0-.486.659v1.84a.484.657 0 0 0 .486.659h4.101a.484.657 0 0 0 .486-.659v-1.84a.484.657 0 0 0-.486-.659zm3.56 1.16H5.617v.838h3.017z' style='fill:%23fff;fill-rule:evenodd;stroke-width:1.03600001'/%3E%3Cg style='stroke-width:1.12603545'%3E%3Cpath d='M-9.408-1.416c-3.833-.025-7.056 2.912-7.08 6.615-.02 3.08 1.653 4.832 3.107 6.268.903.892 1.721 1.74 2.32 2.902l-.525-.004c-.543-.003-.992.304-1.24.639a1.87 1.87 0 0 0-.362 1.121l-.011 1.877c-.003.402.104.787.347 1.125.244.338.688.653 1.23.656l4.142.028c.542.003.99-.306 1.238-.641a1.87 1.87 0 0 0 .363-1.121l.012-1.875a1.87 1.87 0 0 0-.348-1.127c-.243-.338-.688-.653-1.23-.656l-.518-.004c.597-1.145 1.425-1.983 2.348-2.87 1.473-1.414 3.18-3.149 3.2-6.226-.016-3.59-2.923-6.684-6.993-6.707m-.006 1.1v.002c3.274.02 5.92 2.532 5.9 5.6-.017 2.706-1.39 4.026-2.863 5.44-1.034.994-2.118 2.033-2.814 3.633-.018.041-.052.055-.075.065q-.013.004-.02.01a.34.34 0 0 1-.226.084.34.34 0 0 1-.224-.086l-.092-.077c-.699-1.615-1.768-2.669-2.781-3.67-1.454-1.435-2.797-2.762-2.78-5.478.02-3.067 2.7-5.545 5.975-5.523m-.02 2.826c-1.62-.01-2.944 1.315-2.955 2.96-.01 1.646 1.295 2.988 2.916 2.999h.002c1.621.01 2.943-1.316 2.953-2.961.011-1.646-1.294-2.988-2.916-2.998m-.005 1.1c1.017.006 1.829.83 1.822 1.89s-.83 1.874-1.848 1.867c-1.018-.006-1.829-.83-1.822-1.89s.83-1.874 1.848-1.868m-2.155 11.857 4.14.025c.271.002.49.305.487.676l-.013 1.875c-.003.37-.224.67-.495.668l-4.14-.025c-.27-.002-.487-.306-.485-.676l.012-1.875c.003-.37.224-.67.494-.668' style='color:%23000;font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:%23000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:evenodd;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:%23000;solid-opacity:1;vector-effect:none;fill:%23000;fill-opacity:.4;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-9.415-.316C-12.69-.338-15.37 2.14-15.39 5.207c-.017 2.716 1.326 4.041 2.78 5.477 1.013 1 2.081 2.055 2.78 3.67l.092.076a.34.34 0 0 0 .225.086.34.34 0 0 0 .227-.083l.019-.01c.022-.009.057-.024.074-.064.697-1.6 1.78-2.64 2.814-3.634 1.473-1.414 2.847-2.733 2.864-5.44.02-3.067-2.627-5.58-5.901-5.601m-.057 8.784c1.621.011 2.944-1.315 2.955-2.96.01-1.646-1.295-2.988-2.916-2.999-1.622-.01-2.945 1.315-2.955 2.96s1.295 2.989 2.916 3' style='clip-rule:evenodd;fill:%23e1e3e9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-11.594 15.465c-.27-.002-.492.297-.494.668l-.012 1.876c-.003.371.214.673.485.675l4.14.027c.271.002.492-.298.495-.668l.012-1.877c.003-.37-.215-.672-.485-.674z' style='clip-rule:evenodd;fill:%23fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3C/g%3E%3C/svg%3E"); background-repeat: no-repeat; cursor: pointer; display: block; height: 23px; margin: 0px 0px -4px -4px; overflow: hidden; width: 88px; }
+a.maplibregl-ctrl-logo.maplibregl-compact { width: 14px; }
+@media (forced-colors: active) {
+  a.maplibregl-ctrl-logo { background-color: transparent; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='23' fill='none'%3E%3Cpath fill='%23000' fill-opacity='.4' fill-rule='evenodd' d='M17.408 16.796h-1.827l2.501-12.095h.198l3.324 6.533.988 2.19.988-2.19 3.258-6.533h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.929 5.644h-.098l-2.914-5.644-.757-1.71-.345 1.71zm1.958-3.42-.726 3.663a1.255 1.255 0 0 1-1.232 1.011h-1.827a1.255 1.255 0 0 1-1.229-1.509l2.501-12.095a1.255 1.255 0 0 1 1.23-1.001h.197a1.25 1.25 0 0 1 1.12.685l3.19 6.273 3.125-6.263a1.25 1.25 0 0 1 1.123-.695h.181a1.255 1.255 0 0 1 1.227.991l1.443 6.71a5 5 0 0 1 .314-.787l.009-.016a4.6 4.6 0 0 1 1.777-1.887c.782-.46 1.668-.667 2.611-.667a4.6 4.6 0 0 1 1.7.32l.306.134c.21-.16.474-.256.759-.256h1.694a1.255 1.255 0 0 1 1.212.925 1.255 1.255 0 0 1 1.212-.925h1.711c.284 0 .545.094.755.252.613-.3 1.312-.45 2.075-.45 1.356 0 2.557.445 3.482 1.4q.47.48.763 1.064V4.701a1.255 1.255 0 0 1 1.255-1.255h1.86A1.255 1.255 0 0 1 54.44 4.7v9.194h2.217c.19 0 .37.043.532.118v-4.77c0-.356.147-.678.385-.906a2.42 2.42 0 0 1-.682-1.71c0-.665.267-1.253.735-1.7a2.45 2.45 0 0 1 1.722-.674 2.43 2.43 0 0 1 1.705.675q.318.302.504.683V4.7a1.255 1.255 0 0 1 1.255-1.255h1.744A1.255 1.255 0 0 1 65.812 4.7v3.335a4.8 4.8 0 0 1 1.526-.246c.938 0 1.817.214 2.59.69a4.47 4.47 0 0 1 1.67 1.743v-.98a1.255 1.255 0 0 1 1.256-1.256h1.777c.233 0 .451.064.639.174a3.4 3.4 0 0 1 1.567-.372c.346 0 .861.02 1.285.232a1.25 1.25 0 0 1 .689 1.004 4.7 4.7 0 0 1 .853-.588c.795-.44 1.675-.647 2.61-.647 1.385 0 2.65.39 3.525 1.396.836.938 1.168 2.173 1.168 3.528q-.001.515-.056 1.051a1.255 1.255 0 0 1-.947 1.09l.408.952a1.255 1.255 0 0 1-.477 1.552c-.418.268-.92.463-1.458.612-.613.171-1.304.244-2.049.244-1.06 0-2.043-.207-2.886-.698l-.015-.008c-.798-.48-1.419-1.135-1.818-1.963l-.004-.008a5.8 5.8 0 0 1-.548-2.512q0-.429.053-.843a1.3 1.3 0 0 1-.333-.086l-.166-.004c-.223 0-.426.062-.643.228-.03.024-.142.139-.142.59v3.883a1.255 1.255 0 0 1-1.256 1.256h-1.777a1.255 1.255 0 0 1-1.256-1.256V15.69l-.032.057a4.8 4.8 0 0 1-1.86 1.833 5.04 5.04 0 0 1-2.484.634 4.5 4.5 0 0 1-1.935-.424 1.25 1.25 0 0 1-.764.258h-1.71a1.255 1.255 0 0 1-1.256-1.255V7.687a2.4 2.4 0 0 1-.428.625c.253.23.412.561.412.93v7.553a1.255 1.255 0 0 1-1.256 1.255h-1.843a1.25 1.25 0 0 1-.894-.373c-.228.23-.544.373-.894.373H51.32a1.255 1.255 0 0 1-1.256-1.255v-1.251l-.061.117a4.7 4.7 0 0 1-1.782 1.884 4.77 4.77 0 0 1-2.485.67 5.6 5.6 0 0 1-1.485-.188l.009 2.764a1.255 1.255 0 0 1-1.255 1.259h-1.729a1.255 1.255 0 0 1-1.255-1.255v-3.537a1.255 1.255 0 0 1-1.167.793h-1.679a1.25 1.25 0 0 1-.77-.263 4.5 4.5 0 0 1-1.945.429c-.885 0-1.724-.21-2.495-.632l-.017-.01a5 5 0 0 1-1.081-.836 1.255 1.255 0 0 1-1.254 1.312h-1.81a1.255 1.255 0 0 1-1.228-.99l-.782-3.625-2.044 3.939a1.25 1.25 0 0 1-1.115.676h-.098a1.25 1.25 0 0 1-1.116-.68l-2.061-3.994zM35.92 16.63l.207-.114.223-.15q.493-.356.735-.785l.061-.118.033 1.332h1.678V9.242h-1.694l-.033 1.267q-.133-.329-.526-.658l-.032-.028a3.2 3.2 0 0 0-.668-.428l-.27-.12a3.3 3.3 0 0 0-1.235-.23q-1.136-.001-1.974.493a3.36 3.36 0 0 0-1.3 1.382q-.445.89-.444 2.074 0 1.2.51 2.107a3.8 3.8 0 0 0 1.382 1.381 3.9 3.9 0 0 0 1.893.477q.795 0 1.455-.33zm-2.789-5.38q-.576.675-.575 1.762 0 1.102.559 1.794.576.675 1.645.675a2.25 2.25 0 0 0 .934-.19 2.2 2.2 0 0 0 .468-.29l.178-.161a2.2 2.2 0 0 0 .397-.561q.244-.5.244-1.15v-.115q0-.708-.296-1.267l-.043-.077a2.2 2.2 0 0 0-.633-.709l-.13-.086-.047-.028a2.1 2.1 0 0 0-1.073-.285q-1.052 0-1.629.692zm2.316 2.706c.163-.17.28-.407.28-.83v-.114c0-.292-.06-.508-.15-.68a.96.96 0 0 0-.353-.389.85.85 0 0 0-.464-.127c-.4 0-.56.114-.664.239l-.01.012c-.148.174-.275.45-.275.945 0 .506.122.801.27.99.097.11.266.224.68.224.303 0 .504-.09.687-.269zm7.545 1.705a2.6 2.6 0 0 0 .331.423q.319.33.755.548l.173.074q.65.255 1.49.255 1.02 0 1.844-.493a3.45 3.45 0 0 0 1.316-1.4q.493-.904.493-2.089 0-1.909-.988-2.913-.988-1.02-2.584-1.02-.898 0-1.575.347a3 3 0 0 0-.415.262l-.199.166a3.4 3.4 0 0 0-.64.82V9.242h-1.712v11.553h1.729l-.017-5.134zm.53-1.138q.206.29.48.5l.155.11.053.034q.51.296 1.119.297 1.07 0 1.645-.675.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.435 0-.835.16a2 2 0 0 0-.284.136 2 2 0 0 0-.363.254 2.2 2.2 0 0 0-.46.569l-.082.162a2.6 2.6 0 0 0-.213 1.072v.115q0 .707.296 1.267l.135.211zm.964-.818a1.1 1.1 0 0 0 .367.385.94.94 0 0 0 .476.118c.423 0 .59-.117.687-.23.159-.194.28-.478.28-.95 0-.53-.133-.8-.266-.952l-.021-.025c-.078-.094-.231-.221-.68-.221a1 1 0 0 0-.503.135l-.012.007a.86.86 0 0 0-.335.343c-.073.133-.132.324-.132.614v.115a1.4 1.4 0 0 0 .14.66zm15.7-6.222q.347-.346.346-.856a1.05 1.05 0 0 0-.345-.79 1.18 1.18 0 0 0-.84-.329q-.51 0-.855.33a1.05 1.05 0 0 0-.346.79q0 .51.346.855.345.346.856.346.51 0 .839-.346zm4.337 9.314.033-1.332q.191.403.59.747l.098.081a4 4 0 0 0 .316.224l.223.122a3.2 3.2 0 0 0 1.44.322 3.8 3.8 0 0 0 1.875-.477 3.5 3.5 0 0 0 1.382-1.366q.527-.89.526-2.09 0-1.184-.444-2.073a3.24 3.24 0 0 0-1.283-1.399q-.823-.51-1.942-.51a3.5 3.5 0 0 0-1.527.344l-.086.043-.165.09a3 3 0 0 0-.33.214q-.432.315-.656.707a2 2 0 0 0-.099.198l.082-1.283V4.701h-1.744v12.095zm.473-2.509a2.5 2.5 0 0 0 .566.7q.117.098.245.18l.144.08a2.1 2.1 0 0 0 .975.232q1.07 0 1.645-.675.576-.69.576-1.778 0-1.102-.576-1.777-.56-.691-1.645-.692a2.2 2.2 0 0 0-1.015.235q-.22.113-.415.282l-.15.142a2.1 2.1 0 0 0-.42.594q-.223.479-.223 1.1v.115q0 .705.293 1.26zm2.616-.293c.157-.191.28-.479.28-.967 0-.51-.13-.79-.276-.961l-.021-.026c-.082-.1-.232-.225-.67-.225a.87.87 0 0 0-.681.279l-.012.011c-.154.155-.274.38-.274.807v.115c0 .285.057.499.144.669a1.1 1.1 0 0 0 .367.405c.137.082.28.123.455.123.423 0 .59-.118.686-.23zm8.266-3.013q.345-.13.724-.14l.069-.002q.493 0 .642.099l.247-1.794q-.196-.099-.717-.099a2.3 2.3 0 0 0-.545.063 2 2 0 0 0-.411.148 2.2 2.2 0 0 0-.4.249 2.5 2.5 0 0 0-.485.499 2.7 2.7 0 0 0-.32.581l-.05.137v-1.48h-1.778v7.553h1.777v-3.884q0-.546.159-.943a1.5 1.5 0 0 1 .466-.636 2.5 2.5 0 0 1 .399-.253 2 2 0 0 1 .224-.099zm9.784 2.656.05-.922q0-1.743-.856-2.698-.838-.97-2.584-.97-1.119-.001-2.007.493a3.46 3.46 0 0 0-1.4 1.382q-.493.906-.493 2.106 0 1.07.428 1.975.428.89 1.332 1.432.906.526 2.255.526.973 0 1.668-.185l.044-.012.135-.04q.613-.184.984-.421l-.542-1.267q-.3.162-.642.274l-.297.087q-.51.131-1.3.131-.954 0-1.497-.444a1.6 1.6 0 0 1-.192-.193q-.366-.44-.512-1.234l-.004-.021zm-5.427-1.256-.003.022h3.752v-.138q-.011-.727-.288-1.118a1 1 0 0 0-.156-.176q-.46-.428-1.316-.428-.986 0-1.494.604-.379.45-.494 1.234zm-27.053 2.77V4.7h-1.86v12.095h5.333V15.15zm7.103-5.908v7.553h-1.843V9.242h1.843z'/%3E%3Cpath fill='%23fff' d='m19.63 11.151-.757-1.71-.345 1.71-1.12 5.644h-1.827L18.083 4.7h.197l3.325 6.533.988 2.19.988-2.19L26.839 4.7h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.93 5.644h-.098l-2.913-5.644zm14.836 5.81q-1.02 0-1.893-.478a3.8 3.8 0 0 1-1.381-1.382q-.51-.906-.51-2.106 0-1.185.444-2.074a3.36 3.36 0 0 1 1.3-1.382q.839-.494 1.974-.494a3.3 3.3 0 0 1 1.234.231 3.3 3.3 0 0 1 .97.575q.396.33.527.659l.033-1.267h1.694v7.553H37.18l-.033-1.332q-.279.593-1.02 1.053a3.17 3.17 0 0 1-1.662.444zm.296-1.482q.938 0 1.58-.642.642-.66.642-1.711v-.115q0-.708-.296-1.267a2.2 2.2 0 0 0-.807-.872 2.1 2.1 0 0 0-1.119-.313q-1.053 0-1.629.692-.575.675-.575 1.76 0 1.103.559 1.795.577.675 1.645.675zm6.521-6.237h1.711v1.4q.906-1.597 2.83-1.597 1.596 0 2.584 1.02.988 1.005.988 2.914 0 1.185-.493 2.09a3.46 3.46 0 0 1-1.316 1.399 3.5 3.5 0 0 1-1.844.493q-.954 0-1.662-.329a2.67 2.67 0 0 1-1.086-.97l.017 5.134h-1.728zm4.048 6.22q1.07 0 1.645-.674.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.592 0-1.12.296-.51.28-.822.823-.296.527-.296 1.234v.115q0 .708.296 1.267.313.543.823.855.51.296 1.119.297z'/%3E%3Cpath fill='%23e1e3e9' d='M51.325 4.7h1.86v10.45h3.473v1.646h-5.333zm7.12 4.542h1.843v7.553h-1.843zm.905-1.415a1.16 1.16 0 0 1-.856-.346 1.17 1.17 0 0 1-.346-.856 1.05 1.05 0 0 1 .346-.79q.346-.329.856-.329.494 0 .839.33a1.05 1.05 0 0 1 .345.79 1.16 1.16 0 0 1-.345.855q-.33.346-.84.346zm7.875 9.133a3.17 3.17 0 0 1-1.662-.444q-.723-.46-1.004-1.053l-.033 1.332h-1.71V4.701h1.743v4.657l-.082 1.283q.279-.658 1.086-1.119a3.5 3.5 0 0 1 1.778-.477q1.119 0 1.942.51a3.24 3.24 0 0 1 1.283 1.4q.445.888.444 2.072 0 1.201-.526 2.09a3.5 3.5 0 0 1-1.382 1.366 3.8 3.8 0 0 1-1.876.477zm-.296-1.481q1.069 0 1.645-.675.577-.69.577-1.778 0-1.102-.577-1.776-.56-.691-1.645-.692a2.12 2.12 0 0 0-1.58.659q-.642.641-.642 1.694v.115q0 .71.296 1.267a2.4 2.4 0 0 0 .807.872 2.1 2.1 0 0 0 1.119.313zm5.927-6.237h1.777v1.481q.263-.757.856-1.217a2.14 2.14 0 0 1 1.349-.46q.527 0 .724.098l-.247 1.794q-.149-.099-.642-.099-.774 0-1.416.494-.626.493-.626 1.58v3.883h-1.777V9.242zm9.534 7.718q-1.35 0-2.255-.526-.904-.543-1.332-1.432a4.6 4.6 0 0 1-.428-1.975q0-1.2.493-2.106a3.46 3.46 0 0 1 1.4-1.382q.889-.495 2.007-.494 1.744 0 2.584.97.855.956.856 2.7 0 .444-.05.92h-5.43q.18 1.005.708 1.45.542.443 1.497.443.79 0 1.3-.131a4 4 0 0 0 .938-.362l.542 1.267q-.411.263-1.119.46-.708.198-1.711.197zm1.596-4.558q.016-1.02-.444-1.432-.46-.428-1.316-.428-1.728 0-1.991 1.86z'/%3E%3Cpath d='M5.074 15.948a.484.657 0 0 0-.486.659v1.84a.484.657 0 0 0 .486.659h4.101a.484.657 0 0 0 .486-.659v-1.84a.484.657 0 0 0-.486-.659zm3.56 1.16H5.617v.838h3.017z' style='fill:%23fff;fill-rule:evenodd;stroke-width:1.03600001'/%3E%3Cg style='stroke-width:1.12603545'%3E%3Cpath d='M-9.408-1.416c-3.833-.025-7.056 2.912-7.08 6.615-.02 3.08 1.653 4.832 3.107 6.268.903.892 1.721 1.74 2.32 2.902l-.525-.004c-.543-.003-.992.304-1.24.639a1.87 1.87 0 0 0-.362 1.121l-.011 1.877c-.003.402.104.787.347 1.125.244.338.688.653 1.23.656l4.142.028c.542.003.99-.306 1.238-.641a1.87 1.87 0 0 0 .363-1.121l.012-1.875a1.87 1.87 0 0 0-.348-1.127c-.243-.338-.688-.653-1.23-.656l-.518-.004c.597-1.145 1.425-1.983 2.348-2.87 1.473-1.414 3.18-3.149 3.2-6.226-.016-3.59-2.923-6.684-6.993-6.707m-.006 1.1v.002c3.274.02 5.92 2.532 5.9 5.6-.017 2.706-1.39 4.026-2.863 5.44-1.034.994-2.118 2.033-2.814 3.633-.018.041-.052.055-.075.065q-.013.004-.02.01a.34.34 0 0 1-.226.084.34.34 0 0 1-.224-.086l-.092-.077c-.699-1.615-1.768-2.669-2.781-3.67-1.454-1.435-2.797-2.762-2.78-5.478.02-3.067 2.7-5.545 5.975-5.523m-.02 2.826c-1.62-.01-2.944 1.315-2.955 2.96-.01 1.646 1.295 2.988 2.916 2.999h.002c1.621.01 2.943-1.316 2.953-2.961.011-1.646-1.294-2.988-2.916-2.998m-.005 1.1c1.017.006 1.829.83 1.822 1.89s-.83 1.874-1.848 1.867c-1.018-.006-1.829-.83-1.822-1.89s.83-1.874 1.848-1.868m-2.155 11.857 4.14.025c.271.002.49.305.487.676l-.013 1.875c-.003.37-.224.67-.495.668l-4.14-.025c-.27-.002-.487-.306-.485-.676l.012-1.875c.003-.37.224-.67.494-.668' style='color:%23000;font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:%23000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:evenodd;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:%23000;solid-opacity:1;vector-effect:none;fill:%23000;fill-opacity:.4;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-9.415-.316C-12.69-.338-15.37 2.14-15.39 5.207c-.017 2.716 1.326 4.041 2.78 5.477 1.013 1 2.081 2.055 2.78 3.67l.092.076a.34.34 0 0 0 .225.086.34.34 0 0 0 .227-.083l.019-.01c.022-.009.057-.024.074-.064.697-1.6 1.78-2.64 2.814-3.634 1.473-1.414 2.847-2.733 2.864-5.44.02-3.067-2.627-5.58-5.901-5.601m-.057 8.784c1.621.011 2.944-1.315 2.955-2.96.01-1.646-1.295-2.988-2.916-2.999-1.622-.01-2.945 1.315-2.955 2.96s1.295 2.989 2.916 3' style='clip-rule:evenodd;fill:%23e1e3e9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-11.594 15.465c-.27-.002-.492.297-.494.668l-.012 1.876c-.003.371.214.673.485.675l4.14.027c.271.002.492-.298.495-.668l.012-1.877c.003-.37-.215-.672-.485-.674z' style='clip-rule:evenodd;fill:%23fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3C/g%3E%3C/svg%3E"); }
+}
+@media (forced-colors: active) and (prefers-color-scheme: light) {
+  a.maplibregl-ctrl-logo { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='23' fill='none'%3E%3Cpath fill='%23000' fill-opacity='.4' fill-rule='evenodd' d='M17.408 16.796h-1.827l2.501-12.095h.198l3.324 6.533.988 2.19.988-2.19 3.258-6.533h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.929 5.644h-.098l-2.914-5.644-.757-1.71-.345 1.71zm1.958-3.42-.726 3.663a1.255 1.255 0 0 1-1.232 1.011h-1.827a1.255 1.255 0 0 1-1.229-1.509l2.501-12.095a1.255 1.255 0 0 1 1.23-1.001h.197a1.25 1.25 0 0 1 1.12.685l3.19 6.273 3.125-6.263a1.25 1.25 0 0 1 1.123-.695h.181a1.255 1.255 0 0 1 1.227.991l1.443 6.71a5 5 0 0 1 .314-.787l.009-.016a4.6 4.6 0 0 1 1.777-1.887c.782-.46 1.668-.667 2.611-.667a4.6 4.6 0 0 1 1.7.32l.306.134c.21-.16.474-.256.759-.256h1.694a1.255 1.255 0 0 1 1.212.925 1.255 1.255 0 0 1 1.212-.925h1.711c.284 0 .545.094.755.252.613-.3 1.312-.45 2.075-.45 1.356 0 2.557.445 3.482 1.4q.47.48.763 1.064V4.701a1.255 1.255 0 0 1 1.255-1.255h1.86A1.255 1.255 0 0 1 54.44 4.7v9.194h2.217c.19 0 .37.043.532.118v-4.77c0-.356.147-.678.385-.906a2.42 2.42 0 0 1-.682-1.71c0-.665.267-1.253.735-1.7a2.45 2.45 0 0 1 1.722-.674 2.43 2.43 0 0 1 1.705.675q.318.302.504.683V4.7a1.255 1.255 0 0 1 1.255-1.255h1.744A1.255 1.255 0 0 1 65.812 4.7v3.335a4.8 4.8 0 0 1 1.526-.246c.938 0 1.817.214 2.59.69a4.47 4.47 0 0 1 1.67 1.743v-.98a1.255 1.255 0 0 1 1.256-1.256h1.777c.233 0 .451.064.639.174a3.4 3.4 0 0 1 1.567-.372c.346 0 .861.02 1.285.232a1.25 1.25 0 0 1 .689 1.004 4.7 4.7 0 0 1 .853-.588c.795-.44 1.675-.647 2.61-.647 1.385 0 2.65.39 3.525 1.396.836.938 1.168 2.173 1.168 3.528q-.001.515-.056 1.051a1.255 1.255 0 0 1-.947 1.09l.408.952a1.255 1.255 0 0 1-.477 1.552c-.418.268-.92.463-1.458.612-.613.171-1.304.244-2.049.244-1.06 0-2.043-.207-2.886-.698l-.015-.008c-.798-.48-1.419-1.135-1.818-1.963l-.004-.008a5.8 5.8 0 0 1-.548-2.512q0-.429.053-.843a1.3 1.3 0 0 1-.333-.086l-.166-.004c-.223 0-.426.062-.643.228-.03.024-.142.139-.142.59v3.883a1.255 1.255 0 0 1-1.256 1.256h-1.777a1.255 1.255 0 0 1-1.256-1.256V15.69l-.032.057a4.8 4.8 0 0 1-1.86 1.833 5.04 5.04 0 0 1-2.484.634 4.5 4.5 0 0 1-1.935-.424 1.25 1.25 0 0 1-.764.258h-1.71a1.255 1.255 0 0 1-1.256-1.255V7.687a2.4 2.4 0 0 1-.428.625c.253.23.412.561.412.93v7.553a1.255 1.255 0 0 1-1.256 1.255h-1.843a1.25 1.25 0 0 1-.894-.373c-.228.23-.544.373-.894.373H51.32a1.255 1.255 0 0 1-1.256-1.255v-1.251l-.061.117a4.7 4.7 0 0 1-1.782 1.884 4.77 4.77 0 0 1-2.485.67 5.6 5.6 0 0 1-1.485-.188l.009 2.764a1.255 1.255 0 0 1-1.255 1.259h-1.729a1.255 1.255 0 0 1-1.255-1.255v-3.537a1.255 1.255 0 0 1-1.167.793h-1.679a1.25 1.25 0 0 1-.77-.263 4.5 4.5 0 0 1-1.945.429c-.885 0-1.724-.21-2.495-.632l-.017-.01a5 5 0 0 1-1.081-.836 1.255 1.255 0 0 1-1.254 1.312h-1.81a1.255 1.255 0 0 1-1.228-.99l-.782-3.625-2.044 3.939a1.25 1.25 0 0 1-1.115.676h-.098a1.25 1.25 0 0 1-1.116-.68l-2.061-3.994zM35.92 16.63l.207-.114.223-.15q.493-.356.735-.785l.061-.118.033 1.332h1.678V9.242h-1.694l-.033 1.267q-.133-.329-.526-.658l-.032-.028a3.2 3.2 0 0 0-.668-.428l-.27-.12a3.3 3.3 0 0 0-1.235-.23q-1.136-.001-1.974.493a3.36 3.36 0 0 0-1.3 1.382q-.445.89-.444 2.074 0 1.2.51 2.107a3.8 3.8 0 0 0 1.382 1.381 3.9 3.9 0 0 0 1.893.477q.795 0 1.455-.33zm-2.789-5.38q-.576.675-.575 1.762 0 1.102.559 1.794.576.675 1.645.675a2.25 2.25 0 0 0 .934-.19 2.2 2.2 0 0 0 .468-.29l.178-.161a2.2 2.2 0 0 0 .397-.561q.244-.5.244-1.15v-.115q0-.708-.296-1.267l-.043-.077a2.2 2.2 0 0 0-.633-.709l-.13-.086-.047-.028a2.1 2.1 0 0 0-1.073-.285q-1.052 0-1.629.692zm2.316 2.706c.163-.17.28-.407.28-.83v-.114c0-.292-.06-.508-.15-.68a.96.96 0 0 0-.353-.389.85.85 0 0 0-.464-.127c-.4 0-.56.114-.664.239l-.01.012c-.148.174-.275.45-.275.945 0 .506.122.801.27.99.097.11.266.224.68.224.303 0 .504-.09.687-.269zm7.545 1.705a2.6 2.6 0 0 0 .331.423q.319.33.755.548l.173.074q.65.255 1.49.255 1.02 0 1.844-.493a3.45 3.45 0 0 0 1.316-1.4q.493-.904.493-2.089 0-1.909-.988-2.913-.988-1.02-2.584-1.02-.898 0-1.575.347a3 3 0 0 0-.415.262l-.199.166a3.4 3.4 0 0 0-.64.82V9.242h-1.712v11.553h1.729l-.017-5.134zm.53-1.138q.206.29.48.5l.155.11.053.034q.51.296 1.119.297 1.07 0 1.645-.675.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.435 0-.835.16a2 2 0 0 0-.284.136 2 2 0 0 0-.363.254 2.2 2.2 0 0 0-.46.569l-.082.162a2.6 2.6 0 0 0-.213 1.072v.115q0 .707.296 1.267l.135.211zm.964-.818a1.1 1.1 0 0 0 .367.385.94.94 0 0 0 .476.118c.423 0 .59-.117.687-.23.159-.194.28-.478.28-.95 0-.53-.133-.8-.266-.952l-.021-.025c-.078-.094-.231-.221-.68-.221a1 1 0 0 0-.503.135l-.012.007a.86.86 0 0 0-.335.343c-.073.133-.132.324-.132.614v.115a1.4 1.4 0 0 0 .14.66zm15.7-6.222q.347-.346.346-.856a1.05 1.05 0 0 0-.345-.79 1.18 1.18 0 0 0-.84-.329q-.51 0-.855.33a1.05 1.05 0 0 0-.346.79q0 .51.346.855.345.346.856.346.51 0 .839-.346zm4.337 9.314.033-1.332q.191.403.59.747l.098.081a4 4 0 0 0 .316.224l.223.122a3.2 3.2 0 0 0 1.44.322 3.8 3.8 0 0 0 1.875-.477 3.5 3.5 0 0 0 1.382-1.366q.527-.89.526-2.09 0-1.184-.444-2.073a3.24 3.24 0 0 0-1.283-1.399q-.823-.51-1.942-.51a3.5 3.5 0 0 0-1.527.344l-.086.043-.165.09a3 3 0 0 0-.33.214q-.432.315-.656.707a2 2 0 0 0-.099.198l.082-1.283V4.701h-1.744v12.095zm.473-2.509a2.5 2.5 0 0 0 .566.7q.117.098.245.18l.144.08a2.1 2.1 0 0 0 .975.232q1.07 0 1.645-.675.576-.69.576-1.778 0-1.102-.576-1.777-.56-.691-1.645-.692a2.2 2.2 0 0 0-1.015.235q-.22.113-.415.282l-.15.142a2.1 2.1 0 0 0-.42.594q-.223.479-.223 1.1v.115q0 .705.293 1.26zm2.616-.293c.157-.191.28-.479.28-.967 0-.51-.13-.79-.276-.961l-.021-.026c-.082-.1-.232-.225-.67-.225a.87.87 0 0 0-.681.279l-.012.011c-.154.155-.274.38-.274.807v.115c0 .285.057.499.144.669a1.1 1.1 0 0 0 .367.405c.137.082.28.123.455.123.423 0 .59-.118.686-.23zm8.266-3.013q.345-.13.724-.14l.069-.002q.493 0 .642.099l.247-1.794q-.196-.099-.717-.099a2.3 2.3 0 0 0-.545.063 2 2 0 0 0-.411.148 2.2 2.2 0 0 0-.4.249 2.5 2.5 0 0 0-.485.499 2.7 2.7 0 0 0-.32.581l-.05.137v-1.48h-1.778v7.553h1.777v-3.884q0-.546.159-.943a1.5 1.5 0 0 1 .466-.636 2.5 2.5 0 0 1 .399-.253 2 2 0 0 1 .224-.099zm9.784 2.656.05-.922q0-1.743-.856-2.698-.838-.97-2.584-.97-1.119-.001-2.007.493a3.46 3.46 0 0 0-1.4 1.382q-.493.906-.493 2.106 0 1.07.428 1.975.428.89 1.332 1.432.906.526 2.255.526.973 0 1.668-.185l.044-.012.135-.04q.613-.184.984-.421l-.542-1.267q-.3.162-.642.274l-.297.087q-.51.131-1.3.131-.954 0-1.497-.444a1.6 1.6 0 0 1-.192-.193q-.366-.44-.512-1.234l-.004-.021zm-5.427-1.256-.003.022h3.752v-.138q-.011-.727-.288-1.118a1 1 0 0 0-.156-.176q-.46-.428-1.316-.428-.986 0-1.494.604-.379.45-.494 1.234zm-27.053 2.77V4.7h-1.86v12.095h5.333V15.15zm7.103-5.908v7.553h-1.843V9.242h1.843z'/%3E%3Cpath fill='%23fff' d='m19.63 11.151-.757-1.71-.345 1.71-1.12 5.644h-1.827L18.083 4.7h.197l3.325 6.533.988 2.19.988-2.19L26.839 4.7h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.93 5.644h-.098l-2.913-5.644zm14.836 5.81q-1.02 0-1.893-.478a3.8 3.8 0 0 1-1.381-1.382q-.51-.906-.51-2.106 0-1.185.444-2.074a3.36 3.36 0 0 1 1.3-1.382q.839-.494 1.974-.494a3.3 3.3 0 0 1 1.234.231 3.3 3.3 0 0 1 .97.575q.396.33.527.659l.033-1.267h1.694v7.553H37.18l-.033-1.332q-.279.593-1.02 1.053a3.17 3.17 0 0 1-1.662.444zm.296-1.482q.938 0 1.58-.642.642-.66.642-1.711v-.115q0-.708-.296-1.267a2.2 2.2 0 0 0-.807-.872 2.1 2.1 0 0 0-1.119-.313q-1.053 0-1.629.692-.575.675-.575 1.76 0 1.103.559 1.795.577.675 1.645.675zm6.521-6.237h1.711v1.4q.906-1.597 2.83-1.597 1.596 0 2.584 1.02.988 1.005.988 2.914 0 1.185-.493 2.09a3.46 3.46 0 0 1-1.316 1.399 3.5 3.5 0 0 1-1.844.493q-.954 0-1.662-.329a2.67 2.67 0 0 1-1.086-.97l.017 5.134h-1.728zm4.048 6.22q1.07 0 1.645-.674.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.592 0-1.12.296-.51.28-.822.823-.296.527-.296 1.234v.115q0 .708.296 1.267.313.543.823.855.51.296 1.119.297z'/%3E%3Cpath fill='%23e1e3e9' d='M51.325 4.7h1.86v10.45h3.473v1.646h-5.333zm7.12 4.542h1.843v7.553h-1.843zm.905-1.415a1.16 1.16 0 0 1-.856-.346 1.17 1.17 0 0 1-.346-.856 1.05 1.05 0 0 1 .346-.79q.346-.329.856-.329.494 0 .839.33a1.05 1.05 0 0 1 .345.79 1.16 1.16 0 0 1-.345.855q-.33.346-.84.346zm7.875 9.133a3.17 3.17 0 0 1-1.662-.444q-.723-.46-1.004-1.053l-.033 1.332h-1.71V4.701h1.743v4.657l-.082 1.283q.279-.658 1.086-1.119a3.5 3.5 0 0 1 1.778-.477q1.119 0 1.942.51a3.24 3.24 0 0 1 1.283 1.4q.445.888.444 2.072 0 1.201-.526 2.09a3.5 3.5 0 0 1-1.382 1.366 3.8 3.8 0 0 1-1.876.477zm-.296-1.481q1.069 0 1.645-.675.577-.69.577-1.778 0-1.102-.577-1.776-.56-.691-1.645-.692a2.12 2.12 0 0 0-1.58.659q-.642.641-.642 1.694v.115q0 .71.296 1.267a2.4 2.4 0 0 0 .807.872 2.1 2.1 0 0 0 1.119.313zm5.927-6.237h1.777v1.481q.263-.757.856-1.217a2.14 2.14 0 0 1 1.349-.46q.527 0 .724.098l-.247 1.794q-.149-.099-.642-.099-.774 0-1.416.494-.626.493-.626 1.58v3.883h-1.777V9.242zm9.534 7.718q-1.35 0-2.255-.526-.904-.543-1.332-1.432a4.6 4.6 0 0 1-.428-1.975q0-1.2.493-2.106a3.46 3.46 0 0 1 1.4-1.382q.889-.495 2.007-.494 1.744 0 2.584.97.855.956.856 2.7 0 .444-.05.92h-5.43q.18 1.005.708 1.45.542.443 1.497.443.79 0 1.3-.131a4 4 0 0 0 .938-.362l.542 1.267q-.411.263-1.119.46-.708.198-1.711.197zm1.596-4.558q.016-1.02-.444-1.432-.46-.428-1.316-.428-1.728 0-1.991 1.86z'/%3E%3Cpath d='M5.074 15.948a.484.657 0 0 0-.486.659v1.84a.484.657 0 0 0 .486.659h4.101a.484.657 0 0 0 .486-.659v-1.84a.484.657 0 0 0-.486-.659zm3.56 1.16H5.617v.838h3.017z' style='fill:%23fff;fill-rule:evenodd;stroke-width:1.03600001'/%3E%3Cg style='stroke-width:1.12603545'%3E%3Cpath d='M-9.408-1.416c-3.833-.025-7.056 2.912-7.08 6.615-.02 3.08 1.653 4.832 3.107 6.268.903.892 1.721 1.74 2.32 2.902l-.525-.004c-.543-.003-.992.304-1.24.639a1.87 1.87 0 0 0-.362 1.121l-.011 1.877c-.003.402.104.787.347 1.125.244.338.688.653 1.23.656l4.142.028c.542.003.99-.306 1.238-.641a1.87 1.87 0 0 0 .363-1.121l.012-1.875a1.87 1.87 0 0 0-.348-1.127c-.243-.338-.688-.653-1.23-.656l-.518-.004c.597-1.145 1.425-1.983 2.348-2.87 1.473-1.414 3.18-3.149 3.2-6.226-.016-3.59-2.923-6.684-6.993-6.707m-.006 1.1v.002c3.274.02 5.92 2.532 5.9 5.6-.017 2.706-1.39 4.026-2.863 5.44-1.034.994-2.118 2.033-2.814 3.633-.018.041-.052.055-.075.065q-.013.004-.02.01a.34.34 0 0 1-.226.084.34.34 0 0 1-.224-.086l-.092-.077c-.699-1.615-1.768-2.669-2.781-3.67-1.454-1.435-2.797-2.762-2.78-5.478.02-3.067 2.7-5.545 5.975-5.523m-.02 2.826c-1.62-.01-2.944 1.315-2.955 2.96-.01 1.646 1.295 2.988 2.916 2.999h.002c1.621.01 2.943-1.316 2.953-2.961.011-1.646-1.294-2.988-2.916-2.998m-.005 1.1c1.017.006 1.829.83 1.822 1.89s-.83 1.874-1.848 1.867c-1.018-.006-1.829-.83-1.822-1.89s.83-1.874 1.848-1.868m-2.155 11.857 4.14.025c.271.002.49.305.487.676l-.013 1.875c-.003.37-.224.67-.495.668l-4.14-.025c-.27-.002-.487-.306-.485-.676l.012-1.875c.003-.37.224-.67.494-.668' style='color:%23000;font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:%23000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:evenodd;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:%23000;solid-opacity:1;vector-effect:none;fill:%23000;fill-opacity:.4;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-9.415-.316C-12.69-.338-15.37 2.14-15.39 5.207c-.017 2.716 1.326 4.041 2.78 5.477 1.013 1 2.081 2.055 2.78 3.67l.092.076a.34.34 0 0 0 .225.086.34.34 0 0 0 .227-.083l.019-.01c.022-.009.057-.024.074-.064.697-1.6 1.78-2.64 2.814-3.634 1.473-1.414 2.847-2.733 2.864-5.44.02-3.067-2.627-5.58-5.901-5.601m-.057 8.784c1.621.011 2.944-1.315 2.955-2.96.01-1.646-1.295-2.988-2.916-2.999-1.622-.01-2.945 1.315-2.955 2.96s1.295 2.989 2.916 3' style='clip-rule:evenodd;fill:%23e1e3e9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-11.594 15.465c-.27-.002-.492.297-.494.668l-.012 1.876c-.003.371.214.673.485.675l4.14.027c.271.002.492-.298.495-.668l.012-1.877c.003-.37-.215-.672-.485-.674z' style='clip-rule:evenodd;fill:%23fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3C/g%3E%3C/svg%3E"); }
+}
+.maplibregl-ctrl.maplibregl-ctrl-attrib { background-color: rgba(255, 255, 255, 0.5); margin: 0px; padding: 0px 5px; }
+@media screen {
+  .maplibregl-ctrl-attrib.maplibregl-compact { background-color: rgb(255, 255, 255); border-radius: 12px; box-sizing: content-box; color: rgb(0, 0, 0); margin: 10px; min-height: 20px; padding: 2px 24px 2px 0px; position: relative; }
+  .maplibregl-ctrl-attrib.maplibregl-compact-show { padding: 2px 28px 2px 8px; visibility: visible; }
+  .maplibregl-ctrl-bottom-left > .maplibregl-ctrl-attrib.maplibregl-compact-show, .maplibregl-ctrl-top-left > .maplibregl-ctrl-attrib.maplibregl-compact-show { border-radius: 12px; padding: 2px 8px 2px 28px; }
+  .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-inner { display: none; }
+  .maplibregl-ctrl-attrib-button { background-color: rgba(255, 255, 255, 0.5); background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill-rule='evenodd' viewBox='0 0 20 20'%3E%3Cpath d='M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0'/%3E%3C/svg%3E"); border: 0px; border-radius: 12px; box-sizing: border-box; cursor: pointer; display: none; height: 24px; outline: none; position: absolute; right: 0px; top: 0px; width: 24px; }
+  .maplibregl-ctrl-attrib summary.maplibregl-ctrl-attrib-button { appearance: none; list-style: none; }
+  .maplibregl-ctrl-attrib summary.maplibregl-ctrl-attrib-button::-webkit-details-marker { display: none; }
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib-button, .maplibregl-ctrl-top-left .maplibregl-ctrl-attrib-button { left: 0px; }
+  .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button, .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner { display: block; }
+  .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-button { background-color: rgba(0, 0, 0, 0.05); }
+  .maplibregl-ctrl-bottom-right > .maplibregl-ctrl-attrib.maplibregl-compact::after { bottom: 0px; right: 0px; }
+  .maplibregl-ctrl-top-right > .maplibregl-ctrl-attrib.maplibregl-compact::after { right: 0px; top: 0px; }
+  .maplibregl-ctrl-top-left > .maplibregl-ctrl-attrib.maplibregl-compact::after { left: 0px; top: 0px; }
+  .maplibregl-ctrl-bottom-left > .maplibregl-ctrl-attrib.maplibregl-compact::after { bottom: 0px; left: 0px; }
+}
+@media screen and (forced-colors: active) {
+  .maplibregl-ctrl-attrib.maplibregl-compact::after { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='%23fff' fill-rule='evenodd' viewBox='0 0 20 20'%3E%3Cpath d='M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0'/%3E%3C/svg%3E"); }
+}
+@media screen and (forced-colors: active) and (prefers-color-scheme: light) {
+  .maplibregl-ctrl-attrib.maplibregl-compact::after { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill-rule='evenodd' viewBox='0 0 20 20'%3E%3Cpath d='M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0'/%3E%3C/svg%3E"); }
+}
+.maplibregl-ctrl-attrib a { color: rgba(0, 0, 0, 0.75); text-decoration: none; }
+.maplibregl-ctrl-attrib a:hover { color: inherit; text-decoration: underline; }
+.maplibregl-attrib-empty { display: none; }
+.maplibregl-ctrl-scale { background-color: rgba(255, 255, 255, 0.75); border-right: 2px solid rgb(51, 51, 51); border-bottom: 2px solid rgb(51, 51, 51); border-left: 2px solid rgb(51, 51, 51); border-image: initial; border-top: rgb(51, 51, 51); box-sizing: border-box; color: rgb(51, 51, 51); font-size: 10px; padding: 0px 5px; }
+.maplibregl-popup { display: flex; left: 0px; pointer-events: none; position: absolute; top: 0px; will-change: transform; }
+.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right { flex-direction: column; }
+.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right { flex-direction: column-reverse; }
+.maplibregl-popup-anchor-left { flex-direction: row; }
+.maplibregl-popup-anchor-right { flex-direction: row-reverse; }
+.maplibregl-popup-tip { border: 10px solid transparent; height: 0px; width: 0px; z-index: 1; }
+.maplibregl-popup-anchor-top .maplibregl-popup-tip { align-self: center; border-bottom-color: rgb(255, 255, 255); border-top: none; }
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip { align-self: flex-start; border-bottom-color: rgb(255, 255, 255); border-left: none; border-top: none; }
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip { align-self: flex-end; border-bottom-color: rgb(255, 255, 255); border-right: none; border-top: none; }
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { align-self: center; border-bottom: none; border-top-color: rgb(255, 255, 255); }
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip { align-self: flex-start; border-bottom: none; border-left: none; border-top-color: rgb(255, 255, 255); }
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { align-self: flex-end; border-bottom: none; border-right: none; border-top-color: rgb(255, 255, 255); }
+.maplibregl-popup-anchor-left .maplibregl-popup-tip { align-self: center; border-left: none; border-right-color: rgb(255, 255, 255); }
+.maplibregl-popup-anchor-right .maplibregl-popup-tip { align-self: center; border-left-color: rgb(255, 255, 255); border-right: none; }
+.maplibregl-popup-close-button { background-color: transparent; border: 0px; border-radius: 0px 3px 0px 0px; cursor: pointer; position: absolute; right: 0px; top: 0px; }
+.maplibregl-popup-close-button:hover { background-color: rgba(0, 0, 0, 0.05); }
+.maplibregl-popup-content { background: rgb(255, 255, 255); border-radius: 3px; box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px; padding: 15px 10px; pointer-events: auto; position: relative; }
+.maplibregl-popup-anchor-top-left .maplibregl-popup-content { border-top-left-radius: 0px; }
+.maplibregl-popup-anchor-top-right .maplibregl-popup-content { border-top-right-radius: 0px; }
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-content { border-bottom-left-radius: 0px; }
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-content { border-bottom-right-radius: 0px; }
+.maplibregl-popup-track-pointer { display: none; }
+.maplibregl-popup-track-pointer * { pointer-events: none; user-select: none; }
+.maplibregl-map:hover .maplibregl-popup-track-pointer { display: flex; }
+.maplibregl-map:active .maplibregl-popup-track-pointer { display: none; }
+.maplibregl-marker { left: 0px; position: absolute; top: 0px; transition: opacity 0.2s; will-change: transform; }
+.maplibregl-user-location-dot, .maplibregl-user-location-dot::before { background-color: rgb(29, 161, 242); border-radius: 50%; height: 15px; width: 15px; }
+.maplibregl-user-location-dot::before { animation: 2s ease 0s infinite normal none running maplibregl-user-location-dot-pulse; content: ""; position: absolute; }
+.maplibregl-user-location-dot::after { border: 2px solid rgb(255, 255, 255); border-radius: 50%; box-shadow: rgba(0, 0, 0, 0.35) 0px 0px 3px; box-sizing: border-box; content: ""; height: 19px; left: -2px; position: absolute; top: -2px; width: 19px; }
+@keyframes maplibregl-user-location-dot-pulse { 
+  0% { opacity: 1; transform: scale(1); }
+  70% { opacity: 0; transform: scale(3); }
+  100% { opacity: 0; transform: scale(1); }
+}
+.maplibregl-user-location-dot-stale { background-color: rgb(170, 170, 170); }
+.maplibregl-user-location-dot-stale::after { display: none; }
+.maplibregl-user-location-accuracy-circle { background-color: rgba(29, 161, 242, 0.2); border-radius: 100%; height: 1px; width: 1px; }
+.maplibregl-crosshair, .maplibregl-crosshair .maplibregl-interactive, .maplibregl-crosshair .maplibregl-interactive:active { cursor: crosshair; }
+.maplibregl-boxzoom { background: rgb(255, 255, 255); border: 2px dotted rgb(32, 32, 32); height: 0px; left: 0px; opacity: 0.5; position: absolute; top: 0px; width: 0px; }
+.maplibregl-cooperative-gesture-screen { align-items: center; background: rgba(0, 0, 0, 0.4); color: rgb(255, 255, 255); display: flex; font-size: 1.4em; inset: 0px; justify-content: center; line-height: 1.2; opacity: 0; padding: 1rem; pointer-events: none; position: absolute; transition: opacity 1s 1s; z-index: 99999; }
+.maplibregl-cooperative-gesture-screen.maplibregl-show { opacity: 1; transition: opacity 0.05s; }
+.maplibregl-cooperative-gesture-screen .maplibregl-mobile-message { display: none; }
+@media (hover: none), (width <= 480px) {
+  .maplibregl-cooperative-gesture-screen .maplibregl-desktop-message { display: none; }
+  .maplibregl-cooperative-gesture-screen .maplibregl-mobile-message { display: block; }
+}
+.maplibregl-pseudo-fullscreen { z-index: 99999; height: 100% !important; left: 0px !important; position: fixed !important; top: 0px !important; width: 100% !important; }
+
+/* Export-specific overrides */
+body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.agent-panel__messages {
+  overflow: visible;
+  padding: 0;
+}
+</style>
+</head>
+<body>
+<div class="agent-panel">
+  <div class="agent-panel__header">
+    <span class="agent-panel__title">Agent Mode</span>
+  </div>
+  <div class="agent-panel__messages"><div class="message-bubble message-bubble--user"><div class="message-bubble__header">You</div><div class="message-bubble__content"><p>use this skill /analyze-data</p></div></div><div class="message-bubble message-bubble--assistant"><div class="message-bubble__header">Assistant</div><div class="message-bubble__segments"><details class="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible"><summary class="message-bubble__collapsible-summary"><span class="message-bubble__segment-label">Thinking</span></summary><div class="message-bubble__thinking-body"><div class="message-bubble__segment-content"><p><strong>Using the analyze-data skill</strong></p>
+<p>The user mentioned wanting to "use this skill," which I interpret as referring to the /analyze-data skill. I need to follow instructions and invoke the Skill tool to start the analysis. However, I'm not seeing any specific questions or data from them. Since we already have the Titanic table loaded, perhaps the skill could profile it. I'll go ahead and call the Skill tool now to get things moving!</p></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">Skill</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>{
+  "skill": "analyze-data",
+  "args": ""
+}</code></div><div class="inline-query__output"><pre>Launching skill: analyze-data</pre></div></div></div><div class="message-bubble__segment-content"><p><strong>Planning SQL Queries</strong></p>
+<p>I'm considering using the parallel tool to run multiple SQL queries at once, which should speed things up. I want to show tables, describe the Titanic table, and check counts, sample data, and null rates. The wrapper only allows certain developer tools, but it looks like I can call multi_tool_use.parallel with five execute_sql commands. After getting the results, I can summarize the schema and quality, but I’ll check with the user for specific interests related to the data.</p></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SHOW TABLES;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>name</th></tr></thead><tbody><tr><td>titanic</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>DESCRIBE titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>column_name</th><th>column_type</th><th>null</th><th>key</th><th>default</th><th>extra</th></tr></thead><tbody><tr><td>PassengerId</td><td>BIGINT</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Survived</td><td>BIGINT</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Pclass</td><td>BIGINT</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Name</td><td>VARCHAR</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Sex</td><td>VARCHAR</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Age</td><td>DOUBLE</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>SibSp</td><td>BIGINT</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Parch</td><td>BIGINT</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Ticket</td><td>VARCHAR</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Fare</td><td>DOUBLE</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Cabin</td><td>VARCHAR</td><td>YES</td><td></td><td></td><td></td></tr><tr><td>Embarked</td><td>VARCHAR</td><td>YES</td><td></td><td></td><td></td></tr></tbody></table></div><div class="inline-query__meta">12 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT COUNT(*) AS row_count FROM titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>row_count</th></tr></thead><tbody><tr><td>891</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT * FROM titanic LIMIT 5;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>PassengerId</th><th>Survived</th><th>Pclass</th><th>Name</th><th>Sex</th><th>Age</th><th>SibSp</th><th>Parch</th><th>Ticket</th><th>Fare</th><th>Cabin</th><th>Embarked</th></tr></thead><tbody><tr><td>1</td><td>0</td><td>3</td><td>Braund, Mr. Owen Harris</td><td>male</td><td>22</td><td>1</td><td>0</td><td>A/5 21171</td><td>7.25</td><td></td><td>S</td></tr><tr><td>2</td><td>1</td><td>1</td><td>Cumings, Mrs. John Bradley (Florence Briggs Thayer)</td><td>female</td><td>38</td><td>1</td><td>0</td><td>PC 17599</td><td>71.2833</td><td>C85</td><td>C</td></tr><tr><td>3</td><td>1</td><td>3</td><td>Heikkinen, Miss. Laina</td><td>female</td><td>26</td><td>0</td><td>0</td><td>STON/O2. 3101282</td><td>7.925</td><td></td><td>S</td></tr><tr><td>4</td><td>1</td><td>1</td><td>Futrelle, Mrs. Jacques Heath (Lily May Peel)</td><td>female</td><td>35</td><td>1</td><td>0</td><td>113803</td><td>53.1</td><td>C123</td><td>S</td></tr><tr><td>5</td><td>0</td><td>3</td><td>Allen, Mr. William Henry</td><td>male</td><td>35</td><td>0</td><td>0</td><td>373450</td><td>8.05</td><td></td><td>S</td></tr></tbody></table></div><div class="inline-query__meta">5 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT 'PassengerId' AS column_name, COUNT(*)-COUNT(PassengerId) AS nulls, ROUND(100.0*(COUNT(*)-COUNT(PassengerId))/COUNT(*),1) AS null_pct FROM titanic
+UNION ALL SELECT 'Survived', COUNT(*)-COUNT(Survived), ROUND(100.0*(COUNT(*)-COUNT(Survived))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Pclass', COUNT(*)-COUNT(Pclass), ROUND(100.0*(COUNT(*)-COUNT(Pclass))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Name', COUNT(*)-COUNT(Name), ROUND(100.0*(COUNT(*)-COUNT(Name))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Sex', COUNT(*)-COUNT(Sex), ROUND(100.0*(COUNT(*)-COUNT(Sex))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Age', COUNT(*)-COUNT(Age), ROUND(100.0*(COUNT(*)-COUNT(Age))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'SibSp', COUNT(*)-COUNT(SibSp), ROUND(100.0*(COUNT(*)-COUNT(SibSp))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Parch', COUNT(*)-COUNT(Parch), ROUND(100.0*(COUNT(*)-COUNT(Parch))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Ticket', COUNT(*)-COUNT(Ticket), ROUND(100.0*(COUNT(*)-COUNT(Ticket))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Fare', COUNT(*)-COUNT(Fare), ROUND(100.0*(COUNT(*)-COUNT(Fare))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Cabin', COUNT(*)-COUNT(Cabin), ROUND(100.0*(COUNT(*)-COUNT(Cabin))/COUNT(*),1) FROM titanic
+UNION ALL SELECT 'Embarked', COUNT(*)-COUNT(Embarked), ROUND(100.0*(COUNT(*)-COUNT(Embarked))/COUNT(*),1) FROM titanic
+ORDER BY null_pct DESC, column_name;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>column_name</th><th>nulls</th><th>null_pct</th></tr></thead><tbody><tr><td>Cabin</td><td>687</td><td>77.1</td></tr><tr><td>Age</td><td>177</td><td>19.9</td></tr><tr><td>Embarked</td><td>2</td><td>0.2</td></tr><tr><td>Fare</td><td>0</td><td>0</td></tr><tr><td>Name</td><td>0</td><td>0</td></tr><tr><td>Parch</td><td>0</td><td>0</td></tr><tr><td>PassengerId</td><td>0</td><td>0</td></tr><tr><td>Pclass</td><td>0</td><td>0</td></tr><tr><td>Sex</td><td>0</td><td>0</td></tr><tr><td>SibSp</td><td>0</td><td>0</td></tr><tr><td>Survived</td><td>0</td><td>0</td></tr><tr><td>Ticket</td><td>0</td><td>0</td></tr></tbody></table></div><div class="inline-query__meta">12 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">ask_user_question</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>{
+  "question": "What would you like to analyze in the Titanic data next? (You can pick more than one.)",
+  "options": [
+    {
+      "label": "Survival rate breakdowns",
+      "description": "Survival rates by sex, class, embarkation port, family size, etc."
+    },
+    {
+      "label": "Key drivers of survival",
+      "description": "Quantify how features (sex, class, age, fare) relate to survival (e.g., odds ratios / simple model-style summary)."
+    },
+    {
+      "label": "Distributions &amp; outliers",
+      "description": "Age and fare distributions, missing-age patterns, extreme fares, etc."
+    },
+    {
+      "label": "Data quality / missingness",
+      "description": "Deeper look at nulls, duplicates, inconsistent values, and suggested cleaning steps."
+    }
+  ],
+  "multi_select": true
+}</code></div><div class="inline-query__output"><pre>{"answers": ["Distributions &amp; outliers"]}</pre></div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>WITH bins AS (
+  SELECT
+    CASE
+      WHEN Age IS NULL THEN 'Missing'
+      WHEN Age &lt; 10 THEN '0-9'
+      WHEN Age &lt; 20 THEN '10-19'
+      WHEN Age &lt; 30 THEN '20-29'
+      WHEN Age &lt; 40 THEN '30-39'
+      WHEN Age &lt; 50 THEN '40-49'
+      WHEN Age &lt; 60 THEN '50-59'
+      WHEN Age &lt; 70 THEN '60-69'
+      ELSE '70+'
+    END AS age_bin,
+    CASE
+      WHEN Age IS NULL THEN 99
+      WHEN Age &lt; 10 THEN 0
+      WHEN Age &lt; 20 THEN 10
+      WHEN Age &lt; 30 THEN 20
+      WHEN Age &lt; 40 THEN 30
+      WHEN Age &lt; 50 THEN 40
+      WHEN Age &lt; 60 THEN 50
+      WHEN Age &lt; 70 THEN 60
+      ELSE 70
+    END AS sort_key
+  FROM titanic
+)
+SELECT age_bin, COUNT(*) AS passengers
+FROM bins
+GROUP BY age_bin, sort_key
+ORDER BY sort_key, age_bin;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>age_bin</th><th>passengers</th></tr></thead><tbody><tr><td>0-9</td><td>62</td></tr><tr><td>10-19</td><td>102</td></tr><tr><td>20-29</td><td>220</td></tr><tr><td>30-39</td><td>167</td></tr><tr><td>40-49</td><td>89</td></tr><tr><td>50-59</td><td>48</td></tr><tr><td>60-69</td><td>19</td></tr><tr><td>70+</td><td>7</td></tr><tr><td>Missing</td><td>177</td></tr></tbody></table></div><div class="inline-query__meta">9 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>WITH fare_bins AS (
+  SELECT
+    CASE
+      WHEN Fare IS NULL THEN 'Missing'
+      WHEN Fare = 0 THEN '0'
+      WHEN Fare &lt;= 7.91 THEN '(0, 7.91]'
+      WHEN Fare &lt;= 14.45 THEN '(7.91, 14.45]'
+      WHEN Fare &lt;= 31.00 THEN '(14.45, 31.00]'
+      ELSE '31.00+'
+    END AS fare_bin,
+    CASE
+      WHEN Fare IS NULL THEN 99
+      WHEN Fare = 0 THEN 0
+      WHEN Fare &lt;= 7.91 THEN 1
+      WHEN Fare &lt;= 14.45 THEN 2
+      WHEN Fare &lt;= 31.00 THEN 3
+      ELSE 4
+    END AS sort_key
+  FROM titanic
+)
+SELECT fare_bin, COUNT(*) AS passengers
+FROM fare_bins
+GROUP BY fare_bin, sort_key
+ORDER BY sort_key, fare_bin;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>fare_bin</th><th>passengers</th></tr></thead><tbody><tr><td>0</td><td>15</td></tr><tr><td>(0, 7.91]</td><td>208</td></tr><tr><td>(7.91, 14.45]</td><td>217</td></tr><tr><td>(14.45, 31.00]</td><td>229</td></tr><tr><td>31.00+</td><td>222</td></tr></tbody></table></div><div class="inline-query__meta">5 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  MIN(Fare) AS min_fare,
+  APPROX_QUANTILE(Fare, 0.25) AS p25_fare,
+  APPROX_QUANTILE(Fare, 0.50) AS median_fare,
+  APPROX_QUANTILE(Fare, 0.75) AS p75_fare,
+  MAX(Fare) AS max_fare,
+  AVG(Fare) AS avg_fare
+FROM titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>min_fare</th><th>p25_fare</th><th>median_fare</th><th>p75_fare</th><th>max_fare</th><th>avg_fare</th></tr></thead><tbody><tr><td>0</td><td>7.910897727272727</td><td>14.445692261904762</td><td>30.9377125</td><td>512.3292</td><td>32.2042079685746</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  MIN(Age) AS min_age,
+  APPROX_QUANTILE(Age, 0.25) AS p25_age,
+  APPROX_QUANTILE(Age, 0.50) AS median_age,
+  APPROX_QUANTILE(Age, 0.75) AS p75_age,
+  MAX(Age) AS max_age,
+  AVG(Age) AS avg_age,
+  COUNT(*) FILTER (Age IS NULL) AS missing_age,
+  COUNT(*) FILTER (Age IS NOT NULL) AS nonmissing_age
+FROM titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>min_age</th><th>p25_age</th><th>median_age</th><th>p75_age</th><th>max_age</th><th>avg_age</th><th>missing_age</th><th>nonmissing_age</th></tr></thead><tbody><tr><td>0.42</td><td>20.351851851851855</td><td>28.185950413223143</td><td>38.333333333333336</td><td>80</td><td>29.69911764705882</td><td>177</td><td>714</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT PassengerId, Name, Pclass, Sex, Age, Fare, Ticket, Cabin, Embarked
+FROM titanic
+ORDER BY Fare DESC
+LIMIT 10;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>PassengerId</th><th>Name</th><th>Pclass</th><th>Sex</th><th>Age</th><th>Fare</th><th>Ticket</th><th>Cabin</th><th>Embarked</th></tr></thead><tbody><tr><td>259</td><td>Ward, Miss. Anna</td><td>1</td><td>female</td><td>35</td><td>512.3292</td><td>PC 17755</td><td></td><td>C</td></tr><tr><td>680</td><td>Cardeza, Mr. Thomas Drake Martinez</td><td>1</td><td>male</td><td>36</td><td>512.3292</td><td>PC 17755</td><td>B51 B53 B55</td><td>C</td></tr><tr><td>738</td><td>Lesurer, Mr. Gustave J</td><td>1</td><td>male</td><td>35</td><td>512.3292</td><td>PC 17755</td><td>B101</td><td>C</td></tr><tr><td>28</td><td>Fortune, Mr. Charles Alexander</td><td>1</td><td>male</td><td>19</td><td>263</td><td>19950</td><td>C23 C25 C27</td><td>S</td></tr><tr><td>89</td><td>Fortune, Miss. Mabel Helen</td><td>1</td><td>female</td><td>23</td><td>263</td><td>19950</td><td>C23 C25 C27</td><td>S</td></tr><tr><td>342</td><td>Fortune, Miss. Alice Elizabeth</td><td>1</td><td>female</td><td>24</td><td>263</td><td>19950</td><td>C23 C25 C27</td><td>S</td></tr><tr><td>439</td><td>Fortune, Mr. Mark</td><td>1</td><td>male</td><td>64</td><td>263</td><td>19950</td><td>C23 C25 C27</td><td>S</td></tr><tr><td>312</td><td>Ryerson, Miss. Emily Borie</td><td>1</td><td>female</td><td>18</td><td>262.375</td><td>PC 17608</td><td>B57 B59 B63 B66</td><td>C</td></tr><tr><td>743</td><td>Ryerson, Miss. Susan Parker "Suzette"</td><td>1</td><td>female</td><td>21</td><td>262.375</td><td>PC 17608</td><td>B57 B59 B63 B66</td><td>C</td></tr><tr><td>300</td><td>Baxter, Mrs. James (Helene DeLaudeniere Chaput)</td><td>1</td><td>female</td><td>50</td><td>247.5208</td><td>PC 17558</td><td>B58 B60</td><td>C</td></tr></tbody></table></div><div class="inline-query__meta">10 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  SUM(CASE WHEN Fare IS NULL THEN 1 ELSE 0 END) AS missing_fare,
+  SUM(CASE WHEN Fare = 0 THEN 1 ELSE 0 END) AS zero_fare,
+  ROUND(100.0 * SUM(CASE WHEN Fare = 0 THEN 1 ELSE 0 END) / COUNT(*), 1) AS zero_fare_pct
+FROM titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>missing_fare</th><th>zero_fare</th><th>zero_fare_pct</th></tr></thead><tbody><tr><td>0</td><td>15</td><td>1.7</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  Sex,
+  COUNT(*) AS passengers,
+  COUNT(*) FILTER (Age IS NULL) AS missing_age,
+  ROUND(100.0 * COUNT(*) FILTER (Age IS NULL) / COUNT(*), 1) AS missing_age_pct
+FROM titanic
+GROUP BY Sex
+ORDER BY passengers DESC;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>Sex</th><th>passengers</th><th>missing_age</th><th>missing_age_pct</th></tr></thead><tbody><tr><td>male</td><td>577</td><td>124</td><td>21.5</td></tr><tr><td>female</td><td>314</td><td>53</td><td>16.9</td></tr></tbody></table></div><div class="inline-query__meta">2 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  Pclass,
+  COUNT(*) AS passengers,
+  COUNT(*) FILTER (Age IS NULL) AS missing_age,
+  ROUND(100.0 * COUNT(*) FILTER (Age IS NULL) / COUNT(*), 1) AS missing_age_pct
+FROM titanic
+GROUP BY Pclass
+ORDER BY Pclass;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>Pclass</th><th>passengers</th><th>missing_age</th><th>missing_age_pct</th></tr></thead><tbody><tr><td>1</td><td>216</td><td>30</td><td>13.9</td></tr><tr><td>2</td><td>184</td><td>11</td><td>6</td></tr><tr><td>3</td><td>491</td><td>136</td><td>27.7</td></tr></tbody></table></div><div class="inline-query__meta">3 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  PassengerId,
+  Age,
+  (SibSp + Parch) AS family_count,
+  Pclass,
+  Sex,
+  Fare
+FROM titanic
+WHERE Age IS NOT NULL
+ORDER BY Age ASC
+LIMIT 10;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>PassengerId</th><th>Age</th><th>family_count</th><th>Pclass</th><th>Sex</th><th>Fare</th></tr></thead><tbody><tr><td>804</td><td>0.42</td><td>1</td><td>3</td><td>male</td><td>8.5167</td></tr><tr><td>756</td><td>0.67</td><td>2</td><td>2</td><td>male</td><td>14.5</td></tr><tr><td>470</td><td>0.75</td><td>3</td><td>3</td><td>female</td><td>19.2583</td></tr><tr><td>645</td><td>0.75</td><td>3</td><td>3</td><td>female</td><td>19.2583</td></tr><tr><td>79</td><td>0.83</td><td>2</td><td>2</td><td>male</td><td>29</td></tr><tr><td>832</td><td>0.83</td><td>2</td><td>2</td><td>male</td><td>18.75</td></tr><tr><td>306</td><td>0.92</td><td>3</td><td>1</td><td>male</td><td>151.55</td></tr><tr><td>184</td><td>1</td><td>3</td><td>2</td><td>male</td><td>39</td></tr><tr><td>382</td><td>1</td><td>2</td><td>3</td><td>female</td><td>15.7417</td></tr><tr><td>387</td><td>1</td><td>7</td><td>3</td><td>male</td><td>46.9</td></tr></tbody></table></div><div class="inline-query__meta">10 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  PassengerId,
+  Age,
+  (SibSp + Parch) AS family_count,
+  Pclass,
+  Sex,
+  Fare
+FROM titanic
+WHERE Age IS NOT NULL
+ORDER BY Age DESC
+LIMIT 10;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>PassengerId</th><th>Age</th><th>family_count</th><th>Pclass</th><th>Sex</th><th>Fare</th></tr></thead><tbody><tr><td>631</td><td>80</td><td>0</td><td>1</td><td>male</td><td>30</td></tr><tr><td>852</td><td>74</td><td>0</td><td>3</td><td>male</td><td>7.775</td></tr><tr><td>97</td><td>71</td><td>0</td><td>1</td><td>male</td><td>34.6542</td></tr><tr><td>494</td><td>71</td><td>0</td><td>1</td><td>male</td><td>49.5042</td></tr><tr><td>117</td><td>70.5</td><td>0</td><td>3</td><td>male</td><td>7.75</td></tr><tr><td>673</td><td>70</td><td>0</td><td>2</td><td>male</td><td>10.5</td></tr><tr><td>746</td><td>70</td><td>2</td><td>1</td><td>male</td><td>71</td></tr><tr><td>34</td><td>66</td><td>0</td><td>2</td><td>male</td><td>10.5</td></tr><tr><td>281</td><td>65</td><td>0</td><td>3</td><td>male</td><td>7.75</td></tr><tr><td>457</td><td>65</td><td>0</td><td>1</td><td>male</td><td>26.55</td></tr></tbody></table></div><div class="inline-query__meta">10 row(s)</div></div></div></div></details><div class="message-bubble__segment message-bubble__segment--question"><div class="user-question user-question--answered"><div class="user-question__label">Answered</div><div class="user-question__question">What would you like to analyze in the Titanic data next? (You can pick more than one.)</div><div class="user-question__selected-answers"><span class="user-question__selected-chip">Distributions &amp; outliers</span></div></div></div><div class="message-bubble__segment message-bubble__segment--answer"><div class="message-bubble__segment-label message-bubble__segment-label--answer">Answer</div><div class="message-bubble__chart-in-answer"><div class="inline-query inline-query--chart"><div class="inline-query__label inline-query__label--generic">Passenger count by age bin (including missing)<button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button></div><div data-plotly-chart="0" style="width: 100%; min-height: 400px;"></div></div></div><div class="message-bubble__chart-in-answer"><div class="inline-query inline-query--chart"><div class="inline-query__label inline-query__label--generic">Passenger count by fare bin<button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button></div><div data-plotly-chart="1" style="width: 100%; min-height: 400px;"></div></div></div><div class="message-bubble__chart-in-answer"><div class="inline-query inline-query--chart"><div class="inline-query__label inline-query__label--generic">Missing Age rate by sex<button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button></div><div data-plotly-chart="2" style="width: 100%; min-height: 400px;"></div></div></div><div class="message-bubble__chart-in-answer"><div class="inline-query inline-query--chart"><div class="inline-query__label inline-query__label--generic">Missing Age rate by passenger class<button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button></div><div data-plotly-chart="3" style="width: 100%; min-height: 400px;"></div></div></div><div class="message-bubble__segment-content"><h2>Data profile (required)</h2>
+<ul>
+<li><strong>Tables:</strong> <code>titanic</code></li>
+<li><strong>Size:</strong> <strong>891 rows</strong>, <strong>12 columns</strong></li>
+<li><strong>Notable missingness:</strong>
+<ul>
+<li><strong>Cabin:</strong> 687 nulls (<strong>77.1%</strong>) — very sparse</li>
+<li><strong>Age:</strong> 177 nulls (<strong>19.9%</strong>)</li>
+<li><strong>Embarked:</strong> 2 nulls (<strong>0.2%</strong>)</li>
+<li>Others: essentially complete</li>
+</ul>
+</li>
+</ul>
+<h2>Distributions &amp; outliers</h2>
+<h3>Age distribution (incl. missing)</h3>
+<p>The age histogram shows the dataset is concentrated in <strong>young adults</strong>, with a sizable missing-age bucket:</p>
+<ul>
+<li><strong>20–29</strong> is the largest observed bin (<strong>220 passengers</strong>)</li>
+<li><strong>30–39</strong> next (<strong>167</strong>)</li>
+<li><strong>Missing age</strong> is also large (<strong>177</strong>)</li>
+</ul>
+<p>Summary stats (non-missing ages):</p>
+<ul>
+<li><strong>Min:</strong> 0.42, <strong>Max:</strong> 80.0</li>
+<li><strong>Median:</strong> ~<strong>28.19</strong>, <strong>Avg:</strong> ~<strong>29.70</strong></li>
+<li>25th–75th percentile: ~<strong>20.35</strong> to <strong>38.33</strong></li>
+</ul>
+<h3>Where Age is missing (a data quality “shape” issue)</h3>
+<p>Missing age is not evenly distributed:</p>
+<ul>
+<li>By <strong>sex</strong>: male <strong>21.5%</strong> missing vs female <strong>16.9%</strong></li>
+<li>By <strong>class</strong>: <strong>3rd class 27.7%</strong> missing (highest), <strong>2nd class 6.0%</strong> (lowest), <strong>1st class 13.9%</strong></li>
+</ul>
+<p>That means any age-based analysis can be biased toward the groups with better-recorded ages (notably 2nd class).</p>
+<h3>Fare distribution (and outliers)</h3>
+<p>The fare chart (quartile-ish bins + a zero bin) shows fares are fairly spread across low-to-mid ranges, with a heavy right tail.</p>
+<p>Fare summary stats:</p>
+<ul>
+<li><strong>Min:</strong> 0.0</li>
+<li><strong>25th percentile:</strong> ~<strong>7.91</strong></li>
+<li><strong>Median:</strong> ~<strong>14.45</strong></li>
+<li><strong>75th percentile:</strong> ~<strong>30.94</strong></li>
+<li><strong>Mean:</strong> ~<strong>32.20</strong> (higher than median → right-skew)</li>
+<li><strong>Max:</strong> <strong>512.33</strong> (very large outlier)</li>
+</ul>
+<p>Outlier notes:</p>
+<ul>
+<li>The very top fare (<strong>512.33</strong>) appears multiple times and shares the same ticket (<strong>PC 17755</strong>), suggesting a group/party ticketing pattern rather than independent purchases.</li>
+<li><strong>Zero fare</strong> occurs <strong>15 times</strong> (<strong>1.7%</strong> of passengers). That’s worth sanity-checking (e.g., special cases, crew-like records, ticketing artifacts).</li>
+</ul>
+<h2>Suggested next “outliers” follow-ups (pick one)</h2>
+<ul>
+<li>Compare <strong>fare distribution by Pclass</strong> (to see whether outliers are almost entirely 1st class, and how separated the classes are).</li>
+<li>Inspect <strong>zero-fare passengers</strong> (who they are, class, embarked, survival).</li>
+<li>If you’re planning modeling: decide on <strong>Age handling</strong> (drop, impute, or add “Age missing” flag—missingness is clearly structured).</li>
+</ul></div></div></div></div><div></div></div>
+</div>
+<script>
+(function() {
+  var charts = [{"data":[{"type":"bar","x":["0-9","10-19","20-29","30-39","40-49","50-59","60-69","70+","Missing"],"y":[62,102,220,167,89,48,19,7,177]}],"layout":{"autosize":true,"height":400,"paper_bgcolor":"rgba(0, 0, 0, 0)","plot_bgcolor":"rgba(0, 0, 0, 0)","font":{"color":"#e2e8f0"},"xaxis":{"title":"Age bin","type":"category","range":[-0.5,8.5],"autorange":true},"yaxis":{"title":"Passengers","type":"linear","range":[0,231.57894736842104],"autorange":true},"legend":{"font":{"color":"#e2e8f0"}},"title":{"text":"Passenger count by age bin (including missing)"}},"frames":[]},{"data":[{"type":"bar","x":["0","(0, 7.91]","(7.91, 14.45]","(14.45, 31.00]","31.00+"],"y":[15,208,217,229,222]}],"layout":{"autosize":true,"height":400,"paper_bgcolor":"rgba(0, 0, 0, 0)","plot_bgcolor":"rgba(0, 0, 0, 0)","font":{"color":"#e2e8f0"},"xaxis":{"title":"Fare bin (approx quartiles + zero)","type":"category","range":[-0.5,4.5],"autorange":true},"yaxis":{"title":"Passengers","type":"linear","range":[0,241.05263157894737],"autorange":true},"legend":{"font":{"color":"#e2e8f0"}},"title":{"text":"Passenger count by fare bin"}},"frames":[]},{"data":[{"type":"bar","x":["male","female"],"y":[21.5,16.9]}],"layout":{"autosize":true,"height":400,"paper_bgcolor":"rgba(0, 0, 0, 0)","plot_bgcolor":"rgba(0, 0, 0, 0)","font":{"color":"#e2e8f0"},"xaxis":{"title":"Sex","type":"category","range":[-0.5,1.5],"autorange":true},"yaxis":{"title":"Missing Age (%)","type":"linear","range":[0,22.63157894736842],"autorange":true},"legend":{"font":{"color":"#e2e8f0"}},"title":{"text":"Missing Age rate by sex"}},"frames":[]},{"data":[{"type":"bar","x":["1","2","3"],"y":[13.9,6,27.7]}],"layout":{"autosize":true,"height":400,"paper_bgcolor":"rgba(0, 0, 0, 0)","plot_bgcolor":"rgba(0, 0, 0, 0)","font":{"color":"#e2e8f0"},"xaxis":{"title":"Pclass","type":"linear","range":[0.5,3.5],"autorange":true},"yaxis":{"title":"Missing Age (%)","type":"linear","range":[0,29.157894736842106],"autorange":true},"legend":{"font":{"color":"#e2e8f0"}},"title":{"text":"Missing Age rate by passenger class"}},"frames":[]}];
+  document.querySelectorAll('[data-plotly-chart]').forEach(function(el) {
+    var idx = parseInt(el.getAttribute('data-plotly-chart'), 10);
+    var chart = charts[idx];
+    if (chart && window.Plotly) {
+      Plotly.newPlot(el, chart.data, Object.assign({ autosize: true, height: 400 }, chart.layout), { responsive: true, displayModeBar: true });
+    }
+  });
+})();
+</script>
+</body>
+</html>
