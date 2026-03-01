@@ -217,15 +217,26 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
-  padding: 2px 4px;
-  border-radius: 3px;
+  color: var(--color-text-muted);
+  padding: 0 2px;
+  flex-shrink: 0;
   opacity: 1;
-  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .sidebar__delete:hover {
-  background: var(--color-error-bg-subtle);
+  color: var(--color-error);
+}
+
+@media (pointer: coarse) {
+  .sidebar__delete {
+    min-width: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .sidebar__columns {

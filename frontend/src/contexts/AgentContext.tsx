@@ -10,6 +10,7 @@ import { runAgentLoop, runAgentEditLoop } from '../agent/agentService';
 import type { ChatMessage, ContentSegment, ToolCallResult } from '../types';
 import { useSessionId } from '../hooks/useSessionId';
 import { generateUUID } from '../utils/uuid';
+import { buildChatMessages } from '../utils/buildChatMessages';
 
 function generateId() {
   return generateUUID();
@@ -268,6 +269,22 @@ export function AgentProvider({
             // the stale cache so the next switch loads the full backend response.
             if (streamGenerationRef.current !== generation) {
               if (conversationId) messagesCacheRef.current.delete(conversationId);
+              // If user is currently viewing this conversation, re-fetch from
+              // backend so the completed response appears automatically.
+              if (conversationId && activeConversationIdRef.current === conversationId) {
+                // Small delay to let the backend's finally block persist the response.
+                setTimeout(() => {
+                  if (activeConversationIdRef.current !== conversationId) return;
+                  fetch(`/api/conversations/${conversationId}`)
+                    .then(res => res.ok ? res.json() : null)
+                    .then(conv => {
+                      if (!conv?.messages || activeConversationIdRef.current !== conversationId) return;
+                      setMessages(buildChatMessages(conv.messages));
+                      setIsStreaming(false);
+                    })
+                    .catch(() => {});
+                }, 300);
+              }
               return;
             }
             if (newSessionId) sessionIdRef.current = newSessionId;
@@ -296,6 +313,20 @@ export function AgentProvider({
           onError: (error) => {
             if (streamGenerationRef.current !== generation) {
               if (conversationId) messagesCacheRef.current.delete(conversationId);
+              // Re-fetch if user is viewing this conversation
+              if (conversationId && activeConversationIdRef.current === conversationId) {
+                setTimeout(() => {
+                  if (activeConversationIdRef.current !== conversationId) return;
+                  fetch(`/api/conversations/${conversationId}`)
+                    .then(res => res.ok ? res.json() : null)
+                    .then(conv => {
+                      if (!conv?.messages || activeConversationIdRef.current !== conversationId) return;
+                      setMessages(buildChatMessages(conv.messages));
+                      setIsStreaming(false);
+                    })
+                    .catch(() => {});
+                }, 300);
+              }
               return;
             }
             if (flushTimerRef.current) {
@@ -356,6 +387,19 @@ export function AgentProvider({
     async (messageIndex: number, newContent: string) => {
       if (isStreaming) return;
       const generation = ++streamGenerationRef.current;
+      const convId = activeConversationIdRef.current;
+
+      // Truncate messages at the edit point in the backend
+      if (convId) {
+        try {
+          await fetch(`/api/conversations/${convId}/messages?from_sort_order=${messageIndex}`, {
+            method: 'DELETE',
+          });
+        } catch {
+          // Best-effort
+        }
+        messagesCacheRef.current.delete(convId);
+      }
 
       // Build conversation history from messages before the edit point
       const conversationHistory: { role: string; content: string }[] = [];
@@ -594,6 +638,7 @@ export function AgentProvider({
         },
         controller.signal,
         userSessionId,
+        convId,
       );
     },
     [isStreaming, messages, flushText, refreshTables, userSessionId]
@@ -611,6 +656,18 @@ export function AgentProvider({
           .map((m) => ({ role: m.role, content: m.content }));
         return remaining;
       });
+
+      // Persist the truncation to the backend
+      const convId = activeConversationIdRef.current;
+      if (convId) {
+        fetch(`/api/conversations/${convId}/messages?from_sort_order=${messageIndex}`, {
+          method: 'DELETE',
+        }).catch(() => {
+          // Best-effort: if this fails the UI is already updated
+        });
+        // Invalidate cache so switching back loads from backend
+        messagesCacheRef.current.delete(convId);
+      }
 
       // Clear session so next message starts fresh
       sessionIdRef.current = null;
@@ -669,22 +726,23 @@ export function AgentProvider({
     const outgoing = outgoingConversationId || streamConversationIdRef.current;
     activeConversationIdRef.current = incomingConversationId || null;
 
-    // Don't abort the SSE stream — let the backend agent continue running
-    // in the background.  The onDone/onError callbacks detect that the
-    // conversation has changed and handle cleanup (cache invalidation).
-    // Only clear the flush timer so it doesn't interfere with the new
-    // conversation's state.
+    // Do NOT abort the SSE stream — let the agent finish in the background.
+    // The generation counter ensures stale callbacks are no-ops.
+    // The backend's finally block will persist the full response.
+    // When the user switches back, the backend has the complete data.
     if (flushTimerRef.current) {
       clearTimeout(flushTimerRef.current);
       flushTimerRef.current = null;
     }
 
-    // Prefer cached messages when the cache is at least as complete as
-    // the backend response (cache keeps rich segments / streaming data).
+    // Use cache only when it has MORE messages than backend (meaning the
+    // backend hasn't persisted the assistant response yet).  When counts
+    // are equal, prefer backend — it has the final persisted data which
+    // may be more complete than the frozen cache snapshot.
     let finalMsgs = msgs;
     if (incomingConversationId) {
       const cached = messagesCacheRef.current.get(incomingConversationId);
-      if (cached && cached.length > 0 && cached.length >= msgs.length) {
+      if (cached && cached.length > 0 && cached.length > msgs.length) {
         finalMsgs = cached;
       }
       // Clear used cache entry so stale data doesn't persist forever
@@ -719,15 +777,14 @@ export function AgentProvider({
             return {
               ...m,
               content: m.content + pendingText,
-              // Keep isStreaming: true — the SSE stream continues in
-              // the background so the UI should show a thinking indicator.
+              // Keep isStreaming flag — the background stream continues.
               segments: finalSegments.length > 0 ? finalSegments : m.segments,
             };
           }
           return m;
         });
-        // Filter out completed-but-empty assistant messages. Streaming
-        // messages are always kept so the thinking indicator stays visible.
+        // Filter out empty NON-streaming assistant messages.
+        // Keep streaming ones even if empty — they show a "thinking" indicator.
         const toCache = cleaned.filter(m => {
           if (m.role === 'assistant' && !m.isStreaming && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
             return false;
@@ -739,7 +796,11 @@ export function AgentProvider({
       return finalMsgs;
     });
 
-    setIsStreaming(false);
+    // If the loaded messages include a streaming assistant (background stream
+    // still running), keep isStreaming = true so the ChatInput shows "waiting".
+    // The stale onDone will set isStreaming = false when the stream completes.
+    const hasStreamingMsg = finalMsgs.some(m => m.isStreaming);
+    setIsStreaming(hasStreamingMsg);
     textBufferRef.current = '';
     currentTextRef.current = '';
     segmentsRef.current = [];
@@ -753,10 +814,10 @@ export function AgentProvider({
     ++streamGenerationRef.current;
     const outgoing = outgoingConversationId || streamConversationIdRef.current;
     activeConversationIdRef.current = null;
-    if (abortRef.current) {
-      abortRef.current.abort();
-      abortRef.current = null;
-    }
+    // Do NOT abort the SSE stream — let the agent finish in the background.
+    // The generation counter ensures stale callbacks are no-ops.
+    // The backend's finally block will persist the full response.
+    // When the user switches back, the backend has the complete data.
     if (flushTimerRef.current) {
       clearTimeout(flushTimerRef.current);
       flushTimerRef.current = null;
@@ -784,15 +845,16 @@ export function AgentProvider({
             return {
               ...m,
               content: m.content + pendingText,
-              isStreaming: false,
-              currentPhase: undefined,
+              // Keep isStreaming flag — the background stream continues.
               segments: finalSegments.length > 0 ? finalSegments : m.segments,
             };
           }
-          return m.isStreaming ? { ...m, isStreaming: false, currentPhase: undefined } : m;
+          return m;
         });
+        // Filter out empty NON-streaming assistant messages.
+        // Keep streaming ones even if empty — they show a "thinking" indicator.
         const toCache = cleaned.filter(m => {
-          if (m.role === 'assistant' && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
+          if (m.role === 'assistant' && !m.isStreaming && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
             return false;
           }
           return true;

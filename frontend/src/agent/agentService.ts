@@ -147,6 +147,7 @@ export async function runAgentEditLoop(
   callbacks: AgentCallbacks,
   signal?: AbortSignal,
   userSessionId?: string,
+  conversationId?: string | null,
 ): Promise<void> {
   try {
     const response = await fetch('/api/chat/edit', {
@@ -159,6 +160,7 @@ export async function runAgentEditLoop(
         new_message: newMessage,
         conversation_history: conversationHistory,
         langfuse_session_id: langfuseSessionId,
+        conversation_id: conversationId,
       }),
       signal,
     });

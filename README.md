@@ -40,7 +40,18 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
 - **Container isolation** — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
-- **Agent memory** — The agent remembers facts, preferences, and patterns across conversations; memories are stored as markdown files on disk (`data/memories/{user_id}/MEMORY.md`) and injected into the system prompt at the start of each conversation, with stored user preferences taking priority over default model behaviors; the agent saves, recalls, and forgets memories via MCP tools (`save_memory`, `recall_memories`, `forget_memory`); a Memories tab in the sidebar lets you view and delete individual memories; duplicate detection prevents storing the same memory twice
+
+### Editor Mode
+
+- **SQL query editor** — Write and execute queries with Ctrl/Cmd+Enter
+- **Interactive results** — Sortable columns, per-column filters, and global search across results
+- **EXPLAIN support** — Markdown-rendered output for `EXPLAIN` and `EXPLAIN ANALYZE` queries
+
+### Memories
+
+- **Persistent agent memory** — The agent remembers facts, preferences, and patterns across conversations; memories are stored as markdown files on disk (`data/memories/{user_id}/MEMORY.md`) and injected into the system prompt at the start of each conversation, with stored user preferences taking priority over default model behaviors
+- **MCP-based memory tools** — The agent saves, recalls, and forgets memories via MCP tools (`save_memory`, `recall_memories`, `forget_memory`); duplicate detection prevents storing the same memory twice
+- **Memory management UI** — A Memories tab in the sidebar lets you view and delete individual memories
 
 ### Skills
 
@@ -52,12 +63,6 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Create skills from the UI** — Click the "+" button in the Skills tab to create a new skill with a name, description, and step-by-step instructions; skills are stored as `SKILL.md` files on disk
 - **Agent-created skills** — The agent can create new skills during a conversation via the `create_skill` MCP tool; new skills appear in the sidebar automatically
 - **Dynamic skill discovery** — Skills are stored at `skills/<name>/SKILL.md` and re-scanned per request; add or remove skills without restarting
-
-### Editor Mode
-
-- **SQL query editor** — Write and execute queries with Ctrl/Cmd+Enter
-- **Interactive results** — Sortable columns, per-column filters, and global search across results
-- **EXPLAIN support** — Markdown-rendered output for `EXPLAIN` and `EXPLAIN ANALYZE` queries
 
 ## Getting Started
 
@@ -492,4 +497,4 @@ scenarios:
 
 ## License
 
-[MIT](LICENSE.txt)
+[MIT](LICENSE)

@@ -279,6 +279,28 @@ class MemoryStore:
             "sort_order": next_order,
         }
 
+    def truncate_messages(self, conversation_id: str, from_sort_order: int) -> int:
+        """Delete all messages with sort_order >= from_sort_order.
+
+        Returns the number of deleted rows.
+        """
+        with self._lock:
+            conn = self._connect()
+            try:
+                cur = conn.execute(
+                    "DELETE FROM messages WHERE conversation_id = ? AND sort_order >= ?",
+                    (conversation_id, from_sort_order),
+                )
+                conn.execute(
+                    "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                    (_now_iso(), conversation_id),
+                )
+                conn.commit()
+                deleted = cur.rowcount
+            finally:
+                conn.close()
+        return deleted
+
     def list_messages(self, conversation_id: str) -> list[dict]:
         with self._lock:
             conn = self._connect()

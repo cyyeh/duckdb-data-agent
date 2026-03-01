@@ -53,6 +53,15 @@ async def update_conversation(conversation_id: str, request: UpdateConversationR
     return {"status": "ok"}
 
 
+@router.delete("/{conversation_id}/messages")
+async def truncate_messages(
+    conversation_id: str,
+    from_sort_order: int = Query(...),
+):
+    deleted = memory_store.truncate_messages(conversation_id, from_sort_order)
+    return {"deleted": deleted}
+
+
 @router.delete("/{conversation_id}")
 async def delete_conversation(conversation_id: str):
     if not memory_store.delete_conversation(conversation_id):
