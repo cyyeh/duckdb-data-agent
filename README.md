@@ -313,6 +313,8 @@ The data flow for a chat message is:
 | `SKILLS_DIR` | `skills` | Path to skills directory (inside backend container) |
 | `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount (bind-mounted read-only at `/app/.claude/skills/` in sidecar containers) |
 | `APP_UID` | `1000` | UID for the container user (set to `$(id -u)` on Linux so skills directory writes work; not needed on macOS) |
+| `MEMORY_DB_PATH` | `data/memory.db` | SQLite database for conversation history |
+| `MEMORIES_DIR` | `data/memories` | Directory for agent memory files |
 
 **Security properties:**
 
