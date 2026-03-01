@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import type { TableInfo } from '../types';
 import { SkillsPanel } from './SkillsPanel';
+import { MemoriesPanel } from './MemoriesPanel';
 import { CreateSkillDialog } from './CreateSkillDialog';
 import { ConversationHistory } from './ConversationHistory';
 import './Sidebar.css';
@@ -27,9 +28,10 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<'tables' | 'skills'>('tables');
+  const [activeTab, setActiveTab] = useState<'tables' | 'skills' | 'memories'>('tables');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
+  const [memoriesRefreshKey, setMemoriesRefreshKey] = useState(0);
 
   const toggle = (name: string) => {
     setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -62,6 +64,12 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
               onClick={() => setActiveTab('skills')}
             >
               {t('skillsTab')}
+            </button>
+            <button
+              className={`sidebar__tab ${activeTab === 'memories' ? 'sidebar__tab--active' : ''}`}
+              onClick={() => setActiveTab('memories')}
+            >
+              {t('memoriesTab')}
             </button>
           </div>
           <button
@@ -159,12 +167,14 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
               ))}
             </ul>
           </>
-        ) : (
+        ) : activeTab === 'skills' ? (
           <SkillsPanel
             onUseSkill={onUseSkill ?? (() => {})}
             onCreateClick={() => setShowCreateDialog(true)}
             refreshKey={skillsRefreshKey}
           />
+        ) : (
+          <MemoriesPanel refreshKey={memoriesRefreshKey} />
         )}
       </div>
       <div className="sidebar__conversations">
