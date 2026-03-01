@@ -186,7 +186,7 @@ export function AgentProvider({
             );
             refreshTables();
             // When a skill is created, notify SkillsPanel to refresh
-            if (result.toolName === 'create_skill') {
+            if (result.toolName?.includes('create_skill')) {
               window.dispatchEvent(new CustomEvent('skills-updated'));
             }
           },
