@@ -73,6 +73,17 @@ class MemoryStore:
                         ON conversations(user_id, updated_at);
                     """
                 )
+                # Migration: add session_id column
+                try:
+                    conn.execute(
+                        "ALTER TABLE conversations ADD COLUMN session_id TEXT NOT NULL DEFAULT ''"
+                    )
+                except sqlite3.OperationalError:
+                    pass  # column already exists
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_conversations_session "
+                    "ON conversations(session_id)"
+                )
                 conn.commit()
             finally:
                 conn.close()
@@ -82,7 +93,10 @@ class MemoryStore:
     # ------------------------------------------------------------------
 
     def create_conversation(
-        self, user_id: str = "default", title: str | None = None
+        self,
+        user_id: str = "default",
+        title: str | None = None,
+        session_id: str = "",
     ) -> dict:
         now = _now_iso()
         conv_id = str(uuid.uuid4())
@@ -90,6 +104,7 @@ class MemoryStore:
             "id": conv_id,
             "user_id": user_id,
             "title": title,
+            "session_id": session_id,
             "created_at": now,
             "updated_at": now,
         }
@@ -98,8 +113,8 @@ class MemoryStore:
             try:
                 conn.execute(
                     """
-                    INSERT INTO conversations (id, user_id, title, created_at, updated_at)
-                    VALUES (:id, :user_id, :title, :created_at, :updated_at)
+                    INSERT INTO conversations (id, user_id, title, session_id, created_at, updated_at)
+                    VALUES (:id, :user_id, :title, :session_id, :created_at, :updated_at)
                     """,
                     row,
                 )
@@ -113,6 +128,7 @@ class MemoryStore:
         user_id: str = "default",
         limit: int = 50,
         offset: int = 0,
+        session_id: str = "",
     ) -> list[dict]:
         with self._lock:
             conn = self._connect()
@@ -120,11 +136,11 @@ class MemoryStore:
                 rows = conn.execute(
                     """
                     SELECT * FROM conversations
-                    WHERE user_id = ?
+                    WHERE user_id = ? AND session_id = ?
                     ORDER BY updated_at DESC
                     LIMIT ? OFFSET ?
                     """,
-                    (user_id, limit, offset),
+                    (user_id, session_id, limit, offset),
                 ).fetchall()
             finally:
                 conn.close()
@@ -185,6 +201,24 @@ class MemoryStore:
             finally:
                 conn.close()
         return changed
+
+    def delete_conversations_by_session(self, session_id: str) -> int:
+        """Delete all conversations with the given session_id.
+
+        Returns the number of deleted rows.
+        """
+        with self._lock:
+            conn = self._connect()
+            try:
+                cur = conn.execute(
+                    "DELETE FROM conversations WHERE session_id = ?",
+                    (session_id,),
+                )
+                conn.commit()
+                deleted = cur.rowcount
+            finally:
+                conn.close()
+        return deleted
 
     # ------------------------------------------------------------------
     # Messages
