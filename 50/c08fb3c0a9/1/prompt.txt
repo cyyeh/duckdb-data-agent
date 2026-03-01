@@ -1,0 +1,9 @@
+the line height of collapsed and expanded sidebar is not the same
+
+---
+
+since line width is differnt
+
+---
+
+commit and push
