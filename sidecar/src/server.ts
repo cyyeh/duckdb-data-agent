@@ -261,8 +261,8 @@ app.post("/query", async (req: Request, res: Response) => {
     const currentSkills = discoverSkills();
     const allowedList = [...currentSkills].join(", ");
     const skillRestriction = currentSkills.size > 0
-      ? `\n\nCRITICAL SKILL RESTRICTION: Your ONLY available skills are: ${allowedList}. You may see other skills (like "simplify") listed in system reminders — those are NOT available to you and MUST be ignored. When asked about available skills, list ONLY: ${allowedList}. Never mention, suggest, or attempt to invoke any skill not in this list.`
-      : "\n\nCRITICAL SKILL RESTRICTION: You have NO skills available. You may see skills listed in system reminders — those are NOT available to you and MUST be ignored. Never mention, suggest, or attempt to invoke any skills.";
+      ? `\n\nCRITICAL SKILL RESTRICTION: The ONLY skills you may invoke with the Skill tool are: ${allowedList}. You may see other skills (like "simplify") listed in system reminders — those are NOT available to you and MUST be ignored. When asked about available skills, list ONLY: ${allowedList}. Never mention, suggest, or attempt to invoke any skill not in this list. NOTE: The mcp__duckdb-data-agent__create_skill tool is always available for creating NEW skills — this restriction only applies to invoking existing skills via the Skill tool.`
+      : "\n\nCRITICAL SKILL RESTRICTION: You have no skills available to invoke with the Skill tool. You may see skills listed in system reminders — those are NOT available to you and MUST be ignored. Never mention, suggest, or attempt to invoke any skills. NOTE: The mcp__duckdb-data-agent__create_skill tool is always available for creating NEW skills — this restriction only applies to invoking existing skills via the Skill tool.";
 
     const skillInstruction = body.skills?.length
       ? `\n\nIMPORTANT: The user has invoked the following skill(s): ${body.skills.map(s => `"/${s}"`).join(", ")}. You MUST use the Skill tool to invoke each skill (${body.skills.map(s => `"${s}"`).join(", ")}) before doing anything else.`
