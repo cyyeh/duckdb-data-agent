@@ -37,7 +37,6 @@ class MemoryStore:
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self._db_path)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA foreign_keys=ON")
         return conn
 
@@ -45,14 +44,15 @@ class MemoryStore:
         with self._lock:
             conn = self._connect()
             try:
+                conn.execute("PRAGMA journal_mode=WAL")
                 conn.executescript(
                     """
                     CREATE TABLE IF NOT EXISTS conversations (
                         id         TEXT PRIMARY KEY,
-                        user_id    TEXT DEFAULT 'default',
+                        user_id    TEXT NOT NULL DEFAULT 'default',
                         title      TEXT,
-                        created_at TEXT,
-                        updated_at TEXT
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
                     );
 
                     CREATE TABLE IF NOT EXISTS messages (
@@ -60,10 +60,10 @@ class MemoryStore:
                         conversation_id TEXT NOT NULL
                             REFERENCES conversations(id) ON DELETE CASCADE,
                         role            TEXT NOT NULL,
-                        content         TEXT,
+                        content         TEXT NOT NULL,
                         metadata        TEXT,
-                        created_at      TEXT,
-                        sort_order      INTEGER
+                        created_at      TEXT NOT NULL,
+                        sort_order      INTEGER NOT NULL
                     );
 
                     CREATE INDEX IF NOT EXISTS idx_messages_conv_order
@@ -85,7 +85,7 @@ class MemoryStore:
         self, user_id: str = "default", title: str | None = None
     ) -> dict:
         now = _now_iso()
-        conv_id = uuid.uuid4().hex
+        conv_id = str(uuid.uuid4())
         row = {
             "id": conv_id,
             "user_id": user_id,
@@ -197,7 +197,7 @@ class MemoryStore:
         content: str,
         metadata: dict | None = None,
     ) -> dict:
-        msg_id = uuid.uuid4().hex
+        msg_id = str(uuid.uuid4())
         now = _now_iso()
         meta_json = json.dumps(metadata) if metadata is not None else None
 
