@@ -25,6 +25,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Internationalization (i18n)** — Switch between English and Traditional Chinese with the EN/中 toggle in the header; auto-detects your OS language on first visit and remembers your choice across sessions
 - **Interactive clarification** — When your request is ambiguous, the agent asks a clarifying question with selectable options displayed inline in the chat; pick an option or type a free-text response to continue
 - **Export conversation** — Click the Export button to download the full conversation as a single self-contained HTML file; the export preserves the current theme, collapsible thinking blocks, interactive Plotly charts (via CDN), and styled query result tables; interactive-only elements (edit/delete buttons, retry buttons) are stripped for a clean read-only view
+- **Conversation history** — A sidebar lists past conversations ordered by most recent; click to reload a previous conversation, rename it inline, or delete it; conversations are persisted to a SQLite database so they survive page reloads and server restarts; a new conversation is created automatically when you send the first message
 
 ### Agent Mode (default mode)
 
@@ -39,6 +40,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
 - **Container isolation** — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
+- **Agent memory** — The agent remembers facts, preferences, and patterns across conversations; memories are stored as markdown files on disk (`data/memories/{user_id}/MEMORY.md`) and injected into the system prompt at the start of each conversation; the agent can also save, recall, and forget memories on demand via MCP tools (`save_memory`, `recall_memories`, `forget_memory`)
 
 ### Skills
 
@@ -273,7 +275,7 @@ The data flow for a chat message is:
 
 **Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no Docker socket access, and a non-root user. The host `skills/` directory is bind-mounted read-only at `/app/.claude/skills/` (the project-level path) so the SDK's built-in Skill tool can discover and invoke them.
 
-**MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, and `create_skill` for agent-driven skill creation. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
+**MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, `create_skill` for agent-driven skill creation, and `save_memory` / `recall_memories` / `forget_memory` for persistent agent memory. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
 
 **Prerequisites:**
 
@@ -393,7 +395,7 @@ scenarios:
 ├── frontend/               # React frontend
 │   ├── src/
 │   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, skills, user-question)
-│   │   ├── contexts/       #   React context providers (theme, language, agent, config, session)
+│   │   ├── contexts/       #   React context providers (theme, language, agent, config, session, conversation)
 │   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig, useSessionId)
 │   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
 │   │   ├── services/       #   API clients (skillsService.ts)
@@ -411,8 +413,10 @@ scenarios:
 │   │   ├── database.py     #   DuckDB connection and query execution
 │   │   ├── session_manager.py  #   Per-user DuckDB session lifecycle (create, cleanup, disk persistence)
 │   │   ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming via container sidecar
+│   │   ├── memory_store.py #   SQLite-backed conversation and message persistence (WAL mode, thread-safe)
+│   │   ├── agent_memory.py #   File-based agent memory (read/save/forget markdown memories, thread-safe)
 │   │   ├── skills.py       #   Skill CRUD operations (read/write SKILL.md files)
-│   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB, chart, and create_skill tools over HTTP
+│   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB, chart, create_skill, and memory tools over HTTP
 │   │   ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
 │   │   ├── proxy.py        #   Reverse proxy for per-subagent model routing (@suffix rewriting)
 │   │   ├── pending_questions.py  #   Interactive clarification (agent asks user for disambiguation)
@@ -425,6 +429,7 @@ scenarios:
 │   │       ├── tables.py   #     Table inspection (schema, columns, sample data)
 │   │       ├── session.py  #     Session creation and deletion
 │   │       ├── skills.py   #     Skills CRUD REST API (/api/skills)
+│   │       ├── conversations.py  #  Conversation history CRUD REST API (/api/conversations)
 │   │       ├── config.py   #     Runtime configuration
 │   │       └── langfuse_status.py  #   Langfuse tracing status and link
 │   └── tests/              #   Unit tests (pytest)
