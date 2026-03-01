@@ -1,0 +1,17 @@
+how is conversations ordered in conversation list, and is time under the conversation title going to be changed as time goes by
+
+---
+
+yes, add a periodic refresh for the timestamps
+
+---
+
+commit and push
+
+---
+
+I created two conversations, each having different first message content, then I go to either conversation and ask a followup question: what's my first message, agent doesn't show the correct first message I sent in the conversation, instead it gives me the first message I sent in another conversation
+
+---
+
+commit all and push
