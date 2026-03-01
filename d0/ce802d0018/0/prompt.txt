@@ -1,0 +1,56 @@
+on linux machine, when server is starting, I get this error message
+
+duckdb-data-agent  |     run(
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 606, in run
+duckdb-data-agent  |     server.run()
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 75, in run
+duckdb-data-agent  |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+duckdb-data-agent  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
+duckdb-data-agent  |     return runner.run(main)
+duckdb-data-agent  |            ^^^^^^^^^^^^^^^^
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
+duckdb-data-agent  |     return self._loop.run_until_complete(task)
+duckdb-data-agent  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+duckdb-data-agent  |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+duckdb-data-agent  |     await self._serve(sockets)
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 86, in _serve
+duckdb-data-agent  |     config.load()
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 441, in load
+duckdb-data-agent  |     self.loaded_app = import_from_string(self.app)
+duckdb-data-agent  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
+duckdb-data-agent  |     module = importlib.import_module(module_str)
+duckdb-data-agent  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+duckdb-data-agent  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+duckdb-data-agent  |     return _bootstrap._gcd_import(name[level:], package, level)
+duckdb-data-agent  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+duckdb-data-agent  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+duckdb-data-agent  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+duckdb-data-agent  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+duckdb-data-agent  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+duckdb-data-agent  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+duckdb-data-agent  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+duckdb-data-agent  |   File "/app/app/main.py", line 11, in <module>
+duckdb-data-agent  |     from app.routes import tables, query, chat, langfuse_status, config, session, skills, conversations, memories
+duckdb-data-agent  |   File "/app/app/routes/chat.py", line 5, in <module>
+duckdb-data-agent  |     from app.agent import stream_chat
+duckdb-data-agent  |   File "/app/app/agent.py", line 15, in <module>
+duckdb-data-agent  |     from app.memory_store import memory_store
+duckdb-data-agent  |   File "/app/app/memory_store.py", line 322, in <module>
+duckdb-data-agent  |     memory_store = MemoryStore()
+duckdb-data-agent  |                    ^^^^^^^^^^^^^
+duckdb-data-agent  |   File "/app/app/memory_store.py", line 28, in __init__
+duckdb-data-agent  |     self._init_schema()
+duckdb-data-agent  |   File "/app/app/memory_store.py", line 45, in _init_schema
+duckdb-data-agent  |     conn = self._connect()
+duckdb-data-agent  |            ^^^^^^^^^^^^^^^
+duckdb-data-agent  |   File "/app/app/memory_store.py", line 38, in _connect
+duckdb-data-agent  |     conn = sqlite3.connect(self._db_path)
+duckdb-data-agent  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+duckdb-data-agent  | sqlite3.OperationalError: unable to open database file
+
+---
+
+create new branch and commit and push and create pr and merge
