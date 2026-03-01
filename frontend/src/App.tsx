@@ -51,7 +51,7 @@ function AppContent({
   const [pendingSkillCommand, setPendingSkillCommand] = useState<string | null>(null);
 
   const conversation = useConversation();
-  const { clearMessages, loadMessages } = useAgent();
+  const { clearMessages, loadMessages, streamingConversationIds } = useAgent();
 
   const handleConversationSelect = useCallback(async (id: string) => {
     const outgoingId = conversation.activeConversationId;
@@ -271,6 +271,7 @@ function AppContent({
           onConversationRename={handleConversationRename}
           conversationRefreshTrigger={conversation.refreshTrigger}
           sessionId={sessionId}
+          streamingConversationIds={streamingConversationIds}
         />
       </div>
       {agentOpen ? (

@@ -23,9 +23,10 @@ interface SidebarProps {
   onConversationRename: (id: string, title: string) => void;
   conversationRefreshTrigger: number;
   sessionId: string;
+  streamingConversationIds: Set<string>;
 }
 
-export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDeleteAll, collapsed, onToggle, onUseSkill, activeConversationId, onConversationSelect, onConversationNew, onConversationDelete, onConversationRename, conversationRefreshTrigger, sessionId }: SidebarProps) {
+export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDeleteAll, collapsed, onToggle, onUseSkill, activeConversationId, onConversationSelect, onConversationNew, onConversationDelete, onConversationRename, conversationRefreshTrigger, sessionId, streamingConversationIds }: SidebarProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -187,6 +188,7 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
           onRename={onConversationRename}
           refreshTrigger={conversationRefreshTrigger}
           sessionId={sessionId}
+          streamingConversationIds={streamingConversationIds}
         />
       </div>
       <div className="sidebar__footer">

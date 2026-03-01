@@ -131,6 +131,23 @@
   color: var(--color-error-text);
 }
 
+.conv-history__streaming-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-color, #3b82f6);
+  margin-right: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  animation: conv-streaming-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes conv-streaming-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 .conv-history__edit-input {
   width: 100%;
   padding: 4px 6px;

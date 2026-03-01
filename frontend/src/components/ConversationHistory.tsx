@@ -17,6 +17,7 @@ interface ConversationHistoryProps {
   onRename: (conversationId: string, title: string) => void;
   refreshTrigger: number;
   sessionId: string;
+  streamingConversationIds: Set<string>;
 }
 
 function timeAgo(dateStr: string, t: (key: string, params?: Record<string, string | number>) => string): string {
@@ -41,6 +42,7 @@ export function ConversationHistory({
   onRename,
   refreshTrigger,
   sessionId,
+  streamingConversationIds,
 }: ConversationHistoryProps) {
   const { t } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -134,6 +136,9 @@ export function ConversationHistory({
               ) : (
                 <>
                   <div className="conv-history__item-title">
+                    {streamingConversationIds.has(conv.id) && (
+                      <span className="conv-history__streaming-dot" />
+                    )}
                     {conv.title || t('untitled')}
                   </div>
                   <div className="conv-history__item-meta">
