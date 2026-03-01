@@ -7,8 +7,8 @@ interface AgentContextValue {
   sendMessage: (text: string, conversationId?: string | null) => void;
   editMessage: (messageIndex: number, newContent: string) => void;
   deleteMessage: (messageIndex: number) => void;
-  clearMessages: () => void;
-  loadMessages: (msgs: ChatMessage[]) => void;
+  clearMessages: (outgoingConversationId?: string | null) => void;
+  loadMessages: (msgs: ChatMessage[], outgoingConversationId?: string | null, incomingConversationId?: string | null) => void;
   respondToQuestion: (questionId: string, answers: string[], freeText?: string) => void;
 }
 

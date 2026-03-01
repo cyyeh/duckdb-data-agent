@@ -34,3 +34,4 @@ bifrost/data/
 *.txt
 skills/
 !skills/analyze-data
+data/
