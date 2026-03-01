@@ -12,6 +12,7 @@ from app.config import (
     LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL, LANGFUSE_ENABLED,
     SDK_IDLE_TIMEOUT_MS,
 )
+from app.memory_store import memory_store
 from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
@@ -169,8 +170,16 @@ async def stream_chat(
     langfuse_session_id: str | None = None,
     backend_session_id: str | None = None,
     skills: list[str] | None = None,
+    conversation_id: str | None = None,
 ) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events via containerized sidecar."""
+    # Persist user message if conversation_id provided
+    if conversation_id:
+        try:
+            memory_store.add_message(conversation_id, "user", message)
+        except Exception:
+            logger.warning("Failed to persist user message", exc_info=True)
+
     from app.container_manager import container_manager
     if container_manager is None:
         raise RuntimeError("Docker is not available. Container mode requires Docker.")
@@ -294,6 +303,8 @@ async def stream_chat(
         # included in the subagent_end event for visibility.
         subagent_sql_data: dict[str, list[dict]] = {}  # parent_tool_use_id -> [{tool_id, sql, columns?, rows?, rowCount?}]
         subagent_internal_tools: dict[str, str] = {}   # tool_id -> parent_tool_use_id
+        assistant_text_parts: list[str] = []
+        assistant_metadata: dict = {"sql_queries": [], "chart_specs": []}
         actual_session_id = session_id
 
         # Timeout must exceed SDK_IDLE_TIMEOUT_MS so the sidecar's own
@@ -363,6 +374,8 @@ async def stream_chat(
                                         subagent_texts[stream_parent] = subagent_texts.get(stream_parent, "") + text
                                     else:
                                         event_name = "answer" if has_tool_calls else "thinking"
+                                        if event_name == "answer":
+                                            assistant_text_parts.append(text)
                                         yield f"event: {event_name}\ndata: {json.dumps({'text': text})}\n\n"
 
                         elif event_type == "content_block_start":
@@ -564,6 +577,15 @@ async def stream_chat(
                                     end_data["result"] = narrative
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
                                 continue
+                            # Accumulate SQL and chart data for persistence
+                            if "columns" in result_data and "rows" in result_data:
+                                assistant_metadata["sql_queries"].append({
+                                    "sql": result_data.get("sql", ""),
+                                    "columns": result_data.get("columns", []),
+                                    "rowCount": result_data.get("rowCount", 0),
+                                })
+                            if "chart_spec" in result_data:
+                                assistant_metadata["chart_specs"].append(result_data["chart_spec"])
                             yield f"event: tool_result\ndata: {json.dumps(result_data, default=str)}\n\n"
 
                     # --- Final result ---
@@ -589,6 +611,14 @@ async def stream_chat(
                         sys_session = msg.get("session_id")
                         if sys_session:
                             actual_session_id = sys_session
+
+        # Persist assistant message if conversation_id provided
+        if conversation_id and assistant_text_parts:
+            try:
+                meta = assistant_metadata if (assistant_metadata["sql_queries"] or assistant_metadata["chart_specs"]) else None
+                memory_store.add_message(conversation_id, "assistant", "".join(assistant_text_parts), metadata=meta)
+            except Exception:
+                logger.warning("Failed to persist assistant message", exc_info=True)
 
         # Guard: always send done even if sidecar ended without result message
         if not done_sent:
