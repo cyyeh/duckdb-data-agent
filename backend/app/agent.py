@@ -25,6 +25,7 @@ Tools at your disposal:
 - mcp__duckdb-data-agent__execute_sql — run SQL queries against DuckDB
 - mcp__duckdb-data-agent__render_chart — render a Plotly chart
 - mcp__duckdb-data-agent__ask_user_question — ask the user a clarifying question
+- mcp__duckdb-data-agent__create_skill — create a reusable skill (workflow template) that can be invoked later via /skill-name
 - Task tool with subagent_type "sql-analyst" — delegate complex multi-query data exploration
 
 Task tool usage:

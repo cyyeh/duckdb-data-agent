@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from '../hooks/useTranslation';
@@ -139,7 +140,7 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
         ))}
       </ul>
 
-      {selectedSkill && (
+      {selectedSkill && createPortal(
         <div className="skill-detail-overlay" onClick={() => setSelectedSkill(null)}>
           <div className="skill-detail-modal" onClick={(e) => e.stopPropagation()}>
             <div className="skill-detail-modal__header">
@@ -181,7 +182,8 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

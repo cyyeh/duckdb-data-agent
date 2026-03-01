@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from '../hooks/useTranslation';
 import { createSkill } from '../services/skillsService';
 import './CreateSkillDialog.css';
@@ -34,7 +35,7 @@ export function CreateSkillDialog({ onClose, onCreated }: CreateSkillDialogProps
     }
   };
 
-  return (
+  return createPortal(
     <div className="create-skill-overlay" onClick={onClose}>
       <div className="create-skill-dialog" onClick={(e) => e.stopPropagation()}>
         <h3 className="create-skill-dialog__title">{t('createSkill')}</h3>
@@ -68,6 +69,7 @@ export function CreateSkillDialog({ onClose, onCreated }: CreateSkillDialogProps
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
