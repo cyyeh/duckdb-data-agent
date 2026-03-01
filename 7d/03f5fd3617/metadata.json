@@ -3,7 +3,7 @@
   "checkpoint_id": "7d03f5fd3617",
   "strategy": "manual-commit",
   "branch": "worktree-implement-memory",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "backend/tests/test_memory_store.py"
   ],
@@ -21,13 +21,20 @@
       "context": "/7d/03f5fd3617/1/context.md",
       "content_hash": "/7d/03f5fd3617/1/content_hash.txt",
       "prompt": "/7d/03f5fd3617/1/prompt.txt"
+    },
+    {
+      "metadata": "/7d/03f5fd3617/2/metadata.json",
+      "transcript": "/7d/03f5fd3617/2/full.jsonl",
+      "context": "/7d/03f5fd3617/2/context.md",
+      "content_hash": "/7d/03f5fd3617/2/content_hash.txt",
+      "prompt": "/7d/03f5fd3617/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 228,
-    "cache_creation_tokens": 324464,
-    "cache_read_tokens": 18760613,
-    "output_tokens": 111181,
-    "api_call_count": 193
+    "input_tokens": 302,
+    "cache_creation_tokens": 456990,
+    "cache_read_tokens": 23702392,
+    "output_tokens": 131803,
+    "api_call_count": 258
   }
 }
