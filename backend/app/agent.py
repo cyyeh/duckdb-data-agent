@@ -14,7 +14,6 @@ from app.config import (
 )
 from app.memory_store import memory_store
 from app.agent_memory import read_memories
-from app.tracing import get_langfuse_client
 
 logger = logging.getLogger(__name__)
 

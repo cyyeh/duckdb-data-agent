@@ -1,10 +1,9 @@
-import asyncio
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.container_manager import ContainerManager, ContainerInfo, ContainerConfig
+from app.container_manager import ContainerManager, ContainerConfig
 
 
 @pytest.fixture
