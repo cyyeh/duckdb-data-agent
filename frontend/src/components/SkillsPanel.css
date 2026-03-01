@@ -86,6 +86,7 @@
   padding: 2px 8px;
   cursor: pointer;
   white-space: nowrap;
+  touch-action: manipulation;
 }
 
 .skills-panel__use-btn:hover {
@@ -100,6 +101,8 @@
   color: var(--color-text-muted);
   padding: 0 2px;
   opacity: 1;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .skills-panel__delete-btn:hover {
@@ -127,6 +130,8 @@
   display: flex;
   align-items: center;
   transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .skills-panel__toggle-btn:hover {
@@ -318,4 +323,20 @@
 .skill-detail-modal__content--preview th {
   background: var(--color-bg-primary);
   font-weight: 600;
+}
+
+/* Mobile touch targets */
+@media (pointer: coarse) {
+  .skills-panel__toggle-btn,
+  .skills-panel__delete-btn {
+    min-width: 36px;
+    min-height: 36px;
+    justify-content: center;
+  }
+
+  .skills-panel__use-btn {
+    min-height: 36px;
+    padding: 4px 12px;
+    font-size: 12px;
+  }
 }
