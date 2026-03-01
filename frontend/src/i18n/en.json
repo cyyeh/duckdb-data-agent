@@ -115,5 +115,9 @@
   "patternsCategory": "Patterns",
   "noPreferences": "No preferences saved yet.",
   "noFacts": "No facts saved yet.",
-  "noPatterns": "No patterns saved yet."
+  "noPatterns": "No patterns saved yet.",
+  "viewMemoryFile": "View memory file",
+  "memoryFileTitle": "Agent Memory",
+  "memoryPreview": "Preview",
+  "memorySource": "Source"
 }

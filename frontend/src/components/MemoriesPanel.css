@@ -2,6 +2,31 @@
   padding: 0;
 }
 
+.memories-panel__actions {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 0 8px;
+}
+
+.memories-panel__action-btn {
+  background: none;
+  border: 1px solid var(--color-border-medium);
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.memories-panel__action-btn:hover {
+  background: var(--color-bg-hover-strong);
+  color: var(--color-text-primary);
+}
+
 .memories-panel__empty {
   font-size: 13px;
   color: var(--color-text-faint);

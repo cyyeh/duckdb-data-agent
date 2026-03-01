@@ -115,5 +115,9 @@
   "patternsCategory": "模式",
   "noPreferences": "尚無已儲存的偏好。",
   "noFacts": "尚無已儲存的事實。",
-  "noPatterns": "尚無已儲存的模式。"
+  "noPatterns": "尚無已儲存的模式。",
+  "viewMemoryFile": "檢視記憶檔案",
+  "memoryFileTitle": "代理記憶",
+  "memoryPreview": "預覽",
+  "memorySource": "原始碼"
 }

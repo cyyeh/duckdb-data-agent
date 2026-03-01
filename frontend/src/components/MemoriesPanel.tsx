@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useTranslation } from '../hooks/useTranslation';
 import { fetchMemories, deleteMemory as apiDeleteMemory } from '../services/memoriesService';
 import type { MemoryEntry } from '../services/memoriesService';
@@ -25,11 +28,15 @@ const CATEGORY_EMPTY_I18N: Record<MemoryEntry['category'], string> = {
 export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<MemoryEntry[]>([]);
+  const [rawContent, setRawContent] = useState('');
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [detailTab, setDetailTab] = useState<'preview' | 'source'>('preview');
 
   const loadMemories = useCallback(async () => {
     try {
       const data = await fetchMemories();
       setEntries(data.entries);
+      setRawContent(data.raw);
     } catch {
       // silently ignore
     }
@@ -53,11 +60,26 @@ export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
     }
   };
 
+  const handleViewFile = () => {
+    setDetailTab('preview');
+    setShowFileModal(true);
+  };
+
   const grouped = CATEGORY_ORDER
     .map((cat) => ({ category: cat, items: entries.filter((e) => e.category === cat) }));
 
   return (
     <div className="memories-panel">
+      <div className="memories-panel__actions">
+        <button
+          className="memories-panel__action-btn"
+          onClick={handleViewFile}
+          title={t('viewMemoryFile')}
+          aria-label={t('viewMemoryFile')}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </button>
+      </div>
       {grouped.map((group) => (
         <div key={group.category} className="memories-panel__section">
           <h3 className="memories-panel__section-title">{t(CATEGORY_I18N[group.category])}</h3>
@@ -81,6 +103,41 @@ export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
           )}
         </div>
       ))}
+
+      {showFileModal && createPortal(
+        <div className="skill-detail-overlay" onClick={() => setShowFileModal(false)}>
+          <div className="skill-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="skill-detail-modal__header">
+              <span className="skill-detail-modal__name">{t('memoryFileTitle')}</span>
+              <button className="skill-detail-modal__close" onClick={() => setShowFileModal(false)}>
+                &times;
+              </button>
+            </div>
+            <div className="skill-detail-modal__tabs">
+              <button
+                className={`skill-detail-modal__tab${detailTab === 'preview' ? ' skill-detail-modal__tab--active' : ''}`}
+                onClick={() => setDetailTab('preview')}
+              >
+                {t('memoryPreview')}
+              </button>
+              <button
+                className={`skill-detail-modal__tab${detailTab === 'source' ? ' skill-detail-modal__tab--active' : ''}`}
+                onClick={() => setDetailTab('source')}
+              >
+                {t('memorySource')}
+              </button>
+            </div>
+            {detailTab === 'preview' ? (
+              <div className="skill-detail-modal__content skill-detail-modal__content--preview">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{rawContent || '*No content*'}</ReactMarkdown>
+              </div>
+            ) : (
+              <pre className="skill-detail-modal__content">{rawContent || ''}</pre>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

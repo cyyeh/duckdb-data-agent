@@ -52,7 +52,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 
 - **Persistent agent memory** — The agent remembers facts, preferences, and patterns across conversations; memories are stored as markdown files on disk (`data/memories/{user_id}/MEMORY.md`) and injected into the system prompt at the start of each conversation, with stored user preferences taking priority over default model behaviors
 - **MCP-based memory tools** — The agent saves, recalls, and forgets memories via MCP tools (`save_memory`, `recall_memories`, `forget_memory`); duplicate detection prevents storing the same memory twice
-- **Memory management UI** — A Memories tab in the sidebar lets you view and delete individual memories
+- **Memory management UI** — A Memories tab in the sidebar lets you view and delete individual memories; a file icon button opens a detail modal showing the full `MEMORY.md` file with Preview (rendered markdown) and Source (raw text) tabs, matching the skill detail modal
 
 ### Skills
 
