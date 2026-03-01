@@ -5,6 +5,7 @@
   "branch": "worktree-implement-memory",
   "checkpoints_count": 2,
   "files_touched": [
+    "frontend/src/components/ConversationHistory.tsx",
     "frontend/src/contexts/AgentContext.tsx",
     "frontend/src/contexts/ConversationContext.tsx"
   ],
@@ -22,13 +23,20 @@
       "context": "/9a/85cc6e06e1/1/context.md",
       "content_hash": "/9a/85cc6e06e1/1/content_hash.txt",
       "prompt": "/9a/85cc6e06e1/1/prompt.txt"
+    },
+    {
+      "metadata": "/9a/85cc6e06e1/2/metadata.json",
+      "transcript": "/9a/85cc6e06e1/2/full.jsonl",
+      "context": "/9a/85cc6e06e1/2/context.md",
+      "content_hash": "/9a/85cc6e06e1/2/content_hash.txt",
+      "prompt": "/9a/85cc6e06e1/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 106,
-    "cache_creation_tokens": 234250,
-    "cache_read_tokens": 8484605,
-    "output_tokens": 83639,
-    "api_call_count": 85
+    "input_tokens": 143,
+    "cache_creation_tokens": 275930,
+    "cache_read_tokens": 9793420,
+    "output_tokens": 90148,
+    "api_call_count": 112
   }
 }
