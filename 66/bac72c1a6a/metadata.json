@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "66bac72c1a6a",
+  "strategy": "manual-commit",
+  "branch": "chore/remove-unused-imports",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/container_manager.py",
+    "backend/app/database.py",
+    "backend/tests/test_container_manager.py",
+    "backend/tests/test_sql_injection_fix.py",
+    "sidecar/src/server.ts",
+    "sidecar/tsconfig.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/66/bac72c1a6a/0/metadata.json",
+      "transcript": "/66/bac72c1a6a/0/full.jsonl",
+      "context": "/66/bac72c1a6a/0/context.md",
+      "content_hash": "/66/bac72c1a6a/0/content_hash.txt",
+      "prompt": "/66/bac72c1a6a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 29992,
+    "cache_read_tokens": 1353546,
+    "output_tokens": 1859,
+    "api_call_count": 35
+  }
+}
