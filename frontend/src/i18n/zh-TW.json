@@ -112,5 +112,8 @@
   "memoryDeleted": "記憶已刪除。",
   "preferencesCategory": "偏好",
   "factsCategory": "事實",
-  "patternsCategory": "模式"
+  "patternsCategory": "模式",
+  "noPreferences": "尚無已儲存的偏好。",
+  "noFacts": "尚無已儲存的事實。",
+  "noPatterns": "尚無已儲存的模式。"
 }

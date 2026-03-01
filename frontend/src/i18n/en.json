@@ -112,5 +112,8 @@
   "memoryDeleted": "Memory deleted.",
   "preferencesCategory": "Preferences",
   "factsCategory": "Facts",
-  "patternsCategory": "Patterns"
+  "patternsCategory": "Patterns",
+  "noPreferences": "No preferences saved yet.",
+  "noFacts": "No facts saved yet.",
+  "noPatterns": "No patterns saved yet."
 }

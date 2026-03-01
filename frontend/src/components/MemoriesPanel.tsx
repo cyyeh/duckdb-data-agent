@@ -16,6 +16,12 @@ const CATEGORY_I18N: Record<MemoryEntry['category'], string> = {
   pattern: 'patternsCategory',
 };
 
+const CATEGORY_EMPTY_I18N: Record<MemoryEntry['category'], string> = {
+  preference: 'noPreferences',
+  fact: 'noFacts',
+  pattern: 'noPatterns',
+};
+
 export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<MemoryEntry[]>([]);
@@ -48,36 +54,31 @@ export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
   };
 
   const grouped = CATEGORY_ORDER
-    .map((cat) => ({ category: cat, items: entries.filter((e) => e.category === cat) }))
-    .filter((g) => g.items.length > 0);
-
-  if (entries.length === 0) {
-    return (
-      <div className="memories-panel">
-        <p className="memories-panel__empty">{t('noMemories')}</p>
-      </div>
-    );
-  }
+    .map((cat) => ({ category: cat, items: entries.filter((e) => e.category === cat) }));
 
   return (
     <div className="memories-panel">
       {grouped.map((group) => (
         <div key={group.category} className="memories-panel__section">
           <h3 className="memories-panel__section-title">{t(CATEGORY_I18N[group.category])}</h3>
-          <ul className="memories-panel__list">
-            {group.items.map((entry, idx) => (
-              <li key={`${group.category}-${idx}`} className="memories-panel__item">
-                <span className="memories-panel__text">{entry.content}</span>
-                <button
-                  className="memories-panel__delete-btn"
-                  onClick={() => handleDelete(entry.content)}
-                  title={t('deleteMemory')}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
-              </li>
-            ))}
-          </ul>
+          {group.items.length === 0 ? (
+            <p className="memories-panel__section-empty">{t(CATEGORY_EMPTY_I18N[group.category])}</p>
+          ) : (
+            <ul className="memories-panel__list">
+              {group.items.map((entry, idx) => (
+                <li key={`${group.category}-${idx}`} className="memories-panel__item">
+                  <span className="memories-panel__text">{entry.content}</span>
+                  <button
+                    className="memories-panel__delete-btn"
+                    onClick={() => handleDelete(entry.content)}
+                    title={t('deleteMemory')}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ))}
     </div>
