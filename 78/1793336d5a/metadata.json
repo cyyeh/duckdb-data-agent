@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "781793336d5a",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/hooks/useAgent.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/78/1793336d5a/0/metadata.json",
+      "transcript": "/78/1793336d5a/0/full.jsonl",
+      "context": "/78/1793336d5a/0/context.md",
+      "content_hash": "/78/1793336d5a/0/content_hash.txt",
+      "prompt": "/78/1793336d5a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 88,
+    "cache_creation_tokens": 211031,
+    "cache_read_tokens": 7941008,
+    "output_tokens": 77627,
+    "api_call_count": 71
+  }
+}
