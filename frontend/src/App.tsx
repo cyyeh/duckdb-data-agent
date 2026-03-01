@@ -54,13 +54,15 @@ function AppContent({
   const { clearMessages, loadMessages } = useAgent();
 
   const handleConversationSelect = useCallback(async (id: string) => {
+    const outgoingId = conversation.activeConversationId;
     const messages = await conversation.selectConversation(id);
-    loadMessages(messages);
+    loadMessages(messages, outgoingId, id);
   }, [conversation, loadMessages]);
 
   const handleNewConversation = useCallback(() => {
+    const outgoingId = conversation.activeConversationId;
     conversation.startNewConversation();
-    clearMessages();
+    clearMessages(outgoingId);
   }, [conversation, clearMessages]);
 
   const handleConversationDelete = useCallback(async (id: string) => {
@@ -268,6 +270,7 @@ function AppContent({
           onConversationDelete={handleConversationDelete}
           onConversationRename={handleConversationRename}
           conversationRefreshTrigger={conversation.refreshTrigger}
+          sessionId={sessionId}
         />
       </div>
       {agentOpen ? (
@@ -416,7 +419,7 @@ export default function App() {
     <ConfigProvider>
       <LanguageProvider>
         <ThemeProvider>
-          <ConversationProvider>
+          <ConversationProvider sessionId={sessionId}>
             <AgentProvider refreshTables={refreshTables}>
               <AppContent tables={tables} refreshTables={refreshTables} sessionId={sessionId} />
             </AgentProvider>

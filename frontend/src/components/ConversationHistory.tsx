@@ -16,6 +16,7 @@ interface ConversationHistoryProps {
   onDelete: (conversationId: string) => void;
   onRename: (conversationId: string, title: string) => void;
   refreshTrigger: number;
+  sessionId: string;
 }
 
 function timeAgo(dateStr: string, t: (key: string, params?: Record<string, string | number>) => string): string {
@@ -39,6 +40,7 @@ export function ConversationHistory({
   onDelete,
   onRename,
   refreshTrigger,
+  sessionId,
 }: ConversationHistoryProps) {
   const { t } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -48,14 +50,16 @@ export function ConversationHistory({
 
   const fetchConversations = useCallback(async () => {
     try {
-      const res = await fetch('/api/conversations');
+      const res = await fetch('/api/conversations', {
+        headers: { 'X-Session-ID': sessionId },
+      });
       if (res.ok) {
         setConversations(await res.json());
       }
     } catch {
       // Sidebar fetch failure: show empty list
     }
-  }, []);
+  }, [sessionId]);
 
   useEffect(() => {
     fetchConversations();

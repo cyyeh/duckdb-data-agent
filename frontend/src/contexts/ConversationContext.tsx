@@ -1,5 +1,5 @@
 import { createContext, useState, useCallback, useContext, ReactNode } from 'react';
-import type { ChatMessage } from '../types';
+import type { ChatMessage, ContentSegment } from '../types';
 
 interface Conversation {
   id: string;
@@ -28,7 +28,7 @@ interface ConversationContextType {
 
 const ConversationContext = createContext<ConversationContextType | null>(null);
 
-export function ConversationProvider({ children }: { children: ReactNode }) {
+export function ConversationProvider({ children, sessionId }: { children: ReactNode; sessionId: string }) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -40,14 +40,14 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
     const title = firstMessage.length > 50 ? firstMessage.slice(0, 50) + '...' : firstMessage;
     const res = await fetch('/api/conversations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
       body: JSON.stringify({ title }),
     });
     const conv = await res.json();
     setActiveConversationId(conv.id);
     triggerRefresh();
     return conv.id;
-  }, [triggerRefresh]);
+  }, [triggerRefresh, sessionId]);
 
   const selectConversation = useCallback(async (id: string): Promise<ChatMessage[]> => {
     const res = await fetch(`/api/conversations/${id}`);
@@ -55,12 +55,58 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
     const conv: Conversation = await res.json();
     setActiveConversationId(id);
 
-    const chatMessages: ChatMessage[] = (conv.messages || []).map((msg) => ({
-      id: msg.id,
-      role: msg.role as 'user' | 'assistant',
-      content: msg.content,
-      segments: msg.role === 'assistant' ? [{ type: 'answer' as const, text: msg.content }] : undefined,
-    }));
+    const chatMessages: ChatMessage[] = (conv.messages || []).map((msg) => {
+      if (msg.role !== 'assistant') {
+        return { id: msg.id, role: 'user' as const, content: msg.content };
+      }
+
+      // Try to restore segments from metadata
+      let segments: ContentSegment[] | undefined;
+      if (msg.metadata) {
+        try {
+          const meta = typeof msg.metadata === 'string' ? JSON.parse(msg.metadata) : msg.metadata;
+          if (Array.isArray(meta?.segments)) {
+            segments = (meta.segments as Array<Record<string, unknown>>).map((seg) => {
+              const s: ContentSegment = { type: seg.type as ContentSegment['type'] };
+              if (seg.text) s.text = seg.text as string;
+              if (seg.toolCallId || seg.toolName) {
+                s.toolResult = {
+                  toolCallId: (seg.toolCallId as string) || '',
+                  toolName: seg.toolName as string,
+                  sql: (seg.sql as string) || '',
+                  columns: [],
+                  rows: [],
+                  rowCount: (seg.rowCount as number) || 0,
+                  error: seg.error as string | undefined,
+                  chart_spec: seg.chart_spec as ContentSegment['chart_spec'],
+                };
+              }
+              if (seg.subagentId) s.subagentId = seg.subagentId as string;
+              if (seg.subagentName) s.subagentName = seg.subagentName as string;
+              if (seg.sqlResults) s.sqlResults = seg.sqlResults as ContentSegment['sqlResults'];
+              if (seg.chart_spec && seg.type === 'subagent_end') {
+                s.chart_spec = seg.chart_spec as ContentSegment['chart_spec'];
+              }
+              return s;
+            });
+          }
+        } catch {
+          // metadata parse failed, fall through to default
+        }
+      }
+
+      // Fallback: single answer segment from content
+      if (!segments) {
+        segments = [{ type: 'answer' as const, text: msg.content }];
+      }
+
+      return {
+        id: msg.id,
+        role: 'assistant' as const,
+        content: msg.content,
+        segments,
+      };
+    });
     return chatMessages;
   }, []);
 
