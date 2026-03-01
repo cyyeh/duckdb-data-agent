@@ -5,6 +5,7 @@
   "branch": "worktree-implement-memory",
   "checkpoints_count": 5,
   "files_touched": [
+    "README.md",
     "backend/app/memory_store.py",
     "backend/app/routes/chat.py",
     "backend/app/routes/conversations.py",
@@ -14,7 +15,8 @@
     "frontend/src/components/Sidebar.css",
     "frontend/src/components/Sidebar.tsx",
     "frontend/src/contexts/AgentContext.tsx",
-    "frontend/src/contexts/ConversationContext.tsx"
+    "frontend/src/contexts/ConversationContext.tsx",
+    "frontend/src/utils/buildChatMessages.ts"
   ],
   "sessions": [
     {
@@ -58,13 +60,20 @@
       "context": "/9a/85cc6e06e1/5/context.md",
       "content_hash": "/9a/85cc6e06e1/5/content_hash.txt",
       "prompt": "/9a/85cc6e06e1/5/prompt.txt"
+    },
+    {
+      "metadata": "/9a/85cc6e06e1/6/metadata.json",
+      "transcript": "/9a/85cc6e06e1/6/full.jsonl",
+      "context": "/9a/85cc6e06e1/6/context.md",
+      "content_hash": "/9a/85cc6e06e1/6/content_hash.txt",
+      "prompt": "/9a/85cc6e06e1/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 334,
-    "cache_creation_tokens": 458328,
-    "cache_read_tokens": 22950031,
-    "output_tokens": 135299,
-    "api_call_count": 277
+    "input_tokens": 351,
+    "cache_creation_tokens": 473139,
+    "cache_read_tokens": 23420261,
+    "output_tokens": 137466,
+    "api_call_count": 291
   }
 }
