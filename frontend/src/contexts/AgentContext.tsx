@@ -73,6 +73,8 @@ export function AgentProvider({
       const convId = conversationId || null;
       // Per-conversation guard: don't double-send in same conversation
       if (convId && streamStatesRef.current.has(convId)) return;
+      // Fallback guard for null-convId path (new chat before conversation created)
+      if (!convId && isStreaming) return;
 
       const controller = new AbortController();
       const assistantId = generateId();
