@@ -93,5 +93,16 @@
   "useSkillPlaceholder": "use this skill",
   "enableSkill": "Enable skill",
   "disableSkill": "Disable skill",
-  "cannotDeleteBuiltin": "Built-in skills cannot be deleted."
+  "cannotDeleteBuiltin": "Built-in skills cannot be deleted.",
+  "conversations": "Conversations",
+  "newConversation": "New conversation",
+  "noConversationsYet": "No conversations yet",
+  "untitled": "Untitled",
+  "rename": "Rename",
+  "deleteConversation": "Delete",
+  "deleteConversationConfirm": "Delete this conversation?",
+  "timeJustNow": "just now",
+  "timeMinutesAgo": "{count}m ago",
+  "timeHoursAgo": "{count}h ago",
+  "timeDaysAgo": "{count}d ago"
 }

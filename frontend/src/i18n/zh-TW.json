@@ -93,5 +93,16 @@
   "useSkillPlaceholder": "使用此技能",
   "enableSkill": "啟用技能",
   "disableSkill": "停用技能",
-  "cannotDeleteBuiltin": "內建技能無法刪除。"
+  "cannotDeleteBuiltin": "內建技能無法刪除。",
+  "conversations": "對話",
+  "newConversation": "新增對話",
+  "noConversationsYet": "尚無對話",
+  "untitled": "未命名",
+  "rename": "重新命名",
+  "deleteConversation": "刪除",
+  "deleteConversationConfirm": "確定刪除此對話？",
+  "timeJustNow": "剛剛",
+  "timeMinutesAgo": "{count} 分鐘前",
+  "timeHoursAgo": "{count} 小時前",
+  "timeDaysAgo": "{count} 天前"
 }

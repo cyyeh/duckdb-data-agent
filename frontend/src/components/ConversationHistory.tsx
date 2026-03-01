@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 import './ConversationHistory.css';
 
 interface Conversation {
@@ -17,17 +18,17 @@ interface ConversationHistoryProps {
   refreshTrigger: number;
 }
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: (key: string, params?: Record<string, string | number>) => string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return t('timeJustNow');
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t('timeMinutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('timeHoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return t('timeDaysAgo', { count: days });
   return date.toLocaleDateString();
 }
 
@@ -39,6 +40,7 @@ export function ConversationHistory({
   onRename,
   refreshTrigger,
 }: ConversationHistoryProps) {
+  const { t } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -76,7 +78,7 @@ export function ConversationHistory({
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm('Delete this conversation?')) {
+    if (confirm(t('deleteConversationConfirm'))) {
       onDelete(id);
     }
   };
@@ -90,8 +92,8 @@ export function ConversationHistory({
   return (
     <div className="conv-history">
       <div className="conv-history__header">
-        <span className="conv-history__title">Conversations</span>
-        <button className="conv-history__new-btn" onClick={onNew} title="New conversation">
+        <span className="conv-history__title">{t('conversations')}</span>
+        <button className="conv-history__new-btn" onClick={onNew} title={t('newConversation')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
@@ -100,7 +102,7 @@ export function ConversationHistory({
       </div>
       <div className="conv-history__list">
         {conversations.length === 0 ? (
-          <div className="conv-history__empty">No conversations yet</div>
+          <div className="conv-history__empty">{t('noConversationsYet')}</div>
         ) : (
           conversations.map((conv) => (
             <div
@@ -124,15 +126,15 @@ export function ConversationHistory({
               ) : (
                 <>
                   <div className="conv-history__item-title">
-                    {conv.title || 'Untitled'}
+                    {conv.title || t('untitled')}
                   </div>
                   <div className="conv-history__item-meta">
-                    <span className="conv-history__item-time">{timeAgo(conv.updated_at)}</span>
+                    <span className="conv-history__item-time">{timeAgo(conv.updated_at, t)}</span>
                     <span className="conv-history__item-actions">
                       <button
                         className="conv-history__action-btn"
                         onClick={(e) => handleStartRename(e, conv.id, conv.title || '')}
-                        title="Rename"
+                        title={t('rename')}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -142,7 +144,7 @@ export function ConversationHistory({
                       <button
                         className="conv-history__action-btn conv-history__action-btn--danger"
                         onClick={(e) => handleDelete(e, conv.id)}
-                        title="Delete"
+                        title={t('deleteConversation')}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6" />
