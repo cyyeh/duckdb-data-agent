@@ -610,7 +610,22 @@ export function AgentProvider({
   );
 
   const loadMessages = useCallback((msgs: ChatMessage[]) => {
+    // Abort any ongoing stream before loading a different conversation
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    if (flushTimerRef.current) {
+      clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
     setMessages(msgs);
+    setIsStreaming(false);
+    textBufferRef.current = '';
+    currentTextRef.current = '';
+    segmentsRef.current = [];
+    assistantIdRef.current = '';
+    phaseRef.current = 'thinking';
     sessionIdRef.current = null;
     pendingHistoryRef.current = null;
   }, []);
