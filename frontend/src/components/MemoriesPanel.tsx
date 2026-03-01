@@ -40,12 +40,8 @@ export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
     if (!confirm(t('deleteMemoryConfirm'))) return;
     try {
       await apiDeleteMemory(content);
-      setEntries((prev) => {
-        const idx = prev.findIndex((m) => m.content === content);
-        if (idx === -1) return prev;
-        return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
-      });
       if (selectedEntry?.content === content) setSelectedEntry(null);
+      await loadMemories();
     } catch {
       // silently ignore
     }
