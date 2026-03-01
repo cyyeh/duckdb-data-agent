@@ -103,7 +103,12 @@ Clarification:
     memories = read_memories(user_id="default")
     if memories:
         prompt += "\n\n--- Agent Memory ---\n"
-        prompt += "The following are facts, preferences, and patterns you have learned from previous conversations. Use them to provide better, more personalized responses.\n\n"
+        prompt += (
+            "The following are facts, preferences, and patterns you have learned from previous conversations with this user.\n"
+            "IMPORTANT: User preferences stored here represent explicit choices the user has made. "
+            "You MUST follow them — they take priority over your default behaviors. "
+            "For example, if memory says the user wants emojis, always include emojis even if your default would be to omit them.\n\n"
+        )
         prompt += memories
         prompt += "\n--- End Agent Memory ---\n"
 
