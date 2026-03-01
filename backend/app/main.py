@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from app.routes import tables, query, chat, langfuse_status, config, session, skills
+from app.routes import tables, query, chat, langfuse_status, config, session, skills, conversations
 from app.container_manager import container_manager
 from app.mcp_sse import mcp_app
 from app.proxy import router as proxy_router
@@ -66,6 +66,7 @@ app.include_router(config.router)
 app.include_router(session.router)
 app.include_router(skills.router)
 app.include_router(proxy_router)
+app.include_router(conversations.router)
 
 
 app.mount("/mcp", mcp_app)
