@@ -36,6 +36,6 @@ async def api_list_memories():
 @router.delete("/memories")
 async def api_delete_memory(request: DeleteMemoryRequest):
     result = forget_memory(request.content, user_id="default")
-    if result == "Memory not found.":
+    if result != "Memory forgotten.":
         return JSONResponse(status_code=404, content={"error": result})
     return {"status": "deleted"}
