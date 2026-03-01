@@ -48,6 +48,13 @@ export function ConversationHistory({
   const [editTitle, setEditTitle] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
 
+  // Tick state to force re-render of relative timestamps every 60s
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
   const fetchConversations = useCallback(async () => {
     try {
       const res = await fetch('/api/conversations', {
