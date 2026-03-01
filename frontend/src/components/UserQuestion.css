@@ -29,7 +29,63 @@
   font-weight: 500;
   color: var(--color-text-secondary);
   margin-bottom: 10px;
+  line-height: 1.5;
 }
+
+.user-question__question p {
+  margin: 0 0 8px;
+}
+
+.user-question__question p:last-child {
+  margin-bottom: 0;
+}
+
+.user-question__question ul,
+.user-question__question ol {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+
+.user-question__question li {
+  margin-bottom: 2px;
+}
+
+.user-question__question code {
+  background: var(--color-bg-primary);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.user-question__question pre {
+  background: var(--color-bg-primary);
+  padding: 8px 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 4px 0 8px;
+}
+
+.user-question__question pre code {
+  background: none;
+  padding: 0;
+}
+
+.user-question__question strong {
+  font-weight: 600;
+}
+
+.user-question__question h1,
+.user-question__question h2,
+.user-question__question h3,
+.user-question__question h4 {
+  margin: 8px 0 4px;
+  font-weight: 600;
+}
+
+.user-question__question h1 { font-size: 16px; }
+.user-question__question h2 { font-size: 15px; }
+.user-question__question h3 { font-size: 14px; }
+.user-question__question h4 { font-size: 14px; }
 
 .user-question__options {
   display: flex;
