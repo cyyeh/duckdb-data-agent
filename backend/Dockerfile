@@ -22,7 +22,8 @@ COPY backend/app/ app/
 # Copy built frontend into backend static directory
 COPY --from=frontend-build /app/dist/ static/
 
-RUN useradd -m appuser
+ARG APP_UID=1000
+RUN useradd -m -u ${APP_UID} appuser
 USER appuser
 
 EXPOSE 10000
