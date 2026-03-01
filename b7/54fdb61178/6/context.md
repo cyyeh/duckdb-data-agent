@@ -29,3 +29,14 @@ Random fixes waste time and create new bugs. Quick patches mask underlying issue
 ```
 NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIR...
 
+### Prompt 4
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. **User's first message**: Asked to check if the current implementation works correctly - specifically that users should be able to ask a question, create new conversation, freely switch between conversations, and see latest status with all streaming/responses working.
+
+2. **My initia...
+
