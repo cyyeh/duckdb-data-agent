@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a0520b10cd9b",
+  "session_id": "ce17a489-fcb4-43bb-b2c9-7276c36d7469",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-01T07:44:29.3788Z",
+  "branch": "fix/container-idle-timeout-during-query",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "README.md",
+    "backend/.env.example",
+    "backend/app/agent.py",
+    "backend/app/config.py",
+    "sidecar/src/server.ts"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "b9bf27394f4c",
+  "transcript_identifier_at_start": "ed96eab9-ca04-4c37-8926-4ab78af746b7",
+  "token_usage": {
+    "input_tokens": 62,
+    "cache_creation_tokens": 63888,
+    "cache_read_tokens": 2188195,
+    "output_tokens": 9025,
+    "api_call_count": 42
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-01T07:44:29.093551Z",
+    "agent_lines": 15,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 15,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/ce17a489-fcb4-43bb-b2c9-7276c36d7469.jsonl"
+}
