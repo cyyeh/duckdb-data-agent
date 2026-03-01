@@ -41,6 +41,13 @@ export function AgentProvider({
   const messagesCacheRef = useRef<Map<string, ChatMessage[]>>(new Map());
   // Track which conversation is currently displayed so background streams can detect they're stale
   const activeConversationIdRef = useRef<string | null>(null);
+  // Track which conversation owns the current SSE stream (set in sendMessage).
+  // Used as a fallback when React state is stale (e.g. user switches before re-render).
+  const streamConversationIdRef = useRef<string | null>(null);
+  // Generation counter: incremented on every stream-disrupting event (sendMessage,
+  // loadMessages, clearMessages).  Callbacks capture the generation at creation time
+  // and bail out if the ref has since advanced, preventing cross-conversation leaks.
+  const streamGenerationRef = useRef(0);
 
   const flushText = useCallback(() => {
     const text = textBufferRef.current;
@@ -58,6 +65,8 @@ export function AgentProvider({
   const sendMessage = useCallback(
     async (text: string, conversationId?: string | null) => {
       if (isStreaming) return;
+      streamConversationIdRef.current = conversationId || null;
+      const generation = ++streamGenerationRef.current;
 
       const userMsg: ChatMessage = {
         id: generateId(),
@@ -114,6 +123,7 @@ export function AgentProvider({
         conversationId,
         {
           onTextChunk: (chunk) => {
+            if (streamGenerationRef.current !== generation) return;
             textBufferRef.current += chunk;
             if (!flushTimerRef.current) {
               flushTimerRef.current = setTimeout(() => {
@@ -123,6 +133,7 @@ export function AgentProvider({
             }
           },
           onThinkingDone: () => {
+            if (streamGenerationRef.current !== generation) return;
             // Extended thinking just ended and a text block is starting.
             // Create a thinking segment from accumulated thinking text.
             if (flushTimerRef.current) {
@@ -144,6 +155,7 @@ export function AgentProvider({
             );
           },
           onToolCall: (pending: ToolCallResult) => {
+            if (streamGenerationRef.current !== generation) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -168,6 +180,7 @@ export function AgentProvider({
             );
           },
           onToolResult: (result: ToolCallResult) => {
+            if (streamGenerationRef.current !== generation) return;
             // Merge result into pending tool segment (keep input info, add output)
             const pendingIdx = segmentsRef.current.findIndex(
               (s) => s.type === 'tool' && s.toolResult?.toolCallId === result.toolCallId
@@ -206,6 +219,7 @@ export function AgentProvider({
             }
           },
           onSubagentStart: (data) => {
+            if (streamGenerationRef.current !== generation) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -231,6 +245,7 @@ export function AgentProvider({
             );
           },
           onSubagentEnd: (data) => {
+            if (streamGenerationRef.current !== generation) return;
             segmentsRef.current.push({
               type: 'subagent_end',
               subagentId: data.id,
@@ -248,10 +263,10 @@ export function AgentProvider({
             );
           },
           onDone: (newSessionId) => {
-            // If the user switched conversations, this stream is now
-            // backgrounded.  Don't touch shared state — just clear the
-            // stale cache so the next switch loads the full backend response.
-            if (activeConversationIdRef.current !== conversationId) {
+            // If this stream's generation is stale (user switched conversations
+            // or started a new stream), don't touch shared state — just clear
+            // the stale cache so the next switch loads the full backend response.
+            if (streamGenerationRef.current !== generation) {
               if (conversationId) messagesCacheRef.current.delete(conversationId);
               return;
             }
@@ -279,7 +294,7 @@ export function AgentProvider({
             abortRef.current = null;
           },
           onError: (error) => {
-            if (activeConversationIdRef.current !== conversationId) {
+            if (streamGenerationRef.current !== generation) {
               if (conversationId) messagesCacheRef.current.delete(conversationId);
               return;
             }
@@ -305,6 +320,7 @@ export function AgentProvider({
             abortRef.current = null;
           },
           onUserQuestion: (data) => {
+            if (streamGenerationRef.current !== generation) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -339,6 +355,7 @@ export function AgentProvider({
   const editMessage = useCallback(
     async (messageIndex: number, newContent: string) => {
       if (isStreaming) return;
+      const generation = ++streamGenerationRef.current;
 
       // Build conversation history from messages before the edit point
       const conversationHistory: { role: string; content: string }[] = [];
@@ -381,6 +398,7 @@ export function AgentProvider({
         generateUUID(),
         {
           onTextChunk: (chunk) => {
+            if (streamGenerationRef.current !== generation) return;
             textBufferRef.current += chunk;
             if (!flushTimerRef.current) {
               flushTimerRef.current = setTimeout(() => {
@@ -390,6 +408,7 @@ export function AgentProvider({
             }
           },
           onThinkingDone: () => {
+            if (streamGenerationRef.current !== generation) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -409,6 +428,7 @@ export function AgentProvider({
             );
           },
           onToolCall: (pending: ToolCallResult) => {
+            if (streamGenerationRef.current !== generation) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -429,6 +449,7 @@ export function AgentProvider({
             );
           },
           onToolResult: (result: ToolCallResult) => {
+            if (streamGenerationRef.current !== generation) return;
             const pendingIdx = segmentsRef.current.findIndex(
               (s) => s.type === 'tool' && s.toolResult?.toolCallId === result.toolCallId
             );
@@ -458,6 +479,7 @@ export function AgentProvider({
             refreshTables();
           },
           onSubagentStart: (data) => {
+            if (streamGenerationRef.current !== generation) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -483,6 +505,7 @@ export function AgentProvider({
             );
           },
           onSubagentEnd: (data) => {
+            if (streamGenerationRef.current !== generation) return;
             segmentsRef.current.push({
               type: 'subagent_end',
               subagentId: data.id,
@@ -500,8 +523,7 @@ export function AgentProvider({
             );
           },
           onDone: (newSessionId) => {
-            // Guard: if refs were taken over by another stream, bail out
-            if (assistantIdRef.current !== assistantId) return;
+            if (streamGenerationRef.current !== generation) return;
             if (newSessionId) sessionIdRef.current = newSessionId;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
@@ -523,7 +545,7 @@ export function AgentProvider({
             abortRef.current = null;
           },
           onError: (error) => {
-            if (assistantIdRef.current !== assistantId) return;
+            if (streamGenerationRef.current !== generation) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -546,6 +568,7 @@ export function AgentProvider({
             abortRef.current = null;
           },
           onUserQuestion: (data) => {
+            if (streamGenerationRef.current !== generation) return;
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
               flushTimerRef.current = null;
@@ -638,6 +661,12 @@ export function AgentProvider({
   );
 
   const loadMessages = useCallback((msgs: ChatMessage[], outgoingConversationId?: string | null, incomingConversationId?: string | null) => {
+    // Invalidate any in-flight stream so its callbacks become no-ops.
+    ++streamGenerationRef.current;
+
+    // Fall back to the stream's conversation ID when React state is stale
+    // (e.g. user switches before re-render after createConversation).
+    const outgoing = outgoingConversationId || streamConversationIdRef.current;
     activeConversationIdRef.current = incomingConversationId || null;
 
     // Don't abort the SSE stream — let the backend agent continue running
@@ -673,7 +702,7 @@ export function AgentProvider({
 
     // Save current messages to cache before replacing them.
     setMessages(prev => {
-      if (outgoingConversationId && prev.length > 0) {
+      if (outgoing && prev.length > 0) {
         const pendingText = capturedTextBuffer;
         const aId = capturedAssistantId;
 
@@ -705,7 +734,7 @@ export function AgentProvider({
           }
           return true;
         });
-        messagesCacheRef.current.set(outgoingConversationId, toCache);
+        messagesCacheRef.current.set(outgoing, toCache);
       }
       return finalMsgs;
     });
@@ -721,6 +750,8 @@ export function AgentProvider({
   }, []);
 
   const clearMessages = useCallback((outgoingConversationId?: string | null) => {
+    ++streamGenerationRef.current;
+    const outgoing = outgoingConversationId || streamConversationIdRef.current;
     activeConversationIdRef.current = null;
     if (abortRef.current) {
       abortRef.current.abort();
@@ -739,7 +770,7 @@ export function AgentProvider({
     const capturedPhase = phaseRef.current;
 
     setMessages(prev => {
-      if (outgoingConversationId && prev.length > 0) {
+      if (outgoing && prev.length > 0) {
         const pendingText = capturedTextBuffer;
         const aId = capturedAssistantId;
         let finalSegments = [...capturedSegments];
@@ -766,7 +797,7 @@ export function AgentProvider({
           }
           return true;
         });
-        messagesCacheRef.current.set(outgoingConversationId, toCache);
+        messagesCacheRef.current.set(outgoing, toCache);
       }
       return [];
     });
