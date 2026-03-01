@@ -6,6 +6,7 @@
   "checkpoints_count": 0,
   "files_touched": [
     "frontend/src/App.tsx",
+    "frontend/src/components/Sidebar.tsx",
     "frontend/src/contexts/ConversationContext.tsx"
   ],
   "sessions": [
@@ -15,13 +16,20 @@
       "context": "/a7/35785d8483/0/context.md",
       "content_hash": "/a7/35785d8483/0/content_hash.txt",
       "prompt": "/a7/35785d8483/0/prompt.txt"
+    },
+    {
+      "metadata": "/a7/35785d8483/1/metadata.json",
+      "transcript": "/a7/35785d8483/1/full.jsonl",
+      "context": "/a7/35785d8483/1/context.md",
+      "content_hash": "/a7/35785d8483/1/content_hash.txt",
+      "prompt": "/a7/35785d8483/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 88,
-    "cache_creation_tokens": 211031,
-    "cache_read_tokens": 7941008,
-    "output_tokens": 77627,
-    "api_call_count": 71
+    "input_tokens": 228,
+    "cache_creation_tokens": 324464,
+    "cache_read_tokens": 18760613,
+    "output_tokens": 111181,
+    "api_call_count": 193
   }
 }
