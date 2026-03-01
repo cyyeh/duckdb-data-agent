@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAgent } from '../hooks/useAgent';
 import type { UserQuestionData } from '../types';
@@ -54,7 +56,7 @@ export function UserQuestion({
     return (
       <div className="user-question user-question--answered">
         <div className="user-question__label">{t('questionAnswered')}</div>
-        <div className="user-question__question">{questionData.question}</div>
+        <div className="user-question__question"><ReactMarkdown remarkPlugins={[remarkGfm]}>{questionData.question}</ReactMarkdown></div>
         <div className="user-question__selected-answers">
           {userAnswer.map((a, i) => (
             <span key={i} className="user-question__selected-chip">{a}</span>
@@ -70,7 +72,7 @@ export function UserQuestion({
   return (
     <div className="user-question">
       <div className="user-question__label">{t('questionFromAgent')}</div>
-      <div className="user-question__question">{questionData.question}</div>
+      <div className="user-question__question"><ReactMarkdown remarkPlugins={[remarkGfm]}>{questionData.question}</ReactMarkdown></div>
       <div className="user-question__options">
         {questionData.options.map((opt, i) => (
           <button
