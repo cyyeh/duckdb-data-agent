@@ -101,11 +101,13 @@ export async function runAgentLoop(
   agentSessionId: string | null,
   langfuseSessionId: string | null,
   conversationHistory: { role: string; content: string }[] | null,
-  callbacks: AgentCallbacks,
+  conversationId?: string | null,
+  callbacks?: AgentCallbacks,
   signal?: AbortSignal,
   userSessionId?: string,
   skills?: string[],
 ): Promise<void> {
+  if (!callbacks) return;
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -116,6 +118,7 @@ export async function runAgentLoop(
       body: JSON.stringify({
         message,
         session_id: agentSessionId,
+        conversation_id: conversationId,
         langfuse_session_id: langfuseSessionId,
         conversation_history: conversationHistory ?? [],
         ...(skills?.length ? { skills } : {}),

@@ -48,7 +48,7 @@ export function AgentProvider({
   }, []);
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, conversationId?: string | null) => {
       if (isStreaming) return;
 
       const userMsg: ChatMessage = {
@@ -101,6 +101,7 @@ export function AgentProvider({
         sessionIdRef.current,
         langfuseSessionId,
         pendingHistory ?? (history.length > 0 ? history : null),
+        conversationId,
         {
           onTextChunk: (chunk) => {
             textBufferRef.current += chunk;
@@ -608,6 +609,12 @@ export function AgentProvider({
     [userSessionId]
   );
 
+  const loadMessages = useCallback((msgs: ChatMessage[]) => {
+    setMessages(msgs);
+    sessionIdRef.current = null;
+    pendingHistoryRef.current = null;
+  }, []);
+
   const clearMessages = useCallback(() => {
     if (abortRef.current) {
       abortRef.current.abort();
@@ -620,7 +627,7 @@ export function AgentProvider({
 
   return (
     <AgentContext.Provider
-      value={{ messages, isStreaming, sendMessage, editMessage, deleteMessage, clearMessages, respondToQuestion }}
+      value={{ messages, isStreaming, sendMessage, editMessage, deleteMessage, clearMessages, loadMessages, respondToQuestion }}
     >
       {children}
     </AgentContext.Provider>

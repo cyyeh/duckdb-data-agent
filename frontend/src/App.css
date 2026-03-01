@@ -1,11 +1,18 @@
 .app {
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 220px 250px 1fr;
   min-height: 100vh;
 }
 
 .app--sidebar-collapsed {
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 220px auto 1fr;
+}
+
+.app__conv-wrapper {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: visible;
 }
 
 .app__sidebar-wrapper {
