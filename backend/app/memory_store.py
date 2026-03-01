@@ -78,8 +78,9 @@ class MemoryStore:
                     conn.execute(
                         "ALTER TABLE conversations ADD COLUMN session_id TEXT NOT NULL DEFAULT ''"
                     )
-                except sqlite3.OperationalError:
-                    pass  # column already exists
+                except sqlite3.OperationalError as exc:
+                    if "duplicate column name" not in str(exc):
+                        raise
                 conn.execute(
                     "CREATE INDEX IF NOT EXISTS idx_conversations_session "
                     "ON conversations(session_id)"
@@ -207,6 +208,8 @@ class MemoryStore:
 
         Returns the number of deleted rows.
         """
+        if not session_id:
+            return 0
         with self._lock:
             conn = self._connect()
             try:
