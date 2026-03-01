@@ -17,6 +17,7 @@ from app.config import CORS_ALLOWED_ORIGINS
 logger = logging.getLogger(__name__)
 
 from app.session_manager import session_manager
+from app.memory_store import memory_store
 
 
 async def _cleanup_loop():
@@ -24,8 +25,10 @@ async def _cleanup_loop():
         await asyncio.sleep(60)
         try:
             removed = session_manager.cleanup_stale(ttl_seconds=300)
+            for sid in removed:
+                memory_store.delete_conversations_by_session(sid)
             if removed:
-                logger.info("Background cleanup: removed %d stale sessions", removed)
+                logger.info("Background cleanup: removed %d stale sessions", len(removed))
             if container_manager is not None:
                 container_removed = container_manager.cleanup_expired()
                 if container_removed:

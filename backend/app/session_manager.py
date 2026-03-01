@@ -55,7 +55,7 @@ class SessionManager:
                     pass
         logger.info("Destroyed session: %s (delete_file=%s)", session_id, delete_file)
 
-    def cleanup_stale(self, ttl_seconds: int = 300) -> int:
+    def cleanup_stale(self, ttl_seconds: int = 300) -> list[str]:
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=ttl_seconds)
         with self._lock:
             stale = [
@@ -64,7 +64,7 @@ class SessionManager:
             ]
         for sid in stale:
             self.destroy(sid, delete_file=False)
-        return len(stale)
+        return stale
 
 
 session_manager = SessionManager()
