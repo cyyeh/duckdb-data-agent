@@ -3,7 +3,7 @@
   "checkpoint_id": "8ee98babd179",
   "strategy": "manual-commit",
   "branch": "fix/skill-restriction-blocks-create-skill",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "sidecar/src/server.ts"
   ],
@@ -14,6 +14,13 @@
       "context": "/8e/e98babd179/0/context.md",
       "content_hash": "/8e/e98babd179/0/content_hash.txt",
       "prompt": "/8e/e98babd179/0/prompt.txt"
+    },
+    {
+      "metadata": "/8e/e98babd179/1/metadata.json",
+      "transcript": "/8e/e98babd179/1/full.jsonl",
+      "context": "",
+      "content_hash": "/8e/e98babd179/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
