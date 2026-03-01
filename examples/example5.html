@@ -655,44 +655,180 @@ body {
   <div class="agent-panel__header">
     <span class="agent-panel__title">Agent Mode</span>
   </div>
-  <div class="agent-panel__messages"><div class="message-bubble message-bubble--user"><div class="message-bubble__header">You</div><div class="message-bubble__content"><p>create skill for me</p></div></div><div class="message-bubble message-bubble--assistant"><div class="message-bubble__header">Assistant</div><div class="message-bubble__segments"><details class="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible"><summary class="message-bubble__collapsible-summary"><span class="message-bubble__segment-label">Thinking</span></summary><div class="message-bubble__thinking-body"><div class="message-bubble__segment-content"><p><strong>Clarifying skill creation</strong></p>
-<p>The user asked me to create a skill, but it's unclear what they want it to do. I think it’s best to use the ask_user_question tool and provide a few options like: "What workflow would you like?" or maybe suggest a generic Titanic analysis skill since I have a table loaded. I should figure out what aspect they want to automate, whether it's Titanic EDA, survival analysis, building charts, or something custom. I'll make sure to follow the right process.</p></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">ask_user_question</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>{
+  <div class="agent-panel__messages"><div class="message-bubble message-bubble--user"><div class="message-bubble__header">You</div><div class="message-bubble__content"><p>create skill</p></div></div><div class="message-bubble message-bubble--assistant"><div class="message-bubble__header">Assistant</div><div class="message-bubble__segments"><details class="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible"><summary class="message-bubble__collapsible-summary"><span class="message-bubble__segment-label">Thinking</span></summary><div class="message-bubble__thinking-body"><div class="message-bubble__segment-content"><p><strong>Clarifying skill creation</strong></p>
+<p>The user asked me to "create skill," but I need more details about which specific skill they want and for what purpose. Should I use the mcp__create_skill tool or just ask them? I think it would be better to clarify the skill name and its description. Perhaps I can suggest options like a Titanic EDA skill, survival modeling, or a custom option. I’ll ask for this clarification next!</p></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">ask_user_question</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>{
   "question": "What kind of skill do you want me to create?",
   "options": [
     {
       "label": "Titanic EDA",
-      "description": "Profile columns, missingness, basic distributions, and key summary stats for the titanic table."
+      "description": "Reusable workflow to profile the titanic table and summarize survival patterns."
     },
     {
-      "label": "Survival analysis",
-      "description": "Compare survival rates by sex, class, age bands, embarkation; include a few charts."
+      "label": "Survival drivers",
+      "description": "Workflow focused on survival rate comparisons by sex/class/age/fare with key charts."
     },
     {
-      "label": "Visualization pack",
-      "description": "Generate a standard set of 3–5 charts (bar/line/box) for a chosen table/columns."
+      "label": "Data quality check",
+      "description": "Generic workflow to check missing values, duplicates, ranges, and basic stats for any table."
     },
     {
-      "label": "Other / describe it",
-      "description": "Tell me what you want the skill to do and any required inputs/outputs."
+      "label": "Custom",
+      "description": "You tell me the goal, inputs, and outputs; I’ll package it as a skill."
+    }
+  ]
+}</code></div><div class="inline-query__output"><pre>{"answers": [], "free_text": "write a poem using a language user chooses for any topic about current available data"}</pre></div></div></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">create_skill</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>{
+  "name": "data-poem",
+  "description": "Generate a short poem in a user-chosen language and topic, grounded in the currently loaded DuckDB tables (e.g., titanic). The workflow summarizes key stats from the data first, then weaves them into a poem.",
+  "content": "# /data-poem\n\n## Purpose\nCreate a poem **in a language the user chooses** about a **user-chosen topic**, using **facts pulled from the currently available DuckDB tables**.\n\n## When to use\n- The user wants a creative output (poem) that is still anchored in real data.\n- You have one or more tables loaded (e.g., `titanic`).\n\n## Inputs to collect (ask the user)\n1. **Language** (e.g., English, Spanish, French, Hindi).\n2. **Topic / theme** (e.g., “survival and chance”, “class and inequality”, “names and identities”).\n3. **Which table(s)** to draw from (default: all available; if multiple, ask which one).\n4. Optional: **Tone** (e.g., solemn, hopeful, humorous) and **length** (e.g., 8 lines, 14-line sonnet, free verse ~120 words).\n\n## Step-by-step workflow\n### 1) Confirm available data\nRun a quick inventory of tables and row counts.\n- Query `information_schema.tables` (schema filtering as needed).\n- For each table, get `COUNT(*)`.\n\n### 2) Extract “poem-worthy” facts\nPick 3–8 concise facts that can be naturally referenced in verse. Prefer simple aggregations.\n\nSuggested fact templates (choose those that match the chosen topic):\n- **Overall size**: rows, distinct entities (e.g., passengers).\n- **Key proportions**: survival rate, class proportions, sex proportions.\n- **Extremes**: min/max/median fare, youngest/oldest ages (handle nulls).\n- **Notable categories**: top embarkation ports; cabin missingness.\n- **Contrasts**: survival by `Sex`, `Pclass`, age bands, fare bands.\n\nFor Titanic specifically (examples):\n- Survival rate overall and by `Sex` / `Pclass`.\n- Age distribution summary and missingness.\n- Fare summary (median, IQR-ish via quantiles if desired).\n\n### 3) Translate facts into imagery\nConvert each fact into an image/metaphor aligned to the topic:\n- Percentages → “fractions of dawn”, “odds like salt”.\n- Classes → “decks”, “tiers of wind”.\n- Embarkation → “ports as compass points”.\n- Missing values → “blank cabins”, “unknown years”.\n\n### 4) Compose the poem (in the chosen language)\nRules:\n- Include **at least 3 concrete data facts** (numbers or clearly stated comparisons).\n- Keep numbers readable (round sensibly; avoid clutter).\n- Make the poem coherent and respectful (Titanic: avoid flippant tone unless user explicitly requests humor).\n- End with a closing couplet/line that ties the data back to the theme.\n\n### 5) Provide a short “Data notes” section\nAfter the poem, include 3–6 bullets listing the exact facts used (rounded), so the user can see what came from the data.\n\n## Output format\n1. **Poem** (requested language, requested length).\n2. **Data notes** (bulleted factual anchors used).\n\n## Safety / quality checks\n- Handle nulls explicitly (e.g., `Age` missing values).\n- Round percentages to 0–1 decimals; fares/ages to reasonable precision.\n- If multiple tables exist and the user doesn’t choose, default to the most relevant or ask.\n\n## Example prompts you can offer the user\n- “Choose a language and a theme; I’ll write a poem grounded in the dataset’s key numbers.”\n- “Do you want it to focus on survival, inequality by class, or the mystery of missing ages/cabins?”\n"
+}</code></div><div class="inline-query__output"><pre>{"success": true, "message": "Skill 'data-poem' created successfully. Users can now invoke it with /data-poem."}</pre></div></div></div></div></details><div class="message-bubble__segment message-bubble__segment--question"><div class="user-question user-question--answered"><div class="user-question__label">Answered</div><div class="user-question__question">What kind of skill do you want me to create?</div><div class="user-question__selected-answers"><span class="user-question__selected-chip">write a poem using a language user chooses for any topic about current available data</span></div></div></div><div class="message-bubble__segment message-bubble__segment--answer"><div class="message-bubble__segment-label message-bubble__segment-label--answer">Answer</div><div class="message-bubble__segment-content"><p>I created a new reusable skill called <strong><code>/data-poem</code></strong>.</p>
+<p>What it does:</p>
+<ul>
+<li>Asks the user to choose a <strong>language</strong> and a <strong>topic/theme</strong></li>
+<li>Pulls a handful of <strong>real facts from the currently loaded DuckDB tables</strong> (e.g., <code>titanic</code>)</li>
+<li>Writes a poem grounded in those facts</li>
+<li>Adds a short <strong>“Data notes”</strong> section listing the exact stats used</li>
+</ul>
+<p>You can invoke it now with: <strong><code>/data-poem</code></strong></p></div></div></div></div><div class="message-bubble message-bubble--user"><div class="message-bubble__header">You</div><div class="message-bubble__content"><p>use this skill /data-poem</p></div></div><div class="message-bubble message-bubble--assistant"><div class="message-bubble__header">Assistant</div><div class="message-bubble__segments"><details class="message-bubble__segment message-bubble__segment--thinking message-bubble__collapsible" open=""><summary class="message-bubble__collapsible-summary"><span class="message-bubble__segment-label">Thinking</span></summary><div class="message-bubble__thinking-body"><div class="message-bubble__segment-content"><p><strong>Invoking the correct skill</strong></p>
+<p>The user mentioned “use this skill,” which likely refers to the data-poem since they invoked it earlier, but I still need clarification. They didn't explicitly type /data-poem but implied it, so I should call the Skill tool properly. I’ll use "data-poem" as the skill name since it fits. I’ll make sure to ask the user about their preferred language and topic afterwards. So first, I need to invoke the skill!</p>
+<p><strong>Planning post-skill invocation</strong></p>
+<p>After invoking the Skill tool, I expect it will return some instructions. However, in this environment, the Skill call doesn’t do much beyond that. I need to follow up by asking the user questions about their preferences, like language and topic. I can’t ask multiple questions at once due to the tool's limitations, so I’ll separate them. For the first question, I'll ask for language options, then follow up with a topic selection. Each call is interactive but pauses for answers.</p>
+<p><strong>Structuring the next steps</strong></p>
+<p>I plan to first ask the user for their preferred language. After they respond, I’ll follow up with a question about the theme. To streamline this, I’ll use a single question with options that include languages, and "Other" will definitely be included for flexibility. I think a free-text option could work too. Later, I’ll need to gather statistics related to survival rates, demographics, and fares. But first, I'll invoke the Skill tool, and then ask the user their question. Let's get started!</p></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">Skill</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>data-poem</code></div><div class="inline-query__output"><pre>Launching skill: data-poem</pre></div></div></div><div class="message-bubble__segment-content"><p><strong>Planning user interaction</strong></p>
+<p>I need to confirm the data available before proceeding, so I’ll start by checking the tables and counts using SQL. It looks like the Titanic dataset is likely to be the only one. After that, I’ll ask the user for their preferred language, topic, tone, and length. I can present a few options and also allow for free-text responses. I’ll have to ensure the tool I use is compatible with these requirements, especially incorporating an "Other" option.</p>
+<p><strong>Clarifying user questions</strong></p>
+<p>I’m thinking of asking the user two questions sequentially to keep the conversation flowing. First, I’ll ask about the language and format. However, I need to clarify any ambiguity based on their responses. Since they might want to know about multiple tables, I'll adjust my approach accordingly. As a first step, I’ll query the database to check the available tables and their counts. I can use a specific SQL command to list the tables neatly for efficient communication.</p>
+<p><strong>Inventorying table data</strong></p>
+<p>I’ll focus on the Titanic dataset since we already know that’s the one available. First, I’ll run a quick inventory by querying the tables using the <code>SHOW TABLES;</code> command, but given DuckDB’s capabilities, I can also utilize <code>information_schema</code>. I might execute a query to count rows like <code>SELECT 'titanic' as table, COUNT(*) as rows FROM titanic</code>. I’ll also consider using <code>duckdb_tables()</code> for more details. It looks like I’ll proceed with two queries: one to list the tables and the other to count the rows.</p>
+<p><strong>Preparing to gather poem parameters</strong></p>
+<p>Once I’ve confirmed the available tables, I’ll reach out to the user for their poem parameters. From there, I can compute relevant facts based on the selected theme. There are general statistics I could precompute, such as survival rates by demographics, age distributions, fare medians, and missing cabin information. However, it makes sense to only compute the stats most relevant to what the user wants. For now, I'll execute SQL to confirm the data inventory first.</p></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT table_schema, table_name
+FROM information_schema.tables
+WHERE table_type = 'BASE TABLE'
+  AND table_schema NOT IN ('information_schema','pg_catalog')
+ORDER BY table_schema, table_name;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>table_schema</th><th>table_name</th></tr></thead><tbody><tr><td>main</td><td>titanic</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT COUNT(*)::BIGINT AS rows FROM titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>rows</th></tr></thead><tbody><tr><td>891</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">ask_user_question</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>{
+  "question": "For the data-poem, what language and theme do you want? (We currently have only the `titanic` table with 891 rows.)",
+  "options": [
+    {
+      "label": "English • survival &amp; chance",
+      "description": "Solemn free verse about odds and who lived."
+    },
+    {
+      "label": "Spanish • class &amp; inequality",
+      "description": "Verso libre sobre cubiertas, clases y destino."
+    },
+    {
+      "label": "French • names &amp; memory",
+      "description": "Poème sur les noms, l’oubli, et les passagers."
+    },
+    {
+      "label": "Other",
+      "description": "Tell me the language + theme + (optional) tone/length."
+    }
+  ]
+}</code></div><div class="inline-query__output"><pre>{"answers": ["Other"]}</pre></div></div></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">ask_user_question</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>{
+  "question": "Please type your preferences so I can write the poem.",
+  "options": [
+    {
+      "label": "Default",
+      "description": "English, survival &amp; chance, solemn, ~12 lines."
+    },
+    {
+      "label": "Short",
+      "description": "Your language/theme, 8 lines."
+    },
+    {
+      "label": "Sonnet-ish",
+      "description": "Your language/theme, ~14 lines."
+    },
+    {
+      "label": "Free verse",
+      "description": "Your language/theme, ~120 words."
     }
   ],
   "multi_select": false
-}</code></div><div class="inline-query__output"><pre>{"answers": [], "free_text": "write a poem about any topic using current available data"}</pre></div></div></div><div class="message-bubble__tool-segment"><div class="inline-query inline-query--generic"><div class="inline-query__label inline-query__label--generic">create_skill</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>{
-  "name": "data-poem",
-  "description": "Generate a poem inspired by the currently loaded DuckDB tables, weaving in a handful of true, computed facts (counts, rates, averages) from the data.",
-  "content": "# /data-poem\n\nCreate a poem about any topic, *using the currently available data* (the tables loaded in DuckDB) as factual inspiration.\n\n## When to use\n- The user asks for a poem “using the data,” “inspired by the dataset,” or wants creative writing that still reflects real computed statistics.\n\n## Inputs to ask the user for (if not provided)\n1. **Topic/angle** (choose one): people, journeys, inequality, chance, resilience, loss, hope, etc.\n2. **Poem form** (choose one): free verse, sonnet-ish (14 lines), haiku chain (5–7–5 repeated), spoken-word stanza.\n3. **How factual**: light (2–3 numbers), medium (4–6), heavy (7–10).\n\n## Step-by-step workflow\n1. **Identify available tables and pick a primary table**\n   - If there’s only one table, use it.\n   - If multiple, pick the table that best matches the requested topic, or ask the user which table to use.\n\n2. **Collect a small set of true “anchors” (facts) from the data**\n   Compute *only a handful* of compact facts that are easy to weave into verse:\n   - row count\n   - missingness counts for 1–2 key columns\n   - 1–2 averages/medians\n   - 1–2 rates (percentages)\n   - 1–2 group comparisons (e.g., by category)\n\n   Example patterns (adjust column names to the table):\n   - Total rows: `SELECT COUNT(*) AS n FROM &lt;table&gt;;`\n   - Missingness: `SELECT SUM(CASE WHEN &lt;col&gt; IS NULL THEN 1 ELSE 0 END) AS missing FROM &lt;table&gt;;`\n   - Rate: `SELECT AVG(CASE WHEN &lt;flag&gt;=1 THEN 1 ELSE 0 END) AS rate FROM &lt;table&gt;;`\n   - Group comparison (top 3):\n     `SELECT &lt;group&gt;, COUNT(*) n FROM &lt;table&gt; GROUP BY 1 ORDER BY n DESC LIMIT 3;`\n\n3. **Choose a metaphor system tied to the data**\n   - Examples: “tickets” as fate, “columns” as memories, “missing values” as silence, “rates” as tides, “classes” as decks, “fare” as price of passage.\n\n4. **Draft the poem (incorporate the anchors naturally)**\n   - Mention numbers sparingly and musically (round when appropriate, e.g., 0.383 → “thirty-eight percent”).\n   - Ensure every number you use is **true** and derived from the computed facts.\n   - Avoid dumping a list of stats—each fact should serve imagery, tone, or narrative.\n\n5. **Add a short optional appendix (1–3 bullets)**\n   - After the poem, optionally include: “Data notes:” listing the exact facts used (no SQL), so the reader can see what was grounded in the data.\n\n## Style guidelines\n- Keep it readable; favor concrete imagery over jargon.\n- Use data as *gravity*, not as a spreadsheet.\n- If the data contains sensitive attributes, treat them respectfully and avoid stereotyping.\n\n## Output template\n1. **Title**\n2. **Poem**\n3. *(Optional)* **Data notes** (bullets with the facts used)\n"
-}</code></div><div class="inline-query__output"><pre>{"success": true, "message": "Skill 'data-poem' created successfully. Users can now invoke it with /data-poem."}</pre></div></div></div></div></details><div class="message-bubble__segment message-bubble__segment--question"><div class="user-question user-question--answered"><div class="user-question__label">Answered</div><div class="user-question__question">What kind of skill do you want me to create?</div><div class="user-question__selected-answers"><span class="user-question__selected-chip">write a poem about any topic using current available data</span></div></div></div><div class="message-bubble__segment message-bubble__segment--answer"><div class="message-bubble__segment-label message-bubble__segment-label--answer">Answer</div><div class="message-bubble__segment-content"><p>I created a new reusable skill named <strong><code>/data-poem</code></strong>.</p>
-<p>What it does:</p>
+}</code></div><div class="inline-query__output"><pre>{"answers": [], "free_text": "python + romantic"}</pre></div></div></div><div class="message-bubble__segment-content"><p><strong>Crafting a romantic poem in Python</strong></p>
+<p>The user has chosen Python as the language, which suggests they want a poem written in a Python code style with a romantic theme. I'll gather relevant data from the Titanic, extracting poem-worthy facts using SQL to get statistics on survival rates overall, by sex, class, age missingness, and median fare. Then, I'll craft the poem using Python syntax with comments. I won't include any charts, but I’ll add a bullet list for data notes. Let's proceed!</p></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>WITH base AS (
+  SELECT
+    COUNT(*) AS n,
+    SUM(Survived) AS survived_n,
+    AVG(Survived::DOUBLE) AS survived_rate
+  FROM titanic
+)
+SELECT
+  n,
+  survived_n,
+  ROUND(100*survived_rate, 1) AS survived_pct
+FROM base;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>n</th><th>survived_n</th><th>survived_pct</th></tr></thead><tbody><tr><td>891</td><td>342</td><td>38.4</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  Sex,
+  COUNT(*) AS n,
+  SUM(Survived) AS survived_n,
+  ROUND(100*AVG(Survived::DOUBLE), 1) AS survived_pct
+FROM titanic
+GROUP BY Sex
+ORDER BY Sex;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>Sex</th><th>n</th><th>survived_n</th><th>survived_pct</th></tr></thead><tbody><tr><td>female</td><td>314</td><td>233</td><td>74.2</td></tr><tr><td>male</td><td>577</td><td>109</td><td>18.9</td></tr></tbody></table></div><div class="inline-query__meta">2 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  Pclass,
+  COUNT(*) AS n,
+  SUM(Survived) AS survived_n,
+  ROUND(100*AVG(Survived::DOUBLE), 1) AS survived_pct
+FROM titanic
+GROUP BY Pclass
+ORDER BY Pclass;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>Pclass</th><th>n</th><th>survived_n</th><th>survived_pct</th></tr></thead><tbody><tr><td>1</td><td>216</td><td>136</td><td>63</td></tr><tr><td>2</td><td>184</td><td>87</td><td>47.3</td></tr><tr><td>3</td><td>491</td><td>119</td><td>24.2</td></tr></tbody></table></div><div class="inline-query__meta">3 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  COUNT(*) AS n,
+  SUM(CASE WHEN Age IS NULL THEN 1 ELSE 0 END) AS age_missing,
+  ROUND(AVG(Age), 1) AS age_mean,
+  ROUND(MIN(Age), 1) AS age_min,
+  ROUND(MAX(Age), 1) AS age_max,
+  ROUND(quantile_cont(Age, 0.5), 1) AS age_median
+FROM titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>n</th><th>age_missing</th><th>age_mean</th><th>age_min</th><th>age_max</th><th>age_median</th></tr></thead><tbody><tr><td>891</td><td>177</td><td>29.7</td><td>0.4</td><td>80</td><td>28</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  ROUND(MIN(Fare), 2) AS fare_min,
+  ROUND(quantile_cont(Fare, 0.5), 2) AS fare_median,
+  ROUND(quantile_cont(Fare, 0.75), 2) AS fare_q3,
+  ROUND(MAX(Fare), 2) AS fare_max
+FROM titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>fare_min</th><th>fare_median</th><th>fare_q3</th><th>fare_max</th></tr></thead><tbody><tr><td>0</td><td>14.45</td><td>31</td><td>512.33</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  Embarked,
+  COUNT(*) AS n,
+  ROUND(100.0*COUNT(*)/SUM(COUNT(*)) OVER (), 1) AS pct
+FROM titanic
+GROUP BY Embarked
+ORDER BY n DESC NULLS LAST;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>Embarked</th><th>n</th><th>pct</th></tr></thead><tbody><tr><td>S</td><td>644</td><td>72.3</td></tr><tr><td>C</td><td>168</td><td>18.9</td></tr><tr><td>Q</td><td>77</td><td>8.6</td></tr><tr><td></td><td>2</td><td>0.2</td></tr></tbody></table></div><div class="inline-query__meta">4 row(s)</div></div></div><div class="message-bubble__tool-segment"><div class="inline-query "><div class="inline-query__label inline-query__label--sql">SQL Query</div><div class="inline-query__sql"><button class="inline-query__copy-btn" title="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><code>SELECT
+  SUM(CASE WHEN Cabin IS NULL THEN 1 ELSE 0 END) AS cabin_missing,
+  COUNT(*) AS n,
+  ROUND(100.0*SUM(CASE WHEN Cabin IS NULL THEN 1 ELSE 0 END)/COUNT(*), 1) AS cabin_missing_pct
+FROM titanic;</code></div><div class="inline-query__table-wrapper"><table class="inline-query__table"><thead><tr><th>cabin_missing</th><th>n</th><th>cabin_missing_pct</th></tr></thead><tbody><tr><td>687</td><td>891</td><td>77.1</td></tr></tbody></table></div><div class="inline-query__meta">1 row(s)</div></div></div></div></details><div class="message-bubble__segment message-bubble__segment--question"><div class="user-question user-question--answered"><div class="user-question__label">Answered</div><div class="user-question__question">For the data-poem, what language and theme do you want? (We currently have only the `titanic` table with 891 rows.)</div><div class="user-question__selected-answers"><span class="user-question__selected-chip">Other</span></div></div></div><div class="message-bubble__segment message-bubble__segment--question"><div class="user-question user-question--answered"><div class="user-question__label">Answered</div><div class="user-question__question">Please type your preferences so I can write the poem.</div><div class="user-question__selected-answers"><span class="user-question__selected-chip">python + romantic</span></div></div></div><div class="message-bubble__segment message-bubble__segment--answer"><div class="message-bubble__segment-label message-bubble__segment-label--answer">Answer</div><div class="message-bubble__segment-content"><pre><code class="language-python">"""
+A romantic data-poem (in Python),
+threaded with Titanic truths from the table we have.
+"""
+
+poem = [
+    "I met you in a table named titanic—891 hearts in rows,",
+    "where love is a boolean that still aches to be continuous.",
+    "",
+    "survival_rate = 0.384  # 38.4% returned to morning",
+    "and I wondered what my odds are",
+    "when your name is the only column I can’t aggregate.",
+    "",
+    "if you were 'female': 74.2  # percent who lived",
+    "if I were 'male'  : 18.9  # percent who did",
+    "and still I reach across the join between us,",
+    "hoping the world will group_by mercy, not class.",
+    "",
+    "Pclass 1: 63.0; Pclass 3: 24.2—",
+    "even the sea remembers tiers.",
+    "",
+    "Age is missing 177 times; cabins vanish 77.1% of the time—",
+    "yet you are not null to me;",
+    "you are the value I keep,",
+    "the record I refuse to drop."
+]
+print("\n".join(poem))
+</code></pre>
+<h3>Data notes (facts used)</h3>
 <ul>
-<li>Generates a poem on any topic <strong>inspired by the currently loaded DuckDB tables</strong></li>
-<li>Computes a small set of <strong>true facts</strong> from the data (counts, rates, averages, group comparisons)</li>
-<li>Weaves those facts into verse, optionally followed by brief <strong>Data notes</strong> listing the facts used (no SQL)</li>
-</ul>
-<p>You can run it any time with:</p>
-<ul>
-<li><strong>/data-poem</strong></li>
-</ul>
-<p>If you tell me a preferred <strong>topic</strong> and <strong>poem form</strong> (free verse, sonnet-ish, haiku chain, spoken-word), I can also tailor the skill further.</p></div></div></div></div><div></div></div>
+<li><code>titanic</code> has <strong>891</strong> rows (passengers).</li>
+<li>Overall survival: <strong>342 / 891 = 38.4%</strong>.</li>
+<li>Survival by sex: <strong>female 74.2%</strong>, <strong>male 18.9%</strong>.</li>
+<li>Survival by class: <strong>Pclass 1 = 63.0%</strong>, <strong>Pclass 3 = 24.2%</strong>.</li>
+<li><code>Age</code> missing: <strong>177</strong> passengers; <code>Cabin</code> missing: <strong>77.1%</strong> of passengers.</li>
+</ul></div></div></div></div><div></div></div>
 </div>
 
 </body>
