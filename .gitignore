@@ -32,3 +32,5 @@ sidecar/dist/
 bifrost/config.json
 bifrost/data/
 *.txt
+skills/
+!skills/analyze-data

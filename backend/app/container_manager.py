@@ -110,6 +110,24 @@ class ContainerManager:
         if session_id in self._containers:
             return self._containers[session_id]
 
+        # Skills volume: mount the host skills directory into the sidecar
+        # so it can discover dynamically created skills.
+        skills_host_path = os.environ.get("SKILLS_HOST_PATH", "")
+        if not skills_host_path:
+            # When running natively on the host (not inside Docker),
+            # compute the skills directory from this file's location.
+            # container_manager.py is at backend/app/, skills/ is at project root.
+            if not os.path.exists("/.dockerenv"):
+                fallback = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "..", "..", "skills")
+                )
+                if os.path.isdir(fallback):
+                    skills_host_path = fallback
+        volumes = {}
+        if skills_host_path:
+            abs_skills_path = os.path.abspath(skills_host_path)
+            volumes[abs_skills_path] = {"bind": "/app/.claude/skills", "mode": "ro"}
+
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
         # Resolve host.docker.internal so the sidecar can reach the host.
@@ -152,7 +170,14 @@ class ContainerManager:
             read_only=True,
             cap_drop=["ALL"],
             security_opt=["no-new-privileges"],
-            tmpfs={"/tmp": "size=50m", "/home/appuser": "size=50m,uid=1000,gid=1000"},
+            tmpfs={
+                "/tmp": "size=50m",
+                "/home/appuser": "size=50m,uid=1000,gid=1000",
+                # Separate tmpfs for .claude so it stays owned by appuser
+                # and writable for CLI session data, debug logs, etc.
+                "/home/appuser/.claude": "size=10m,uid=1000,gid=1000",
+            },
+            **({"volumes": volumes} if volumes else {}),
             network=self._config.network,
             environment=env,
             extra_hosts=extra_hosts or None,

@@ -16,6 +16,7 @@ export interface QueryRequest {
   langfuse_session_id?: string;
   original_message?: string;
   conversation_history?: Array<{ role: string; content: string }>;
+  skills?: string[];
 }
 
 export interface HealthResponse {

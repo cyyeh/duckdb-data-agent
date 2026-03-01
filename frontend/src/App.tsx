@@ -46,6 +46,7 @@ function AppContent({
   );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [agentOpen, setAgentOpen] = useState(true);
+  const [pendingSkillCommand, setPendingSkillCommand] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = t('appTitle');
@@ -226,7 +227,7 @@ function AppContent({
   return (
     <div className={appClass}>
       <div className="app__sidebar-wrapper">
-        <Sidebar tables={tables} onTableClick={handleTableClick} onTableDelete={handleTableDelete} onUpload={handleFileUpload} onDeleteAll={handleDeleteAll} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} />
+        <Sidebar tables={tables} onTableClick={handleTableClick} onTableDelete={handleTableDelete} onUpload={handleFileUpload} onDeleteAll={handleDeleteAll} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} onUseSkill={(name) => setPendingSkillCommand(name)} />
       </div>
       {agentOpen ? (
         <div className="app__agent-wrapper">
@@ -264,6 +265,8 @@ function AppContent({
             tables={tables}
             onUpload={handleFileUpload}
             onLoadSample={handleLoadSample}
+            pendingSkillCommand={pendingSkillCommand}
+            onSkillCommandConsumed={() => setPendingSkillCommand(null)}
           />
         </div>
       ) : (

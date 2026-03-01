@@ -184,3 +184,63 @@ async def test_handle_sse_returns_400_without_session_id():
     response = client.get("/sse")
     assert response.status_code == 400
     assert "session_id" in response.text
+
+
+@pytest.mark.asyncio
+async def test_list_tools_includes_create_skill(db):
+    import mcp.types as types
+    server = _create_mcp_server(db, "test-session")
+    handler = server.request_handlers[types.ListToolsRequest]
+    result = await handler(types.ListToolsRequest(method="tools/list"))
+    tool_names = [t.name for t in result.root.tools]
+    assert "create_skill" in tool_names
+
+
+@pytest.mark.asyncio
+async def test_call_create_skill_writes_file(db, tmp_path):
+    import mcp.types as types
+    from unittest.mock import patch
+    with patch("app.mcp_sse.SKILLS_DIR", str(tmp_path)):
+        server = _create_mcp_server(db, "test-session")
+        handler = server.request_handlers[types.CallToolRequest]
+        request = types.CallToolRequest(
+            method="tools/call",
+            params=types.CallToolRequestParams(
+                name="create_skill",
+                arguments={
+                    "name": "my-new-skill",
+                    "description": "A brand new skill",
+                    "content": "# My New Skill\n\nStep 1: Do something.",
+                },
+            ),
+        )
+        result = await handler(request)
+        content = result.root.content[0]
+        parsed = json.loads(content.text)
+        assert parsed["success"] is True
+        # Verify file was created
+        assert (tmp_path / "my-new-skill" / "SKILL.md").exists()
+
+
+@pytest.mark.asyncio
+async def test_call_create_skill_rejects_invalid_name(db, tmp_path):
+    import mcp.types as types
+    from unittest.mock import patch
+    with patch("app.mcp_sse.SKILLS_DIR", str(tmp_path)):
+        server = _create_mcp_server(db, "test-session")
+        handler = server.request_handlers[types.CallToolRequest]
+        request = types.CallToolRequest(
+            method="tools/call",
+            params=types.CallToolRequestParams(
+                name="create_skill",
+                arguments={
+                    "name": "BAD NAME",
+                    "description": "desc",
+                    "content": "content",
+                },
+            ),
+        )
+        result = await handler(request)
+        content = result.root.content[0]
+        parsed = json.loads(content.text)
+        assert parsed["success"] is False

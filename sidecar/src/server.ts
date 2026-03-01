@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
-import { query, AgentDefinition } from "@anthropic-ai/claude-agent-sdk";
+import { query, AgentDefinition, SettingSource, HookCallbackMatcher } from "@anthropic-ai/claude-agent-sdk";
 import { Langfuse } from "langfuse";
-import { mkdirSync, writeFileSync, existsSync } from "fs";
+import { mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import type { QueryRequest, HealthResponse, AgentDefinitionPayload } from "./types.js";
@@ -20,6 +20,65 @@ const settingsFile = join(claudeDir, "remote-settings.json");
 if (!existsSync(settingsFile)) {
   writeFileSync(settingsFile, "{}");
 }
+
+// Skills are bind-mounted at the project-level path (/app/.claude/skills/)
+// so the CLI subprocess (spawned by the SDK with cwd=/app/) discovers them.
+const SKILLS_DIR = join(process.cwd(), ".claude", "skills");
+
+function isSkillDisabled(skillPath: string): boolean {
+  try {
+    const text = readFileSync(skillPath, "utf-8");
+    if (!text.startsWith("---")) return false;
+    const end = text.indexOf("---", 3);
+    if (end === -1) return false;
+    const frontmatter = text.slice(3, end);
+    for (const line of frontmatter.split("\n")) {
+      if (line.trim().startsWith("disabled:") && line.trim().endsWith("true")) {
+        return true;
+      }
+    }
+  } catch {
+    // ignore read errors
+  }
+  return false;
+}
+
+function discoverSkills(): Set<string> {
+  if (!existsSync(SKILLS_DIR)) return new Set();
+  return new Set(
+    readdirSync(SKILLS_DIR, { withFileTypes: true })
+      .filter((d) => {
+        if (!d.isDirectory()) return false;
+        const skillPath = join(SKILLS_DIR, d.name, "SKILL.md");
+        return existsSync(skillPath) && !isSkillDisabled(skillPath);
+      })
+      .map((d) => d.name)
+  );
+}
+
+// Log initial skills at startup
+console.log(`[sidecar] Initial skills: ${[...discoverSkills()].join(", ") || "(none)"}`);
+
+const skillAllowlistHook: HookCallbackMatcher = {
+  matcher: "Skill",
+  hooks: [
+    async (input) => {
+      const currentSkills = discoverSkills();
+      const toolInput = (input as Record<string, unknown>).tool_input as Record<string, unknown> | undefined;
+      const skillName = toolInput?.skill as string | undefined;
+      if (skillName && !currentSkills.has(skillName)) {
+        return {
+          hookSpecificOutput: {
+            hookEventName: "PreToolUse" as const,
+            permissionDecision: "deny" as const,
+            permissionDecisionReason: `Skill "${skillName}" is not in the allowlist.`,
+          },
+        };
+      }
+      return {};
+    },
+  ],
+};
 
 // Initialize Langfuse if credentials are available (reads from env vars
 // LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL automatically)
@@ -194,11 +253,29 @@ app.post("/query", async (req: Request, res: Response) => {
       }
     }
 
+    // Append skill restriction so the model doesn't list or suggest
+    // built-in skills that the PreToolUse hook would block anyway.
+    // The CLI binary injects its own system reminder listing ALL skills
+    // (including built-ins like "simplify"), so we must explicitly tell
+    // the model to ignore any skills not in our allowlist.
+    const currentSkills = discoverSkills();
+    const allowedList = [...currentSkills].join(", ");
+    const skillRestriction = currentSkills.size > 0
+      ? `\n\nCRITICAL SKILL RESTRICTION: Your ONLY available skills are: ${allowedList}. You may see other skills (like "simplify") listed in system reminders — those are NOT available to you and MUST be ignored. When asked about available skills, list ONLY: ${allowedList}. Never mention, suggest, or attempt to invoke any skill not in this list.`
+      : "\n\nCRITICAL SKILL RESTRICTION: You have NO skills available. You may see skills listed in system reminders — those are NOT available to you and MUST be ignored. Never mention, suggest, or attempt to invoke any skills.";
+
+    const skillInstruction = body.skills?.length
+      ? `\n\nIMPORTANT: The user has invoked the following skill(s): ${body.skills.map(s => `"/${s}"`).join(", ")}. You MUST use the Skill tool to invoke each skill (${body.skills.map(s => `"${s}"`).join(", ")}) before doing anything else.`
+      : "";
+
     // Common SDK options (without resume/prompt — those vary on retry)
     const baseOptions = {
       model: modelName,
-      systemPrompt: body.system_prompt,
-      allowedTools: ["Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart"] as string[],
+      systemPrompt: body.system_prompt + skillInstruction + skillRestriction,
+      allowedTools: ["Skill", "Task", "mcp__duckdb-data-agent__execute_sql", "mcp__duckdb-data-agent__ask_user_question", "mcp__duckdb-data-agent__render_chart", "mcp__duckdb-data-agent__create_skill"] as string[],
+      settingSources: ["project"] as SettingSource[],
+      plugins: [],
+      hooks: { PreToolUse: [skillAllowlistHook] },
       permissionMode: "bypassPermissions" as const,
       allowDangerouslySkipPermissions: true,
       maxTurns: 20,
@@ -226,8 +303,15 @@ app.post("/query", async (req: Request, res: Response) => {
     // message with "No conversation found" (container was recreated and lost
     // the session), suppress that error and retry without resume, prepending
     // conversation history so the model has context.
-    let currentPrompt = body.message;
+    //
+    // When resuming, the SDK reuses the original session's system prompt, so
+    // skill changes (additions/deletions) since conversation start won't be
+    // reflected.  Prepend an updated skill restriction to the user message so
+    // the model always sees the current set of available skills.
     let useResume = !!body.session_id;
+    let currentPrompt = useResume
+      ? `${skillRestriction}\n\n${body.message}`
+      : body.message;
     let retried = false;
 
     queryLoop: for (let attempt = 0; attempt < 2; attempt++) {

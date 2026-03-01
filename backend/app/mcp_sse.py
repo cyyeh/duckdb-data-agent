@@ -11,6 +11,10 @@ import mcp.types as types
 from app.session_manager import session_manager
 from app.database import Database
 from app.pending_questions import pending_question_store
+import os
+from app.skills import create_skill as _create_skill_file, SkillValidationError
+
+SKILLS_DIR = os.environ.get("SKILLS_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "skills"))
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +106,31 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                     "required": ["data", "layout"],
                 },
             ),
+            types.Tool(
+                name="create_skill",
+                description=(
+                    "Create a reusable skill (workflow template) that can be invoked later. "
+                    "The skill is saved as a SKILL.md file and becomes available via /skill-name."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Skill identifier in hyphen-case (e.g. 'my-analysis-workflow')",
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "What the skill does and when to use it (max 1024 chars)",
+                        },
+                        "content": {
+                            "type": "string",
+                            "description": "Full markdown body with step-by-step instructions",
+                        },
+                    },
+                    "required": ["name", "description", "content"],
+                },
+            ),
         ]
 
     @server.call_tool()
@@ -171,6 +200,21 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                 "status": "success",
                 "chart_spec": {"data": data, "layout": layout},
             }))]
+        elif name == "create_skill":
+            skill_name = arguments.get("name", "")
+            description = arguments.get("description", "")
+            content = arguments.get("content", "")
+            try:
+                _create_skill_file(skill_name, description, content, SKILLS_DIR)
+                return [types.TextContent(type="text", text=json.dumps({
+                    "success": True,
+                    "message": f"Skill '{skill_name}' created successfully. Users can now invoke it with /{skill_name}.",
+                }))]
+            except SkillValidationError as e:
+                return [types.TextContent(type="text", text=json.dumps({
+                    "success": False,
+                    "error": str(e),
+                }))]
         else:
             raise ValueError(f"Unknown tool: {name}")
 

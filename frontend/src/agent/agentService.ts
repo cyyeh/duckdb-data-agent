@@ -104,6 +104,7 @@ export async function runAgentLoop(
   callbacks: AgentCallbacks,
   signal?: AbortSignal,
   userSessionId?: string,
+  skills?: string[],
 ): Promise<void> {
   try {
     const response = await fetch('/api/chat', {
@@ -117,6 +118,7 @@ export async function runAgentLoop(
         session_id: agentSessionId,
         langfuse_session_id: langfuseSessionId,
         conversation_history: conversationHistory ?? [],
+        ...(skills?.length ? { skills } : {}),
       }),
       signal,
     });

@@ -86,3 +86,11 @@ export interface LangfuseStatus {
   enabled: boolean;
   dashboardUrl: string | null;
 }
+
+export interface SkillInfo {
+  name: string;
+  description: string;
+  content?: string;
+  builtin?: boolean;
+  disabled?: boolean;
+}

@@ -40,6 +40,17 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Container isolation** — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
 
+### Skills
+
+- **Browse skills** — A "Skills" tab in the sidebar lists available skills with name and description; click a skill to open a detail modal with Preview and Source tabs; click "Use" to append a `/skill-name` slash command to the current chat input text
+- **Invoke skills via slash command** — Type `/` anywhere in the chat input to open an autocomplete dropdown of available skills; the menu filters as you type and works at any cursor position, not just the beginning of the input
+- **Multiple skills per message** — Combine multiple skills in a single message (e.g., `use this skill /analyze-data use this skill /my-other-skill What is the average revenue?`); all referenced skills are invoked before the agent processes your question
+- **Enable/disable skills** — Toggle the eye icon on any skill to enable or disable it; disabled skills are hidden from the slash command menu and cannot be invoked
+- **Delete skills** — Remove custom skills via the delete button in the sidebar; built-in skills (like `analyze-data`) cannot be deleted
+- **Create skills from the UI** — Click the "+" button in the Skills tab to create a new skill with a name, description, and step-by-step instructions; skills are stored as `SKILL.md` files on disk
+- **Agent-created skills** — The agent can create new skills during a conversation via the `create_skill` MCP tool; new skills appear in the sidebar automatically
+- **Dynamic skill discovery** — Skills are stored at `skills/<name>/SKILL.md` and re-scanned per request; add or remove skills without restarting
+
 ### Editor Mode
 
 - **SQL query editor** — Write and execute queries with Ctrl/Cmd+Enter
@@ -255,9 +266,9 @@ The data flow for a chat message is:
 6. The sidecar streams SSE events back to the backend, which forwards them to the frontend.
 7. On session end, the container is stopped and removed.
 
-**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no volume mounts, no Docker socket access, and a non-root user.
+**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no Docker socket access, and a non-root user. The host `skills/` directory is bind-mounted read-only at `/app/.claude/skills/` (the project-level path) so the SDK's built-in Skill tool can discover and invoke them.
 
-**MCP SSE bridge:** The backend exposes the DuckDB `execute_sql` tool at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`). Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
+**MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, and `create_skill` for agent-driven skill creation. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
 
 **Prerequisites:**
 
@@ -294,10 +305,12 @@ The data flow for a chat message is:
 | `CONTAINER_MAX_LIFETIME_SECONDS` | `3600` | Max container lifetime |
 | `CONTAINER_IDLE_TIMEOUT_SECONDS` | `300` | Idle timeout before container is stopped (5 min) |
 | `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
+| `SKILLS_DIR` | `skills` | Path to skills directory (inside backend container) |
+| `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount (bind-mounted read-only at `/app/.claude/skills/` in sidecar containers) |
 
 **Security properties:**
 
-- The container never accesses the host filesystem, processes, or environment
+- The container has no host filesystem access except a read-only bind mount of the `skills/` directory
 - gVisor intercepts all syscalls -- even arbitrary bash/python execution is sandboxed
 - No real API keys inside the container (placeholder string only; real keys managed by Bifrost)
 - Per-session isolation -- containers cannot see each other
@@ -371,10 +384,11 @@ scenarios:
 ```
 ├── frontend/               # React frontend
 │   ├── src/
-│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, user-question)
+│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, skills, user-question)
 │   │   ├── contexts/       #   React context providers (theme, language, agent, config, session)
 │   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig, useSessionId)
 │   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
+│   │   ├── services/       #   API clients (skillsService.ts)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
 │   │   ├── utils/          #   Utility functions (UUID generation, conversation export)
 │   │   └── types.ts        #   Shared TypeScript interfaces
@@ -389,7 +403,8 @@ scenarios:
 │   │   ├── database.py     #   DuckDB connection and query execution
 │   │   ├── session_manager.py  #   Per-user DuckDB session lifecycle (create, cleanup, disk persistence)
 │   │   ├── agent.py        #   Agent loop, subagent definitions, & SSE streaming via container sidecar
-│   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB and chart tools over HTTP for containers
+│   │   ├── skills.py       #   Skill CRUD operations (read/write SKILL.md files)
+│   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB, chart, and create_skill tools over HTTP
 │   │   ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
 │   │   ├── proxy.py        #   Reverse proxy for per-subagent model routing (@suffix rewriting)
 │   │   ├── pending_questions.py  #   Interactive clarification (agent asks user for disambiguation)
@@ -401,14 +416,20 @@ scenarios:
 │   │       ├── query.py    #     SQL query execution
 │   │       ├── tables.py   #     Table inspection (schema, columns, sample data)
 │   │       ├── session.py  #     Session creation and deletion
+│   │       ├── skills.py   #     Skills CRUD REST API (/api/skills)
 │   │       ├── config.py   #     Runtime configuration
 │   │       └── langfuse_status.py  #   Langfuse tracing status and link
 │   └── tests/              #   Unit tests (pytest)
+│       ├── test_skills.py
+│       ├── test_skills_routes.py
 │       ├── test_container_manager.py
 │       ├── test_mcp_sse.py
 │       ├── test_proxy.py
 │       ├── test_session_manager.py
-│       └── ...             #   12 test modules total
+│       └── ...             #   14 test modules total
+├── skills/                 # Skill definitions (SKILL.md files, volume-mounted into sidecar containers)
+│   ├── analyze-data/       #   Built-in data analysis workflow skill
+│   └── <name>/             #   Custom skills (each with a SKILL.md file)
 ├── sidecar/                # Containerized agent sidecar
 │   ├── src/
 │   │   ├── server.ts       #   TypeScript HTTP server using Claude Agent SDK with token-level streaming

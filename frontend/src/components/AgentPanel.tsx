@@ -12,9 +12,11 @@ interface AgentPanelProps {
   tables: TableInfo[];
   onUpload: (files: File[]) => Promise<void>;
   onLoadSample: () => Promise<void>;
+  pendingSkillCommand?: string | null;
+  onSkillCommandConsumed?: () => void;
 }
 
-export function AgentPanel({ tables, onUpload, onLoadSample }: AgentPanelProps) {
+export function AgentPanel({ tables, onUpload, onLoadSample, pendingSkillCommand, onSkillCommandConsumed }: AgentPanelProps) {
   const { t } = useTranslation();
   const { messages, clearMessages } = useAgent();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -69,7 +71,7 @@ export function AgentPanel({ tables, onUpload, onLoadSample }: AgentPanelProps) 
         ))}
         <div ref={bottomRef} />
       </div>
-      <ChatInput />
+      <ChatInput pendingSkillCommand={pendingSkillCommand} onSkillCommandConsumed={onSkillCommandConsumed} />
     </div>
   );
 }
