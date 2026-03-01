@@ -33,6 +33,8 @@ export function AgentProvider({
   const phaseRef = useRef<'thinking' | 'answer'>('thinking');
   const sessionIdRef = useRef<string | null>(null);
   const pendingHistoryRef = useRef<{ role: string; content: string }[] | null>(null);
+  // Cache messages per conversation so switching away doesn't lose in-progress data
+  const messagesCacheRef = useRef<Map<string, ChatMessage[]>>(new Map());
 
   const flushText = useCallback(() => {
     const text = textBufferRef.current;
@@ -189,6 +191,10 @@ export function AgentProvider({
             // When a skill is created, notify SkillsPanel to refresh
             if (result.toolName?.includes('create_skill')) {
               window.dispatchEvent(new CustomEvent('skills-updated'));
+            }
+            // When a memory is saved or forgotten, notify MemoriesPanel to refresh
+            if (result.toolName?.includes('save_memory') || result.toolName?.includes('forget_memory')) {
+              window.dispatchEvent(new CustomEvent('memories-updated'));
             }
           },
           onSubagentStart: (data) => {
@@ -609,7 +615,7 @@ export function AgentProvider({
     [userSessionId]
   );
 
-  const loadMessages = useCallback((msgs: ChatMessage[]) => {
+  const loadMessages = useCallback((msgs: ChatMessage[], outgoingConversationId?: string | null, incomingConversationId?: string | null) => {
     // Abort any ongoing stream before loading a different conversation
     if (abortRef.current) {
       abortRef.current.abort();
@@ -619,7 +625,55 @@ export function AgentProvider({
       clearTimeout(flushTimerRef.current);
       flushTimerRef.current = null;
     }
-    setMessages(msgs);
+
+    // Always prefer cached messages over API when available.  The cache
+    // represents the most recent in-memory state (with rich segments,
+    // streaming data, etc.) which is always fresher and more complete
+    // than what the backend persisted to SQLite.
+    let finalMsgs = msgs;
+    if (incomingConversationId) {
+      const cached = messagesCacheRef.current.get(incomingConversationId);
+      if (cached && cached.length > 0) {
+        finalMsgs = cached;
+      }
+      // Clear used cache entry so stale data doesn't persist forever
+      messagesCacheRef.current.delete(incomingConversationId);
+    }
+
+    // Save current messages to cache before replacing them.
+    // Uses functional setMessages to read the latest state without
+    // needing `messages` in the dependency array.
+    setMessages(prev => {
+      if (outgoingConversationId && prev.length > 0) {
+        // Flush any pending text buffer into the streaming assistant message
+        const pendingText = textBufferRef.current;
+        const aId = assistantIdRef.current;
+
+        // Build finalized segments including any unflushed text
+        let finalSegments = [...segmentsRef.current];
+        const pendingSegmentText = currentTextRef.current + pendingText;
+        if (pendingSegmentText.trim()) {
+          const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+          finalSegments.push({ type: segType as ContentSegment['type'], text: pendingSegmentText });
+        }
+
+        const cleaned = prev.map(m => {
+          if (m.id === aId && m.isStreaming) {
+            return {
+              ...m,
+              content: m.content + pendingText,
+              isStreaming: false,
+              currentPhase: undefined,
+              segments: finalSegments.length > 0 ? finalSegments : m.segments,
+            };
+          }
+          return m;
+        });
+        messagesCacheRef.current.set(outgoingConversationId, cleaned);
+      }
+      return finalMsgs;
+    });
+
     setIsStreaming(false);
     textBufferRef.current = '';
     currentTextRef.current = '';
@@ -630,12 +684,49 @@ export function AgentProvider({
     pendingHistoryRef.current = null;
   }, []);
 
-  const clearMessages = useCallback(() => {
+  const clearMessages = useCallback((outgoingConversationId?: string | null) => {
     if (abortRef.current) {
       abortRef.current.abort();
+      abortRef.current = null;
     }
-    setMessages([]);
+    if (flushTimerRef.current) {
+      clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+    setMessages(prev => {
+      if (outgoingConversationId && prev.length > 0) {
+        // Flush pending text and segments into the cached messages
+        // (same logic as loadMessages cache save)
+        const pendingText = textBufferRef.current;
+        const aId = assistantIdRef.current;
+        let finalSegments = [...segmentsRef.current];
+        const pendingSegmentText = currentTextRef.current + pendingText;
+        if (pendingSegmentText.trim()) {
+          const segType = phaseRef.current === 'answer' ? 'answer' : 'thinking';
+          finalSegments.push({ type: segType as ContentSegment['type'], text: pendingSegmentText });
+        }
+        const cleaned = prev.map(m => {
+          if (m.id === aId && m.isStreaming) {
+            return {
+              ...m,
+              content: m.content + pendingText,
+              isStreaming: false,
+              currentPhase: undefined,
+              segments: finalSegments.length > 0 ? finalSegments : m.segments,
+            };
+          }
+          return m.isStreaming ? { ...m, isStreaming: false, currentPhase: undefined } : m;
+        });
+        messagesCacheRef.current.set(outgoingConversationId, cleaned);
+      }
+      return [];
+    });
     setIsStreaming(false);
+    textBufferRef.current = '';
+    currentTextRef.current = '';
+    segmentsRef.current = [];
+    assistantIdRef.current = '';
+    phaseRef.current = 'thinking';
     sessionIdRef.current = null;
     pendingHistoryRef.current = null;
   }, []);

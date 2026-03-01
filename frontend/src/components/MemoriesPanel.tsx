@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useTranslation } from '../hooks/useTranslation';
 import { fetchMemories, deleteMemory as apiDeleteMemory } from '../services/memoriesService';
 import type { MemoryEntry } from '../services/memoriesService';
@@ -22,6 +24,7 @@ export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
   const [entries, setEntries] = useState<MemoryEntry[]>([]);
   const [raw, setRaw] = useState('');
   const [selectedEntry, setSelectedEntry] = useState<MemoryEntry | null>(null);
+  const [detailTab, setDetailTab] = useState<'preview' | 'source'>('preview');
 
   const loadMemories = useCallback(async () => {
     try {
@@ -34,6 +37,12 @@ export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
   }, []);
 
   useEffect(() => { loadMemories(); }, [loadMemories, refreshKey]);
+
+  useEffect(() => {
+    const handler = () => loadMemories();
+    window.addEventListener('memories-updated', handler);
+    return () => window.removeEventListener('memories-updated', handler);
+  }, [loadMemories]);
 
   const handleDelete = async (content: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -66,7 +75,7 @@ export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
           <h3 className="memories-panel__section-title">{t(CATEGORY_I18N[group.category])}</h3>
           <ul className="memories-panel__list">
             {group.items.map((entry, idx) => (
-              <li key={`${group.category}-${idx}`} className="memories-panel__item" onClick={() => setSelectedEntry(entry)}>
+              <li key={`${group.category}-${idx}`} className="memories-panel__item" onClick={() => { setSelectedEntry(entry); setDetailTab('preview'); }}>
                 <span className="memories-panel__text">{entry.content}</span>
                 <button
                   className="memories-panel__delete-btn"
@@ -91,8 +100,27 @@ export function MemoriesPanel({ refreshKey }: MemoriesPanelProps) {
               </button>
             </div>
             <p className="memory-detail-modal__entry">{selectedEntry.content}</p>
-            <p className="memory-detail-modal__context-label">{t('memoryContext')}</p>
-            <pre className="memory-detail-modal__context">{raw}</pre>
+            <div className="memory-detail-modal__tabs">
+              <button
+                className={`memory-detail-modal__tab${detailTab === 'preview' ? ' memory-detail-modal__tab--active' : ''}`}
+                onClick={() => setDetailTab('preview')}
+              >
+                {t('skillPreview')}
+              </button>
+              <button
+                className={`memory-detail-modal__tab${detailTab === 'source' ? ' memory-detail-modal__tab--active' : ''}`}
+                onClick={() => setDetailTab('source')}
+              >
+                {t('skillSource')}
+              </button>
+            </div>
+            {detailTab === 'preview' ? (
+              <div className="memory-detail-modal__context memory-detail-modal__context--preview">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{raw}</ReactMarkdown>
+              </div>
+            ) : (
+              <pre className="memory-detail-modal__context">{raw}</pre>
+            )}
           </div>
         </div>,
         document.body
