@@ -216,6 +216,7 @@ function handleSSEEvent(
         output: (data.output as string) ?? undefined,
         rawContent: (data.content as string) ?? undefined,
         chart_spec: (data.chart_spec as { data: unknown[]; layout?: Record<string, unknown> }) ?? undefined,
+        answerDurationMs: (data.answer_duration_ms as number) ?? undefined,
       };
       callbacks.onToolResult(result);
       break;

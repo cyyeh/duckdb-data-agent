@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 from typing import AsyncIterator
 
 from claude_agent_sdk import AgentDefinition
@@ -317,12 +318,15 @@ async def stream_chat(
         if skills:
             payload["skills"] = skills
 
+        stream_start_time = time.time()
         has_tool_calls = False
         has_thinking = False
         done_sent = False
         waiting_for_user = False
         tool_names: dict[str, str] = {}
         tool_sqls: dict[str, str] = {}
+        # Track when ask_user_question was emitted (tool_id -> timestamp)
+        question_asked_at: dict[str, float] = {}
         # Capture render_chart tool_use inputs so we can attach chart_spec
         # to the tool_result event (the MCP tool result itself may not echo
         # the full spec).
@@ -519,11 +523,33 @@ async def stream_chat(
                                 if "ask_user_question" in tool_name:
                                     from app.pending_questions import pending_question_store
                                     import asyncio as _asyncio
+                                    # Store the tool input on the tool segment for persistence
+                                    for seg in persisted_segments:
+                                        if seg.get("type") == "tool" and seg.get("toolCallId") == tool_id:
+                                            seg["toolInput"] = tool_input
+                                            break
                                     for _ in range(50):
                                         pending = pending_question_store.get_pending(stable_session)
                                         if pending:
-                                            yield f"event: user_question\ndata: {json.dumps({'question_id': pending['question_id'], **pending['data']})}\n\n"
+                                            q_id = pending["question_id"]
+                                            q_data = pending["data"]
+                                            yield f"event: user_question\ndata: {json.dumps({'question_id': q_id, **q_data})}\n\n"
                                             waiting_for_user = True
+                                            question_asked_at[tool_id] = time.time()
+                                            # Append user_question segment (keep the tool segment for thinking block display)
+                                            persisted_segments.append({
+                                                "type": "user_question",
+                                                "toolCallId": tool_id,
+                                                "questionData": {
+                                                    "questionId": q_id,
+                                                    "question": q_data.get("question", ""),
+                                                    "options": [
+                                                        {"label": o.get("label", ""), **({"description": o["description"]} if o.get("description") else {})}
+                                                        for o in q_data.get("options", [])
+                                                    ],
+                                                    "multiSelect": q_data.get("multi_select", False),
+                                                },
+                                            })
                                             break
                                         await _asyncio.sleep(0.1)
 
@@ -586,6 +612,35 @@ async def stream_chat(
                                         text = part.get("text", "")
                             elif isinstance(content_parts, str):
                                 text = content_parts
+
+                            # Handle ask_user_question result: capture answer and timing in persisted segment
+                            if "ask_user_question" in name:
+                                answered_at = time.time()
+                                asked_at = question_asked_at.pop(tool_id, None)
+                                duration_ms = int((answered_at - asked_at) * 1000) if asked_at else None
+                                try:
+                                    answer_parsed = json.loads(text)
+                                    for seg in persisted_segments:
+                                        if seg.get("type") == "user_question" and seg.get("toolCallId") == tool_id:
+                                            seg["userAnswer"] = answer_parsed.get("answers", [])
+                                            ft = answer_parsed.get("free_text")
+                                            if ft:
+                                                seg["userFreeText"] = ft
+                                            if duration_ms is not None:
+                                                seg["answerDurationMs"] = duration_ms
+                                            break
+                                except (json.JSONDecodeError, AttributeError):
+                                    pass
+                                # Also update the tool segment with the output text for thinking block display
+                                for seg in persisted_segments:
+                                    if seg.get("type") == "tool" and seg.get("toolCallId") == tool_id:
+                                        seg["output"] = text
+                                        break
+                                result_evt: dict = {'id': tool_id, 'name': name, 'output': text}
+                                if duration_ms is not None:
+                                    result_evt['answer_duration_ms'] = duration_ms
+                                yield f"event: tool_result\ndata: {json.dumps(result_evt, default=str)}\n\n"
+                                continue
 
                             # Try to parse structured MCP result
                             result_data: dict = {"id": tool_id, "name": name}
@@ -654,11 +709,15 @@ async def stream_chat(
                                 })
                             if "chart_spec" in result_data:
                                 assistant_metadata["chart_specs"].append(result_data["chart_spec"])
-                            # Update tool segment with result summary
+                            # Update tool segment with result data for persistence
                             for seg in persisted_segments:
                                 if seg.get("type") == "tool" and seg.get("toolCallId") == tool_id:
                                     seg["rowCount"] = result_data.get("rowCount")
                                     seg["error"] = result_data.get("error")
+                                    if "columns" in result_data:
+                                        seg["columns"] = result_data["columns"]
+                                    if "rows" in result_data:
+                                        seg["rows"] = result_data["rows"]
                                     if "chart_spec" in result_data:
                                         seg["chart_spec"] = result_data["chart_spec"]
                                     break
@@ -720,6 +779,7 @@ async def stream_chat(
                 meta = assistant_metadata.copy() if (assistant_metadata["sql_queries"] or assistant_metadata["chart_specs"]) else {}
                 if persisted_segments:
                     meta["segments"] = persisted_segments
+                meta["durationMs"] = int((time.time() - stream_start_time) * 1000)
                 memory_store.add_message(
                     conversation_id, "assistant", "".join(text_to_persist),
                     metadata=meta if meta else None,

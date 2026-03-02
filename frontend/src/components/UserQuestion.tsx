@@ -6,14 +6,25 @@ import { useAgent } from '../hooks/useAgent';
 import type { UserQuestionData } from '../types';
 import './UserQuestion.css';
 
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+}
+
 export function UserQuestion({
   questionData,
   userAnswer,
   userFreeText,
+  answerDurationMs,
 }: {
   questionData: UserQuestionData;
   userAnswer?: string[];
   userFreeText?: string;
+  answerDurationMs?: number;
 }) {
   const { t } = useTranslation();
   const { respondToQuestion } = useAgent();
@@ -55,7 +66,12 @@ export function UserQuestion({
   if (isAnswered) {
     return (
       <div className="user-question user-question--answered">
-        <div className="user-question__label">{t('questionAnswered')}</div>
+        <div className="user-question__label">
+          {t('questionAnswered')}
+          {answerDurationMs != null && (
+            <span className="user-question__duration">{formatDuration(answerDurationMs)}</span>
+          )}
+        </div>
         <div className="user-question__question"><ReactMarkdown remarkPlugins={[remarkGfm]}>{questionData.question}</ReactMarkdown></div>
         <div className="user-question__selected-answers">
           {userAnswer.map((a, i) => (
