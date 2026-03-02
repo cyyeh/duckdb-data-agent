@@ -119,5 +119,11 @@
   "viewMemoryFile": "View memory file",
   "memoryFileTitle": "Agent Memory",
   "memoryPreview": "Preview",
-  "memorySource": "Source"
+  "memorySource": "Source",
+  "searchTables": "Search tables",
+  "searchTablesPlaceholder": "Filter tables\u2026",
+  "searchSkills": "Search skills",
+  "searchSkillsPlaceholder": "Filter skills\u2026",
+  "searchMemories": "Search memories",
+  "searchMemoriesPlaceholder": "Filter memories\u2026"
 }

@@ -173,6 +173,8 @@
 
 .message-bubble__error-retry {
   align-self: flex-start;
+  width: 72px;
+  height: 26px;
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
@@ -182,6 +184,8 @@
   border-radius: 4px;
   cursor: pointer;
   margin-top: 2px;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .message-bubble__error-retry:hover {
@@ -408,6 +412,8 @@
 }
 
 .message-bubble__edit-btn {
+  width: 110px;
+  height: 28px;
   padding: 4px 12px;
   border: 1px solid var(--color-border-dark);
   border-radius: 6px;
@@ -415,6 +421,8 @@
   cursor: pointer;
   background: var(--color-bg-primary);
   color: var(--color-text-tertiary);
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .message-bubble__edit-btn:hover {
@@ -449,6 +457,8 @@
 }
 
 .message-bubble__confirm-btn {
+  width: 64px;
+  height: 28px;
   padding: 4px 12px;
   border: 1px solid var(--color-border-dark);
   border-radius: 6px;
@@ -456,6 +466,8 @@
   cursor: pointer;
   background: var(--color-bg-primary);
   color: var(--color-text-tertiary);
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .message-bubble__confirm-btn:hover {

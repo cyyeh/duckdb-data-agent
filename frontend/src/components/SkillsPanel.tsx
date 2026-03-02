@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -19,6 +19,8 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
   const [selectedSkill, setSelectedSkill] = useState<SkillInfo | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<'preview' | 'source'>('preview');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadSkills = useCallback(async () => {
     try {
@@ -36,6 +38,12 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
     window.addEventListener('skills-updated', handler);
     return () => window.removeEventListener('skills-updated', handler);
   }, [loadSkills]);
+
+  const filteredSkills = useMemo(() => {
+    if (!searchTerm) return skills;
+    const q = searchTerm.toLowerCase();
+    return skills.filter((s) => s.name.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q)));
+  }, [skills, searchTerm]);
 
   const handleSkillClick = async (name: string) => {
     if (selectedSkill?.name === name) {
@@ -95,9 +103,30 @@ export function SkillsPanel({ onUseSkill, onCreateClick, refreshKey }: SkillsPan
         <button className="skills-panel__create-btn" onClick={onCreateClick} title={t('createSkill')}>
           +
         </button>
+        <button
+          className={`skills-panel__action-btn${searchOpen ? ' skills-panel__action-btn--active' : ''}`}
+          onClick={() => { setSearchOpen((v) => !v); if (searchOpen) setSearchTerm(''); }}
+          title={t('searchSkills')}
+          aria-label={t('searchSkills')}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
       </div>
+      {searchOpen && (
+        <input
+          className="skills-panel__search-input"
+          type="text"
+          placeholder={t('searchSkillsPlaceholder')}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          autoFocus
+        />
+      )}
       <ul className="skills-panel__list">
-        {skills.map((skill) => (
+        {filteredSkills.map((skill) => (
           <li key={skill.name} className={`skills-panel__item${skill.disabled ? ' skills-panel__item--disabled' : ''}`} onClick={() => handleSkillClick(skill.name)}>
             <div className="skills-panel__item-header">
               <span className="skills-panel__name" title={skill.name}>

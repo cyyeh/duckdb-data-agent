@@ -53,14 +53,19 @@
 }
 
 .file-upload-sample-btn {
+  width: 240px;
+  height: 40px;
   padding: 8px 20px;
   border: 1px solid var(--color-accent-secondary);
   border-radius: 6px;
   background: transparent;
   color: var(--color-accent-secondary);
   font-size: 14px;
+  line-height: 1.5;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .file-upload-sample-btn:hover:not(:disabled) {
