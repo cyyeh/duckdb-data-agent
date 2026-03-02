@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d857032b6158",
+  "strategy": "manual-commit",
+  "branch": "feat/sidebar-search-filter",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "frontend/src/App.css",
+    "frontend/src/components/AgentPanel.css",
+    "frontend/src/components/ChatInput.css",
+    "frontend/src/components/CreateSkillDialog.css",
+    "frontend/src/components/FileUpload.css",
+    "frontend/src/components/MemoriesPanel.css",
+    "frontend/src/components/MemoriesPanel.tsx",
+    "frontend/src/components/MessageBubble.css",
+    "frontend/src/components/QueryEditor.css",
+    "frontend/src/components/Sidebar.css",
+    "frontend/src/components/Sidebar.tsx",
+    "frontend/src/components/SkillsPanel.css",
+    "frontend/src/components/SkillsPanel.tsx",
+    "frontend/src/components/UserQuestion.css",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d8/57032b6158/0/metadata.json",
+      "transcript": "/d8/57032b6158/0/full.jsonl",
+      "context": "/d8/57032b6158/0/context.md",
+      "content_hash": "/d8/57032b6158/0/content_hash.txt",
+      "prompt": "/d8/57032b6158/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 29992,
+    "cache_read_tokens": 1353546,
+    "output_tokens": 1859,
+    "api_call_count": 35
+  }
+}
