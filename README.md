@@ -35,7 +35,9 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Live cross-conversation streaming** — Start a query in one conversation, switch to another, and both streams run concurrently; a pulsing dot in the sidebar indicates which conversations are actively streaming; switch back to a streaming conversation for instant re-attachment with no lost tokens
 - **Visible reasoning** — Collapsible thinking block shows the agent's intermediate steps and SQL queries
 - **Inline results** — Query results rendered inline within the conversation
-- **Chart generation** — Ask for a chart or visualization and the orchestrator generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping, powered by Plotly; animated charts with frames, sliders, and play/pause controls are also supported
+- **Chart generation** — Ask for a chart or visualization and the orchestrator generates it inline; supports bar, scatter, line, pie, histogram, box, and heatmap chart types with optional multi-series grouping; animated charts with frames, sliders, and play/pause controls are also supported
+- **Dual chart library support** — Toggle between [Plotly](https://plotly.com/javascript/) and [Vega-Lite](https://vega.github.io/vega-lite/) chart renderers via a toggle button in the agent panel header; the selected library is persisted to localStorage and sent to the backend so the agent emits native chart specs for the chosen library; defaults to Plotly for backward compatibility
+- **Response time** — Each answer block shows the agent response time (e.g., "Answered in 3.2s") after streaming completes, giving visibility into query latency
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Bifrost LLM gateway** — A [Bifrost](https://github.com/maximhq/bifrost) gateway service manages API keys centrally and routes LLM requests to multiple providers; sidecar containers never have access to real API keys (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
@@ -400,9 +402,9 @@ scenarios:
 ```
 ├── frontend/               # React frontend
 │   ├── src/
-│   │   ├── components/     #   UI components (editor, results, sidebar, chat, charts, skills, memories, conversations, user-question)
-│   │   ├── contexts/       #   React context providers (theme, language, agent, config, session, conversation)
-│   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig, useSessionId)
+│   │   ├── components/     #   UI components (editor, results, sidebar, chat, Plotly/Vega-Lite charts, skills, memories, conversations, user-question)
+│   │   ├── contexts/       #   React context providers (theme, language, agent, config, session, conversation, chart library)
+│   │   ├── hooks/          #   Custom hooks (useTheme, useTranslation, useAgent, useConfig, useSessionId, useChartLibrary)
 │   │   ├── agent/          #   Agent service (SSE event handling, session ID injection)
 │   │   ├── services/       #   API clients (skillsService.ts, memoriesService.ts)
 │   │   ├── i18n/           #   Translation files (en.json, zh-TW.json)
@@ -468,7 +470,7 @@ scenarios:
 │   └── config.example.json #   Example provider keys and routing config (copy to config.json)
 ├── examples/               # Exported conversation examples (self-contained HTML)
 ├── docs/plans/             # Design and implementation plan documents
-├── utils/                  # Standalone utility scripts
+├── utils/                  # Standalone utility pages (run_plotly.html, run_vega_lite.html for testing chart specs)
 ├── .github/workflows/      # GitHub Actions CI/CD (code review, CI)
 ├── docker-compose.yml      # Compose orchestration (bifrost + app + sidecar build)
 └── Makefile                # Dev commands (install, dev, compose-build/up/down, e2e-test, clean)
@@ -479,7 +481,7 @@ scenarios:
 **Frontend**
 - [React](https://react.dev/) 18 + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vite.dev/)
-- [Plotly](https://plotly.com/javascript/) via [react-plotly.js](https://github.com/plotly/react-plotly.js) (chart rendering)
+- [Plotly](https://plotly.com/javascript/) via [react-plotly.js](https://github.com/plotly/react-plotly.js) and [Vega-Lite](https://vega.github.io/vega-lite/) via [vega-embed](https://github.com/vega/vega-embed) (dual chart rendering, user-selectable)
 
 **Backend**
 - [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/)

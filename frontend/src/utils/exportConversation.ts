@@ -4,10 +4,11 @@
  * Strategy:
  * 1. Clone the .agent-panel__messages DOM
  * 2. Extract Plotly chart data before cloning (react-plotly stores .data/.layout on the el)
- * 3. Remove interactive-only elements (edit/delete buttons, retry, streaming indicators)
- * 4. Gather CSS from document.styleSheets
- * 5. Build a standalone HTML document with embedded CSS + Plotly CDN
- * 6. Trigger browser download
+ * 3. Extract Vega-Lite specs from data attributes before cloning
+ * 4. Remove interactive-only elements (edit/delete buttons, retry, streaming indicators)
+ * 5. Gather CSS from document.styleSheets
+ * 6. Build a standalone HTML document with embedded CSS + chart CDN scripts
+ * 7. Trigger browser download
  */
 
 interface PlotlyChartData {
@@ -33,6 +34,22 @@ function extractPlotlyCharts(container: HTMLElement): PlotlyChartData[] {
     }
   });
   return charts;
+}
+
+function extractVegaLiteCharts(container: HTMLElement): Record<string, unknown>[] {
+  const specs: Record<string, unknown>[] = [];
+  const vegaEls = container.querySelectorAll('.vega-lite-chart[data-vegalite-spec]');
+  vegaEls.forEach((el) => {
+    const raw = el.getAttribute('data-vegalite-spec');
+    if (raw) {
+      try {
+        specs.push(JSON.parse(raw));
+      } catch {
+        // Skip malformed specs
+      }
+    }
+  });
+  return specs;
 }
 
 function gatherCSS(): string {
@@ -75,12 +92,24 @@ function replacePlotlyWithPlaceholders(clone: HTMLElement): void {
   });
 }
 
+function replaceVegaLiteWithPlaceholders(clone: HTMLElement): void {
+  const vegaEls = clone.querySelectorAll('.vega-lite-chart[data-vegalite-spec]');
+  vegaEls.forEach((el, i) => {
+    const placeholder = document.createElement('div');
+    placeholder.setAttribute('data-vegalite-chart', String(i));
+    placeholder.style.width = '100%';
+    placeholder.style.minHeight = '400px';
+    el.parentElement?.replaceChild(placeholder, el);
+  });
+}
+
 export function exportConversation(): void {
   const messagesContainer = document.querySelector('.agent-panel__messages');
   if (!messagesContainer) return;
 
-  // 1. Extract Plotly data from live DOM before cloning
-  const charts = extractPlotlyCharts(messagesContainer as HTMLElement);
+  // 1. Extract chart data from live DOM before cloning
+  const plotlyCharts = extractPlotlyCharts(messagesContainer as HTMLElement);
+  const vegaLiteCharts = extractVegaLiteCharts(messagesContainer as HTMLElement);
 
   // 2. Clone the DOM
   const clone = messagesContainer.cloneNode(true) as HTMLElement;
@@ -88,8 +117,9 @@ export function exportConversation(): void {
   // 3. Clean up interactive-only elements
   cleanClone(clone);
 
-  // 4. Replace Plotly chart elements with placeholders
+  // 4. Replace chart elements with placeholders
   replacePlotlyWithPlaceholders(clone);
+  replaceVegaLiteWithPlaceholders(clone);
 
   // 5. Gather CSS
   const css = gatherCSS();
@@ -102,7 +132,7 @@ export function exportConversation(): void {
   const title = titleEl?.textContent || 'Agent Mode';
 
   // 8. Build the HTML document
-  const html = buildHTML({ clone, css, charts, theme, title });
+  const html = buildHTML({ clone, css, plotlyCharts, vegaLiteCharts, theme, title });
 
   // 9. Trigger download
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -120,14 +150,18 @@ export function exportConversation(): void {
 function buildHTML(opts: {
   clone: HTMLElement;
   css: string;
-  charts: PlotlyChartData[];
+  plotlyCharts: PlotlyChartData[];
+  vegaLiteCharts: Record<string, unknown>[];
   theme: string;
   title: string;
 }): string {
-  const { clone, css, charts, theme, title } = opts;
+  const { clone, css, plotlyCharts, vegaLiteCharts, theme, title } = opts;
 
-  const chartsJSON = JSON.stringify(charts).replace(/<\//g, '<\\/');
+  const hasPlotly = plotlyCharts.length > 0;
+  const hasVegaLite = vegaLiteCharts.length > 0;
 
+  const plotlyChartsJSON = JSON.stringify(plotlyCharts).replace(/<\//g, '<\\/');
+  const vegaLiteChartsJSON = JSON.stringify(vegaLiteCharts).replace(/<\//g, '<\\/');
 
   return `<!DOCTYPE html>
 <html data-theme="${theme}">
@@ -135,7 +169,10 @@ function buildHTML(opts: {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DuckDB Data Agent — Conversation Export</title>
-${charts.length > 0 ? '<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"><\/script>' : ''}
+${hasPlotly ? '<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"><\/script>' : ''}
+${hasVegaLite ? `<script src="https://cdn.jsdelivr.net/npm/vega@5"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@5"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"><\/script>` : ''}
 <style>
 ${css}
 
@@ -158,14 +195,40 @@ body {
   </div>
   ${clone.outerHTML}
 </div>
-${charts.length > 0 ? `<script>
+${hasPlotly ? `<script>
 (function() {
-  var charts = ${chartsJSON};
+  var charts = ${plotlyChartsJSON};
   document.querySelectorAll('[data-plotly-chart]').forEach(function(el) {
     var idx = parseInt(el.getAttribute('data-plotly-chart'), 10);
     var chart = charts[idx];
     if (chart && window.Plotly) {
       Plotly.newPlot(el, chart.data, Object.assign({ autosize: true, height: 400 }, chart.layout), { responsive: true, displayModeBar: true });
+    }
+  });
+})();
+<\/script>` : ''}
+${hasVegaLite ? `<script>
+(function() {
+  var specs = ${vegaLiteChartsJSON};
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var darkConfig = {
+    background: 'transparent',
+    axis: { labelColor: '#e2e8f0', titleColor: '#e2e8f0', gridColor: '#374151', domainColor: '#374151' },
+    legend: { labelColor: '#e2e8f0', titleColor: '#e2e8f0' },
+    title: { color: '#e2e8f0' },
+    view: { stroke: 'transparent' }
+  };
+  var lightConfig = { background: 'transparent', view: { stroke: 'transparent' } };
+  document.querySelectorAll('[data-vegalite-chart]').forEach(function(el) {
+    var idx = parseInt(el.getAttribute('data-vegalite-chart'), 10);
+    var spec = specs[idx];
+    if (spec && window.vegaEmbed) {
+      var fullSpec = Object.assign({}, spec, {
+        width: 'container',
+        autosize: { type: 'fit', contains: 'padding' },
+        config: isDark ? darkConfig : lightConfig
+      });
+      vegaEmbed(el, fullSpec, { actions: true, renderer: 'svg' });
     }
   });
 })();

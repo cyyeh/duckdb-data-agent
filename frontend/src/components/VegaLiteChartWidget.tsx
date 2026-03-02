@@ -89,5 +89,12 @@ export function VegaLiteChartWidget({ spec }: VegaLiteChartWidgetProps) {
     );
   }
 
-  return <div ref={containerRef} style={{ width: '100%', minHeight: 400 }} />;
+  return (
+    <div
+      ref={containerRef}
+      className="vega-lite-chart"
+      data-vegalite-spec={JSON.stringify(spec)}
+      style={{ width: '100%', minHeight: 400 }}
+    />
+  );
 }
