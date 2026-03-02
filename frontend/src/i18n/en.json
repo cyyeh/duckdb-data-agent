@@ -127,5 +127,6 @@
   "searchMemories": "Search memories",
   "searchMemoriesPlaceholder": "Filter memories\u2026",
   "chartLibPlotly": "Plotly",
-  "chartLibVegaLite": "Vega-Lite"
+  "chartLibVegaLite": "Vega-Lite",
+  "chartRenderError": "Chart rendering failed"
 }

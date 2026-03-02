@@ -127,5 +127,6 @@
   "searchMemories": "搜尋記憶",
   "searchMemoriesPlaceholder": "篩選記憶\u2026",
   "chartLibPlotly": "Plotly",
-  "chartLibVegaLite": "Vega-Lite"
+  "chartLibVegaLite": "Vega-Lite",
+  "chartRenderError": "圖表渲染失敗"
 }

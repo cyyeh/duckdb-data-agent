@@ -15,7 +15,10 @@
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "react-plotly.js": "^2.6.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "vega": "^6.2.0",
+    "vega-embed": "^7.1.0",
+    "vega-lite": "^6.4.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
