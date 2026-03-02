@@ -30,7 +30,7 @@
 .query-editor__run-btn {
   width: 100px;
   height: 38px;
-  padding: 8px 20px;
+  padding: 0;
   background: var(--color-accent-secondary);
   color: white;
   border: none;
@@ -39,7 +39,9 @@
   cursor: pointer;
   transition: background 0.2s;
   box-sizing: border-box;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
 }
 
