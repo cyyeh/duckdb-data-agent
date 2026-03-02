@@ -170,7 +170,7 @@
 }
 
 .user-question__submit-btn {
-  width: 72px;
+  min-width: 72px;
   height: 32px;
   padding: 6px 14px;
   border: none;
@@ -183,6 +183,7 @@
   transition: background 0.15s;
   box-sizing: border-box;
   text-align: center;
+  white-space: nowrap;
 }
 
 .user-question__submit-btn:hover {
