@@ -22,6 +22,7 @@ interface StreamState {
   sessionId: string | null;
   messages: ChatMessage[];
   flushTimer: ReturnType<typeof setTimeout> | null;
+  startTime: number;
 }
 
 function generateId() {
@@ -115,6 +116,7 @@ export function AgentProvider({
         sessionId: sessionIdRef.current,
         messages: streamMessages,
         flushTimer: null,
+        startTime: Date.now(),
       };
 
       if (convId) {
@@ -253,6 +255,15 @@ export function AgentProvider({
             } else {
               state.segments.push({ type: 'tool', toolResult: result });
             }
+            // Attach answer duration to user_question segment
+            if (result.answerDurationMs != null && result.toolName?.includes('ask_user_question')) {
+              const qIdx = state.segments.findIndex(
+                s => s.type === 'user_question' && s.questionData
+              );
+              if (qIdx !== -1) {
+                state.segments[qIdx] = { ...state.segments[qIdx], answerDurationMs: result.answerDurationMs };
+              }
+            }
             updateMessages(msgs =>
               msgs.map(m =>
                 m.id === assistantId
@@ -316,10 +327,11 @@ export function AgentProvider({
               state.segments.push({ type: 'answer', text: state.currentText });
               state.currentText = '';
             }
+            const durationMs = Date.now() - state.startTime;
             updateMessages(msgs =>
               msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments], durationMs }
                   : m
               )
             );
@@ -339,10 +351,11 @@ export function AgentProvider({
               state.currentText = '';
             }
             state.segments.push({ type: 'error', errorMessage: error });
+            const durationMs = Date.now() - state.startTime;
             updateMessages(msgs =>
               msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments], durationMs }
                   : m
               )
             );
@@ -453,6 +466,7 @@ export function AgentProvider({
         sessionId: null, // Edit starts a fresh session
         messages: streamMessages,
         flushTimer: null,
+        startTime: Date.now(),
       };
 
       if (convId) {
@@ -566,6 +580,15 @@ export function AgentProvider({
             } else {
               state.segments.push({ type: 'tool', toolResult: result });
             }
+            // Attach answer duration to user_question segment
+            if (result.answerDurationMs != null && result.toolName?.includes('ask_user_question')) {
+              const qIdx = state.segments.findIndex(
+                s => s.type === 'user_question' && s.questionData
+              );
+              if (qIdx !== -1) {
+                state.segments[qIdx] = { ...state.segments[qIdx], answerDurationMs: result.answerDurationMs };
+              }
+            }
             updateMessages(msgs =>
               msgs.map(m =>
                 m.id === assistantId
@@ -623,10 +646,11 @@ export function AgentProvider({
               state.segments.push({ type: 'answer', text: state.currentText });
               state.currentText = '';
             }
+            const durationMs = Date.now() - state.startTime;
             updateMessages(msgs =>
               msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments], durationMs }
                   : m
               )
             );
@@ -646,10 +670,11 @@ export function AgentProvider({
               state.currentText = '';
             }
             state.segments.push({ type: 'error', errorMessage: error });
+            const durationMs = Date.now() - state.startTime;
             updateMessages(msgs =>
               msgs.map(m =>
                 m.id === assistantId
-                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments] }
+                  ? { ...m, isStreaming: false, currentPhase: undefined, segments: [...state.segments], durationMs }
                   : m
               )
             );

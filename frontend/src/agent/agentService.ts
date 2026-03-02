@@ -228,6 +228,7 @@ function handleSSEEvent(
               spec: (data.chart_spec as Record<string, unknown>).spec as Record<string, unknown> | undefined,
             }
           : undefined,
+        answerDurationMs: (data.answer_duration_ms as number) ?? undefined,
       };
       callbacks.onToolResult(result);
       break;

@@ -173,9 +173,9 @@
 
 .message-bubble__error-retry {
   align-self: flex-start;
-  width: 72px;
-  height: 26px;
-  padding: 4px 12px;
+  min-width: 88px;
+  height: 28px;
+  padding: 4px 16px;
   font-size: 12px;
   font-weight: 600;
   color: #fff;
@@ -185,7 +185,10 @@
   cursor: pointer;
   margin-top: 2px;
   box-sizing: border-box;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .message-bubble__error-retry:hover {
@@ -506,4 +509,11 @@
 
 .message-bubble__chart-in-answer:last-child {
   margin-bottom: 8px;
+}
+
+.message-bubble__duration {
+  font-size: 11px;
+  color: var(--color-text-disabled);
+  margin-top: 8px;
+  text-align: right;
 }
