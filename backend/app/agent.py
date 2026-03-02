@@ -18,13 +18,76 @@ from app.agent_memory import read_memories
 logger = logging.getLogger(__name__)
 
 
-def build_system_prompt(db: Database) -> str:
+def build_system_prompt(db: Database, chart_library: str = "plotly") -> str:
+    # Chart tool description and workflow vary by library
+    if chart_library == "vegalite":
+        chart_tool_desc = "- mcp__duckdb-data-agent__render_chart — render a Vega-Lite chart"
+        direct_tool_chart_line = (
+            "- For charts/visualizations, call execute_sql to get the data, "
+            "then call render_chart yourself with the Vega-Lite spec. Do NOT delegate charting to a subagent."
+        )
+        charting_workflow = """Charting workflow (follow this exactly):
+1. Run execute_sql to get the data you need for a chart.
+2. Call render_chart with TWO required parameters:
+   - `library`: "vegalite"
+   - `spec`: a Vega-Lite specification object containing:
+     - `$schema`: "https://vega.github.io/schema/vega-lite/v5.json"
+     - `title`: a descriptive chart title (required)
+     - `mark`: the mark type (e.g. "bar", "line", "point", "arc", "boxplot", "area", "rect")
+     - `encoding`: channel encodings (x, y, color, size, etc.) referencing field names
+     - `data`: {"values": [...]} with the actual data rows
+   Both `library` and `spec` are required — the tool WILL accept both. Do not second-guess this.
+3. After the chart renders, write your narrative text discussing what the chart shows.
+4. Repeat steps 1-3 for each additional chart. This produces interleaved charts and narrative.
+- Do NOT render all charts first and then write all narrative at the end.
+- Do NOT output chart JSON as a code block. Always use the render_chart tool.
+- NEVER include Vega-Lite JSON, spec objects, or encoding details in your final answer text unless the user explicitly asks to see the raw JSON. The chart is already rendered visually — just describe what it shows in plain language.
+
+Charting guidelines:
+- Choose the most appropriate mark type (bar, line, point, arc, boxplot, area, rect, etc.).
+- For pie charts, use mark "arc" with theta and color encodings.
+- For multi-series data, use color encoding to distinguish series.
+- Keep the chart clean and readable.
+- IMPORTANT — keep data small. Pre-aggregate in SQL instead of passing raw rows:
+  - Box plots: compute summary stats in SQL and pass as values. Use mark "boxplot".
+  - Histograms: compute bin counts in SQL, then render as bar chart with the bin edges.
+  - Scatter / line with many rows: sample (ORDER BY random() LIMIT 200) or aggregate so data has at most ~200 points.
+  - General rule: data.values should have at most ~200 rows."""
+    else:
+        chart_tool_desc = "- mcp__duckdb-data-agent__render_chart — render a Plotly chart"
+        direct_tool_chart_line = (
+            "- For charts/visualizations, call execute_sql to get the data, "
+            "then call render_chart yourself with the Plotly spec. Do NOT delegate charting to a subagent."
+        )
+        charting_workflow = """Charting workflow (follow this exactly):
+1. Run execute_sql to get the data you need for a chart.
+2. Call render_chart with TWO required parameters:
+   - `data`: array of Plotly trace objects (e.g. [{"type": "bar", "x": [...], "y": [...]}])
+   - `layout`: object that MUST include `title` (e.g. {"title": "My Chart"})
+   Both `data` and `layout` are required — the tool WILL accept both. Do not second-guess this.
+3. After the chart renders, write your narrative text discussing what the chart shows.
+4. Repeat steps 1-3 for each additional chart. This produces interleaved charts and narrative.
+- Do NOT render all charts first and then write all narrative at the end.
+- Do NOT output chart JSON as a code block. Always use the render_chart tool.
+- NEVER include Plotly JSON schema, trace objects, or layout objects in your final answer text unless the user explicitly asks to see the raw JSON. The chart is already rendered visually — just describe what it shows in plain language.
+
+Charting guidelines:
+- Choose the most appropriate chart type (bar, line, scatter, pie, histogram, box, heatmap, etc.).
+- For pie charts, use `labels` and `values` fields in the trace.
+- For multi-series data, group into separate traces.
+- Keep the chart clean and readable.
+- IMPORTANT — keep data small. Pre-aggregate in SQL instead of passing raw rows:
+  - Box plots: compute lowerfence, q1, median, q3, upperfence per group in SQL. Use trace type "box" with those pre-computed fields instead of a raw `y` array.
+  - Histograms: compute bin counts with width_bucket() or CASE in SQL, then render as a bar chart with the bin edges as `x` and counts as `y`.
+  - Scatter / line with many rows: sample (ORDER BY random() LIMIT 200) or aggregate (e.g. average per time bucket) so each trace has at most ~200 points.
+  - General rule: each trace should have at most ~200 data points."""
+
     tables = db.list_tables()
-    prompt = """You are a helpful data analyst assistant working with a DuckDB database.
+    prompt = f"""You are a helpful data analyst assistant working with a DuckDB database.
 
 Tools at your disposal:
 - mcp__duckdb-data-agent__execute_sql — run SQL queries against DuckDB
-- mcp__duckdb-data-agent__render_chart — render a Plotly chart
+{chart_tool_desc}
 - mcp__duckdb-data-agent__ask_user_question — ask the user a clarifying question
 - mcp__duckdb-data-agent__create_skill — create a reusable skill (workflow template) that can be invoked later via /skill-name
 - mcp__duckdb-data-agent__save_memory — save a fact, preference, or pattern to long-term memory
@@ -48,30 +111,9 @@ Task tool usage:
 
 Direct tool usage:
 - For simple SQL queries, call execute_sql directly instead of delegating to sql-analyst.
-- For charts/visualizations, call execute_sql to get the data, then call render_chart yourself with the Plotly spec. Do NOT delegate charting to a subagent.
+{direct_tool_chart_line}
 
-Charting workflow (follow this exactly):
-1. Run execute_sql to get the data you need for a chart.
-2. Call render_chart with TWO required parameters:
-   - `data`: array of Plotly trace objects (e.g. [{"type": "bar", "x": [...], "y": [...]}])
-   - `layout`: object that MUST include `title` (e.g. {"title": "My Chart"})
-   Both `data` and `layout` are required — the tool WILL accept both. Do not second-guess this.
-3. After the chart renders, write your narrative text discussing what the chart shows.
-4. Repeat steps 1-3 for each additional chart. This produces interleaved charts and narrative.
-- Do NOT render all charts first and then write all narrative at the end.
-- Do NOT output chart JSON as a code block. Always use the render_chart tool.
-- NEVER include Plotly JSON schema, trace objects, or layout objects in your final answer text unless the user explicitly asks to see the raw JSON. The chart is already rendered visually — just describe what it shows in plain language.
-
-Charting guidelines:
-- Choose the most appropriate chart type (bar, line, scatter, pie, histogram, box, heatmap, etc.).
-- For pie charts, use `labels` and `values` fields in the trace.
-- For multi-series data, group into separate traces.
-- Keep the chart clean and readable.
-- IMPORTANT — keep data small. Pre-aggregate in SQL instead of passing raw rows:
-  - Box plots: compute lowerfence, q1, median, q3, upperfence per group in SQL. Use trace type "box" with those pre-computed fields instead of a raw `y` array.
-  - Histograms: compute bin counts with width_bucket() or CASE in SQL, then render as a bar chart with the bin edges as `x` and counts as `y`.
-  - Scatter / line with many rows: sample (ORDER BY random() LIMIT 200) or aggregate (e.g. average per time bucket) so each trace has at most ~200 points.
-  - General rule: each trace should have at most ~200 data points.
+{charting_workflow}
 
 Identity:
 - You are an AI assistant. If asked whether you are an AI or a human, always confirm that you are an AI.
@@ -194,6 +236,7 @@ async def stream_chat(
     backend_session_id: str | None = None,
     skills: list[str] | None = None,
     conversation_id: str | None = None,
+    chart_library: str = "plotly",
 ) -> AsyncIterator[str]:
     """Stream agent chat responses as SSE events via containerized sidecar."""
     # Persist user message if conversation_id provided
@@ -216,7 +259,7 @@ async def stream_chat(
     # For normal follow-ups with a session_id, pass history as a separate field
     # so the sidecar can use it as fallback if resume fails.
     query_message = _build_message_with_history(message, conversation_history) if not session_id else message
-    system_prompt = build_system_prompt(db)
+    system_prompt = build_system_prompt(db, chart_library=chart_library)
 
     # Pass Langfuse credentials to the container so the sidecar's
     # TypeScript Langfuse SDK can create traces directly.
