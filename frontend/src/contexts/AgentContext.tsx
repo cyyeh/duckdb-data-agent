@@ -9,6 +9,7 @@ import { AgentContext } from '../hooks/useAgent';
 import { runAgentLoop, runAgentEditLoop } from '../agent/agentService';
 import type { ChatMessage, ContentSegment, ToolCallResult } from '../types';
 import { useSessionId } from '../hooks/useSessionId';
+import { useChartLibrary } from '../hooks/useChartLibrary';
 import { generateUUID } from '../utils/uuid';
 
 interface StreamState {
@@ -35,6 +36,7 @@ export function AgentProvider({
   refreshTables: () => Promise<void>;
 }) {
   const userSessionId = useSessionId();
+  const { chartLibrary } = useChartLibrary();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
@@ -372,9 +374,10 @@ export function AgentProvider({
         controller.signal,
         userSessionId,
         skills,
+        chartLibrary,
       );
     },
-    [flushTextForStream, refreshTables, userSessionId]
+    [flushTextForStream, refreshTables, userSessionId, chartLibrary]
   );
 
   const editMessage = useCallback(
@@ -678,9 +681,10 @@ export function AgentProvider({
         controller.signal,
         userSessionId,
         convId,
+        chartLibrary,
       );
     },
-    [flushTextForStream, refreshTables, userSessionId]
+    [flushTextForStream, refreshTables, userSessionId, chartLibrary]
   );
 
   const deleteMessage = useCallback(
