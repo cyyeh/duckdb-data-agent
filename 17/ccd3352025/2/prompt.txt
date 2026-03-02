@@ -1,0 +1,70 @@
+Implement the following plan:
+
+# Plan: Add Search/Filter to Sidebar Tabs
+
+## Context
+The Tables, Skills, and Memories sidebar tabs have no way to search or filter items. As the number of items grows, users need a quick way to find what they're looking for. We'll add a search icon button to each tab's action bar that toggles a filter input.
+
+## Implementation
+
+### Step 1: Add i18n keys
+**Files:** `frontend/src/i18n/en.json`, `frontend/src/i18n/zh-TW.json`
+
+Add keys: `searchTables`, `searchTablesPlaceholder`, `searchSkills`, `searchSkillsPlaceholder`, `searchMemories`, `searchMemoriesPlaceholder`
+
+### Step 2: Tables tab search (`frontend/src/components/Sidebar.tsx`)
+- Add `useMemo` import, `tableSearch` and `tableSearchOpen` state
+- Add search icon button (magnifying glass SVG) in `sidebar__actions` div after existing buttons
+- Add search input below actions div (shown when `tableSearchOpen` is true, `autoFocus`)
+- Add `filteredTables` useMemo that filters `tables` by name (case-insensitive)
+- Replace `tables.map(...)` with `filteredTables.map(...)` in the list rendering
+
+### Step 3: Tables tab CSS (`frontend/src/components/Sidebar.css`)
+- Add `.sidebar__action-btn--active` style (accent color highlight)
+- Add `.sidebar__search-input` style (full-width, 6px 10px padding, 13px font, matching existing input patterns)
+- Add `.sidebar__search-input:focus` style (accent border + box-shadow)
+
+### Step 4: Skills tab search (`frontend/src/components/SkillsPanel.tsx`)
+- Add `useMemo` import, `searchOpen` and `searchTerm` state
+- Add search icon button in `skills-panel__actions` div (only in the non-empty branch, line 94)
+- Add search input below actions div
+- Add `filteredSkills` useMemo that filters by name AND description (case-insensitive)
+- Replace `skills.map(...)` with `filteredSkills.map(...)` in list rendering
+
+### Step 5: Skills tab CSS (`frontend/src/components/SkillsPanel.css`)
+- Add `.skills-panel__action-btn` base style (30x30px, matching existing button pattern)
+- Add `.skills-panel__action-btn--active` and hover styles
+- Add `.skills-panel__search-input` and focus styles
+
+### Step 6: Memories tab search (`frontend/src/components/MemoriesPanel.tsx`)
+- Add `useMemo` import, `searchOpen` and `searchTerm` state
+- Add search icon button in `memories-panel__actions` div (next to view-file button)
+- Add search input below actions div
+- Filter `entries` before grouping by category — `filteredEntries` useMemo filters by `entry.content` (case-insensitive)
+- Derive `grouped` from `filteredEntries` instead of `entries`
+
+### Step 7: Memories tab CSS (`frontend/src/components/MemoriesPanel.css`)
+- Add `.memories-panel__action-btn--active` style
+- Add `.memories-panel__search-input` and focus styles
+
+## UX Details
+- Search icon: standard magnifying glass (Feather Icons style, matching existing SVGs)
+- Clicking the icon toggles the search input; closing clears the filter
+- Input gets `autoFocus` when opened
+- All filtering is case-insensitive substring matching
+- When filter yields no results, filtered list is simply empty (existing empty states handle display)
+
+## Verification
+1. Run `npm run build` in frontend to check for compilation errors
+2. Manual test: switch between all 3 tabs, toggle search open/close, type to filter, verify items filter correctly in both English and Chinese
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+---
+
+create new branch and commit all and push and raise pr and merge
+
+---
+
+delete branch feat/sidebar-search-filter local and remote
