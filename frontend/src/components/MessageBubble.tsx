@@ -6,6 +6,7 @@ import type { ChatMessage, ContentSegment } from '../types';
 import { useAgent } from '../hooks/useAgent';
 import { InlineQueryResult } from './InlineQueryResult';
 import { ChartWidget } from './ChartWidget';
+import { VegaLiteChartWidget } from './VegaLiteChartWidget';
 import { UserQuestion } from './UserQuestion';
 import './MessageBubble.css';
 
@@ -370,7 +371,9 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
                       {seg.type === 'tool' && seg.toolResult ? (
                         <InlineQueryResult result={seg.toolResult!} />
                       ) : seg.chart_spec ? (
-                        <ChartWidget data={seg.chart_spec.data} layout={seg.chart_spec.layout} frames={seg.chart_spec.frames} />
+                        seg.chart_spec.library === 'vegalite' && seg.chart_spec.spec
+                          ? <VegaLiteChartWidget spec={seg.chart_spec.spec} />
+                          : <ChartWidget data={seg.chart_spec.data} layout={seg.chart_spec.layout} frames={seg.chart_spec.frames} />
                       ) : null}
                     </div>
                   );

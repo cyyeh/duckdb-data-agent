@@ -3,6 +3,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import type { ToolCallResult } from '../types';
 import './InlineQueryResult.css';
 import { ChartWidget } from './ChartWidget';
+import { VegaLiteChartWidget } from './VegaLiteChartWidget';
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -85,17 +86,24 @@ export function InlineQueryResult({ result }: { result: ToolCallResult }) {
 
   // Render chart if chart_spec is present
   if (result.chart_spec) {
+    const isVegaLite = result.chart_spec.library === 'vegalite';
     return (
       <div className="inline-query inline-query--chart">
         <div className="inline-query__label inline-query__label--generic">
-          {(result.chart_spec?.layout?.title as string) || getToolDisplayName(result, t)}
-          <CopyButton text={JSON.stringify(result.chart_spec, null, 2)} />
+          {isVegaLite
+            ? ((result.chart_spec.spec as Record<string, unknown>)?.title as string) || getToolDisplayName(result, t)
+            : (result.chart_spec?.layout?.title as string) || getToolDisplayName(result, t)}
+          <CopyButton text={JSON.stringify(isVegaLite ? result.chart_spec.spec : result.chart_spec, null, 2)} />
         </div>
-        <ChartWidget
-          data={result.chart_spec.data}
-          layout={result.chart_spec.layout}
-          frames={result.chart_spec.frames}
-        />
+        {isVegaLite ? (
+          <VegaLiteChartWidget spec={result.chart_spec.spec!} />
+        ) : (
+          <ChartWidget
+            data={result.chart_spec.data}
+            layout={result.chart_spec.layout}
+            frames={result.chart_spec.frames}
+          />
+        )}
       </div>
     );
   }
