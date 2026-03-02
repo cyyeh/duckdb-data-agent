@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0098ae097067",
+  "session_id": "e4e8d300-63a6-4425-bea2-919dc7467ec1",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-02T07:56:15.886473Z",
+  "branch": "fix/i18n-button-sizing",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/src/components/AgentPanel.css",
+    "frontend/src/components/ChatInput.css",
+    "frontend/src/components/CreateSkillDialog.css",
+    "frontend/src/components/FileUpload.css",
+    "frontend/src/components/QueryEditor.css",
+    "frontend/src/components/SkillsPanel.css",
+    "frontend/src/components/UserQuestion.css"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "3dcf91bf0f66",
+  "transcript_identifier_at_start": "a8bf0a4b-7f03-4844-aecf-1f5c2407fb08",
+  "token_usage": {
+    "input_tokens": 16,
+    "cache_creation_tokens": 54615,
+    "cache_read_tokens": 420717,
+    "output_tokens": 6863,
+    "api_call_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-02T07:56:15.754559Z",
+    "agent_lines": 14,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 14,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/e4e8d300-63a6-4425-bea2-919dc7467ec1.jsonl"
+}

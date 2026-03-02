@@ -3,7 +3,7 @@
   "checkpoint_id": "0098ae097067",
   "strategy": "manual-commit",
   "branch": "fix/i18n-button-sizing",
-  "checkpoints_count": 0,
+  "checkpoints_count": 2,
   "files_touched": [
     "frontend/src/components/AgentPanel.css",
     "frontend/src/components/ChatInput.css",
@@ -20,13 +20,20 @@
       "context": "/00/98ae097067/0/context.md",
       "content_hash": "/00/98ae097067/0/content_hash.txt",
       "prompt": "/00/98ae097067/0/prompt.txt"
+    },
+    {
+      "metadata": "/00/98ae097067/1/metadata.json",
+      "transcript": "/00/98ae097067/1/full.jsonl",
+      "context": "/00/98ae097067/1/context.md",
+      "content_hash": "/00/98ae097067/1/content_hash.txt",
+      "prompt": "/00/98ae097067/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 43,
-    "cache_creation_tokens": 29992,
-    "cache_read_tokens": 1353546,
-    "output_tokens": 1859,
-    "api_call_count": 35
+    "input_tokens": 59,
+    "cache_creation_tokens": 84607,
+    "cache_read_tokens": 1774263,
+    "output_tokens": 8722,
+    "api_call_count": 45
   }
 }
