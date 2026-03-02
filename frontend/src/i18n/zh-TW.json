@@ -125,5 +125,7 @@
   "searchSkills": "搜尋技能",
   "searchSkillsPlaceholder": "篩選技能\u2026",
   "searchMemories": "搜尋記憶",
-  "searchMemoriesPlaceholder": "篩選記憶\u2026"
+  "searchMemoriesPlaceholder": "篩選記憶\u2026",
+  "chartLibPlotly": "Plotly",
+  "chartLibVegaLite": "Vega-Lite"
 }

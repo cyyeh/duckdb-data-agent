@@ -125,5 +125,7 @@
   "searchSkills": "Search skills",
   "searchSkillsPlaceholder": "Filter skills\u2026",
   "searchMemories": "Search memories",
-  "searchMemoriesPlaceholder": "Filter memories\u2026"
+  "searchMemoriesPlaceholder": "Filter memories\u2026",
+  "chartLibPlotly": "Plotly",
+  "chartLibVegaLite": "Vega-Lite"
 }
