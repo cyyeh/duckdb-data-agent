@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d857032b6158",
+  "session_id": "8a596d0b-4ccc-46c8-94f1-666fc4a66154",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-02T02:22:16.701948Z",
+  "branch": "feat/sidebar-search-filter",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/src/App.css",
+    "frontend/src/components/AgentPanel.css",
+    "frontend/src/components/ChatInput.css",
+    "frontend/src/components/CreateSkillDialog.css",
+    "frontend/src/components/FileUpload.css",
+    "frontend/src/components/MessageBubble.css",
+    "frontend/src/components/QueryEditor.css",
+    "frontend/src/components/Sidebar.css",
+    "frontend/src/components/SkillsPanel.css",
+    "frontend/src/components/UserQuestion.css"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "9b21665cc717",
+  "transcript_identifier_at_start": "751f75e2-cd6e-4c6e-9ecd-86c6feed652b",
+  "token_usage": {
+    "input_tokens": 39,
+    "cache_creation_tokens": 75159,
+    "cache_read_tokens": 2264771,
+    "output_tokens": 16891,
+    "api_call_count": 33
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-02T02:22:16.457151Z",
+    "agent_lines": 69,
+    "human_added": 185,
+    "human_modified": 17,
+    "human_removed": 0,
+    "total_committed": 269,
+    "agent_percentage": 25.650557620817843
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/8a596d0b-4ccc-46c8-94f1-666fc4a66154.jsonl"
+}
