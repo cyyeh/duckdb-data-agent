@@ -5,6 +5,7 @@ import { useSessionId } from './hooks/useSessionId';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { useTranslation } from './hooks/useTranslation';
 import { AgentProvider } from './contexts/AgentContext';
+import { ChartLibraryProvider } from './contexts/ChartLibraryContext';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { ConversationProvider, useConversation } from './contexts/ConversationContext';
 import { FileUpload } from './components/FileUpload';
@@ -421,9 +422,11 @@ export default function App() {
       <LanguageProvider>
         <ThemeProvider>
           <ConversationProvider sessionId={sessionId}>
-            <AgentProvider refreshTables={refreshTables}>
-              <AppContent tables={tables} refreshTables={refreshTables} sessionId={sessionId} />
-            </AgentProvider>
+            <ChartLibraryProvider>
+              <AgentProvider refreshTables={refreshTables}>
+                <AppContent tables={tables} refreshTables={refreshTables} sessionId={sessionId} />
+              </AgentProvider>
+            </ChartLibraryProvider>
           </ConversationProvider>
         </ThemeProvider>
       </LanguageProvider>
