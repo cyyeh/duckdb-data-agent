@@ -3,7 +3,7 @@
   "checkpoint_id": "0fc41fc80c29",
   "strategy": "manual-commit",
   "branch": "fix/persist-conversation-state",
-  "checkpoints_count": 1,
+  "checkpoints_count": 10,
   "files_touched": [
     "backend/app/agent.py",
     "frontend/src/agent/agentService.ts",
@@ -31,13 +31,20 @@
       "context": "/0f/c41fc80c29/1/context.md",
       "content_hash": "/0f/c41fc80c29/1/content_hash.txt",
       "prompt": "/0f/c41fc80c29/1/prompt.txt"
+    },
+    {
+      "metadata": "/0f/c41fc80c29/2/metadata.json",
+      "transcript": "/0f/c41fc80c29/2/full.jsonl",
+      "context": "/0f/c41fc80c29/2/context.md",
+      "content_hash": "/0f/c41fc80c29/2/content_hash.txt",
+      "prompt": "/0f/c41fc80c29/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 50,
-    "cache_creation_tokens": 51740,
-    "cache_read_tokens": 1527539,
-    "output_tokens": 3081,
-    "api_call_count": 40
+    "input_tokens": 495,
+    "cache_creation_tokens": 309875,
+    "cache_read_tokens": 19243596,
+    "output_tokens": 74821,
+    "api_call_count": 219
   }
 }
