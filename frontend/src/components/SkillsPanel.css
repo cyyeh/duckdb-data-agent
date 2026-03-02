@@ -4,7 +4,8 @@
 
 .skills-panel__actions {
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
   padding: 0 0 8px;
 }
 
@@ -27,6 +28,54 @@
 .skills-panel__create-btn:hover {
   background: var(--color-bg-hover-strong);
   color: var(--color-text-primary);
+}
+
+.skills-panel__action-btn {
+  background: none;
+  border: 1px solid var(--color-border-medium);
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.skills-panel__action-btn:hover {
+  background: var(--color-bg-hover-strong);
+  color: var(--color-text-primary);
+}
+
+.skills-panel__action-btn--active {
+  background: var(--color-accent-primary);
+  color: #fff;
+  border-color: var(--color-accent-primary);
+}
+
+.skills-panel__action-btn--active:hover {
+  background: var(--color-accent-primary-hover);
+  color: #fff;
+}
+
+.skills-panel__search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--color-border-medium);
+  border-radius: 6px;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+  outline: none;
+}
+
+.skills-panel__search-input:focus {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .skills-panel__empty {
@@ -83,10 +132,14 @@
   border: none;
   border-radius: 4px;
   font-size: 11px;
+  width: 44px;
+  height: 22px;
   padding: 2px 8px;
   cursor: pointer;
   white-space: nowrap;
   touch-action: manipulation;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .skills-panel__use-btn:hover {
@@ -217,11 +270,15 @@
   background: none;
   border: 1px solid var(--color-border-light);
   border-radius: 4px;
+  width: 64px;
+  height: 28px;
   padding: 4px 12px;
   font-size: 12px;
   color: var(--color-text-muted);
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .skill-detail-modal__tab:hover {

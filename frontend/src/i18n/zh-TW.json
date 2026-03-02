@@ -119,5 +119,11 @@
   "viewMemoryFile": "檢視記憶檔案",
   "memoryFileTitle": "代理記憶",
   "memoryPreview": "預覽",
-  "memorySource": "原始碼"
+  "memorySource": "原始碼",
+  "searchTables": "搜尋資料表",
+  "searchTablesPlaceholder": "篩選資料表\u2026",
+  "searchSkills": "搜尋技能",
+  "searchSkillsPlaceholder": "篩選技能\u2026",
+  "searchMemories": "搜尋記憶",
+  "searchMemoriesPlaceholder": "篩選記憶\u2026"
 }

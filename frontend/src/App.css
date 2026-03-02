@@ -99,6 +99,7 @@
 
 .app__agent-toggle {
   height: 34px;
+  width: 120px;
   padding: 0 14px;
   font-size: 13px;
   font-weight: 600;
@@ -108,6 +109,8 @@
   color: var(--color-accent-primary);
   cursor: pointer;
   white-space: nowrap;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .app__agent-toggle:hover {

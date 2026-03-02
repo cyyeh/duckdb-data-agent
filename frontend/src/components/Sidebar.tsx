@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import type { TableInfo } from '../types';
 import { SkillsPanel } from './SkillsPanel';
@@ -34,10 +34,18 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
   const [memoriesRefreshKey, setMemoriesRefreshKey] = useState(0);
+  const [tableSearchOpen, setTableSearchOpen] = useState(false);
+  const [tableSearch, setTableSearch] = useState('');
 
   const toggle = (name: string) => {
     setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
   };
+
+  const filteredTables = useMemo(() => {
+    if (!tableSearch) return tables;
+    const q = tableSearch.toLowerCase();
+    return tables.filter((t) => t.name.toLowerCase().includes(q));
+  }, [tables, tableSearch]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -119,12 +127,33 @@ export function Sidebar({ tables, onTableClick, onTableDelete, onUpload, onDelet
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                 </svg>
               </button>
+              <button
+                className={`sidebar__action-btn${tableSearchOpen ? ' sidebar__action-btn--active' : ''}`}
+                onClick={() => { setTableSearchOpen((v) => !v); if (tableSearchOpen) setTableSearch(''); }}
+                title={t('searchTables')}
+                aria-label={t('searchTables')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </button>
             </div>
+            {tableSearchOpen && (
+              <input
+                className="sidebar__search-input"
+                type="text"
+                placeholder={t('searchTablesPlaceholder')}
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                autoFocus
+              />
+            )}
             {tables.length === 0 && (
               <p className="sidebar__empty">{t('noTables')}</p>
             )}
             <ul className="sidebar__list">
-              {tables.map((table) => (
+              {filteredTables.map((table) => (
                 <li key={table.name} className="sidebar__item">
                   <div className="sidebar__table-header">
                     <button

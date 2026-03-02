@@ -23,6 +23,7 @@
 
 .agent-panel__clear {
   height: 28px;
+  width: 80px;
   padding: 0 10px;
   font-size: 12px;
   background: none;
@@ -30,6 +31,8 @@
   border-radius: 6px;
   color: var(--color-text-subtle);
   cursor: pointer;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .agent-panel__clear:hover {
@@ -46,8 +49,10 @@
 .agent-panel__langfuse {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   height: 28px;
+  width: 80px;
   padding: 0 10px;
   font-size: 12px;
   background: none;
@@ -55,6 +60,7 @@
   border-radius: 6px;
   color: var(--color-text-subtle);
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .agent-panel__langfuse-icon {
