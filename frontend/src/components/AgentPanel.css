@@ -23,7 +23,6 @@
 
 .agent-panel__clear {
   height: 28px;
-  width: 80px;
   padding: 0 10px;
   font-size: 12px;
   background: none;
@@ -33,6 +32,7 @@
   cursor: pointer;
   box-sizing: border-box;
   text-align: center;
+  white-space: nowrap;
 }
 
 .agent-panel__clear:hover {
@@ -41,9 +41,10 @@
 }
 
 .agent-panel__actions {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
+  width: 210px;
 }
 
 .agent-panel__langfuse {
