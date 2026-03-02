@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d857032b6158",
+  "session_id": "f1e67026-f5b1-40d2-b0c7-fe402c16c073",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-02T02:22:18.706549Z",
+  "branch": "feat/sidebar-search-filter",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/MemoriesPanel.css",
+    "frontend/src/components/MemoriesPanel.tsx",
+    "frontend/src/components/Sidebar.css",
+    "frontend/src/components/Sidebar.tsx",
+    "frontend/src/components/SkillsPanel.css",
+    "frontend/src/components/SkillsPanel.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "214ba96a3b1c",
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 51111,
+    "cache_read_tokens": 2400294,
+    "output_tokens": 12354,
+    "api_call_count": 39
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-02T02:22:18.535842Z",
+    "agent_lines": 225,
+    "human_added": 45,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 272,
+    "agent_percentage": 82.72058823529412
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/f1e67026-f5b1-40d2-b0c7-fe402c16c073.jsonl"
+}
