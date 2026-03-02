@@ -132,7 +132,7 @@
   border: none;
   border-radius: 4px;
   font-size: 11px;
-  width: 44px;
+  min-width: 44px;
   height: 22px;
   padding: 2px 8px;
   cursor: pointer;
@@ -270,7 +270,7 @@
   background: none;
   border: 1px solid var(--color-border-light);
   border-radius: 4px;
-  width: 64px;
+  min-width: 64px;
   height: 28px;
   padding: 4px 12px;
   font-size: 12px;
@@ -279,6 +279,7 @@
   transition: background 0.15s, color 0.15s, border-color 0.15s;
   box-sizing: border-box;
   text-align: center;
+  white-space: nowrap;
 }
 
 .skill-detail-modal__tab:hover {

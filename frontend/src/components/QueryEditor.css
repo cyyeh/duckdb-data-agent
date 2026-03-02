@@ -40,6 +40,7 @@
   transition: background 0.2s;
   box-sizing: border-box;
   text-align: center;
+  white-space: nowrap;
 }
 
 .query-editor__run-btn:hover:not(:disabled) {
