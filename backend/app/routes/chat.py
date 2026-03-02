@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -17,7 +19,7 @@ class ChatRequest(BaseModel):
     conversation_history: list[dict] = []
     skills: list[str] | None = None
     conversation_id: str | None = None
-    chart_library: str = "plotly"
+    chart_library: Literal["plotly", "vegalite"] = "plotly"
 
 
 class ChatEditRequest(BaseModel):
@@ -25,7 +27,7 @@ class ChatEditRequest(BaseModel):
     conversation_history: list[dict] = []
     langfuse_session_id: str | None = None
     conversation_id: str | None = None
-    chart_library: str = "plotly"
+    chart_library: Literal["plotly", "vegalite"] = "plotly"
 
 
 class QuestionResponseRequest(BaseModel):

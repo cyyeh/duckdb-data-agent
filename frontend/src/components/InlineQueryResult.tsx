@@ -99,7 +99,7 @@ export function InlineQueryResult({ result }: { result: ToolCallResult }) {
           <VegaLiteChartWidget spec={result.chart_spec.spec!} />
         ) : (
           <ChartWidget
-            data={result.chart_spec.data}
+            data={result.chart_spec.data ?? []}
             layout={result.chart_spec.layout}
             frames={result.chart_spec.frames}
           />

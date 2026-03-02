@@ -31,7 +31,7 @@ export interface ToolCallResult {
   rawContent?: string;
   chart_spec?: {
     library?: 'plotly' | 'vegalite';
-    data: unknown[];
+    data?: unknown[];
     layout?: Record<string, unknown>;
     frames?: unknown[];
     spec?: Record<string, unknown>;
@@ -65,7 +65,7 @@ export interface ContentSegment {
   }>;
   chart_spec?: {
     library?: 'plotly' | 'vegalite';
-    data: unknown[];
+    data?: unknown[];
     layout?: Record<string, unknown>;
     frames?: unknown[];
     spec?: Record<string, unknown>;

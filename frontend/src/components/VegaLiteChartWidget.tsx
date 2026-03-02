@@ -9,6 +9,7 @@ interface VegaLiteChartWidgetProps {
 
 export function VegaLiteChartWidget({ spec }: VegaLiteChartWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<{ finalize: () => void } | null>(null);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const { t } = useTranslation();
@@ -16,6 +17,10 @@ export function VegaLiteChartWidget({ spec }: VegaLiteChartWidgetProps) {
 
   useEffect(() => {
     if (!containerRef.current || !spec) return;
+
+    setError(null);
+    viewRef.current?.finalize();
+    viewRef.current = null;
 
     const darkConfig = {
       background: 'transparent',
@@ -51,24 +56,28 @@ export function VegaLiteChartWidget({ spec }: VegaLiteChartWidgetProps) {
       config: isDark ? darkConfig : lightConfig,
     };
 
-    let disposed = false;
+    let cancelled = false;
     embed(containerRef.current, fullSpec as never, {
       actions: true,
       renderer: 'svg',
     })
       .then((result) => {
-        if (disposed) {
+        if (cancelled) {
           result.finalize();
+        } else {
+          viewRef.current = result;
         }
       })
       .catch((err) => {
-        if (!disposed) {
+        if (!cancelled) {
           setError(err?.message || 'Failed to render Vega-Lite chart');
         }
       });
 
     return () => {
-      disposed = true;
+      cancelled = true;
+      viewRef.current?.finalize();
+      viewRef.current = null;
     };
   }, [spec, isDark]);
 

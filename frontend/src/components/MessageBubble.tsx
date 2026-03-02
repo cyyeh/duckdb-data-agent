@@ -373,7 +373,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
                       ) : seg.chart_spec ? (
                         seg.chart_spec.library === 'vegalite' && seg.chart_spec.spec
                           ? <VegaLiteChartWidget spec={seg.chart_spec.spec} />
-                          : <ChartWidget data={seg.chart_spec.data} layout={seg.chart_spec.layout} frames={seg.chart_spec.frames} />
+                          : <ChartWidget data={seg.chart_spec.data ?? []} layout={seg.chart_spec.layout} frames={seg.chart_spec.frames} />
                       ) : null}
                     </div>
                   );
