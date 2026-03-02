@@ -319,8 +319,8 @@
 }
 
 .sidebar__tabs {
-  display: flex;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   flex: 1;
 }
 
@@ -332,11 +332,15 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--color-text-muted);
-  padding: 4px 8px;
+  height: 28px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
   border-bottom: 2px solid transparent;
   transition: color 0.15s, border-color 0.15s;
-  flex: 1;
-  text-align: center;
+  width: 100%;
 }
 
 .sidebar__tab--active {
