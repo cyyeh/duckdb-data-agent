@@ -8,6 +8,7 @@ import type { TableInfo } from '../types';
 import './AgentPanel.css';
 import { exportConversation } from '../utils/exportConversation';
 import { useConversation } from '../contexts/ConversationContext';
+import { useChartLibrary } from '../hooks/useChartLibrary';
 
 interface AgentPanelProps {
   tables: TableInfo[];
@@ -21,6 +22,7 @@ export function AgentPanel({ tables, onUpload, onLoadSample, pendingSkillCommand
   const { t } = useTranslation();
   const { messages, clearMessages } = useAgent();
   const { activeConversationId, startNewConversation } = useConversation();
+  const { chartLibrary, setChartLibrary } = useChartLibrary();
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
@@ -46,6 +48,20 @@ export function AgentPanel({ tables, onUpload, onLoadSample, pendingSkillCommand
       <div className="agent-panel__header">
         <span className="agent-panel__title">{t('agentMode')}</span>
         <div className="agent-panel__actions">
+          <div className="agent-panel__chart-toggle">
+            <button
+              className={`agent-panel__chart-toggle-btn${chartLibrary === 'plotly' ? ' agent-panel__chart-toggle-btn--active' : ''}`}
+              onClick={() => setChartLibrary('plotly')}
+            >
+              {t('chartLibPlotly')}
+            </button>
+            <button
+              className={`agent-panel__chart-toggle-btn${chartLibrary === 'vegalite' ? ' agent-panel__chart-toggle-btn--active' : ''}`}
+              onClick={() => setChartLibrary('vegalite')}
+            >
+              {t('chartLibVegaLite')}
+            </button>
+          </div>
           {messages.length > 0 && (
             <button className="agent-panel__clear" onClick={() => exportConversation()}>
               {t('export')}

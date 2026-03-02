@@ -6,7 +6,7 @@ interface AgentCallbacks {
   onToolCall: (pending: ToolCallResult) => void;
   onToolResult: (result: ToolCallResult) => void;
   onSubagentStart?: (data: { id: string; name: string; prompt: string }) => void;
-  onSubagentEnd?: (data: { id: string; name: string; result?: string; sql_results?: Array<{ sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }>; chart_spec?: { data: unknown[]; layout?: Record<string, unknown> } }) => void;
+  onSubagentEnd?: (data: { id: string; name: string; result?: string; sql_results?: Array<{ sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }>; chart_spec?: { library?: 'plotly' | 'vegalite'; data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[]; spec?: Record<string, unknown> } }) => void;
   onDone: (sessionId: string | null) => void;
   onError: (error: string) => void;
   onUserQuestion?: (data: UserQuestionData) => void;
@@ -106,6 +106,7 @@ export async function runAgentLoop(
   signal?: AbortSignal,
   userSessionId?: string,
   skills?: string[],
+  chartLibrary?: string,
 ): Promise<void> {
   if (!callbacks) return;
   try {
@@ -122,6 +123,7 @@ export async function runAgentLoop(
         langfuse_session_id: langfuseSessionId,
         conversation_history: conversationHistory ?? [],
         ...(skills?.length ? { skills } : {}),
+        chart_library: chartLibrary || 'plotly',
       }),
       signal,
     });
@@ -148,6 +150,7 @@ export async function runAgentEditLoop(
   signal?: AbortSignal,
   userSessionId?: string,
   conversationId?: string | null,
+  chartLibrary?: string,
 ): Promise<void> {
   try {
     const response = await fetch('/api/chat/edit', {
@@ -161,6 +164,7 @@ export async function runAgentEditLoop(
         conversation_history: conversationHistory,
         langfuse_session_id: langfuseSessionId,
         conversation_id: conversationId,
+        chart_library: chartLibrary || 'plotly',
       }),
       signal,
     });
@@ -215,7 +219,15 @@ function handleSSEEvent(
         error: (data.error as string) ?? undefined,
         output: (data.output as string) ?? undefined,
         rawContent: (data.content as string) ?? undefined,
-        chart_spec: (data.chart_spec as { data: unknown[]; layout?: Record<string, unknown> }) ?? undefined,
+        chart_spec: data.chart_spec
+          ? {
+              library: (data.chart_spec as Record<string, unknown>).library as 'plotly' | 'vegalite' | undefined,
+              data: ((data.chart_spec as Record<string, unknown>).data as unknown[]) ?? [],
+              layout: (data.chart_spec as Record<string, unknown>).layout as Record<string, unknown> | undefined,
+              frames: (data.chart_spec as Record<string, unknown>).frames as unknown[] | undefined,
+              spec: (data.chart_spec as Record<string, unknown>).spec as Record<string, unknown> | undefined,
+            }
+          : undefined,
         answerDurationMs: (data.answer_duration_ms as number) ?? undefined,
       };
       callbacks.onToolResult(result);
@@ -229,7 +241,7 @@ function handleSSEEvent(
       });
       break;
     case 'subagent_end': {
-      type ChartSpec = { data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[] };
+      type ChartSpec = { library?: 'plotly' | 'vegalite'; data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[]; spec?: Record<string, unknown> };
       // Backend sends chart_specs (array) for multi-chart support.
       // Fall back to legacy chart_spec (single object) for backwards compat.
       const rawSpecs = data.chart_specs as ChartSpec[] | undefined;

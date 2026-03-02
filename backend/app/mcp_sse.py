@@ -84,27 +84,37 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
             types.Tool(
                 name="render_chart",
                 description=(
-                    "Render a Plotly chart. Call this as the final step after querying data. "
-                    "Pass all Plotly traces in `data` and a layout object with a descriptive `title`."
+                    "Render a chart. For Plotly: pass `data` (array of traces) and `layout` (with title). "
+                    "For Vega-Lite: pass `library` as \"vegalite\" and `spec` (full Vega-Lite spec with title)."
                 ),
                 inputSchema={
                     "type": "object",
                     "properties": {
+                        "library": {
+                            "type": "string",
+                            "enum": ["plotly", "vegalite"],
+                            "default": "plotly",
+                            "description": "Chart library to use: 'plotly' (default) or 'vegalite'",
+                        },
                         "data": {
                             "type": "array",
-                            "description": "Array of Plotly trace objects (bar, line, scatter, pie, etc.)",
+                            "description": "Array of Plotly trace objects (for Plotly mode)",
                             "items": {"type": "object"},
                         },
                         "layout": {
                             "type": "object",
-                            "description": "Plotly layout object",
+                            "description": "Plotly layout object (for Plotly mode)",
                             "properties": {
                                 "title": {"type": "string"},
                             },
                             "required": ["title"],
                         },
+                        "spec": {
+                            "type": "object",
+                            "description": "Full Vega-Lite specification (for Vega-Lite mode)",
+                        },
                     },
-                    "required": ["data", "layout"],
+                    "required": [],
                 },
             ),
             types.Tool(
@@ -221,40 +231,59 @@ def _create_mcp_server(db: Database, session_id: str) -> MCPServer:
                 result = answer
             return [types.TextContent(type="text", text=json.dumps(result))]
         elif name == "render_chart":
-            data = arguments.get("data")
-            layout = arguments.get("layout", {})
-            if not isinstance(data, list):
-                logger.warning("render_chart called with missing data: %s", arguments)
-                return [types.TextContent(type="text", text=json.dumps({"status": "error", "error": "data (array of Plotly traces) is required"}))]
+            library = arguments.get("library", "plotly")
 
-            # Reject specs where every trace has empty data arrays.
-            # Data-bearing fields vary by chart type (x, y, z, values, labels, etc.).
-            _DATA_FIELDS = ("x", "y", "z", "values", "labels", "lat", "lon", "r", "theta",
-                            "lowerfence", "q1", "median", "q3", "upperfence")
-            has_nonempty_trace = False
-            for trace in data:
-                if not isinstance(trace, dict):
-                    continue
-                for field in _DATA_FIELDS:
-                    val = trace.get(field)
-                    if isinstance(val, list) and len(val) > 0:
-                        has_nonempty_trace = True
-                        break
-                if has_nonempty_trace:
-                    break
-            if not has_nonempty_trace:
-                logger.warning("render_chart called with all-empty data traces: %s", arguments)
+            if library == "vegalite":
+                spec = arguments.get("spec")
+                if not isinstance(spec, dict):
+                    return [types.TextContent(type="text", text=json.dumps({
+                        "status": "error",
+                        "error": "spec (Vega-Lite specification object) is required when library is 'vegalite'"
+                    }))]
+                # Check spec has data
+                data_obj = spec.get("data", {})
+                data_values = data_obj.get("values", []) if isinstance(data_obj, dict) else []
+                if not data_values:
+                    return [types.TextContent(type="text", text=json.dumps({
+                        "status": "error",
+                        "error": "Vega-Lite spec must contain data.values with at least one row."
+                    }))]
                 return [types.TextContent(type="text", text=json.dumps({
-                    "status": "error",
-                    "error": "All data traces are empty — no data to chart. "
-                             "Check your SQL query results before calling render_chart."
+                    "status": "success",
+                    "chart_spec": {"library": "vegalite", "spec": spec},
                 }))]
-            # Return success with chart_spec so the orchestrator can see
-            # what was rendered and write coherent commentary about it.
-            return [types.TextContent(type="text", text=json.dumps({
-                "status": "success",
-                "chart_spec": {"data": data, "layout": layout},
-            }))]
+            else:
+                # Plotly path (existing logic)
+                data = arguments.get("data")
+                layout = arguments.get("layout", {})
+                if not isinstance(data, list):
+                    logger.warning("render_chart called with missing data: %s", arguments)
+                    return [types.TextContent(type="text", text=json.dumps({"status": "error", "error": "data (array of Plotly traces) is required"}))]
+
+                _DATA_FIELDS = ("x", "y", "z", "values", "labels", "lat", "lon", "r", "theta",
+                                "lowerfence", "q1", "median", "q3", "upperfence")
+                has_nonempty_trace = False
+                for trace in data:
+                    if not isinstance(trace, dict):
+                        continue
+                    for field in _DATA_FIELDS:
+                        val = trace.get(field)
+                        if isinstance(val, list) and len(val) > 0:
+                            has_nonempty_trace = True
+                            break
+                    if has_nonempty_trace:
+                        break
+                if not has_nonempty_trace:
+                    logger.warning("render_chart called with all-empty data traces: %s", arguments)
+                    return [types.TextContent(type="text", text=json.dumps({
+                        "status": "error",
+                        "error": "All data traces are empty — no data to chart. "
+                                 "Check your SQL query results before calling render_chart."
+                    }))]
+                return [types.TextContent(type="text", text=json.dumps({
+                    "status": "success",
+                    "chart_spec": {"library": "plotly", "data": data, "layout": layout},
+                }))]
         elif name == "create_skill":
             skill_name = arguments.get("name", "")
             description = arguments.get("description", "")

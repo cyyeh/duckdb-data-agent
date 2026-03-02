@@ -30,9 +30,11 @@ export interface ToolCallResult {
   output?: string;
   rawContent?: string;
   chart_spec?: {
-    data: unknown[];
+    library?: 'plotly' | 'vegalite';
+    data?: unknown[];
     layout?: Record<string, unknown>;
     frames?: unknown[];
+    spec?: Record<string, unknown>;
   };
   answerDurationMs?: number;
 }
@@ -63,9 +65,11 @@ export interface ContentSegment {
     error?: string;
   }>;
   chart_spec?: {
-    data: unknown[];
+    library?: 'plotly' | 'vegalite';
+    data?: unknown[];
     layout?: Record<string, unknown>;
     frames?: unknown[];
+    spec?: Record<string, unknown>;
   };
   questionData?: UserQuestionData;
   userAnswer?: string[];

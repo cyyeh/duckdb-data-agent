@@ -126,5 +126,8 @@
   "searchSkillsPlaceholder": "篩選技能\u2026",
   "searchMemories": "搜尋記憶",
   "searchMemoriesPlaceholder": "篩選記憶\u2026",
+  "chartLibPlotly": "Plotly",
+  "chartLibVegaLite": "Vega-Lite",
+  "chartRenderError": "圖表渲染失敗",
   "answeredIn": "回答耗時 {time}"
 }
