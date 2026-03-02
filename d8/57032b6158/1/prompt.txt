@@ -1,0 +1,21 @@
+load sample dataset button width should be the same in different languages
+
+---
+
+width is still differnt
+
+---
+
+revert width change
+
+---
+
+height is not the same
+
+---
+
+add search icon in tables/skills/memories tab so that user could quickly search and fileter out the information he wants
+
+---
+
+[Request interrupted by user for tool use]
