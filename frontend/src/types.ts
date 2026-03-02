@@ -34,6 +34,7 @@ export interface ToolCallResult {
     layout?: Record<string, unknown>;
     frames?: unknown[];
   };
+  answerDurationMs?: number;
 }
 
 export interface UserQuestionOption {
@@ -69,6 +70,7 @@ export interface ContentSegment {
   questionData?: UserQuestionData;
   userAnswer?: string[];
   userFreeText?: string;
+  answerDurationMs?: number;
   errorMessage?: string;
 }
 
@@ -80,6 +82,7 @@ export interface ChatMessage {
   segments?: ContentSegment[];
   isStreaming?: boolean;
   currentPhase?: 'thinking' | 'answer';
+  durationMs?: number;
 }
 
 export interface LangfuseStatus {

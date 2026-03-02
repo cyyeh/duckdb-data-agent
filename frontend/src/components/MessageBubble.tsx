@@ -170,6 +170,15 @@ function ErrorBlock({ errorMessage, onRetry }: { errorMessage: string; onRetry?:
   );
 }
 
+function formatDuration(ms: number): string {
+  if (ms < 1000) return '<1s';
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+}
+
 export function MessageBubble({ message, messageIndex }: { message: ChatMessage; messageIndex: number }) {
   const { t } = useTranslation();
   const { isStreaming, editMessage, deleteMessage, sendMessage, messages } = useAgent();
@@ -356,6 +365,7 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
                 questionData={seg.questionData!}
                 userAnswer={seg.userAnswer}
                 userFreeText={seg.userFreeText}
+                answerDurationMs={seg.answerDurationMs}
               />
             </div>
           ))}
@@ -391,6 +401,11 @@ export function MessageBubble({ message, messageIndex }: { message: ChatMessage;
                   </div>
                 ) : null;
               })()}
+              {!message.isStreaming && message.durationMs != null && (
+                <div className="message-bubble__duration">
+                  {t('answeredIn', { time: formatDuration(message.durationMs) })}
+                </div>
+              )}
             </div>
           )}
           {/* Only show standalone streaming answer block when no answer segments exist yet */}
