@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "26f6db5b070b",
+  "strategy": "manual-commit",
+  "branch": "feature/chart-library-switch",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/AgentPanel.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/26/f6db5b070b/0/metadata.json",
+      "transcript": "/26/f6db5b070b/0/full.jsonl",
+      "context": "/26/f6db5b070b/0/context.md",
+      "content_hash": "/26/f6db5b070b/0/content_hash.txt",
+      "prompt": "/26/f6db5b070b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 11,
+    "cache_creation_tokens": 25845,
+    "cache_read_tokens": 212557,
+    "output_tokens": 1891,
+    "api_call_count": 7
+  }
+}
