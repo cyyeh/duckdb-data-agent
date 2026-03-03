@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "4f17de0996a0",
+  "session_id": "a93165b9-684f-4a60-ba6e-ff7aae0175b5",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-03T14:57:55.494138Z",
+  "branch": "worktree-add-data-plugin",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md",
+    "docs/plans/2026-03-03-inline-dashboard-rendering.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "4d8041f4b8df",
+  "transcript_identifier_at_start": "55d95dcf-a392-4660-861e-b6d3a887201b",
+  "token_usage": {
+    "input_tokens": 55,
+    "cache_creation_tokens": 66941,
+    "cache_read_tokens": 2497513,
+    "output_tokens": 17396,
+    "api_call_count": 38
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-03T14:57:54.768637Z",
+    "agent_lines": 578,
+    "human_added": 2,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 580,
+    "agent_percentage": 99.6551724137931
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-add-data-plugin/a93165b9-684f-4a60-ba6e-ff7aae0175b5.jsonl"
+}
