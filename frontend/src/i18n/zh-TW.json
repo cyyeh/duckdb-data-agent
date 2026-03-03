@@ -64,6 +64,8 @@
   "duplicateFilesExist": "檔案已上傳：{names}。請先移除或重新命名後再上傳。",
   "viewOnGitHub": "在 GitHub 上檢視",
   "sqlAnalystWorking": "SQL 分析師執行中...",
+  "subagentQueryCount": "{count} 個查詢",
+  "subagentQueryCountPlural": "{count} 個查詢",
   "questionFromAgent": "問題",
   "questionAnswered": "已回答",
   "other": "其他...",

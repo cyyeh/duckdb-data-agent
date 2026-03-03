@@ -391,6 +391,9 @@ async def stream_chat(
         # included in the subagent_end event for visibility.
         subagent_sql_data: dict[str, list[dict]] = {}  # parent_tool_use_id -> [{tool_id, sql, columns?, rows?, rowCount?}]
         subagent_internal_tools: dict[str, str] = {}   # tool_id -> parent_tool_use_id
+        # Track subagent thinking output from stream events so it can be
+        # included in the subagent_end event for visibility.
+        subagent_thinking: dict[str, str] = {}  # parent_tool_use_id -> accumulated thinking text
 
         # Timeout must exceed SDK_IDLE_TIMEOUT_MS so the sidecar's own
         # idle abort fires first; add a 60s buffer.
@@ -446,9 +449,13 @@ async def stream_chat(
                             delta_type = delta.get("type", "")
                             if delta_type == "thinking_delta":
                                 text = delta.get("thinking", "")
-                                if text and not is_subagent_event:
-                                    seg_thinking_buf.append(text)
-                                    yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
+                                if text:
+                                    if is_subagent_event:
+                                        subagent_thinking[stream_parent] = subagent_thinking.get(stream_parent, "") + text
+                                        yield f"event: subagent_thinking\ndata: {json.dumps({'id': stream_parent, 'text': text})}\n\n"
+                                    else:
+                                        seg_thinking_buf.append(text)
+                                        yield f"event: thinking\ndata: {json.dumps({'text': text})}\n\n"
                             elif delta_type == "text_delta":
                                 text = delta.get("text", "")
                                 if text:
@@ -504,11 +511,19 @@ async def stream_chat(
                         # that the Task tool_result metadata lacks.
                         if parent_tool_use_id and parent_tool_use_id in tool_names:
                             text_parts = []
+                            thinking_parts = []
                             for block in message_obj.get("content", []):
                                 if block.get("type") == "text" and block.get("text"):
                                     text_parts.append(block["text"])
+                                elif block.get("type") == "thinking" and block.get("thinking"):
+                                    thinking_parts.append(block["thinking"])
                             if text_parts:
                                 subagent_texts[parent_tool_use_id] = "\n".join(text_parts)
+                            # SDK strips thinking from subagent messages, but keep
+                            # accumulator as fallback in case behavior changes.
+                            if thinking_parts:
+                                new_thinking = "\n".join(thinking_parts)
+                                subagent_thinking[parent_tool_use_id] = subagent_thinking.get(parent_tool_use_id, "") + new_thinking + "\n"
 
                         is_subagent_msg = bool(parent_tool_use_id and parent_tool_use_id in tool_names)
                         for block in message_obj.get("content", []):
@@ -533,6 +548,7 @@ async def stream_chat(
                                             subagent_sql_data.setdefault(parent_tool_use_id, []).append(
                                                 {"tool_id": tool_id, "sql": sql}
                                             )
+                                            yield f"event: subagent_sql_query\ndata: {json.dumps({'id': parent_tool_use_id, 'sql': sql})}\n\n"
                                     continue
 
                                 has_tool_calls = True
@@ -561,7 +577,7 @@ async def stream_chat(
                                 if not sql and tool_input:
                                     tool_seg["toolInput"] = tool_input
                                 persisted_segments.append(tool_seg)
-                                if tool_name == "Task":
+                                if tool_name in ("Task", "Agent"):
                                     subagent_name = tool_input.get("subagent_type", "unknown")
                                     subagent_prompt = tool_input.get("prompt", "")
                                     tool_names[tool_id] = subagent_name
@@ -615,14 +631,19 @@ async def stream_chat(
                         # Extract it so we can use it for chart_spec extraction.
                         tool_use_result = msg.get("tool_use_result")
                         tool_use_result_text = ""
+                        tool_use_result_thinking = ""
                         if isinstance(tool_use_result, dict):
                             tur_content = tool_use_result.get("content")
                             if isinstance(tur_content, list):
                                 parts = []
+                                thinking_parts = []
                                 for item in tur_content:
                                     if isinstance(item, dict) and item.get("type") == "text":
                                         parts.append(item.get("text", ""))
+                                    elif isinstance(item, dict) and item.get("type") == "thinking":
+                                        thinking_parts.append(item.get("thinking", ""))
                                 tool_use_result_text = "\n".join(parts)
+                                tool_use_result_thinking = "\n".join(thinking_parts)
                         for block in message_obj.get("content", []):
                             if block.get("type") != "tool_result":
                                 continue
@@ -646,12 +667,21 @@ async def stream_chat(
                                         sa_parsed = json.loads(sa_text)
                                         for entry in subagent_sql_data.get(parent_subagent_id, []):
                                             if entry.get("tool_id") == tool_id:
+                                                sql_result_event: dict = {
+                                                    "id": parent_subagent_id,
+                                                    "sql": entry.get("sql", ""),
+                                                }
                                                 if sa_parsed.get("status") == "success":
                                                     entry["columns"] = sa_parsed.get("columns", [])
                                                     entry["rows"] = sa_parsed.get("rows", [])[:100]
                                                     entry["rowCount"] = sa_parsed.get("rowCount", 0)
+                                                    sql_result_event["columns"] = entry["columns"]
+                                                    sql_result_event["rows"] = entry["rows"]
+                                                    sql_result_event["rowCount"] = entry["rowCount"]
                                                 elif sa_parsed.get("status") == "error":
                                                     entry["error"] = sa_parsed.get("error", "")
+                                                    sql_result_event["error"] = entry["error"]
+                                                yield f"event: subagent_sql_result\ndata: {json.dumps(sql_result_event, default=str)}\n\n"
                                                 break
                                     except (json.JSONDecodeError, AttributeError):
                                         pass
@@ -735,7 +765,7 @@ async def stream_chat(
                             # analysis in thinking instead of text output.
                             if tool_id in tool_chart_specs and "chart_spec" not in result_data and "error" not in result_data:
                                 result_data["chart_spec"] = tool_chart_specs[tool_id]
-                            # Detect subagent result (Task tool)
+                            # Detect subagent result (Task/Agent tool)
                             if name == "sql-analyst":
                                 end_data: dict = {"id": tool_id, "name": name}
                                 sql_data = subagent_sql_data.get(tool_id, [])
@@ -747,12 +777,18 @@ async def stream_chat(
                                 narrative = subagent_texts.get(tool_id, "") or tool_use_result_text
                                 if narrative:
                                     end_data["result"] = narrative
+                                # Include subagent thinking if captured (stream events
+                                # or fallback to tool_use_result thinking blocks)
+                                sa_thinking = subagent_thinking.get(tool_id, "") or tool_use_result_thinking
+                                if sa_thinking:
+                                    end_data["thinking"] = sa_thinking
                                 # Track subagent_end segment for persistence
                                 persisted_segments.append({
                                     "type": "subagent_end",
                                     "subagentId": tool_id,
                                     "subagentName": name,
                                     "text": narrative or None,
+                                    "thinking": sa_thinking or None,
                                     "sqlResults": end_data.get("sql_results"),
                                 })
                                 yield f"event: subagent_end\ndata: {json.dumps(end_data, default=str)}\n\n"
