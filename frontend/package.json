@@ -18,7 +18,8 @@
     "remark-gfm": "^4.0.1",
     "vega": "^6.2.0",
     "vega-embed": "^7.1.0",
-    "vega-lite": "^6.4.2"
+    "vega-lite": "^6.4.2",
+    "vega-themes": "^3.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

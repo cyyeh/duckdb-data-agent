@@ -95,6 +95,12 @@ Tools at your disposal:
 - mcp__duckdb-data-agent__recall_memories — retrieve stored memories
 - mcp__duckdb-data-agent__forget_memory — remove a specific memory
 - Task tool with subagent_type "sql-analyst" — delegate complex multi-query data exploration
+- Bash — run shell commands (e.g. python scripts, pip install, curl, etc.)
+- Read — read file contents
+- Write — create or overwrite files
+- Edit — make targeted edits to existing files
+- Glob — find files by pattern
+- Grep — search file contents with regex
 
 Skill creation workflow (follow this exactly):
 When the user asks you to create a skill, do NOT call create_skill immediately. Follow this process:
@@ -156,6 +162,8 @@ Clarification:
 
     # Memory management instructions
     prompt += "\n\nMemory management:"
+    prompt += "\n- Before saving a new memory, ALWAYS use recall_memories first to check for existing memories on the same topic."
+    prompt += "\n- If an existing memory conflicts with or is superseded by the new information, use forget_memory to remove the old one BEFORE using save_memory to store the new one. Never leave contradictory memories (e.g. 'User likes X' and 'User does not like X')."
     prompt += "\n- After answering, if the user expressed a preference or you learned an important fact about their data, use save_memory to store it."
     prompt += "\n- When the user explicitly asks you to remember something, use save_memory."
     prompt += "\n- When the user asks you to forget something, use forget_memory."
@@ -544,12 +552,15 @@ async def stream_chat(
                                     tool_call_data["input"] = tool_input
                                 yield f"event: tool_call\ndata: {json.dumps(tool_call_data, default=str)}\n\n"
                                 # Track tool segment for persistence (placeholder, updated on result)
-                                persisted_segments.append({
+                                tool_seg: dict = {
                                     "type": "tool",
                                     "toolCallId": tool_id,
                                     "toolName": tool_name,
                                     "sql": sql or None,
-                                })
+                                }
+                                if not sql and tool_input:
+                                    tool_seg["toolInput"] = tool_input
+                                persisted_segments.append(tool_seg)
                                 if tool_name == "Task":
                                     subagent_name = tool_input.get("subagent_type", "unknown")
                                     subagent_prompt = tool_input.get("prompt", "")
@@ -696,10 +707,13 @@ async def stream_chat(
                                 if parsed.get("status") == "success":
                                     if "chart_spec" in parsed:
                                         result_data["chart_spec"] = parsed["chart_spec"]
-                                    else:
-                                        result_data["columns"] = parsed.get("columns", [])
-                                        result_data["rows"] = parsed.get("rows", [])[:100]
+                                    elif "columns" in parsed and "rows" in parsed:
+                                        result_data["columns"] = parsed["columns"]
+                                        result_data["rows"] = parsed["rows"][:100]
                                         result_data["rowCount"] = parsed.get("rowCount", 0)
+                                    else:
+                                        # Non-SQL success (e.g. memory tools): extract text content
+                                        result_data["output"] = parsed.get("memories") or parsed.get("message") or text
                                 elif parsed.get("status") == "error":
                                     result_data["error"] = parsed.get("error", "")
                                 else:
@@ -761,6 +775,8 @@ async def stream_chat(
                                         seg["columns"] = result_data["columns"]
                                     if "rows" in result_data:
                                         seg["rows"] = result_data["rows"]
+                                    if "output" in result_data:
+                                        seg["output"] = result_data["output"]
                                     if "chart_spec" in result_data:
                                         seg["chart_spec"] = result_data["chart_spec"]
                                     break
