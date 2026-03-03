@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8ccc2ac47eeb",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 5,
+  "files_touched": [
+    ".gitignore",
+    "Makefile",
+    "README.md",
+    "backend/app/mcp_sse.py",
+    "bifrost/config.example.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8c/cc2ac47eeb/0/metadata.json",
+      "transcript": "/8c/cc2ac47eeb/0/full.jsonl",
+      "context": "/8c/cc2ac47eeb/0/context.md",
+      "content_hash": "/8c/cc2ac47eeb/0/content_hash.txt",
+      "prompt": "/8c/cc2ac47eeb/0/prompt.txt"
+    },
+    {
+      "metadata": "/8c/cc2ac47eeb/1/metadata.json",
+      "transcript": "/8c/cc2ac47eeb/1/full.jsonl",
+      "context": "/8c/cc2ac47eeb/1/context.md",
+      "content_hash": "/8c/cc2ac47eeb/1/content_hash.txt",
+      "prompt": "/8c/cc2ac47eeb/1/prompt.txt"
+    },
+    {
+      "metadata": "/8c/cc2ac47eeb/2/metadata.json",
+      "transcript": "/8c/cc2ac47eeb/2/full.jsonl",
+      "context": "/8c/cc2ac47eeb/2/context.md",
+      "content_hash": "/8c/cc2ac47eeb/2/content_hash.txt",
+      "prompt": "/8c/cc2ac47eeb/2/prompt.txt"
+    },
+    {
+      "metadata": "/8c/cc2ac47eeb/3/metadata.json",
+      "transcript": "/8c/cc2ac47eeb/3/full.jsonl",
+      "context": "/8c/cc2ac47eeb/3/context.md",
+      "content_hash": "/8c/cc2ac47eeb/3/content_hash.txt",
+      "prompt": "/8c/cc2ac47eeb/3/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 582,
+    "cache_creation_tokens": 540871,
+    "cache_read_tokens": 24750678,
+    "output_tokens": 57823,
+    "api_call_count": 267
+  }
+}

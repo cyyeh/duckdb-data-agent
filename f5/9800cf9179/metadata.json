@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f59800cf9179",
+  "strategy": "manual-commit",
+  "branch": "feat/sidecar-skill",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/mcp_sse.py",
+    "backend/tests/test_mcp_sse.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f5/9800cf9179/0/metadata.json",
+      "transcript": "/f5/9800cf9179/0/full.jsonl",
+      "context": "/f5/9800cf9179/0/context.md",
+      "content_hash": "/f5/9800cf9179/0/content_hash.txt",
+      "prompt": "/f5/9800cf9179/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 78,
+    "cache_creation_tokens": 131959,
+    "cache_read_tokens": 5594986,
+    "output_tokens": 42585,
+    "api_call_count": 69
+  }
+}

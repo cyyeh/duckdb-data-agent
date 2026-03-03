@@ -1,0 +1,112 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "5a2676123c2c",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/src/components/AgentPanel.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/5a/2676123c2c/0/metadata.json",
+      "transcript": "/5a/2676123c2c/0/full.jsonl",
+      "context": "/5a/2676123c2c/0/context.md",
+      "content_hash": "/5a/2676123c2c/0/content_hash.txt",
+      "prompt": "/5a/2676123c2c/0/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/1/metadata.json",
+      "transcript": "/5a/2676123c2c/1/full.jsonl",
+      "context": "/5a/2676123c2c/1/context.md",
+      "content_hash": "/5a/2676123c2c/1/content_hash.txt",
+      "prompt": "/5a/2676123c2c/1/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/2/metadata.json",
+      "transcript": "/5a/2676123c2c/2/full.jsonl",
+      "context": "/5a/2676123c2c/2/context.md",
+      "content_hash": "/5a/2676123c2c/2/content_hash.txt",
+      "prompt": "/5a/2676123c2c/2/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/3/metadata.json",
+      "transcript": "/5a/2676123c2c/3/full.jsonl",
+      "context": "/5a/2676123c2c/3/context.md",
+      "content_hash": "/5a/2676123c2c/3/content_hash.txt",
+      "prompt": "/5a/2676123c2c/3/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/4/metadata.json",
+      "transcript": "/5a/2676123c2c/4/full.jsonl",
+      "context": "/5a/2676123c2c/4/context.md",
+      "content_hash": "/5a/2676123c2c/4/content_hash.txt",
+      "prompt": "/5a/2676123c2c/4/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/5/metadata.json",
+      "transcript": "/5a/2676123c2c/5/full.jsonl",
+      "context": "/5a/2676123c2c/5/context.md",
+      "content_hash": "/5a/2676123c2c/5/content_hash.txt",
+      "prompt": "/5a/2676123c2c/5/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/6/metadata.json",
+      "transcript": "/5a/2676123c2c/6/full.jsonl",
+      "context": "/5a/2676123c2c/6/context.md",
+      "content_hash": "/5a/2676123c2c/6/content_hash.txt",
+      "prompt": "/5a/2676123c2c/6/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/7/metadata.json",
+      "transcript": "/5a/2676123c2c/7/full.jsonl",
+      "context": "/5a/2676123c2c/7/context.md",
+      "content_hash": "/5a/2676123c2c/7/content_hash.txt",
+      "prompt": "/5a/2676123c2c/7/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/8/metadata.json",
+      "transcript": "/5a/2676123c2c/8/full.jsonl",
+      "context": "/5a/2676123c2c/8/context.md",
+      "content_hash": "/5a/2676123c2c/8/content_hash.txt",
+      "prompt": "/5a/2676123c2c/8/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/9/metadata.json",
+      "transcript": "/5a/2676123c2c/9/full.jsonl",
+      "context": "/5a/2676123c2c/9/context.md",
+      "content_hash": "/5a/2676123c2c/9/content_hash.txt",
+      "prompt": "/5a/2676123c2c/9/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/10/metadata.json",
+      "transcript": "/5a/2676123c2c/10/full.jsonl",
+      "context": "/5a/2676123c2c/10/context.md",
+      "content_hash": "/5a/2676123c2c/10/content_hash.txt",
+      "prompt": "/5a/2676123c2c/10/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/11/metadata.json",
+      "transcript": "/5a/2676123c2c/11/full.jsonl",
+      "context": "/5a/2676123c2c/11/context.md",
+      "content_hash": "/5a/2676123c2c/11/content_hash.txt",
+      "prompt": "/5a/2676123c2c/11/prompt.txt"
+    },
+    {
+      "metadata": "/5a/2676123c2c/12/metadata.json",
+      "transcript": "/5a/2676123c2c/12/full.jsonl",
+      "context": "/5a/2676123c2c/12/context.md",
+      "content_hash": "/5a/2676123c2c/12/content_hash.txt",
+      "prompt": "/5a/2676123c2c/12/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1777,
+    "cache_creation_tokens": 1147914,
+    "cache_read_tokens": 61108204,
+    "output_tokens": 79346,
+    "api_call_count": 842
+  }
+}

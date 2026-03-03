@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "53d58add2f51",
+  "session_id": "56969570-4f20-4ab8-8d65-d4f9b3267980",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T18:17:21.2259Z",
+  "branch": "feat/e2e-playwright-tests",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/2026-02-26-e2e-playwright-tests.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "3bd88503e70f",
+  "transcript_identifier_at_start": "01fdd639-294a-4c0a-94f8-61a31b4f72ea",
+  "token_usage": {
+    "input_tokens": 380,
+    "cache_creation_tokens": 266451,
+    "cache_read_tokens": 6673199,
+    "output_tokens": 9591,
+    "api_call_count": 90
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T18:17:18.8076Z",
+    "agent_lines": 0,
+    "human_added": 808,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 808,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/56969570-4f20-4ab8-8d65-d4f9b3267980.jsonl"
+}

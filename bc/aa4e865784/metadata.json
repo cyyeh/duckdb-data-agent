@@ -1,0 +1,46 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "bcaa4e865784",
+  "strategy": "manual-commit",
+  "branch": "fix/incomplete-chunked-read-and-multi-chart",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/components/MessageBubble.css",
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/contexts/AgentContext.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json",
+    "frontend/src/types.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/bc/aa4e865784/0/metadata.json",
+      "transcript": "/bc/aa4e865784/0/full.jsonl",
+      "context": "/bc/aa4e865784/0/context.md",
+      "content_hash": "/bc/aa4e865784/0/content_hash.txt",
+      "prompt": "/bc/aa4e865784/0/prompt.txt"
+    },
+    {
+      "metadata": "/bc/aa4e865784/1/metadata.json",
+      "transcript": "/bc/aa4e865784/1/full.jsonl",
+      "context": "/bc/aa4e865784/1/context.md",
+      "content_hash": "/bc/aa4e865784/1/content_hash.txt",
+      "prompt": "/bc/aa4e865784/1/prompt.txt"
+    },
+    {
+      "metadata": "/bc/aa4e865784/2/metadata.json",
+      "transcript": "/bc/aa4e865784/2/full.jsonl",
+      "context": "/bc/aa4e865784/2/context.md",
+      "content_hash": "/bc/aa4e865784/2/content_hash.txt",
+      "prompt": "/bc/aa4e865784/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 85,
+    "cache_creation_tokens": 77119,
+    "cache_read_tokens": 3310950,
+    "output_tokens": 11297,
+    "api_call_count": 69
+  }
+}

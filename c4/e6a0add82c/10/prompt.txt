@@ -1,0 +1,9 @@
+is it possible I could freely scroll the page while streaming from agent response is going?
+
+---
+
+yes, implement it
+
+---
+
+commit this and push

@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "583cabef02ac",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/contexts/AgentContext.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/58/3cabef02ac/0/metadata.json",
+      "transcript": "/58/3cabef02ac/0/full.jsonl",
+      "context": "/58/3cabef02ac/0/context.md",
+      "content_hash": "/58/3cabef02ac/0/content_hash.txt",
+      "prompt": "/58/3cabef02ac/0/prompt.txt"
+    },
+    {
+      "metadata": "/58/3cabef02ac/1/metadata.json",
+      "transcript": "/58/3cabef02ac/1/full.jsonl",
+      "context": "/58/3cabef02ac/1/context.md",
+      "content_hash": "/58/3cabef02ac/1/content_hash.txt",
+      "prompt": "/58/3cabef02ac/1/prompt.txt"
+    },
+    {
+      "metadata": "/58/3cabef02ac/2/metadata.json",
+      "transcript": "/58/3cabef02ac/2/full.jsonl",
+      "context": "/58/3cabef02ac/2/context.md",
+      "content_hash": "/58/3cabef02ac/2/content_hash.txt",
+      "prompt": "/58/3cabef02ac/2/prompt.txt"
+    },
+    {
+      "metadata": "/58/3cabef02ac/3/metadata.json",
+      "transcript": "/58/3cabef02ac/3/full.jsonl",
+      "context": "/58/3cabef02ac/3/context.md",
+      "content_hash": "/58/3cabef02ac/3/content_hash.txt",
+      "prompt": "/58/3cabef02ac/3/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 349,
+    "cache_creation_tokens": 742991,
+    "cache_read_tokens": 29504548,
+    "output_tokens": 301660,
+    "api_call_count": 291
+  }
+}

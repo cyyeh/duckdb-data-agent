@@ -1,0 +1,82 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "52c2828dfcfe",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/index.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/52/c2828dfcfe/0/metadata.json",
+      "transcript": "/52/c2828dfcfe/0/full.jsonl",
+      "context": "/52/c2828dfcfe/0/context.md",
+      "content_hash": "/52/c2828dfcfe/0/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/0/prompt.txt"
+    },
+    {
+      "metadata": "/52/c2828dfcfe/1/metadata.json",
+      "transcript": "/52/c2828dfcfe/1/full.jsonl",
+      "context": "/52/c2828dfcfe/1/context.md",
+      "content_hash": "/52/c2828dfcfe/1/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/1/prompt.txt"
+    },
+    {
+      "metadata": "/52/c2828dfcfe/2/metadata.json",
+      "transcript": "/52/c2828dfcfe/2/full.jsonl",
+      "context": "/52/c2828dfcfe/2/context.md",
+      "content_hash": "/52/c2828dfcfe/2/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/2/prompt.txt"
+    },
+    {
+      "metadata": "/52/c2828dfcfe/3/metadata.json",
+      "transcript": "/52/c2828dfcfe/3/full.jsonl",
+      "context": "/52/c2828dfcfe/3/context.md",
+      "content_hash": "/52/c2828dfcfe/3/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/3/prompt.txt"
+    },
+    {
+      "metadata": "/52/c2828dfcfe/4/metadata.json",
+      "transcript": "/52/c2828dfcfe/4/full.jsonl",
+      "context": "/52/c2828dfcfe/4/context.md",
+      "content_hash": "/52/c2828dfcfe/4/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/4/prompt.txt"
+    },
+    {
+      "metadata": "/52/c2828dfcfe/5/metadata.json",
+      "transcript": "/52/c2828dfcfe/5/full.jsonl",
+      "context": "/52/c2828dfcfe/5/context.md",
+      "content_hash": "/52/c2828dfcfe/5/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/5/prompt.txt"
+    },
+    {
+      "metadata": "/52/c2828dfcfe/6/metadata.json",
+      "transcript": "/52/c2828dfcfe/6/full.jsonl",
+      "context": "/52/c2828dfcfe/6/context.md",
+      "content_hash": "/52/c2828dfcfe/6/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/6/prompt.txt"
+    },
+    {
+      "metadata": "/52/c2828dfcfe/7/metadata.json",
+      "transcript": "/52/c2828dfcfe/7/full.jsonl",
+      "context": "/52/c2828dfcfe/7/context.md",
+      "content_hash": "/52/c2828dfcfe/7/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/7/prompt.txt"
+    },
+    {
+      "metadata": "/52/c2828dfcfe/8/metadata.json",
+      "transcript": "/52/c2828dfcfe/8/full.jsonl",
+      "context": "/52/c2828dfcfe/8/context.md",
+      "content_hash": "/52/c2828dfcfe/8/content_hash.txt",
+      "prompt": "/52/c2828dfcfe/8/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 524,
+    "cache_creation_tokens": 582339,
+    "cache_read_tokens": 35819026,
+    "output_tokens": 58559,
+    "api_call_count": 446
+  }
+}

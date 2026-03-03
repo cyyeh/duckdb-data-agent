@@ -1,0 +1,1 @@
+how to prevent generating chart with empty data values like this?

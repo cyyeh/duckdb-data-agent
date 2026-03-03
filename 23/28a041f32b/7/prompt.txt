@@ -1,0 +1,5 @@
+make compose-build doesn't build sidecar image
+
+---
+
+commit this and push and create new branch and pr

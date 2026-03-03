@@ -1,0 +1,11 @@
+checkout out to new branch chore/minor-updates
+
+---
+
+it looks edit icon is smaller than delete icon? could you change edit icon and make it the same size as delete icon?
+
+also I found as they show in ui, it slightly changes the height of the user message block
+
+---
+
+commit and push

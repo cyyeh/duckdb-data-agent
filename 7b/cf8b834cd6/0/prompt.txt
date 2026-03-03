@@ -1,0 +1,102 @@
+push to remote branch
+
+---
+
+is it possible automatically open browser open while running e2e-test
+
+---
+
+yes, add it to the Makefile
+
+---
+
+so is it possible test --headed and --ui at the same time?
+
+---
+
+fix the issues
+
+  1) tests/scenario-runner.spec.ts:22:11 › data-queries.yaml › Upload CSV and query total sales by region › Step 4 [verify] 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "north"
+    Received string:    "assistant·
+    the user is asking for the total sales amount for each region. this is a straightforward sql query task that requires:·
+    grouping the sales"
+
+       at lib/verifiers.ts:12
+
+      10 |     const text = await lastAssistant.innerText();
+      11 |     for (const keyword of expected.contains) {
+    > 12 |       expect(text.toLowerCase()).toContain(keyword.toLowerCase());
+         |                                  ^
+      13 |     }
+      14 |   }
+      15 |
+        at runStructuralVerify (/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/e2e-playwright/e2e/lib/verifiers.ts:12:34)
+        at /Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/e2e-playwright/e2e/tests/scenario-runner.spec.ts:33:15
+        at /Users/cyyeh/Desktop/dta-agent/.claude/worktrees/e2e-playwright/e2e/tests/scenario-runner.spec.ts:31:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/tests-scenario-runner-data-e955d-query-total-sales-by-region/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/tests-scenario-runner-data-e955d-query-total-sales-by-region/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    terror: expect(locator).toBeVisible() failed
+
+    Locator: locator('.message-bubble--assistant').last().locator('.plotly-graph-div')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for locator('.message-bubble--assistant').last().locator('.plotly-graph-div')
+
+
+       at lib/verifiers.ts:24
+
+      22 |
+      23 |   if (expected.has_chart === true) {
+    > 24 |     await expect(lastAssistant.locator('.plotly-graph-div')).toBeVisible();
+         |                                                              ^
+      25 |   }
+      26 |   if (expected.has_chart === false) {
+      27 |     await expect(lastAssistant.locator('.plotly-graph-div')).not.toBeVisible();
+        at runStructuralVerify (/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/e2e-playwright/e2e/lib/verifiers.ts:24:62)
+        at /Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/e2e-playwright/e2e/tests/scenario-runner.spec.ts:33:15
+        at /Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/e2e-playwright/e2e/tests/scenario-runner.spec.ts:31:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/tests-scenario-runner-data-queries-yaml-Ask-for-a-chart/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/tests-scenario-runner-data-queries-yaml-Ask-for-a-chart/error-context.md
+
+    attachment #3: trace (application/zip) ───────────────────────────────────────────────CSV and query total sales by region 
+    tests/scenario-runner.spec.ts:22:11 › data-queries.yaml › Ask for a chart
+
+---
+
+in upload csv, verify_llm part this error shows
+
+Error: Could not resolve authentication method. Expected either apiKey or authToken to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted
+
+---
+
+update README to state that ANTHROPIC_API_KEY is needed in e2e/.env in order to make verify_llm works
+
+---
+
+I don't see readme updated
+
+---
+
+also update readme about these commands: e2e-test-headed, e2e-test-ui
+
+---
+
+commit this

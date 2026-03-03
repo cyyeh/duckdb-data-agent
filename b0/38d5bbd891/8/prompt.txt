@@ -1,0 +1,9 @@
+could you help answer why answer text of chart generation and sql query on main branch could stream back in ui, but current branch could not?
+
+---
+
+yes, apply the fix
+
+---
+
+commit this and push

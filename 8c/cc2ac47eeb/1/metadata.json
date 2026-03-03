@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8ccc2ac47eeb",
+  "session_id": "3296edb8-4b24-4ae4-af95-a4e72627621e",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T14:52:52.317584Z",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/mcp_sse.py",
+    "bifrost/config.example.json",
+    ".gitignore",
+    "Makefile",
+    "README.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "b233276bf687",
+  "token_usage": {
+    "input_tokens": 469,
+    "cache_creation_tokens": 186604,
+    "cache_read_tokens": 19306059,
+    "output_tokens": 48313,
+    "api_call_count": 181
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T14:52:50.992597Z",
+    "agent_lines": 12,
+    "human_added": 15,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 27,
+    "agent_percentage": 44.44444444444444
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-litellm-proxy/3296edb8-4b24-4ae4-af95-a4e72627621e.jsonl"
+}

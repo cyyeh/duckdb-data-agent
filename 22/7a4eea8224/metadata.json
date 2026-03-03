@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "227a4eea8224",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "backend/app/main.py",
+    "backend/app/session_manager.py",
+    "backend/tests/test_session_manager.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/22/7a4eea8224/0/metadata.json",
+      "transcript": "/22/7a4eea8224/0/full.jsonl",
+      "context": "/22/7a4eea8224/0/context.md",
+      "content_hash": "/22/7a4eea8224/0/content_hash.txt",
+      "prompt": "/22/7a4eea8224/0/prompt.txt"
+    },
+    {
+      "metadata": "/22/7a4eea8224/1/metadata.json",
+      "transcript": "/22/7a4eea8224/1/full.jsonl",
+      "context": "/22/7a4eea8224/1/context.md",
+      "content_hash": "/22/7a4eea8224/1/content_hash.txt",
+      "prompt": "/22/7a4eea8224/1/prompt.txt"
+    },
+    {
+      "metadata": "/22/7a4eea8224/2/metadata.json",
+      "transcript": "/22/7a4eea8224/2/full.jsonl",
+      "context": "/22/7a4eea8224/2/context.md",
+      "content_hash": "/22/7a4eea8224/2/content_hash.txt",
+      "prompt": "/22/7a4eea8224/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 314,
+    "cache_creation_tokens": 470031,
+    "cache_read_tokens": 25136796,
+    "output_tokens": 134705,
+    "api_call_count": 270
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "50de6c09c672",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "Makefile"
+  ],
+  "sessions": [
+    {
+      "metadata": "/50/de6c09c672/0/metadata.json",
+      "transcript": "/50/de6c09c672/0/full.jsonl",
+      "context": "/50/de6c09c672/0/context.md",
+      "content_hash": "/50/de6c09c672/0/content_hash.txt",
+      "prompt": "/50/de6c09c672/0/prompt.txt"
+    },
+    {
+      "metadata": "/50/de6c09c672/1/metadata.json",
+      "transcript": "/50/de6c09c672/1/full.jsonl",
+      "context": "/50/de6c09c672/1/context.md",
+      "content_hash": "/50/de6c09c672/1/content_hash.txt",
+      "prompt": "/50/de6c09c672/1/prompt.txt"
+    },
+    {
+      "metadata": "/50/de6c09c672/2/metadata.json",
+      "transcript": "/50/de6c09c672/2/full.jsonl",
+      "context": "/50/de6c09c672/2/context.md",
+      "content_hash": "/50/de6c09c672/2/content_hash.txt",
+      "prompt": "/50/de6c09c672/2/prompt.txt"
+    },
+    {
+      "metadata": "/50/de6c09c672/3/metadata.json",
+      "transcript": "/50/de6c09c672/3/full.jsonl",
+      "context": "/50/de6c09c672/3/context.md",
+      "content_hash": "/50/de6c09c672/3/content_hash.txt",
+      "prompt": "/50/de6c09c672/3/prompt.txt"
+    },
+    {
+      "metadata": "/50/de6c09c672/4/metadata.json",
+      "transcript": "/50/de6c09c672/4/full.jsonl",
+      "context": "/50/de6c09c672/4/context.md",
+      "content_hash": "/50/de6c09c672/4/content_hash.txt",
+      "prompt": "/50/de6c09c672/4/prompt.txt"
+    },
+    {
+      "metadata": "/50/de6c09c672/5/metadata.json",
+      "transcript": "/50/de6c09c672/5/full.jsonl",
+      "context": "/50/de6c09c672/5/context.md",
+      "content_hash": "/50/de6c09c672/5/content_hash.txt",
+      "prompt": "/50/de6c09c672/5/prompt.txt"
+    },
+    {
+      "metadata": "/50/de6c09c672/6/metadata.json",
+      "transcript": "/50/de6c09c672/6/full.jsonl",
+      "context": "/50/de6c09c672/6/context.md",
+      "content_hash": "/50/de6c09c672/6/content_hash.txt",
+      "prompt": "/50/de6c09c672/6/prompt.txt"
+    },
+    {
+      "metadata": "/50/de6c09c672/7/metadata.json",
+      "transcript": "/50/de6c09c672/7/full.jsonl",
+      "context": "/50/de6c09c672/7/context.md",
+      "content_hash": "/50/de6c09c672/7/content_hash.txt",
+      "prompt": "/50/de6c09c672/7/prompt.txt"
+    },
+    {
+      "metadata": "/50/de6c09c672/8/metadata.json",
+      "transcript": "/50/de6c09c672/8/full.jsonl",
+      "context": "/50/de6c09c672/8/context.md",
+      "content_hash": "/50/de6c09c672/8/content_hash.txt",
+      "prompt": "/50/de6c09c672/8/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 8722,
+    "cache_creation_tokens": 888129,
+    "cache_read_tokens": 44988233,
+    "output_tokens": 42078,
+    "api_call_count": 569
+  }
+}

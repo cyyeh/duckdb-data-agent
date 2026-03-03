@@ -1,0 +1,9 @@
+got this error
+
+---
+
+are you sure, but I put .claude/skills in sidecar folder before, and it works
+
+---
+
+[Request interrupted by user]

@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "83adc1a1c5c8",
+  "strategy": "manual-commit",
+  "branch": "chore/audit-readme-env-example",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md",
+    "backend/.env.example"
+  ],
+  "sessions": [
+    {
+      "metadata": "/83/adc1a1c5c8/0/metadata.json",
+      "transcript": "/83/adc1a1c5c8/0/full.jsonl",
+      "context": "/83/adc1a1c5c8/0/context.md",
+      "content_hash": "/83/adc1a1c5c8/0/content_hash.txt",
+      "prompt": "/83/adc1a1c5c8/0/prompt.txt"
+    },
+    {
+      "metadata": "/83/adc1a1c5c8/1/metadata.json",
+      "transcript": "/83/adc1a1c5c8/1/full.jsonl",
+      "context": "/83/adc1a1c5c8/1/context.md",
+      "content_hash": "/83/adc1a1c5c8/1/content_hash.txt",
+      "prompt": "/83/adc1a1c5c8/1/prompt.txt"
+    },
+    {
+      "metadata": "/83/adc1a1c5c8/2/metadata.json",
+      "transcript": "/83/adc1a1c5c8/2/full.jsonl",
+      "context": "/83/adc1a1c5c8/2/context.md",
+      "content_hash": "/83/adc1a1c5c8/2/content_hash.txt",
+      "prompt": "/83/adc1a1c5c8/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1102,
+    "cache_creation_tokens": 88568,
+    "cache_read_tokens": 2420274,
+    "output_tokens": 10061,
+    "api_call_count": 60
+  }
+}

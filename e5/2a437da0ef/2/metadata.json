@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e52a437da0ef",
+  "session_id": "4603cabf-d461-4c65-b369-940297745688",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T04:20:44.505525Z",
+  "branch": "fix/sidecar-orphan-cleanup",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "backend/app/container_manager.py",
+    "backend/app/main.py",
+    "backend/tests/test_container_manager.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "086207fab19f",
+  "token_usage": {
+    "input_tokens": 58,
+    "cache_creation_tokens": 64264,
+    "cache_read_tokens": 3077091,
+    "output_tokens": 4340,
+    "api_call_count": 46
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T04:20:44.27298Z",
+    "agent_lines": 0,
+    "human_added": 2246,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 2246,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/4603cabf-d461-4c65-b369-940297745688.jsonl"
+}

@@ -1,0 +1,116 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f970983bdd45",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 7,
+  "files_touched": [
+    "Makefile",
+    "README.md",
+    "backend/.env.example",
+    "backend/app/proxy.py",
+    "bifrost/README.md",
+    "bifrost/config.example.json",
+    "docker-compose.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f9/70983bdd45/0/metadata.json",
+      "transcript": "/f9/70983bdd45/0/full.jsonl",
+      "context": "/f9/70983bdd45/0/context.md",
+      "content_hash": "/f9/70983bdd45/0/content_hash.txt",
+      "prompt": "/f9/70983bdd45/0/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/1/metadata.json",
+      "transcript": "/f9/70983bdd45/1/full.jsonl",
+      "context": "/f9/70983bdd45/1/context.md",
+      "content_hash": "/f9/70983bdd45/1/content_hash.txt",
+      "prompt": "/f9/70983bdd45/1/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/2/metadata.json",
+      "transcript": "/f9/70983bdd45/2/full.jsonl",
+      "context": "/f9/70983bdd45/2/context.md",
+      "content_hash": "/f9/70983bdd45/2/content_hash.txt",
+      "prompt": "/f9/70983bdd45/2/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/3/metadata.json",
+      "transcript": "/f9/70983bdd45/3/full.jsonl",
+      "context": "/f9/70983bdd45/3/context.md",
+      "content_hash": "/f9/70983bdd45/3/content_hash.txt",
+      "prompt": "/f9/70983bdd45/3/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/4/metadata.json",
+      "transcript": "/f9/70983bdd45/4/full.jsonl",
+      "context": "/f9/70983bdd45/4/context.md",
+      "content_hash": "/f9/70983bdd45/4/content_hash.txt",
+      "prompt": "/f9/70983bdd45/4/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/5/metadata.json",
+      "transcript": "/f9/70983bdd45/5/full.jsonl",
+      "context": "/f9/70983bdd45/5/context.md",
+      "content_hash": "/f9/70983bdd45/5/content_hash.txt",
+      "prompt": "/f9/70983bdd45/5/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/6/metadata.json",
+      "transcript": "/f9/70983bdd45/6/full.jsonl",
+      "context": "/f9/70983bdd45/6/context.md",
+      "content_hash": "/f9/70983bdd45/6/content_hash.txt",
+      "prompt": "/f9/70983bdd45/6/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/7/metadata.json",
+      "transcript": "/f9/70983bdd45/7/full.jsonl",
+      "context": "/f9/70983bdd45/7/context.md",
+      "content_hash": "/f9/70983bdd45/7/content_hash.txt",
+      "prompt": "/f9/70983bdd45/7/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/8/metadata.json",
+      "transcript": "/f9/70983bdd45/8/full.jsonl",
+      "context": "/f9/70983bdd45/8/context.md",
+      "content_hash": "/f9/70983bdd45/8/content_hash.txt",
+      "prompt": "/f9/70983bdd45/8/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/9/metadata.json",
+      "transcript": "/f9/70983bdd45/9/full.jsonl",
+      "context": "/f9/70983bdd45/9/context.md",
+      "content_hash": "/f9/70983bdd45/9/content_hash.txt",
+      "prompt": "/f9/70983bdd45/9/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/10/metadata.json",
+      "transcript": "/f9/70983bdd45/10/full.jsonl",
+      "context": "/f9/70983bdd45/10/context.md",
+      "content_hash": "/f9/70983bdd45/10/content_hash.txt",
+      "prompt": "/f9/70983bdd45/10/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/11/metadata.json",
+      "transcript": "/f9/70983bdd45/11/full.jsonl",
+      "context": "/f9/70983bdd45/11/context.md",
+      "content_hash": "/f9/70983bdd45/11/content_hash.txt",
+      "prompt": "/f9/70983bdd45/11/prompt.txt"
+    },
+    {
+      "metadata": "/f9/70983bdd45/12/metadata.json",
+      "transcript": "/f9/70983bdd45/12/full.jsonl",
+      "context": "/f9/70983bdd45/12/context.md",
+      "content_hash": "/f9/70983bdd45/12/content_hash.txt",
+      "prompt": "/f9/70983bdd45/12/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2238,
+    "cache_creation_tokens": 1091203,
+    "cache_read_tokens": 52570646,
+    "output_tokens": 207104,
+    "api_call_count": 608
+  }
+}

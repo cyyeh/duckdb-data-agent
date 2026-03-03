@@ -1,0 +1,11 @@
+I double check the sidecar container, and I can could skill in /home/appuser/.claude/skills
+
+fix the issue
+
+---
+
+update readme if there is any relevant info needed to update
+
+---
+
+commit all and push

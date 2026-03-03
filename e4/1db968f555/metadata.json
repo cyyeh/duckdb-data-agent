@@ -1,0 +1,61 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e41db968f555",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/main.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e4/1db968f555/0/metadata.json",
+      "transcript": "/e4/1db968f555/0/full.jsonl",
+      "context": "/e4/1db968f555/0/context.md",
+      "content_hash": "/e4/1db968f555/0/content_hash.txt",
+      "prompt": "/e4/1db968f555/0/prompt.txt"
+    },
+    {
+      "metadata": "/e4/1db968f555/1/metadata.json",
+      "transcript": "/e4/1db968f555/1/full.jsonl",
+      "context": "/e4/1db968f555/1/context.md",
+      "content_hash": "/e4/1db968f555/1/content_hash.txt",
+      "prompt": "/e4/1db968f555/1/prompt.txt"
+    },
+    {
+      "metadata": "/e4/1db968f555/2/metadata.json",
+      "transcript": "/e4/1db968f555/2/full.jsonl",
+      "context": "/e4/1db968f555/2/context.md",
+      "content_hash": "/e4/1db968f555/2/content_hash.txt",
+      "prompt": "/e4/1db968f555/2/prompt.txt"
+    },
+    {
+      "metadata": "/e4/1db968f555/3/metadata.json",
+      "transcript": "/e4/1db968f555/3/full.jsonl",
+      "context": "/e4/1db968f555/3/context.md",
+      "content_hash": "/e4/1db968f555/3/content_hash.txt",
+      "prompt": "/e4/1db968f555/3/prompt.txt"
+    },
+    {
+      "metadata": "/e4/1db968f555/4/metadata.json",
+      "transcript": "/e4/1db968f555/4/full.jsonl",
+      "context": "/e4/1db968f555/4/context.md",
+      "content_hash": "/e4/1db968f555/4/content_hash.txt",
+      "prompt": "/e4/1db968f555/4/prompt.txt"
+    },
+    {
+      "metadata": "/e4/1db968f555/5/metadata.json",
+      "transcript": "/e4/1db968f555/5/full.jsonl",
+      "context": "/e4/1db968f555/5/context.md",
+      "content_hash": "/e4/1db968f555/5/content_hash.txt",
+      "prompt": "/e4/1db968f555/5/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 696,
+    "cache_creation_tokens": 727456,
+    "cache_read_tokens": 33506170,
+    "output_tokens": 89644,
+    "api_call_count": 365
+  }
+}

@@ -1,0 +1,5 @@
+update claude-agent-sdk to the latest version for both backend and sidecar
+
+---
+
+create new branch and commit and push

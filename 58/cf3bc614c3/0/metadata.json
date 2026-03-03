@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "58cf3bc614c3",
+  "session_id": "b8c6fe81-f73b-4aef-91a7-745a02861c31",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T04:23:29.256112Z",
+  "branch": "worktree-refine-answer-block",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/2026-02-26-interleaved-answer-block-design.md",
+    "docs/plans/2026-02-26-interleaved-answer-block.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "a43632165437",
+  "transcript_identifier_at_start": "7c759b8c-b0a0-4e8f-8910-13873e1de1c6",
+  "token_usage": {
+    "input_tokens": 64,
+    "cache_creation_tokens": 74482,
+    "cache_read_tokens": 2814760,
+    "output_tokens": 12969,
+    "api_call_count": 56
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T04:23:28.575227Z",
+    "agent_lines": 177,
+    "human_added": 41,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 218,
+    "agent_percentage": 81.19266055045871
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-refine-answer-block/b8c6fe81-f73b-4aef-91a7-745a02861c31.jsonl"
+}

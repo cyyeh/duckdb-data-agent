@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "9e2cf2d46523",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/routes/memories.py",
+    "data/memory.db",
+    "docs/plans/2026-03-01-memories-tab-design.md",
+    "docs/plans/2026-03-01-memories-tab.md",
+    "docs/plans/2026-03-01-session-scoped-conversations-design.md",
+    "docs/plans/2026-03-01-session-scoped-conversations.md",
+    "frontend/src/App.tsx",
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/components/Sidebar.tsx",
+    "frontend/src/contexts/ConversationContext.tsx",
+    "frontend/src/hooks/useAgent.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/9e/2cf2d46523/0/metadata.json",
+      "transcript": "/9e/2cf2d46523/0/full.jsonl",
+      "context": "/9e/2cf2d46523/0/context.md",
+      "content_hash": "/9e/2cf2d46523/0/content_hash.txt",
+      "prompt": "/9e/2cf2d46523/0/prompt.txt"
+    },
+    {
+      "metadata": "/9e/2cf2d46523/1/metadata.json",
+      "transcript": "/9e/2cf2d46523/1/full.jsonl",
+      "context": "/9e/2cf2d46523/1/context.md",
+      "content_hash": "/9e/2cf2d46523/1/content_hash.txt",
+      "prompt": "/9e/2cf2d46523/1/prompt.txt"
+    },
+    {
+      "metadata": "/9e/2cf2d46523/2/metadata.json",
+      "transcript": "/9e/2cf2d46523/2/full.jsonl",
+      "context": "/9e/2cf2d46523/2/context.md",
+      "content_hash": "/9e/2cf2d46523/2/content_hash.txt",
+      "prompt": "/9e/2cf2d46523/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 296,
+    "cache_creation_tokens": 451157,
+    "cache_read_tokens": 23040870,
+    "output_tokens": 129531,
+    "api_call_count": 252
+  }
+}

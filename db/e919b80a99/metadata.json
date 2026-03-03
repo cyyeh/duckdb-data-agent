@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "dbe919b80a99",
+  "strategy": "manual-commit",
+  "branch": "feat/sidecar-skill",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/container_manager.py",
+    "docker-compose.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/db/e919b80a99/0/metadata.json",
+      "transcript": "/db/e919b80a99/0/full.jsonl",
+      "context": "/db/e919b80a99/0/context.md",
+      "content_hash": "/db/e919b80a99/0/content_hash.txt",
+      "prompt": "/db/e919b80a99/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 821,
+    "cache_creation_tokens": 139827,
+    "cache_read_tokens": 6073646,
+    "output_tokens": 46882,
+    "api_call_count": 72
+  }
+}

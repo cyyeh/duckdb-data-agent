@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "70a3b71deb27",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docker-compose.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/70/a3b71deb27/0/metadata.json",
+      "transcript": "/70/a3b71deb27/0/full.jsonl",
+      "context": "/70/a3b71deb27/0/context.md",
+      "content_hash": "/70/a3b71deb27/0/content_hash.txt",
+      "prompt": "/70/a3b71deb27/0/prompt.txt"
+    },
+    {
+      "metadata": "/70/a3b71deb27/1/metadata.json",
+      "transcript": "/70/a3b71deb27/1/full.jsonl",
+      "context": "/70/a3b71deb27/1/context.md",
+      "content_hash": "/70/a3b71deb27/1/content_hash.txt",
+      "prompt": "/70/a3b71deb27/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 58,
+    "cache_creation_tokens": 317061,
+    "cache_read_tokens": 4470687,
+    "output_tokens": 4749,
+    "api_call_count": 55
+  }
+}

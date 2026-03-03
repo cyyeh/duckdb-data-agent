@@ -1,0 +1,17 @@
+how to add llm api url?
+
+---
+
+yes, update the config for me
+
+---
+
+don't need to update .env
+
+---
+
+only update bifrost/config.example.json, bifrost/README.md and backend/.env.example
+
+---
+
+commit this

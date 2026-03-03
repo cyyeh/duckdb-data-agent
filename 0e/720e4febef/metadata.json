@@ -1,0 +1,92 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0e720e4febef",
+  "strategy": "manual-commit",
+  "branch": "feat/animated-chart-support",
+  "checkpoints_count": 8,
+  "files_touched": [
+    "frontend/src/components/ChartWidget.tsx",
+    "frontend/src/components/InlineQueryResult.tsx",
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/types.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0e/720e4febef/0/metadata.json",
+      "transcript": "/0e/720e4febef/0/full.jsonl",
+      "context": "/0e/720e4febef/0/context.md",
+      "content_hash": "/0e/720e4febef/0/content_hash.txt",
+      "prompt": "/0e/720e4febef/0/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/1/metadata.json",
+      "transcript": "/0e/720e4febef/1/full.jsonl",
+      "context": "/0e/720e4febef/1/context.md",
+      "content_hash": "/0e/720e4febef/1/content_hash.txt",
+      "prompt": "/0e/720e4febef/1/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/2/metadata.json",
+      "transcript": "/0e/720e4febef/2/full.jsonl",
+      "context": "/0e/720e4febef/2/context.md",
+      "content_hash": "/0e/720e4febef/2/content_hash.txt",
+      "prompt": "/0e/720e4febef/2/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/3/metadata.json",
+      "transcript": "/0e/720e4febef/3/full.jsonl",
+      "context": "/0e/720e4febef/3/context.md",
+      "content_hash": "/0e/720e4febef/3/content_hash.txt",
+      "prompt": "/0e/720e4febef/3/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/4/metadata.json",
+      "transcript": "/0e/720e4febef/4/full.jsonl",
+      "context": "/0e/720e4febef/4/context.md",
+      "content_hash": "/0e/720e4febef/4/content_hash.txt",
+      "prompt": "/0e/720e4febef/4/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/5/metadata.json",
+      "transcript": "/0e/720e4febef/5/full.jsonl",
+      "context": "/0e/720e4febef/5/context.md",
+      "content_hash": "/0e/720e4febef/5/content_hash.txt",
+      "prompt": "/0e/720e4febef/5/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/6/metadata.json",
+      "transcript": "/0e/720e4febef/6/full.jsonl",
+      "context": "/0e/720e4febef/6/context.md",
+      "content_hash": "/0e/720e4febef/6/content_hash.txt",
+      "prompt": "/0e/720e4febef/6/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/7/metadata.json",
+      "transcript": "/0e/720e4febef/7/full.jsonl",
+      "context": "/0e/720e4febef/7/context.md",
+      "content_hash": "/0e/720e4febef/7/content_hash.txt",
+      "prompt": "/0e/720e4febef/7/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/8/metadata.json",
+      "transcript": "/0e/720e4febef/8/full.jsonl",
+      "context": "/0e/720e4febef/8/context.md",
+      "content_hash": "/0e/720e4febef/8/content_hash.txt",
+      "prompt": "/0e/720e4febef/8/prompt.txt"
+    },
+    {
+      "metadata": "/0e/720e4febef/9/metadata.json",
+      "transcript": "/0e/720e4febef/9/full.jsonl",
+      "context": "/0e/720e4febef/9/context.md",
+      "content_hash": "/0e/720e4febef/9/content_hash.txt",
+      "prompt": "/0e/720e4febef/9/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2407,
+    "cache_creation_tokens": 1096062,
+    "cache_read_tokens": 51008666,
+    "output_tokens": 48564,
+    "api_call_count": 655
+  }
+}

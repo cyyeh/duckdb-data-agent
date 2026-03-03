@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "45877bf0a18e",
+  "strategy": "manual-commit",
+  "branch": "chore/update-claude-agent-sdk",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/poetry.lock",
+    "backend/pyproject.toml",
+    "sidecar/package-lock.json",
+    "sidecar/package.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/45/877bf0a18e/0/metadata.json",
+      "transcript": "/45/877bf0a18e/0/full.jsonl",
+      "context": "/45/877bf0a18e/0/context.md",
+      "content_hash": "/45/877bf0a18e/0/content_hash.txt",
+      "prompt": "/45/877bf0a18e/0/prompt.txt"
+    },
+    {
+      "metadata": "/45/877bf0a18e/1/metadata.json",
+      "transcript": "/45/877bf0a18e/1/full.jsonl",
+      "context": "/45/877bf0a18e/1/context.md",
+      "content_hash": "/45/877bf0a18e/1/content_hash.txt",
+      "prompt": "/45/877bf0a18e/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1206,
+    "cache_creation_tokens": 46165,
+    "cache_read_tokens": 1767328,
+    "output_tokens": 4870,
+    "api_call_count": 47
+  }
+}

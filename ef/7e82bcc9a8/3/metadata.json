@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "ef7e82bcc9a8",
+  "session_id": "7473e6ef-c17b-4ac1-9048-dae947a361c1",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-28T01:12:59.010589Z",
+  "branch": "fix/thinking-block-bold-and-chart-prompt",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/tests/test_agent_chart.py",
+    "backend/tests/test_stream_chart_capture.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "49cf86b739b5",
+  "transcript_identifier_at_start": "bb8f3f2b-5c7b-4bc2-a825-3c695551d1f1",
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 13745,
+    "cache_read_tokens": 123425,
+    "output_tokens": 1736,
+    "api_call_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-28T01:12:58.787741Z",
+    "agent_lines": 0,
+    "human_added": 59,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 59,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/7473e6ef-c17b-4ac1-9048-dae947a361c1.jsonl"
+}

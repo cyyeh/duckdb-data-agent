@@ -1,0 +1,5 @@
+make sure these buttons are mobile friendly
+
+---
+
+commit all and push

@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "3cf154bb0851",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3c/f154bb0851/0/metadata.json",
+      "transcript": "/3c/f154bb0851/0/full.jsonl",
+      "context": "/3c/f154bb0851/0/context.md",
+      "content_hash": "/3c/f154bb0851/0/content_hash.txt",
+      "prompt": "/3c/f154bb0851/0/prompt.txt"
+    },
+    {
+      "metadata": "/3c/f154bb0851/1/metadata.json",
+      "transcript": "/3c/f154bb0851/1/full.jsonl",
+      "context": "/3c/f154bb0851/1/context.md",
+      "content_hash": "/3c/f154bb0851/1/content_hash.txt",
+      "prompt": "/3c/f154bb0851/1/prompt.txt"
+    },
+    {
+      "metadata": "/3c/f154bb0851/2/metadata.json",
+      "transcript": "/3c/f154bb0851/2/full.jsonl",
+      "context": "/3c/f154bb0851/2/context.md",
+      "content_hash": "/3c/f154bb0851/2/content_hash.txt",
+      "prompt": "/3c/f154bb0851/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 89,
+    "cache_creation_tokens": 152540,
+    "cache_read_tokens": 6628645,
+    "output_tokens": 57116,
+    "api_call_count": 71
+  }
+}

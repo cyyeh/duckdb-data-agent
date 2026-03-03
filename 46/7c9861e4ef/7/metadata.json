@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "467c9861e4ef",
+  "session_id": "f507e2f1-60b6-4deb-930d-1207c5ccdfab",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-20T04:13:06.753053Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-20-langfuse-integration-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "a92ff19668a5",
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 33799,
+    "cache_read_tokens": 896866,
+    "output_tokens": 5949,
+    "api_call_count": 25
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-20T04:13:06.558813Z",
+    "agent_lines": 0,
+    "human_added": 121,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 121,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/f507e2f1-60b6-4deb-930d-1207c5ccdfab.jsonl"
+}

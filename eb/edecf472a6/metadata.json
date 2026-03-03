@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "ebedecf472a6",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/utils/exportConversation.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/eb/edecf472a6/0/metadata.json",
+      "transcript": "/eb/edecf472a6/0/full.jsonl",
+      "context": "/eb/edecf472a6/0/context.md",
+      "content_hash": "/eb/edecf472a6/0/content_hash.txt",
+      "prompt": "/eb/edecf472a6/0/prompt.txt"
+    },
+    {
+      "metadata": "/eb/edecf472a6/1/metadata.json",
+      "transcript": "/eb/edecf472a6/1/full.jsonl",
+      "context": "/eb/edecf472a6/1/context.md",
+      "content_hash": "/eb/edecf472a6/1/content_hash.txt",
+      "prompt": "/eb/edecf472a6/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 111,
+    "cache_creation_tokens": 96724,
+    "cache_read_tokens": 4779909,
+    "output_tokens": 18567,
+    "api_call_count": 96
+  }
+}

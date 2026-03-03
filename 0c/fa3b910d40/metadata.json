@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0cfa3b910d40",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/src/components/ChartWidget.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0c/fa3b910d40/0/metadata.json",
+      "transcript": "/0c/fa3b910d40/0/full.jsonl",
+      "context": "/0c/fa3b910d40/0/context.md",
+      "content_hash": "/0c/fa3b910d40/0/content_hash.txt",
+      "prompt": "/0c/fa3b910d40/0/prompt.txt"
+    },
+    {
+      "metadata": "/0c/fa3b910d40/1/metadata.json",
+      "transcript": "/0c/fa3b910d40/1/full.jsonl",
+      "context": "/0c/fa3b910d40/1/context.md",
+      "content_hash": "/0c/fa3b910d40/1/content_hash.txt",
+      "prompt": "/0c/fa3b910d40/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 106,
+    "cache_creation_tokens": 108211,
+    "cache_read_tokens": 5105947,
+    "output_tokens": 13733,
+    "api_call_count": 83
+  }
+}

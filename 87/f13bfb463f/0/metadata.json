@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "87f13bfb463f",
+  "session_id": "31c2fff9-b463-457b-ba63-e974e1e80272",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-28T06:16:33.904981Z",
+  "branch": "chore/remove-claude-code-cli-from-dockerfiles",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "Makefile",
+    "README.md",
+    "docker-compose.yml",
+    "sidecar/Dockerfile"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "6995d2f1df0e",
+  "transcript_identifier_at_start": "6f68128b-a856-4f03-a1f1-90ece9236e03",
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 57182,
+    "cache_read_tokens": 896575,
+    "output_tokens": 4622,
+    "api_call_count": 22
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-28T06:16:33.320965Z",
+    "agent_lines": 6,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 6,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/31c2fff9-b463-457b-ba63-e974e1e80272.jsonl"
+}

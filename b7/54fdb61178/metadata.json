@@ -1,0 +1,69 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "b754fdb61178",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "frontend/src/App.css",
+    "frontend/src/contexts/AgentContext.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b7/54fdb61178/0/metadata.json",
+      "transcript": "/b7/54fdb61178/0/full.jsonl",
+      "context": "/b7/54fdb61178/0/context.md",
+      "content_hash": "/b7/54fdb61178/0/content_hash.txt",
+      "prompt": "/b7/54fdb61178/0/prompt.txt"
+    },
+    {
+      "metadata": "/b7/54fdb61178/1/metadata.json",
+      "transcript": "/b7/54fdb61178/1/full.jsonl",
+      "context": "/b7/54fdb61178/1/context.md",
+      "content_hash": "/b7/54fdb61178/1/content_hash.txt",
+      "prompt": "/b7/54fdb61178/1/prompt.txt"
+    },
+    {
+      "metadata": "/b7/54fdb61178/2/metadata.json",
+      "transcript": "/b7/54fdb61178/2/full.jsonl",
+      "context": "/b7/54fdb61178/2/context.md",
+      "content_hash": "/b7/54fdb61178/2/content_hash.txt",
+      "prompt": "/b7/54fdb61178/2/prompt.txt"
+    },
+    {
+      "metadata": "/b7/54fdb61178/3/metadata.json",
+      "transcript": "/b7/54fdb61178/3/full.jsonl",
+      "context": "/b7/54fdb61178/3/context.md",
+      "content_hash": "/b7/54fdb61178/3/content_hash.txt",
+      "prompt": "/b7/54fdb61178/3/prompt.txt"
+    },
+    {
+      "metadata": "/b7/54fdb61178/4/metadata.json",
+      "transcript": "/b7/54fdb61178/4/full.jsonl",
+      "context": "/b7/54fdb61178/4/context.md",
+      "content_hash": "/b7/54fdb61178/4/content_hash.txt",
+      "prompt": "/b7/54fdb61178/4/prompt.txt"
+    },
+    {
+      "metadata": "/b7/54fdb61178/5/metadata.json",
+      "transcript": "/b7/54fdb61178/5/full.jsonl",
+      "context": "/b7/54fdb61178/5/context.md",
+      "content_hash": "/b7/54fdb61178/5/content_hash.txt",
+      "prompt": "/b7/54fdb61178/5/prompt.txt"
+    },
+    {
+      "metadata": "/b7/54fdb61178/6/metadata.json",
+      "transcript": "/b7/54fdb61178/6/full.jsonl",
+      "context": "/b7/54fdb61178/6/context.md",
+      "content_hash": "/b7/54fdb61178/6/content_hash.txt",
+      "prompt": "/b7/54fdb61178/6/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 400,
+    "cache_creation_tokens": 637661,
+    "cache_read_tokens": 32643579,
+    "output_tokens": 208215,
+    "api_call_count": 341
+  }
+}

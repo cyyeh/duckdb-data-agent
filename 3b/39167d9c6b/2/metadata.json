@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "3b39167d9c6b",
+  "session_id": "72a7f9a7-deff-4d51-9d26-38d8fa3fe93c",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-19T23:34:11.902325Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/app/routes/tables.py",
+    "backend/app/data/titanic.csv"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "a7b439316124",
+  "transcript_identifier_at_start": "6366f6e5-3f6c-40e6-91ed-c3279a66a0a4",
+  "checkpoint_transcript_start": 277,
+  "transcript_lines_at_start": 277,
+  "token_usage": {
+    "input_tokens": 5,
+    "cache_creation_tokens": 1350,
+    "cache_read_tokens": 148702,
+    "output_tokens": 40,
+    "api_call_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-19T23:34:11.802832Z",
+    "agent_lines": 0,
+    "human_added": 887,
+    "human_modified": 12,
+    "human_removed": 0,
+    "total_committed": 887,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/72a7f9a7-deff-4d51-9d26-38d8fa3fe93c.jsonl"
+}

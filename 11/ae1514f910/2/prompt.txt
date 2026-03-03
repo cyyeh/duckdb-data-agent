@@ -1,0 +1,5 @@
+still chart title is not shown in ui
+
+---
+
+commit and push

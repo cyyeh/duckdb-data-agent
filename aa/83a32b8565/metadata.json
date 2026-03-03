@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "aa83a32b8565",
+  "strategy": "manual-commit",
+  "branch": "docs/add-online-examples-links",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/aa/83a32b8565/0/metadata.json",
+      "transcript": "/aa/83a32b8565/0/full.jsonl",
+      "context": "/aa/83a32b8565/0/context.md",
+      "content_hash": "/aa/83a32b8565/0/content_hash.txt",
+      "prompt": "/aa/83a32b8565/0/prompt.txt"
+    },
+    {
+      "metadata": "/aa/83a32b8565/1/metadata.json",
+      "transcript": "/aa/83a32b8565/1/full.jsonl",
+      "context": "/aa/83a32b8565/1/context.md",
+      "content_hash": "/aa/83a32b8565/1/content_hash.txt",
+      "prompt": "/aa/83a32b8565/1/prompt.txt"
+    },
+    {
+      "metadata": "/aa/83a32b8565/2/metadata.json",
+      "transcript": "/aa/83a32b8565/2/full.jsonl",
+      "context": "/aa/83a32b8565/2/context.md",
+      "content_hash": "/aa/83a32b8565/2/content_hash.txt",
+      "prompt": "/aa/83a32b8565/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 160,
+    "cache_creation_tokens": 134883,
+    "cache_read_tokens": 8016000,
+    "output_tokens": 24719,
+    "api_call_count": 132
+  }
+}

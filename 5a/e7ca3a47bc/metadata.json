@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "5ae7ca3a47bc",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".gitignore"
+  ],
+  "sessions": [
+    {
+      "metadata": "/5a/e7ca3a47bc/0/metadata.json",
+      "transcript": "/5a/e7ca3a47bc/0/full.jsonl",
+      "context": "/5a/e7ca3a47bc/0/context.md",
+      "content_hash": "/5a/e7ca3a47bc/0/content_hash.txt",
+      "prompt": "/5a/e7ca3a47bc/0/prompt.txt"
+    },
+    {
+      "metadata": "/5a/e7ca3a47bc/1/metadata.json",
+      "transcript": "/5a/e7ca3a47bc/1/full.jsonl",
+      "context": "/5a/e7ca3a47bc/1/context.md",
+      "content_hash": "/5a/e7ca3a47bc/1/content_hash.txt",
+      "prompt": "/5a/e7ca3a47bc/1/prompt.txt"
+    },
+    {
+      "metadata": "/5a/e7ca3a47bc/2/metadata.json",
+      "transcript": "/5a/e7ca3a47bc/2/full.jsonl",
+      "context": "/5a/e7ca3a47bc/2/context.md",
+      "content_hash": "/5a/e7ca3a47bc/2/content_hash.txt",
+      "prompt": "/5a/e7ca3a47bc/2/prompt.txt"
+    },
+    {
+      "metadata": "/5a/e7ca3a47bc/3/metadata.json",
+      "transcript": "/5a/e7ca3a47bc/3/full.jsonl",
+      "context": "/5a/e7ca3a47bc/3/context.md",
+      "content_hash": "/5a/e7ca3a47bc/3/content_hash.txt",
+      "prompt": "/5a/e7ca3a47bc/3/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1052,
+    "cache_creation_tokens": 111722,
+    "cache_read_tokens": 1705069,
+    "output_tokens": 5826,
+    "api_call_count": 48
+  }
+}

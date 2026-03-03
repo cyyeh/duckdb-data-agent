@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "7c2bb22d6ee1",
+  "strategy": "manual-commit",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/mcp_sse.py",
+    "backend/tests/test_stream_chart_capture.py",
+    "backend/tests/test_subagent_definitions.py",
+    "sidecar/src/server.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/7c/2bb22d6ee1/0/metadata.json",
+      "transcript": "/7c/2bb22d6ee1/0/full.jsonl",
+      "context": "/7c/2bb22d6ee1/0/context.md",
+      "content_hash": "/7c/2bb22d6ee1/0/content_hash.txt",
+      "prompt": "/7c/2bb22d6ee1/0/prompt.txt"
+    },
+    {
+      "metadata": "/7c/2bb22d6ee1/1/metadata.json",
+      "transcript": "/7c/2bb22d6ee1/1/full.jsonl",
+      "context": "/7c/2bb22d6ee1/1/context.md",
+      "content_hash": "/7c/2bb22d6ee1/1/content_hash.txt",
+      "prompt": "/7c/2bb22d6ee1/1/prompt.txt"
+    },
+    {
+      "metadata": "/7c/2bb22d6ee1/2/metadata.json",
+      "transcript": "/7c/2bb22d6ee1/2/full.jsonl",
+      "context": "/7c/2bb22d6ee1/2/context.md",
+      "content_hash": "/7c/2bb22d6ee1/2/content_hash.txt",
+      "prompt": "/7c/2bb22d6ee1/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 91,
+    "cache_creation_tokens": 134392,
+    "cache_read_tokens": 3159412,
+    "output_tokens": 20896,
+    "api_call_count": 70
+  }
+}

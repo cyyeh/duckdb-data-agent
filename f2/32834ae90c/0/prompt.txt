@@ -1,0 +1,64 @@
+Implement the following plan:
+
+# Sidecar SDK Refactoring: True Token-Level Streaming
+
+## Goal
+Replace CLI spawn in sidecar with `@anthropic-ai/claude-agent-sdk` TypeScript SDK to get true token-level streaming (content_block_delta events) in the container path, matching the non-container path behavior.
+
+## Architecture
+- **Sidecar**: Uses SDK `query()` with `includePartialMessages: true`, forwards raw SDK message JSON as SSE `data:` lines to backend
+- **Backend**: `_stream_chat_container` handles both complete messages (AssistantMessage, UserMessage, ResultMessage) AND streaming deltas (StreamEvent with content_block_delta), translating them into frontend SSE events
+- **Frontend**: No changes needed — already handles `thinking`, `answer`, `thinking_done`, `tool_call`, `tool_result`, `done` events
+
+## Changes
+
+### 1. Sidecar: Install SDK dependency
+**File**: `sidecar/package.json`
+- Add `@anthropic-ai/claude-agent-sdk` to dependencies
+
+### 2. Sidecar: Update types
+**File**: `sidecar/src/types.ts`
+- No changes needed to QueryRequest — it already has `message`, `session_id`, `system_prompt`, `model`, `mcp_server_url`, `env`
+
+### 3. Sidecar: Rewrite server to use SDK
+**File**: `sidecar/src/server.ts`
+- Replace `spawn("claude", ...)` with SDK `query()` call
+- Use `includePartialMessages: true` for streaming deltas
+- Configure SDK with: model, system_prompt, allowed_tools, permission_mode, max_turns, MCP server config
+- Forward each SDK message as SSE `data:` line (JSON stringified)
+- Tag each message with its type: for StreamEvent messages, wrap as `{"type": "stream_event", "event": {...}}`; for AssistantMessage/UserMessage/ResultMessage, the SDK already provides typed JSON
+- Remove `child_process` import and CLI spawn logic
+- Keep `/health`, `/stop`, and express setup
+
+### 4. Sidecar: Update Dockerfile
+**File**: `sidecar/Dockerfile`
+- Keep `npm install -g @anthropic-ai/claude-code` (SDK still needs the CLI installed for subprocess communication)
+- No other changes needed — SDK dependency is in package.json, installed via `npm ci`
+
+### 5. Backend: Handle stream_event messages
+**File**: `backend/app/agent.py`
+- In `_stream_chat_container`, add handling for `msg_type == "stream_event"`:
+  - `content_block_delta` with `thinking_delta` → emit `event: thinking`
+  - `content_block_delta` with `text_delta` → emit `event: thinking` or `event: answer` based on `has_tool_calls`
+  - `content_block_start` with `type: "thinking"` → track `has_thinking = True`
+  - `content_block_start` with `type: "text"` → if `has_thinking`, emit `event: thinking_done`
+  - `content_block_start` with `type: "tool_use"` → track `has_tool_calls = True`
+- Keep existing `assistant`, `user`, `result` message type handling for complete messages (tool_call, tool_result, done, session_id)
+- Remove `_chunk_text` function and its usage
+- Remove the `asyncio.sleep(0.015)` artificial delay
+
+### 6. Rebuild and test
+- Run `cd sidecar && npm install` to update lock file
+- Rebuild sidecar Docker image
+- Test end-to-end: text should stream token-by-token in the browser
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+---
+
+also update plans of Containerized Claude Code Runtime accordingly to reflect the latest changes
+
+---
+
+you don't need to handle the case where the old sidecar image is still running

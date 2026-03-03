@@ -1,0 +1,13 @@
+change sidebar width to 290px
+
+---
+
+change sidebar width to 280px
+
+---
+
+commit and push
+
+---
+
+update readme, and put memory to unique section on functionality description

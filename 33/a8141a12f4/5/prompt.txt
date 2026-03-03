@@ -1,0 +1,171 @@
+Implement the following plan:
+
+# Skill Disable/Enable Toggle & Built-in Protection
+
+## Context
+
+Users need to temporarily disable skills without deleting them, and built-in skills (shipped with the project) should be protected from deletion. The approach uses a `builtin: true` marker in SKILL.md frontmatter and a `disabled: true` frontmatter flag for the toggle.
+
+## Changes
+
+### 1. Backend: Parse new frontmatter fields (`backend/app/skills.py`)
+
+- `_parse_skill_md()` — extract `builtin` and `disabled` boolean fields from frontmatter
+- `list_skills()` — include `builtin` and `disabled` in returned dicts
+- `get_skill()` — include `builtin` and `disabled` in returned dict
+- `delete_skill()` — reject deletion if skill has `builtin: true`
+- Add `toggle_skill_disabled(name, disabled, skills_dir)` — rewrites frontmatter with updated `disabled` field
+
+### 2. Backend: Add toggle route (`backend/app/routes/skills.py`)
+
+- `PATCH /api/skills/{name}/toggle` — accepts `{"disabled": bool}`, calls `toggle_skill_disabled`
+- Update delete route to return 403 if skill is built-in
+
+### 3. Frontend: Update types and API client
+
+- `frontend/src/types.ts` — add `builtin?: boolean` and `disabled?: boolean` to `SkillInfo`
+- `frontend/src/services/skillsService.ts` — add `toggleSkill(name, disabled)` function
+
+### 4. Frontend: Update SkillsPanel UI (`frontend/src/components/SkillsPanel.tsx`)
+
+- Add toggle button (on/off icon) on each skill card
+- Hide delete button for built-in skills
+- Gray out disabled skills (reduced opacity, strikethrough or muted style)
+- Disabled skills still visible but clearly marked
+
+### 5. Frontend: Filter disabled skills from SlashCommandMenu
+
+- `frontend/src/components/SlashCommandMenu.tsx` — filter out `disabled` skills from autocomplete
+
+### 6. Frontend: Filter disabled skills from chat input "Use" action
+
+- `frontend/src/components/SkillsPanel.tsx` — hide "Use" button for disabled skills
+
+### 7. Sidecar: Filter disabled skills (`sidecar/src/server.ts`)
+
+- `discoverSkills()` — parse SKILL.md frontmatter, exclude skills with `disabled: true`
+
+### 8. Mark analyze-data as built-in (`skills/analyze-data/SKILL.md`)
+
+- Add `builtin: true` to frontmatter
+
+### 9. i18n keys (`frontend/src/i18n/en.json`, `zh-TW.json`)
+
+- `enableSkill` / `disableSkill` — toggle button tooltips
+- `cannotDeleteBuiltin` — error message for built-in deletion attempt
+
+### 10. CSS (`frontend/src/components/SkillsPanel.css`)
+
+- `.skills-panel__item--disabled` — muted opacity style
+- `.skills-panel__toggle-btn` — toggle button styling
+
+## Key files
+
+- `backend/app/skills.py` — core CRUD + frontmatter parsing
+- `backend/app/routes/skills.py` — REST routes
+- `frontend/src/types.ts` — SkillInfo type
+- `frontend/src/services/skillsService.ts` — API client
+- `frontend/src/components/SkillsPanel.tsx` — skills sidebar UI
+- `frontend/src/components/SlashCommandMenu.tsx` — autocomplete filtering
+- `sidecar/src/server.ts` — skill discovery for agent
+- `skills/analyze-data/SKILL.md` — default built-in skill
+
+## Verification
+
+1. `python -m pytest backend/tests/test_skills*.py` — existing + new tests pass
+2. `npx tsc --noEmit` in frontend — compiles clean
+3. UI: analyze-data skill shows no delete button, has toggle
+4. UI: toggle off a skill → it grays out, disappears from slash menu, agent won't use it
+5. UI: toggle back on → fully functional again
+6. UI: user-created skills can still be deleted
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+---
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/executing-plans
+
+# Executing Plans
+
+## Overview
+
+Load plan, review critically, execute tasks in batches, report for review between batches.
+
+**Core principle:** Batch execution with checkpoints for architect review.
+
+**Announce at start:** "I'm using the executing-plans skill to implement this plan."
+
+## The Process
+
+### Step 1: Load and Review Plan
+1. Read plan file
+2. Review critically - identify any questions or concerns about the plan
+3. If concerns: Raise them with your human partner before starting
+4. If no concerns: Create TodoWrite and proceed
+
+### Step 2: Execute Batch
+**Default: First 3 tasks**
+
+For each task:
+1. Mark as in_progress
+2. Follow each step exactly (plan has bite-sized steps)
+3. Run verifications as specified
+4. Mark as completed
+
+### Step 3: Report
+When batch complete:
+- Show what was implemented
+- Show verification output
+- Say: "Ready for feedback."
+
+### Step 4: Continue
+Based on feedback:
+- Apply changes if needed
+- Execute next batch
+- Repeat until complete
+
+### Step 5: Complete Development
+
+After all tasks complete and verified:
+- Announce: "I'm using the finishing-a-development-branch skill to complete this work."
+- **REQUIRED SUB-SKILL:** Use superpowers:finishing-a-development-branch
+- Follow that skill to verify tests, present options, execute choice
+
+## When to Stop and Ask for Help
+
+**STOP executing immediately when:**
+- Hit a blocker mid-batch (missing dependency, test fails, instruction unclear)
+- Plan has critical gaps preventing starting
+- You don't understand an instruction
+- Verification fails repeatedly
+
+**Ask for clarification rather than guessing.**
+
+## When to Revisit Earlier Steps
+
+**Return to Review (Step 1) when:**
+- Partner updates the plan based on your feedback
+- Fundamental approach needs rethinking
+
+**Don't force through blockers** - stop and ask.
+
+## Remember
+- Review plan critically first
+- Follow plan steps exactly
+- Don't skip verifications
+- Reference skills when plan says to
+- Between batches: just report and wait
+- Stop when blocked, don't guess
+- Never start implementation on main/master branch without explicit user consent
+
+## Integration
+
+**Required workflow skills:**
+- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **superpowers:writing-plans** - Creates the plan this skill executes
+- **superpowers:finishing-a-development-branch** - Complete development after all tasks
+
+---
+
+should put builtin field in metadata field in skill.md

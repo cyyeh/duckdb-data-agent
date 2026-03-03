@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "11ae1514f910",
+  "session_id": "7201d36b-cca8-455d-985f-6d8cb2e06676",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T13:19:56.290901Z",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "frontend/src/components/ChartWidget.tsx"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "36583711bd37",
+  "checkpoint_transcript_start": 1686,
+  "transcript_lines_at_start": 1686,
+  "token_usage": {
+    "input_tokens": 208,
+    "cache_creation_tokens": 271288,
+    "cache_read_tokens": 18255457,
+    "output_tokens": 10737,
+    "api_call_count": 185
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T13:19:54.129645Z",
+    "agent_lines": 0,
+    "human_added": 985,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 985,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/7201d36b-cca8-455d-985f-6d8cb2e06676.jsonl"
+}

@@ -1,0 +1,9 @@
+how is conversations ordered in conversation list, and is time under the conversation title going to be changed as time goes by
+
+---
+
+yes, add a periodic refresh for the timestamps
+
+---
+
+commit and push

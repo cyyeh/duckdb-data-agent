@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "3ba0bac413cf",
+  "session_id": "dbfd92e1-8f53-4cd6-b2c3-1bc9d5d7685a",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-01T15:17:36.143585Z",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "frontend/src/contexts/AgentContext.tsx"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "a96f275ee28c",
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 8669,
+    "cache_read_tokens": 117683,
+    "output_tokens": 811,
+    "api_call_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-01T15:17:36.083389Z",
+    "agent_lines": 6,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 6,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-implement-memory/dbfd92e1-8f53-4cd6-b2c3-1bc9d5d7685a.jsonl"
+}

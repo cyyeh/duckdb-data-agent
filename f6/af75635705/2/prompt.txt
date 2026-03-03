@@ -1,0 +1,81 @@
+Implement the following plan:
+
+# Resume Fallback: Retry with History on Container Recreation
+
+## Context
+
+When a sidecar container is killed (idle timeout, max lifetime, crash) and recreated, the Claude Agent SDK's `resume` flag fails with "No conversation found with session ID: xxx" because the new container has no memory of the old conversation. The user sees an error and can't continue chatting.
+
+**Fix:** The sidecar catches the resume failure and retries without `resume`, prepending conversation history into the message so the model has context.
+
+## Changes
+
+### 1. Frontend: Always send conversation history (`frontend/src/contexts/AgentContext.tsx`)
+
+Currently `conversation_history` is only sent on delete/edit. Change `sendMessage` to always build and send the full conversation history.
+
+In the `sendMessage` callback (~line 85), build history from current `messages` state and pass it to `runAgentLoop`:
+
+```tsx
+// Build conversation history from current messages
+const history = messages
+  .filter((m) => m.role === 'user' || m.role === 'assistant')
+  .map((m) => ({ role: m.role, content: m.content }));
+
+await runAgentLoop(
+  text,
+  sessionIdRef.current,
+  langfuseSessionId,
+  history.length > 0 ? history : pendingHistory,
+  { ... },
+);
+```
+
+### 2. Sidecar: Catch resume failure, retry with history (`sidecar/src/server.ts`)
+
+Wrap the SDK `query()` call + iteration in a try/catch. If the error contains "No conversation found", rebuild the message with history prepended and retry without `resume`:
+
+- Build a `messageWithHistory` by prepending `body.conversation_history` to `body.message` (same format as backend's `_build_message_with_history`)
+- Call `query()` again without `resume` and with the enriched message
+- The existing stream processing loop handles the rest
+
+### 3. Backend: Forward conversation_history to sidecar always (`backend/app/agent.py`)
+
+The backend already sends `conversation_history` in the payload (line 289-291), but only when it's non-empty and only as Langfuse metadata. It also already prepends history into `query_message` via `_build_message_with_history`.
+
+However, `_build_message_with_history` only activates when `conversation_history` is non-empty, and for normal follow-up messages the frontend currently sends `[]`. Once the frontend change (step 1) sends real history, the backend will pass it through to the sidecar in the payload — no backend changes needed.
+
+## Files to modify
+
+1. `frontend/src/contexts/AgentContext.tsx` — `sendMessage`: build history from `messages` state
+2. `sidecar/src/server.ts` — wrap query in try/catch, retry without resume on "No conversation found"
+
+## Verification
+
+1. Start the app, upload data, ask a question (container spins up, gets session ID)
+2. Wait for container idle timeout (or manually `docker stop` the sidecar)
+3. Ask another question — should auto-recover: new container, history prepended, no error
+4. Run existing tests: `cd backend && python -m pytest tests/test_container_manager.py -v`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+---
+
+still the same issue
+
+---
+
+[Request interrupted by user]
+
+---
+
+still the same issue
+
+---
+
+rebuilt docker, but found the same issue
+
+---
+
+commit and push

@@ -1,0 +1,17 @@
+show trashcan icon directly, no need to hover
+
+---
+
+after clicking use skill button in ui, append command in current command in chatinput, not directly replace
+
+---
+
+the useSkillPlaceholder should also be in place for every use click
+
+---
+
+I can only show skill menu in the first char of chatinput, should be anywhere
+
+---
+
+update readme based on current new skills implementation

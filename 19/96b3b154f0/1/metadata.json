@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "1996b3b154f0",
+  "session_id": "6843b29f-b640-4a21-83c3-0eccbeb43fb4",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-01T03:18:33.7851Z",
+  "branch": "fix/linux-skills-write-permission",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docker-compose.yml",
+    "Makefile",
+    "README.md",
+    "backend/Dockerfile"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "51ae6a8c2b35",
+  "initial_attribution": {
+    "calculated_at": "2026-03-01T03:18:33.734815Z",
+    "agent_lines": 0,
+    "human_added": 9,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 9,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-sidecar-skill/6843b29f-b640-4a21-83c3-0eccbeb43fb4.jsonl"
+}

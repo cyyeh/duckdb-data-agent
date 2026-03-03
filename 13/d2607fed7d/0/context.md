@@ -1,0 +1,35 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+for sql analyst subagent, I can't see sql query sql and result in thinking block
+
+### Prompt 2
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/systematic-debugging
+
+# Systematic Debugging
+
+## Overview
+
+Random fixes waste time and create new bugs. Quick patches mask underlying issues.
+
+**Core principle:** ALWAYS find root cause before attempting fixes. Symptom fixes are failure.
+
+**Violating the letter of this process is violating the spirit of debugging.**
+
+## The Iron Law
+
+```
+NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIR...
+
+### Prompt 3
+
+ui is wrong: sql should be in the sql query block including sql query result, and there is a copy button on the top right
+
+### Prompt 4
+
+is there issue with container mode and agent mode
+

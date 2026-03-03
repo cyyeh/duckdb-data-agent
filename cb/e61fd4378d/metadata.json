@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "cbe61fd4378d",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/agent.py",
+    "backend/app/config.py",
+    "backend/tests/test_subagent_config.py",
+    "backend/tests/test_subagent_definitions.py",
+    "bifrost/config.example.json",
+    "sidecar/src/server.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/cb/e61fd4378d/0/metadata.json",
+      "transcript": "/cb/e61fd4378d/0/full.jsonl",
+      "context": "/cb/e61fd4378d/0/context.md",
+      "content_hash": "/cb/e61fd4378d/0/content_hash.txt",
+      "prompt": "/cb/e61fd4378d/0/prompt.txt"
+    },
+    {
+      "metadata": "/cb/e61fd4378d/1/metadata.json",
+      "transcript": "/cb/e61fd4378d/1/full.jsonl",
+      "context": "/cb/e61fd4378d/1/context.md",
+      "content_hash": "/cb/e61fd4378d/1/content_hash.txt",
+      "prompt": "/cb/e61fd4378d/1/prompt.txt"
+    },
+    {
+      "metadata": "/cb/e61fd4378d/2/metadata.json",
+      "transcript": "/cb/e61fd4378d/2/full.jsonl",
+      "context": "/cb/e61fd4378d/2/context.md",
+      "content_hash": "/cb/e61fd4378d/2/content_hash.txt",
+      "prompt": "/cb/e61fd4378d/2/prompt.txt"
+    },
+    {
+      "metadata": "/cb/e61fd4378d/3/metadata.json",
+      "transcript": "/cb/e61fd4378d/3/full.jsonl",
+      "context": "/cb/e61fd4378d/3/context.md",
+      "content_hash": "/cb/e61fd4378d/3/content_hash.txt",
+      "prompt": "/cb/e61fd4378d/3/prompt.txt"
+    },
+    {
+      "metadata": "/cb/e61fd4378d/4/metadata.json",
+      "transcript": "/cb/e61fd4378d/4/full.jsonl",
+      "context": "/cb/e61fd4378d/4/context.md",
+      "content_hash": "/cb/e61fd4378d/4/content_hash.txt",
+      "prompt": "/cb/e61fd4378d/4/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 637,
+    "cache_creation_tokens": 604188,
+    "cache_read_tokens": 28615869,
+    "output_tokens": 80828,
+    "api_call_count": 320
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "30874db77b12",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/mcp_sse.py",
+    "frontend/src/agent/agentService.ts",
+    "frontend/src/contexts/AgentContext.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/30/874db77b12/0/metadata.json",
+      "transcript": "/30/874db77b12/0/full.jsonl",
+      "context": "/30/874db77b12/0/context.md",
+      "content_hash": "/30/874db77b12/0/content_hash.txt",
+      "prompt": "/30/874db77b12/0/prompt.txt"
+    },
+    {
+      "metadata": "/30/874db77b12/1/metadata.json",
+      "transcript": "/30/874db77b12/1/full.jsonl",
+      "context": "/30/874db77b12/1/context.md",
+      "content_hash": "/30/874db77b12/1/content_hash.txt",
+      "prompt": "/30/874db77b12/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 187,
+    "cache_creation_tokens": 254991,
+    "cache_read_tokens": 14281360,
+    "output_tokens": 49573,
+    "api_call_count": 155
+  }
+}

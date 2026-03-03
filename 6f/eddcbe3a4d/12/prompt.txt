@@ -1,0 +1,17 @@
+if thinking is finished, don't show any thinking text content(ex. Thinking...) any more, leave it empty
+
+---
+
+now I don't see any preview text while thinking is not finished yet
+
+---
+
+[Request interrupted by user]
+
+---
+
+now I don't see any preview text while thinking is not finished yet
+
+---
+
+commit this and push

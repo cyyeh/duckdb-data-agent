@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "5095495aa886",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/src/components/ChartWidget.tsx",
+    "frontend/src/components/MessageBubble.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/50/95495aa886/0/metadata.json",
+      "transcript": "/50/95495aa886/0/full.jsonl",
+      "context": "/50/95495aa886/0/context.md",
+      "content_hash": "/50/95495aa886/0/content_hash.txt",
+      "prompt": "/50/95495aa886/0/prompt.txt"
+    },
+    {
+      "metadata": "/50/95495aa886/1/metadata.json",
+      "transcript": "/50/95495aa886/1/full.jsonl",
+      "context": "/50/95495aa886/1/context.md",
+      "content_hash": "/50/95495aa886/1/content_hash.txt",
+      "prompt": "/50/95495aa886/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 131,
+    "cache_creation_tokens": 134389,
+    "cache_read_tokens": 7633918,
+    "output_tokens": 15348,
+    "api_call_count": 104
+  }
+}

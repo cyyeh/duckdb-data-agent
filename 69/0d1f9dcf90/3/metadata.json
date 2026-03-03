@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "690d1f9dcf90",
+  "session_id": "efcf1994-2998-4b97-90ca-3de703b210b0",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T13:38:54.640772Z",
+  "branch": "feature/idle-based-container-lifecycle",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/app/config.py",
+    "backend/app/container_manager.py",
+    "backend/tests/test_container_manager.py",
+    "docs/plans/2026-02-27-idle-based-container-lifecycle-design.md",
+    "docs/plans/2026-02-27-idle-based-container-lifecycle.md",
+    "backend/.env.example",
+    "backend/app/agent.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "851969fd4281",
+  "checkpoint_transcript_start": 484,
+  "transcript_lines_at_start": 484,
+  "token_usage": {
+    "input_tokens": 107,
+    "cache_creation_tokens": 86493,
+    "cache_read_tokens": 6445764,
+    "output_tokens": 21814,
+    "api_call_count": 91
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T13:38:54.218771Z",
+    "agent_lines": 0,
+    "human_added": 582,
+    "human_modified": 7,
+    "human_removed": 0,
+    "total_committed": 582,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/efcf1994-2998-4b97-90ca-3de703b210b0.jsonl"
+}

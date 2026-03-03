@@ -1,0 +1,76 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "33a8141a12f4",
+  "strategy": "manual-commit",
+  "branch": "feat/sidecar-skill",
+  "checkpoints_count": 11,
+  "files_touched": [
+    "README.md",
+    "backend/app/container_manager.py",
+    "backend/app/routes/skills.py",
+    "backend/app/skills.py",
+    "docker-compose.yml",
+    "frontend/src/components/ChatInput.tsx",
+    "frontend/src/components/Sidebar.css",
+    "frontend/src/components/SkillsPanel.css",
+    "frontend/src/components/SkillsPanel.tsx",
+    "frontend/src/components/SlashCommandMenu.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json",
+    "frontend/src/services/skillsService.ts",
+    "frontend/src/types.ts",
+    "sidecar/src/server.ts",
+    "skills/analyze-data/SKILL.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/33/a8141a12f4/0/metadata.json",
+      "transcript": "/33/a8141a12f4/0/full.jsonl",
+      "context": "/33/a8141a12f4/0/context.md",
+      "content_hash": "/33/a8141a12f4/0/content_hash.txt",
+      "prompt": "/33/a8141a12f4/0/prompt.txt"
+    },
+    {
+      "metadata": "/33/a8141a12f4/1/metadata.json",
+      "transcript": "/33/a8141a12f4/1/full.jsonl",
+      "context": "/33/a8141a12f4/1/context.md",
+      "content_hash": "/33/a8141a12f4/1/content_hash.txt",
+      "prompt": "/33/a8141a12f4/1/prompt.txt"
+    },
+    {
+      "metadata": "/33/a8141a12f4/2/metadata.json",
+      "transcript": "/33/a8141a12f4/2/full.jsonl",
+      "context": "/33/a8141a12f4/2/context.md",
+      "content_hash": "/33/a8141a12f4/2/content_hash.txt",
+      "prompt": "/33/a8141a12f4/2/prompt.txt"
+    },
+    {
+      "metadata": "/33/a8141a12f4/3/metadata.json",
+      "transcript": "/33/a8141a12f4/3/full.jsonl",
+      "context": "/33/a8141a12f4/3/context.md",
+      "content_hash": "/33/a8141a12f4/3/content_hash.txt",
+      "prompt": "/33/a8141a12f4/3/prompt.txt"
+    },
+    {
+      "metadata": "/33/a8141a12f4/4/metadata.json",
+      "transcript": "/33/a8141a12f4/4/full.jsonl",
+      "context": "/33/a8141a12f4/4/context.md",
+      "content_hash": "/33/a8141a12f4/4/content_hash.txt",
+      "prompt": "/33/a8141a12f4/4/prompt.txt"
+    },
+    {
+      "metadata": "/33/a8141a12f4/5/metadata.json",
+      "transcript": "/33/a8141a12f4/5/full.jsonl",
+      "context": "/33/a8141a12f4/5/context.md",
+      "content_hash": "/33/a8141a12f4/5/content_hash.txt",
+      "prompt": "/33/a8141a12f4/5/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4740,
+    "cache_creation_tokens": 240673,
+    "cache_read_tokens": 8426760,
+    "output_tokens": 42777,
+    "api_call_count": 155
+  }
+}

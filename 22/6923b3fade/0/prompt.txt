@@ -1,0 +1,5 @@
+change delete skill icon to trashcan
+
+---
+
+after I delete the skill, I still found it when I ask agent

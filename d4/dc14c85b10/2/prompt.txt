@@ -1,0 +1,13 @@
+make sidebar wider
+
+---
+
+change to 300px
+
+---
+
+also show preview/source in memory details modal
+
+---
+
+revert this change, I mean show preview/source in memory details modal, the same as skills details modal

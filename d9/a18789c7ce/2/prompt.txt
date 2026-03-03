@@ -1,0 +1,35 @@
+also add chart title and why you generate this chart and observations in the answer text along with generated chart
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+still no showing chart title, why this chart and observations in answer text
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+commit and push
+
+---
+
+why I see this in backend terminal: INFO:     127.0.0.1:52778 - "GET /anthropic/v1/models HTTP/1.1" 401 Unauthorized
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+INFO:     127.0.0.1:53197 - "GET /anthropic/v1/models HTTP/1.1" 401 Unauthorized
+
+still got 401
+
+---
+
+commit and push

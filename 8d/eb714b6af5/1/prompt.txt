@@ -1,0 +1,140 @@
+Implement the following plan:
+
+# Plan: Add docker-compose.yml and update Makefile/README
+
+## Context
+
+The project currently has individual Dockerfiles for the main app and sidecar, but no docker-compose file to orchestrate them together. Users must manually build images, create Docker networks, and manage container isolation setup. A `docker-compose.yml` will simplify running all services (app + sidecar) with a single command.
+
+## Design
+
+### Architecture
+
+The sidecar is **not a static service** — it's spawned on-demand per-session by the backend's `ContainerManager` via the Docker SDK. So docker-compose will:
+
+1. **Build** both images (app + sidecar)
+2. **Run** only the app service
+3. **Provide** the Docker socket so the app can spawn sidecar containers dynamically
+4. **Create** the `agent-sandbox` network shared between app and sidecar containers
+
+The sidecar service in docker-compose exists only for image building (using `profiles` to prevent it from starting).
+
+### `PROXY_BASE_URL` routing
+
+When the backend runs inside a docker-compose container, sidecar containers need to reach it via the Docker network. Using `container_name: duckdb-data-agent` gives the app a fixed hostname, so `PROXY_BASE_URL=http://duckdb-data-agent:10000`.
+
+### Docker socket access
+
+The app container runs as `appuser` (non-root). To access `/var/run/docker.sock`, we use `group_add` with a configurable `DOCKER_GID` env var (defaults to `0` which works on macOS Docker Desktop; Linux users set it to their host's docker group GID).
+
+## Changes
+
+### 1. Create `docker-compose.yml` (new file)
+
+```yaml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: duckdb-data-agent:latest
+    container_name: duckdb-data-agent
+    ports:
+      - "${APP_PORT:-10000}:10000"
+    env_file:
+      - backend/.env
+    environment:
+      CONTAINER_ENABLED: "true"
+      CONTAINER_IMAGE: duckdb-agent-sidecar:latest
+      CONTAINER_NETWORK: agent-sandbox
+      PROXY_BASE_URL: http://duckdb-data-agent:10000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID:-0}"
+    networks:
+      - agent-sandbox
+    restart: unless-stopped
+
+  sidecar:
+    build:
+      context: ./sidecar
+      dockerfile: Dockerfile
+    image: duckdb-agent-sidecar:latest
+    profiles:
+      - build
+    # Never started directly — exists only so `docker compose build`
+    # produces the sidecar image. The app spawns sidecar containers
+    # on-demand via Docker SDK.
+
+networks:
+  agent-sandbox:
+    name: agent-sandbox
+    driver: bridge
+```
+
+Key design decisions:
+- `profiles: [build]` on sidecar: `docker compose build` builds it, `docker compose up` doesn't start it
+- `container_name: duckdb-data-agent`: fixed hostname for sidecar→backend communication
+- `env_file` + `environment`: .env provides API keys, environment block overrides container-specific settings
+- `networks.agent-sandbox.name: agent-sandbox`: ensures the network name matches what ContainerManager expects (no project prefix)
+
+### 2. Update `Makefile`
+
+Add three new targets:
+
+```makefile
+# Docker Compose
+compose-build:
+	docker compose build
+
+compose-up:
+	docker compose up
+
+compose-down:
+	docker compose down
+```
+
+Update `.PHONY` line to include new targets.
+
+### 3. Update `README.md`
+
+Add a "Docker Compose" subsection under "Production Build and Deployment", after the existing "Build and run locally" section. Content:
+
+- Prerequisites (Docker, Docker Compose)
+- `make compose-build` to build images
+- `make compose-up` to start
+- Note about `DOCKER_GID` for Linux
+- Note about disabling container isolation (remove `CONTAINER_ENABLED` override or set to `false`)
+- `make compose-down` to stop
+
+Also update the Project Structure tree to include `docker-compose.yml`.
+
+## Files to modify
+
+| File | Action |
+|------|--------|
+| `docker-compose.yml` | Create |
+| `Makefile` | Edit — add compose targets + update .PHONY |
+| `README.md` | Edit — add Docker Compose section + update project structure |
+
+## Verification
+
+1. `docker compose config` — validate the compose file parses correctly
+2. `docker compose build` — verify both images build successfully
+3. `docker compose up -d` — verify the app starts and is accessible at http://localhost:10000
+4. Check that sidecar image exists: `docker images | grep duckdb-agent-sidecar`
+5. Check that `agent-sandbox` network is created: `docker network ls | grep agent-sandbox`
+6. `docker compose down` — verify clean shutdown
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+---
+
+fix this: WARN[0000] a network with name agent-sandbox exists but was not created by compose.
+Set `external: true` to use an existing network
+
+---
+
+commit this and push

@@ -1,0 +1,9 @@
+don't show langfuse button in ui
+
+---
+
+also remove langfuse-color.svg
+
+---
+
+commit this and push

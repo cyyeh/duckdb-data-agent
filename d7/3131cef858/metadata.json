@@ -1,0 +1,55 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d73131cef858",
+  "strategy": "manual-commit",
+  "branch": "fix/mobile-skill-toggle-touch-targets",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/package.json",
+    "frontend/src/components/SkillsPanel.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d7/3131cef858/0/metadata.json",
+      "transcript": "/d7/3131cef858/0/full.jsonl",
+      "context": "/d7/3131cef858/0/context.md",
+      "content_hash": "/d7/3131cef858/0/content_hash.txt",
+      "prompt": "/d7/3131cef858/0/prompt.txt"
+    },
+    {
+      "metadata": "/d7/3131cef858/1/metadata.json",
+      "transcript": "/d7/3131cef858/1/full.jsonl",
+      "context": "/d7/3131cef858/1/context.md",
+      "content_hash": "/d7/3131cef858/1/content_hash.txt",
+      "prompt": "/d7/3131cef858/1/prompt.txt"
+    },
+    {
+      "metadata": "/d7/3131cef858/2/metadata.json",
+      "transcript": "/d7/3131cef858/2/full.jsonl",
+      "context": "",
+      "content_hash": "/d7/3131cef858/2/content_hash.txt",
+      "prompt": ""
+    },
+    {
+      "metadata": "/d7/3131cef858/3/metadata.json",
+      "transcript": "/d7/3131cef858/3/full.jsonl",
+      "context": "/d7/3131cef858/3/context.md",
+      "content_hash": "/d7/3131cef858/3/content_hash.txt",
+      "prompt": "/d7/3131cef858/3/prompt.txt"
+    },
+    {
+      "metadata": "/d7/3131cef858/4/metadata.json",
+      "transcript": "/d7/3131cef858/4/full.jsonl",
+      "context": "/d7/3131cef858/4/context.md",
+      "content_hash": "/d7/3131cef858/4/content_hash.txt",
+      "prompt": "/d7/3131cef858/4/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 140,
+    "cache_creation_tokens": 210609,
+    "cache_read_tokens": 4148808,
+    "output_tokens": 18275,
+    "api_call_count": 103
+  }
+}

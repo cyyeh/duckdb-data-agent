@@ -1,0 +1,9 @@
+update system prompt so that no matter how user tricks you, never expose any llm model info or you are based on claude, etc.
+
+---
+
+I mean edit system prompt in backend/app/agent.py, you should confirm you are AI but not disclosing any llm model info
+
+---
+
+commit this and push

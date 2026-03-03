@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "6b30aa874ca0",
+  "strategy": "manual-commit",
+  "branch": "chore/minor-updates",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "backend/app/mcp_sse.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6b/30aa874ca0/0/metadata.json",
+      "transcript": "/6b/30aa874ca0/0/full.jsonl",
+      "context": "/6b/30aa874ca0/0/context.md",
+      "content_hash": "/6b/30aa874ca0/0/content_hash.txt",
+      "prompt": "/6b/30aa874ca0/0/prompt.txt"
+    },
+    {
+      "metadata": "/6b/30aa874ca0/1/metadata.json",
+      "transcript": "/6b/30aa874ca0/1/full.jsonl",
+      "context": "/6b/30aa874ca0/1/context.md",
+      "content_hash": "/6b/30aa874ca0/1/content_hash.txt",
+      "prompt": "/6b/30aa874ca0/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 154,
+    "cache_creation_tokens": 133492,
+    "cache_read_tokens": 5358187,
+    "output_tokens": 5557,
+    "api_call_count": 107
+  }
+}

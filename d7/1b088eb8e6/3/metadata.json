@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d71b088eb8e6",
+  "session_id": "fbb25455-8b3e-4dba-b529-51bfef8f6f98",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T18:44:55.122929Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docker-compose.yml"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "83aa76af695a",
+  "checkpoint_transcript_start": 966,
+  "transcript_lines_at_start": 966,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T18:44:54.51436Z",
+    "agent_lines": 0,
+    "human_added": 16,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 16,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/fbb25455-8b3e-4dba-b529-51bfef8f6f98.jsonl"
+}

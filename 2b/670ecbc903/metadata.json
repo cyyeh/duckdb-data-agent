@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "2b670ecbc903",
+  "strategy": "manual-commit",
+  "branch": "chore/remove-claude-code-cli-from-dockerfiles",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/2b/670ecbc903/0/metadata.json",
+      "transcript": "/2b/670ecbc903/0/full.jsonl",
+      "context": "/2b/670ecbc903/0/context.md",
+      "content_hash": "/2b/670ecbc903/0/content_hash.txt",
+      "prompt": "/2b/670ecbc903/0/prompt.txt"
+    },
+    {
+      "metadata": "/2b/670ecbc903/1/metadata.json",
+      "transcript": "/2b/670ecbc903/1/full.jsonl",
+      "context": "/2b/670ecbc903/1/context.md",
+      "content_hash": "/2b/670ecbc903/1/content_hash.txt",
+      "prompt": "/2b/670ecbc903/1/prompt.txt"
+    },
+    {
+      "metadata": "/2b/670ecbc903/2/metadata.json",
+      "transcript": "/2b/670ecbc903/2/full.jsonl",
+      "context": "/2b/670ecbc903/2/context.md",
+      "content_hash": "/2b/670ecbc903/2/content_hash.txt",
+      "prompt": "/2b/670ecbc903/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1219,
+    "cache_creation_tokens": 59113,
+    "cache_read_tokens": 2346820,
+    "output_tokens": 6733,
+    "api_call_count": 58
+  }
+}

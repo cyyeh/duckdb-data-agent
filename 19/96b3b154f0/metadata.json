@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "1996b3b154f0",
+  "strategy": "manual-commit",
+  "branch": "fix/linux-skills-write-permission",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "Makefile",
+    "README.md",
+    "backend/Dockerfile",
+    "docker-compose.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/19/96b3b154f0/0/metadata.json",
+      "transcript": "/19/96b3b154f0/0/full.jsonl",
+      "context": "/19/96b3b154f0/0/context.md",
+      "content_hash": "/19/96b3b154f0/0/content_hash.txt",
+      "prompt": "/19/96b3b154f0/0/prompt.txt"
+    },
+    {
+      "metadata": "/19/96b3b154f0/1/metadata.json",
+      "transcript": "/19/96b3b154f0/1/full.jsonl",
+      "context": "",
+      "content_hash": "/19/96b3b154f0/1/content_hash.txt",
+      "prompt": ""
+    },
+    {
+      "metadata": "/19/96b3b154f0/2/metadata.json",
+      "transcript": "/19/96b3b154f0/2/full.jsonl",
+      "context": "/19/96b3b154f0/2/context.md",
+      "content_hash": "/19/96b3b154f0/2/content_hash.txt",
+      "prompt": "/19/96b3b154f0/2/prompt.txt"
+    },
+    {
+      "metadata": "/19/96b3b154f0/3/metadata.json",
+      "transcript": "/19/96b3b154f0/3/full.jsonl",
+      "context": "/19/96b3b154f0/3/context.md",
+      "content_hash": "/19/96b3b154f0/3/content_hash.txt",
+      "prompt": "/19/96b3b154f0/3/prompt.txt"
+    },
+    {
+      "metadata": "/19/96b3b154f0/4/metadata.json",
+      "transcript": "/19/96b3b154f0/4/full.jsonl",
+      "context": "/19/96b3b154f0/4/context.md",
+      "content_hash": "/19/96b3b154f0/4/content_hash.txt",
+      "prompt": "/19/96b3b154f0/4/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 141,
+    "cache_creation_tokens": 226502,
+    "cache_read_tokens": 4189343,
+    "output_tokens": 18321,
+    "api_call_count": 104
+  }
+}

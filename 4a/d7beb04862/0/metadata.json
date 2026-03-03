@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "4ad7beb04862",
+  "session_id": "3296edb8-4b24-4ae4-af95-a4e72627621e",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T13:21:47.324186Z",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-26-bifrost-llm-gateway.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "6e6d4e553984",
+  "checkpoint_transcript_start": 199,
+  "transcript_lines_at_start": 199,
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 20105,
+    "cache_read_tokens": 446274,
+    "output_tokens": 5720,
+    "api_call_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T13:21:46.757677Z",
+    "agent_lines": 488,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 488,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-litellm-proxy/3296edb8-4b24-4ae4-af95-a4e72627621e.jsonl"
+}

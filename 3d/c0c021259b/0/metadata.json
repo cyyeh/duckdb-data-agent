@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "3dc0c021259b",
+  "session_id": "092027de-37f1-44c9-89b9-adcbc36d087d",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-20T03:12:25.743348Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/agent.py",
+    "backend/app/config.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "8770bcfead07",
+  "transcript_identifier_at_start": "54d6c832-27e9-4190-8862-b67a81139a46",
+  "checkpoint_transcript_start": 54,
+  "transcript_lines_at_start": 54,
+  "token_usage": {
+    "input_tokens": 33,
+    "cache_creation_tokens": 51152,
+    "cache_read_tokens": 675397,
+    "output_tokens": 958,
+    "api_call_count": 23
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-20T03:12:25.678973Z",
+    "agent_lines": 3,
+    "human_added": 0,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 4,
+    "agent_percentage": 75
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/092027de-37f1-44c9-89b9-adcbc36d087d.jsonl"
+}

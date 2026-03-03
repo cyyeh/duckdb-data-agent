@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "53a034c02b25",
+  "session_id": "4eff2529-7c90-492e-83ac-bf5d430bed80",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-24T20:18:52.554159Z",
+  "branch": "feat/subagent-sql-chart",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/database.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "3fb879540226",
+  "transcript_identifier_at_start": "f01bfe31-0849-45f8-9f6c-0e574fcc96c9",
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 16429,
+    "cache_read_tokens": 379957,
+    "output_tokens": 93,
+    "api_call_count": 11
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-24T20:18:52.499859Z",
+    "agent_lines": 6,
+    "human_added": 151,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 157,
+    "agent_percentage": 3.821656050955414
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/4eff2529-7c90-492e-83ac-bf5d430bed80.jsonl"
+}

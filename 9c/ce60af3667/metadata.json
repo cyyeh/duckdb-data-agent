@@ -1,0 +1,83 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "9cce60af3667",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/src/components/AgentPanel.css",
+    "frontend/src/components/AgentPanel.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/9c/ce60af3667/0/metadata.json",
+      "transcript": "/9c/ce60af3667/0/full.jsonl",
+      "context": "/9c/ce60af3667/0/context.md",
+      "content_hash": "/9c/ce60af3667/0/content_hash.txt",
+      "prompt": "/9c/ce60af3667/0/prompt.txt"
+    },
+    {
+      "metadata": "/9c/ce60af3667/1/metadata.json",
+      "transcript": "/9c/ce60af3667/1/full.jsonl",
+      "context": "/9c/ce60af3667/1/context.md",
+      "content_hash": "/9c/ce60af3667/1/content_hash.txt",
+      "prompt": "/9c/ce60af3667/1/prompt.txt"
+    },
+    {
+      "metadata": "/9c/ce60af3667/2/metadata.json",
+      "transcript": "/9c/ce60af3667/2/full.jsonl",
+      "context": "/9c/ce60af3667/2/context.md",
+      "content_hash": "/9c/ce60af3667/2/content_hash.txt",
+      "prompt": "/9c/ce60af3667/2/prompt.txt"
+    },
+    {
+      "metadata": "/9c/ce60af3667/3/metadata.json",
+      "transcript": "/9c/ce60af3667/3/full.jsonl",
+      "context": "/9c/ce60af3667/3/context.md",
+      "content_hash": "/9c/ce60af3667/3/content_hash.txt",
+      "prompt": "/9c/ce60af3667/3/prompt.txt"
+    },
+    {
+      "metadata": "/9c/ce60af3667/4/metadata.json",
+      "transcript": "/9c/ce60af3667/4/full.jsonl",
+      "context": "/9c/ce60af3667/4/context.md",
+      "content_hash": "/9c/ce60af3667/4/content_hash.txt",
+      "prompt": "/9c/ce60af3667/4/prompt.txt"
+    },
+    {
+      "metadata": "/9c/ce60af3667/5/metadata.json",
+      "transcript": "/9c/ce60af3667/5/full.jsonl",
+      "context": "/9c/ce60af3667/5/context.md",
+      "content_hash": "/9c/ce60af3667/5/content_hash.txt",
+      "prompt": "/9c/ce60af3667/5/prompt.txt"
+    },
+    {
+      "metadata": "/9c/ce60af3667/6/metadata.json",
+      "transcript": "/9c/ce60af3667/6/full.jsonl",
+      "context": "/9c/ce60af3667/6/context.md",
+      "content_hash": "/9c/ce60af3667/6/content_hash.txt",
+      "prompt": "/9c/ce60af3667/6/prompt.txt"
+    },
+    {
+      "metadata": "/9c/ce60af3667/7/metadata.json",
+      "transcript": "/9c/ce60af3667/7/full.jsonl",
+      "context": "/9c/ce60af3667/7/context.md",
+      "content_hash": "/9c/ce60af3667/7/content_hash.txt",
+      "prompt": "/9c/ce60af3667/7/prompt.txt"
+    },
+    {
+      "metadata": "/9c/ce60af3667/8/metadata.json",
+      "transcript": "/9c/ce60af3667/8/full.jsonl",
+      "context": "/9c/ce60af3667/8/context.md",
+      "content_hash": "/9c/ce60af3667/8/content_hash.txt",
+      "prompt": "/9c/ce60af3667/8/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 261,
+    "cache_creation_tokens": 228512,
+    "cache_read_tokens": 6915501,
+    "output_tokens": 10142,
+    "api_call_count": 202
+  }
+}

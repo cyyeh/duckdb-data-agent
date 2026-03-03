@@ -1,0 +1,9 @@
+make sure all buttons should be the same width/height no matter what language it is
+
+---
+
+also apply this to agent mode/editor mode button
+
+---
+
+width still different

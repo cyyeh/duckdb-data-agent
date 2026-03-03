@@ -1,0 +1,91 @@
+Implement the following plan:
+
+# Fix: Empty assistant bubble when switching conversations mid-stream
+
+## Context
+
+When the user sends a message and switches to another conversation before any text tokens arrive from the SSE stream (e.g., during the model's initial thinking delay), then switches back, the original conversation shows an empty assistant bubble (just the "ASSISTANT" header with no content).
+
+**Root cause**: Two issues in `AgentContext.tsx`:
+1. The message cache saves empty assistant messages (created with `content: ''` at stream start, no text received yet)
+2. The cache is always preferred over backend data, even when the backend has a more complete response (the `finally` block in `agent.py` persists whatever text was generated before disconnect)
+
+## Fix (2 changes in `AgentContext.tsx`)
+
+### Change 1: Filter empty assistant messages from cache
+
+In both `loadMessages` (line ~660-672) and `clearMessages` (line ~708-720), after building the `cleaned` array, filter out assistant messages that have no content AND no meaningful segments before caching.
+
+```typescript
+// After: const cleaned = prev.map(m => { ... });
+// Add filter to remove empty assistant messages
+const toCache = cleaned.filter(m => {
+  if (m.role === 'assistant' && !m.content?.trim() && (!m.segments || m.segments.length === 0)) {
+    return false;
+  }
+  return true;
+});
+messagesCacheRef.current.set(outgoingConversationId, toCache);
+```
+
+### Change 2: Prefer backend when cache has fewer messages
+
+Change the cache comparison logic (line ~634-641) to only prefer cache when it has at least as many messages as the backend response.
+
+```typescript
+// Before:
+if (cached && cached.length > 0) {
+  finalMsgs = cached;
+}
+
+// After:
+if (cached && cached.length > 0 && cached.length >= msgs.length) {
+  finalMsgs = cached;
+}
+```
+
+## Files to modify
+
+- `frontend/src/contexts/AgentContext.tsx` — 3 locations:
+  1. `loadMessages` cache save (~line 672)
+  2. `loadMessages` cache lookup (~line 636)
+  3. `clearMessages` cache save (~line 720)
+
+## Scenario verification
+
+| Scenario | Cache (after filter) | Backend | Winner | Result |
+|----------|---------------------|---------|--------|--------|
+| No text received, backend empty | `[user]` | `[user]` | cache (equal) | Just user msg, no empty bubble |
+| No text received, backend has response | `[user]` | `[user, assistant]` | backend (more) | User + backend's response |
+| Partial text received | `[user, partial_assistant]` | `[user, assistant]` | cache (equal, richer segments) | User + cached partial |
+| Normal (no streaming) | full messages | full messages | cache (equal, richer segments) | Preserved as-is |
+
+## How to verify
+
+1. Start the app, open a conversation
+2. Send a message, immediately switch to another conversation while the agent is thinking
+3. Switch back to the original conversation
+4. Verify: no empty assistant bubble appears. Either the user message alone is shown, or the backend's persisted response is shown.
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+---
+
+when I switch back to original conversation, agent response disappears(thinking process), it should be still running
+
+---
+
+[Request interrupted by user]
+
+---
+
+when I switch back to original conversation, agent response disappears(thinking process), it should be still running
+
+---
+
+after I switch back, I don't see agent thinking block ui at all
+
+---
+
+sometimes it works, sometimes the same issue

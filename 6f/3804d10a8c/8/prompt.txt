@@ -1,0 +1,25 @@
+when is new session id generated in frontend
+
+---
+
+but I found session id is renew for every new question
+
+---
+
+yes, fix it
+
+---
+
+subsequent questions are stuck:
+
+---
+
+does this implementation support multiple users?
+
+---
+
+in langfuse session, I found session title id is differnt from session_id from output
+
+---
+
+commit this and push

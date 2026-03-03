@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d53fcb62dd4f",
+  "session_id": "19a91471-8198-492d-8623-c5bc14d1399d",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-02T09:49:37.781859Z",
+  "branch": "feature/chart-library-switch",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "README.md",
+    "frontend/src/components/VegaLiteChartWidget.tsx",
+    "frontend/src/utils/exportConversation.ts",
+    "utils/run_vega_lite.html"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "5b321b36a20f",
+  "transcript_identifier_at_start": "9e7dc767-9de0-453e-a724-2b8331caa6e8",
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 66476,
+    "cache_read_tokens": 1596697,
+    "output_tokens": 11408,
+    "api_call_count": 30
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-02T09:49:37.02441Z",
+    "agent_lines": 160,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 160,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--worktrees-chart-library-switch/19a91471-8198-492d-8623-c5bc14d1399d.jsonl"
+}

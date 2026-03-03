@@ -1,0 +1,43 @@
+clear
+
+---
+
+why I cannot query the duckdb after running app for a while
+
+error message
+Catalog Error: Table with name titanic does not exist!
+Did you mean "pg_tablespace"?
+
+LINE 1: SELECT * FROM "titanic" LIMIT 100
+
+---
+
+Persist to disk — change duckdb.connect(":memory:") to duckdb.connect(f"/tmp/{session_id}.duckdb") so data survives reconnections
+
+---
+
+when destroy happens?
+
+---
+
+clear chat history still belongs to the same session right?
+
+---
+
+so if idle timeout(5 min), duckdb file will be deleted?
+
+---
+
+yes, fix it
+
+---
+
+is this condition written to tests?
+
+---
+
+yes, add them
+
+---
+
+create new branch and push and raise pr

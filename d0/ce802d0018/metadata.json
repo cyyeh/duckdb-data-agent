@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d0ce802d0018",
+  "strategy": "manual-commit",
+  "branch": "fix/linux-data-dir-permissions",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "Makefile",
+    "backend/app/memory_store.py",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d0/ce802d0018/0/metadata.json",
+      "transcript": "/d0/ce802d0018/0/full.jsonl",
+      "context": "/d0/ce802d0018/0/context.md",
+      "content_hash": "/d0/ce802d0018/0/content_hash.txt",
+      "prompt": "/d0/ce802d0018/0/prompt.txt"
+    },
+    {
+      "metadata": "/d0/ce802d0018/1/metadata.json",
+      "transcript": "/d0/ce802d0018/1/full.jsonl",
+      "context": "/d0/ce802d0018/1/context.md",
+      "content_hash": "/d0/ce802d0018/1/content_hash.txt",
+      "prompt": "/d0/ce802d0018/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 195,
+    "cache_creation_tokens": 53295,
+    "cache_read_tokens": 1934171,
+    "output_tokens": 10574,
+    "api_call_count": 50
+  }
+}

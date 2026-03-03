@@ -1,0 +1,121 @@
+why duplicate answer found for asking question that requires sql analyst
+
+(1) Overall survival
+group    passenger_count    survived_count    survival_rate
+Overall    891    342    0.3838
+(2) Survival by Sex
+sex    passenger_count    survived_count    survival_rate
+female    314    233    0.7420
+male    577    109    0.1889
+(3) Survival by Pclass
+pclass    passenger_count    survived_count    survival_rate
+1    216    136    0.6296
+2    184    87    0.4728
+3    491    119    0.2424
+(4) Survival by Sex × Pclass
+sex    pclass    passenger_count    survived_count    survival_rate
+female    1    94    91    0.9681
+female    2    76    70    0.9211
+female    3    144    72    0.5000
+male    1    122    45    0.3689
+male    2    108    17    0.1574
+male    3    347    47    0.1354
+(5) Survival by Embarked (missing → “Unknown”)
+embarked    passenger_count    survived_count    survival_rate
+S    644    217    0.3370
+C    168    93    0.5536
+Q    77    30    0.3896
+Unknown    2    2    1.0000
+(6) Survival by Age bands (NULL → “Unknown”)
+Bands: 0-10, 10-20, …, 60-70, 70+
+
+age_band    passenger_count    survived_count    survival_rate
+0-10    62    38    0.6129
+10-20    102    41    0.4020
+20-30    220    77    0.3500
+30-40    167    73    0.4371
+40-50    89    34    0.3820
+50-60    48    20    0.4167
+60-70    19    6    0.3158
+70+    7    1    0.1429
+Unkn38
+(7) Survival by Family size bands
+Definition: family_size = SibSp + Parch + 1; bands: 1, 2, 3-4, 5+
+
+family_size_band    passenger_count    survived_count    survival_rate
+1    537    163    0.3035
+2    161    89    0.5528
+3-4    131    80    0.6107
+5+    62    10    0.1613
+Basic missingness counts
+age_missing    cabin_missing    embarked_missing
+177    687    2
+Here’s an exploratory “survival breakdown” of the Titanic table (891 passengers), focusing on survival rates across key groups.
+
+Overall survival
+342 / 891 survived → 38.38%
+Survival by sex
+Sex    Count    Survived    Survival rate
+female    314    233    74.20%
+male    577    109    18.89%
+Main pattern: survival is dramatically higher for women than men.
+
+Survival by passenger class (Pclass)
+Pclass    Count    Survived    Survival rate
+1    216    136    62.96%
+2    184    87    47.28%
+3    491    119    24.24%
+Main pattern: higher class → higher survival.
+
+Survival by sex × class (interaction)
+Sex    Pclass    Count    Survived    Survival rate
+female    1    94    91    96.81%
+female    2    76    70    92.11%
+female    3    144    72    50.00%
+male    1    122    45    36.89%
+male    2    108    17    15.74%
+male    3    347    ey insight: female survival is high across all classes, while male survival drops sharply in 2nd/3rd class.
+
+Survival by embarked port (missing → “Unknown”)
+Embarked    Count    Survived    Survival rate
+S    644    217    33.70%
+C    168    93    55.36%
+Q    77    30    38.96%
+Unknown    2    2    100.00%
+Note: “Unknown” is only 2 rows, so it’s not meaningful as a rate.
+
+Survival by age band (NULL → “Unknown”)
+Bands: 0-10, 10-20, …, 60-70, 70+
+
+Age band    Count    Survived    Survival rate
+0-10    62    38    61.29%
+10-20    102    41    40.20%
+20-30    220    77    35.00%
+30-40    167    73    43.71%
+40-50    89    34    38.20%
+50-60    48    20    41.67%
+60-70    19    6    31.58%
+70+    7    1    14.29%
+Unknown    177    52    29.38%
+Key insight: children (0–10) have notably higher survival; oldest group (70+) is lowest (but tiny sample).
+
+Survival by family size band
+Definition: family_size = SibSp + Parch + 1; bands: 1, 2, 3–4, 5+
+
+Family size    Count    Survived    Survival rate
+1    537    163    30.35%
+2    161    89    55.28%
+3-4    131    80    61.07%
+5+    62    10    16.13%
+Key insight: small families (2 to 4) do best; very large families (5+) dbasic)
+Age missing: 177
+Cabin missing: 687 (very high)
+Embarked missing: 2
+If you want, I can follow up with either:
+
+a quick set of charts (survival rate by sex/class/age band), or
+deeper drilling (e.g., Fare bands, title extraction from Name like Mr/Mrs/Miss, etc.).
+
+---
+
+go with option 1, the frontend fix

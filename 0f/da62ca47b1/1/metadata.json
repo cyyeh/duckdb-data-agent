@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0fda62ca47b1",
+  "session_id": "d351e542-d03b-4529-b7a9-f41b02eade41",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-28T04:04:54.094485Z",
+  "branch": "fix/cross-model-chart-interleaving",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/mcp_sse.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "0cfef8370a13",
+  "transcript_identifier_at_start": "6e2db1eb-78b8-4d17-b469-9d53ff1ecc04",
+  "token_usage": {
+    "input_tokens": 44,
+    "cache_creation_tokens": 56477,
+    "cache_read_tokens": 2292963,
+    "output_tokens": 12382,
+    "api_call_count": 35
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-28T04:04:53.710888Z",
+    "agent_lines": 11,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 11,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/d351e542-d03b-4529-b7a9-f41b02eade41.jsonl"
+}

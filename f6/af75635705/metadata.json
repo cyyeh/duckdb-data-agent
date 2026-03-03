@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f6af75635705",
+  "strategy": "manual-commit",
+  "branch": "feature/idle-based-container-lifecycle",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/contexts/AgentContext.tsx",
+    "sidecar/src/server.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f6/af75635705/0/metadata.json",
+      "transcript": "/f6/af75635705/0/full.jsonl",
+      "context": "/f6/af75635705/0/context.md",
+      "content_hash": "/f6/af75635705/0/content_hash.txt",
+      "prompt": "/f6/af75635705/0/prompt.txt"
+    },
+    {
+      "metadata": "/f6/af75635705/1/metadata.json",
+      "transcript": "/f6/af75635705/1/full.jsonl",
+      "context": "/f6/af75635705/1/context.md",
+      "content_hash": "/f6/af75635705/1/content_hash.txt",
+      "prompt": "/f6/af75635705/1/prompt.txt"
+    },
+    {
+      "metadata": "/f6/af75635705/2/metadata.json",
+      "transcript": "/f6/af75635705/2/full.jsonl",
+      "context": "/f6/af75635705/2/context.md",
+      "content_hash": "/f6/af75635705/2/content_hash.txt",
+      "prompt": "/f6/af75635705/2/prompt.txt"
+    },
+    {
+      "metadata": "/f6/af75635705/3/metadata.json",
+      "transcript": "/f6/af75635705/3/full.jsonl",
+      "context": "/f6/af75635705/3/context.md",
+      "content_hash": "/f6/af75635705/3/content_hash.txt",
+      "prompt": "/f6/af75635705/3/prompt.txt"
+    },
+    {
+      "metadata": "/f6/af75635705/4/metadata.json",
+      "transcript": "/f6/af75635705/4/full.jsonl",
+      "context": "/f6/af75635705/4/context.md",
+      "content_hash": "/f6/af75635705/4/content_hash.txt",
+      "prompt": "/f6/af75635705/4/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 619,
+    "cache_creation_tokens": 435159,
+    "cache_read_tokens": 19618426,
+    "output_tokens": 82235,
+    "api_call_count": 285
+  }
+}

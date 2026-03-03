@@ -1,0 +1,13 @@
+you should now in litellm-proxy worktree
+
+---
+
+update makefile so make dev works out of the box without starting litellm separately
+
+---
+
+update readme
+
+---
+
+commit this

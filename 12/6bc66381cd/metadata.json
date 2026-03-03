@@ -1,0 +1,61 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "126bc66381cd",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/2026-02-27-per-subagent-model-routing.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/12/6bc66381cd/0/metadata.json",
+      "transcript": "/12/6bc66381cd/0/full.jsonl",
+      "context": "/12/6bc66381cd/0/context.md",
+      "content_hash": "/12/6bc66381cd/0/content_hash.txt",
+      "prompt": "/12/6bc66381cd/0/prompt.txt"
+    },
+    {
+      "metadata": "/12/6bc66381cd/1/metadata.json",
+      "transcript": "/12/6bc66381cd/1/full.jsonl",
+      "context": "/12/6bc66381cd/1/context.md",
+      "content_hash": "/12/6bc66381cd/1/content_hash.txt",
+      "prompt": "/12/6bc66381cd/1/prompt.txt"
+    },
+    {
+      "metadata": "/12/6bc66381cd/2/metadata.json",
+      "transcript": "/12/6bc66381cd/2/full.jsonl",
+      "context": "/12/6bc66381cd/2/context.md",
+      "content_hash": "/12/6bc66381cd/2/content_hash.txt",
+      "prompt": "/12/6bc66381cd/2/prompt.txt"
+    },
+    {
+      "metadata": "/12/6bc66381cd/3/metadata.json",
+      "transcript": "/12/6bc66381cd/3/full.jsonl",
+      "context": "/12/6bc66381cd/3/context.md",
+      "content_hash": "/12/6bc66381cd/3/content_hash.txt",
+      "prompt": "/12/6bc66381cd/3/prompt.txt"
+    },
+    {
+      "metadata": "/12/6bc66381cd/4/metadata.json",
+      "transcript": "/12/6bc66381cd/4/full.jsonl",
+      "context": "/12/6bc66381cd/4/context.md",
+      "content_hash": "/12/6bc66381cd/4/content_hash.txt",
+      "prompt": "/12/6bc66381cd/4/prompt.txt"
+    },
+    {
+      "metadata": "/12/6bc66381cd/5/metadata.json",
+      "transcript": "/12/6bc66381cd/5/full.jsonl",
+      "context": "/12/6bc66381cd/5/context.md",
+      "content_hash": "/12/6bc66381cd/5/content_hash.txt",
+      "prompt": "/12/6bc66381cd/5/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 701,
+    "cache_creation_tokens": 754631,
+    "cache_read_tokens": 33403171,
+    "output_tokens": 100952,
+    "api_call_count": 369
+  }
+}

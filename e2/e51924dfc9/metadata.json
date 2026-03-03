@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e2e51924dfc9",
+  "strategy": "manual-commit",
+  "branch": "worktree-litellm-proxy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/.env.example"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e2/e51924dfc9/0/metadata.json",
+      "transcript": "/e2/e51924dfc9/0/full.jsonl",
+      "context": "/e2/e51924dfc9/0/context.md",
+      "content_hash": "/e2/e51924dfc9/0/content_hash.txt",
+      "prompt": "/e2/e51924dfc9/0/prompt.txt"
+    },
+    {
+      "metadata": "/e2/e51924dfc9/1/metadata.json",
+      "transcript": "/e2/e51924dfc9/1/full.jsonl",
+      "context": "/e2/e51924dfc9/1/context.md",
+      "content_hash": "/e2/e51924dfc9/1/content_hash.txt",
+      "prompt": "/e2/e51924dfc9/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 413,
+    "cache_creation_tokens": 423148,
+    "cache_read_tokens": 10002385,
+    "output_tokens": 31074,
+    "api_call_count": 134
+  }
+}

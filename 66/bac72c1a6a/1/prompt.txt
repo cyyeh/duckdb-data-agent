@@ -1,0 +1,13 @@
+review the code to identify all unused imports
+
+---
+
+remove them
+
+---
+
+could we update tsconfig.json in sidecar, with references to tsconfig.json in frontend
+
+---
+
+create new branch and commit and push and raise pr

@@ -1,0 +1,17 @@
+for all buttons in ui, width/height should be the same, text in center, no matter what i18n setting is
+
+---
+
+make run query button in chinese mode the same width as english mode
+
+---
+
+create new branch and commit all and push and raise pr and merege
+
+---
+
+run query text is not at the center
+
+---
+
+create new branch and commit and push and raise pr and merge

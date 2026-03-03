@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d73131cef858",
+  "session_id": "59166d0a-6a07-49bc-b811-129c3694d914",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-01T01:27:27.634183Z",
+  "branch": "fix/mobile-skill-toggle-touch-targets",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/SkillsPanel.css"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "d30aa842e6cf",
+  "transcript_identifier_at_start": "bb43b2f4-0401-416a-86ac-b045f7e98edf",
+  "token_usage": {
+    "input_tokens": 20,
+    "cache_creation_tokens": 36703,
+    "cache_read_tokens": 557299,
+    "output_tokens": 3422,
+    "api_call_count": 14
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-01T01:27:27.530488Z",
+    "agent_lines": 21,
+    "human_added": 1,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 22,
+    "agent_percentage": 95.45454545454545
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/59166d0a-6a07-49bc-b811-129c3694d914.jsonl"
+}

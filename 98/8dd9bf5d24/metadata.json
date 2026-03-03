@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "988dd9bf5d24",
+  "strategy": "manual-commit",
+  "branch": "feat/chart-dark-mode",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/components/ChartWidget.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/98/8dd9bf5d24/0/metadata.json",
+      "transcript": "/98/8dd9bf5d24/0/full.jsonl",
+      "context": "/98/8dd9bf5d24/0/context.md",
+      "content_hash": "/98/8dd9bf5d24/0/content_hash.txt",
+      "prompt": "/98/8dd9bf5d24/0/prompt.txt"
+    },
+    {
+      "metadata": "/98/8dd9bf5d24/1/metadata.json",
+      "transcript": "/98/8dd9bf5d24/1/full.jsonl",
+      "context": "/98/8dd9bf5d24/1/context.md",
+      "content_hash": "/98/8dd9bf5d24/1/content_hash.txt",
+      "prompt": "/98/8dd9bf5d24/1/prompt.txt"
+    },
+    {
+      "metadata": "/98/8dd9bf5d24/2/metadata.json",
+      "transcript": "/98/8dd9bf5d24/2/full.jsonl",
+      "context": "/98/8dd9bf5d24/2/context.md",
+      "content_hash": "/98/8dd9bf5d24/2/content_hash.txt",
+      "prompt": "/98/8dd9bf5d24/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 55,
+    "cache_creation_tokens": 53712,
+    "cache_read_tokens": 1608625,
+    "output_tokens": 4350,
+    "api_call_count": 43
+  }
+}

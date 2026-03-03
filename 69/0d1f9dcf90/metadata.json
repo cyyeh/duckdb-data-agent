@@ -1,0 +1,53 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "690d1f9dcf90",
+  "strategy": "manual-commit",
+  "branch": "feature/idle-based-container-lifecycle",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/agent.py",
+    "backend/app/config.py",
+    "backend/app/container_manager.py",
+    "backend/tests/test_container_manager.py",
+    "docs/plans/2026-02-27-idle-based-container-lifecycle-design.md",
+    "docs/plans/2026-02-27-idle-based-container-lifecycle.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/69/0d1f9dcf90/0/metadata.json",
+      "transcript": "/69/0d1f9dcf90/0/full.jsonl",
+      "context": "/69/0d1f9dcf90/0/context.md",
+      "content_hash": "/69/0d1f9dcf90/0/content_hash.txt",
+      "prompt": "/69/0d1f9dcf90/0/prompt.txt"
+    },
+    {
+      "metadata": "/69/0d1f9dcf90/1/metadata.json",
+      "transcript": "/69/0d1f9dcf90/1/full.jsonl",
+      "context": "/69/0d1f9dcf90/1/context.md",
+      "content_hash": "/69/0d1f9dcf90/1/content_hash.txt",
+      "prompt": "/69/0d1f9dcf90/1/prompt.txt"
+    },
+    {
+      "metadata": "/69/0d1f9dcf90/2/metadata.json",
+      "transcript": "/69/0d1f9dcf90/2/full.jsonl",
+      "context": "/69/0d1f9dcf90/2/context.md",
+      "content_hash": "/69/0d1f9dcf90/2/content_hash.txt",
+      "prompt": "/69/0d1f9dcf90/2/prompt.txt"
+    },
+    {
+      "metadata": "/69/0d1f9dcf90/3/metadata.json",
+      "transcript": "/69/0d1f9dcf90/3/full.jsonl",
+      "context": "/69/0d1f9dcf90/3/context.md",
+      "content_hash": "/69/0d1f9dcf90/3/content_hash.txt",
+      "prompt": "/69/0d1f9dcf90/3/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 524,
+    "cache_creation_tokens": 234137,
+    "cache_read_tokens": 13388109,
+    "output_tokens": 43836,
+    "api_call_count": 212
+  }
+}

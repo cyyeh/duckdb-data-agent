@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "97d1387a7789",
+  "session_id": "d702f6ba-f795-4217-8343-b7f600da1355",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-01T14:38:05.651583Z",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-03-01-live-cross-conversation-streaming-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "db070f16f434",
+  "checkpoint_transcript_start": 90,
+  "transcript_lines_at_start": 90,
+  "token_usage": {
+    "input_tokens": 37,
+    "cache_creation_tokens": 32149,
+    "cache_read_tokens": 1465887,
+    "output_tokens": 6286,
+    "api_call_count": 25
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-01T14:38:05.419775Z",
+    "agent_lines": 0,
+    "human_added": 113,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 113,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-implement-memory/d702f6ba-f795-4217-8343-b7f600da1355.jsonl"
+}

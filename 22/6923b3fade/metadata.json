@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "226923b3fade",
+  "strategy": "manual-commit",
+  "branch": "feat/sidecar-skill",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "README.md",
+    "backend/.env.example",
+    "backend/app/mcp_sse.py",
+    "backend/app/routes/skills.py",
+    "sidecar/src/server.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/22/6923b3fade/0/metadata.json",
+      "transcript": "/22/6923b3fade/0/full.jsonl",
+      "context": "/22/6923b3fade/0/context.md",
+      "content_hash": "/22/6923b3fade/0/content_hash.txt",
+      "prompt": "/22/6923b3fade/0/prompt.txt"
+    },
+    {
+      "metadata": "/22/6923b3fade/1/metadata.json",
+      "transcript": "/22/6923b3fade/1/full.jsonl",
+      "context": "/22/6923b3fade/1/context.md",
+      "content_hash": "/22/6923b3fade/1/content_hash.txt",
+      "prompt": "/22/6923b3fade/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1717,
+    "cache_creation_tokens": 499812,
+    "cache_read_tokens": 25204934,
+    "output_tokens": 113058,
+    "api_call_count": 285
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "864088370ca2",
+  "session_id": "4d1ec9bd-2e91-417e-9bff-ba00a2cd44f2",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T07:23:35.630337Z",
+  "branch": "fix/incomplete-chunked-read-and-multi-chart",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/agent.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "39028f360efc",
+  "transcript_identifier_at_start": "db2bb20f-beb1-4465-8b6d-6442c7b2b6f7",
+  "token_usage": {
+    "input_tokens": 24,
+    "cache_creation_tokens": 27106,
+    "cache_read_tokens": 796909,
+    "output_tokens": 4094,
+    "api_call_count": 20
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T07:23:35.51245Z",
+    "agent_lines": 17,
+    "human_added": 93,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 110,
+    "agent_percentage": 15.454545454545453
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/4d1ec9bd-2e91-417e-9bff-ba00a2cd44f2.jsonl"
+}

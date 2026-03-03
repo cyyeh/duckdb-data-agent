@@ -1,0 +1,9 @@
+increase SDK idle timeout, make it as env vars in backend
+
+---
+
+also add SDK_IDLE_TIMEOUT_MS in backend/.env.example
+
+---
+
+create new branch: minor-updates and push

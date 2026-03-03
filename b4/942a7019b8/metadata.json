@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "b4942a7019b8",
+  "strategy": "manual-commit",
+  "branch": "feat/skill-creation-workflow",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "examples/example5.html"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b4/942a7019b8/0/metadata.json",
+      "transcript": "/b4/942a7019b8/0/full.jsonl",
+      "context": "/b4/942a7019b8/0/context.md",
+      "content_hash": "/b4/942a7019b8/0/content_hash.txt",
+      "prompt": "/b4/942a7019b8/0/prompt.txt"
+    },
+    {
+      "metadata": "/b4/942a7019b8/1/metadata.json",
+      "transcript": "/b4/942a7019b8/1/full.jsonl",
+      "context": "/b4/942a7019b8/1/context.md",
+      "content_hash": "/b4/942a7019b8/1/content_hash.txt",
+      "prompt": "/b4/942a7019b8/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 51,
+    "cache_creation_tokens": 32378,
+    "cache_read_tokens": 1742187,
+    "output_tokens": 2928,
+    "api_call_count": 41
+  }
+}

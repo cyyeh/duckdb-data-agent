@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "3ba97b2afba3",
+  "session_id": "9f69cb87-95d3-4129-9e16-9a81e195920e",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T15:49:04.159275Z",
+  "branch": "fix/compose-build-sidecar",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "Makefile"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "e260f9e9656e",
+  "transcript_identifier_at_start": "34dc0084-116c-449d-8a3c-2a78ca28c03c",
+  "token_usage": {
+    "input_tokens": 11,
+    "cache_creation_tokens": 10495,
+    "cache_read_tokens": 216689,
+    "output_tokens": 179,
+    "api_call_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T15:49:04.106054Z",
+    "agent_lines": 0,
+    "human_added": 1,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 2,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/9f69cb87-95d3-4129-9e16-9a81e195920e.jsonl"
+}

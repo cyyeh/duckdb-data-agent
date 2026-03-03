@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "38b15657b6d1",
+  "session_id": "8e663843-a7d9-49e8-98b4-544b534b3531",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T17:12:00.619104Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-26-claude-gateway-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "0b5afca85e3d",
+  "token_usage": {
+    "input_tokens": 49,
+    "cache_creation_tokens": 101119,
+    "cache_read_tokens": 1409493,
+    "output_tokens": 3544,
+    "api_call_count": 34
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T17:12:00.389638Z",
+    "agent_lines": 0,
+    "human_added": 192,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 192,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/8e663843-a7d9-49e8-98b4-544b534b3531.jsonl"
+}

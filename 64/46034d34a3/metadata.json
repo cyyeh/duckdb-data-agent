@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "6446034d34a3",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/src/components/ConversationHistory.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/64/46034d34a3/0/metadata.json",
+      "transcript": "/64/46034d34a3/0/full.jsonl",
+      "context": "/64/46034d34a3/0/context.md",
+      "content_hash": "/64/46034d34a3/0/content_hash.txt",
+      "prompt": "/64/46034d34a3/0/prompt.txt"
+    },
+    {
+      "metadata": "/64/46034d34a3/1/metadata.json",
+      "transcript": "/64/46034d34a3/1/full.jsonl",
+      "context": "/64/46034d34a3/1/context.md",
+      "content_hash": "/64/46034d34a3/1/content_hash.txt",
+      "prompt": "/64/46034d34a3/1/prompt.txt"
+    },
+    {
+      "metadata": "/64/46034d34a3/2/metadata.json",
+      "transcript": "/64/46034d34a3/2/full.jsonl",
+      "context": "/64/46034d34a3/2/context.md",
+      "content_hash": "/64/46034d34a3/2/content_hash.txt",
+      "prompt": "/64/46034d34a3/2/prompt.txt"
+    },
+    {
+      "metadata": "/64/46034d34a3/3/metadata.json",
+      "transcript": "/64/46034d34a3/3/full.jsonl",
+      "context": "/64/46034d34a3/3/context.md",
+      "content_hash": "/64/46034d34a3/3/content_hash.txt",
+      "prompt": "/64/46034d34a3/3/prompt.txt"
+    },
+    {
+      "metadata": "/64/46034d34a3/4/metadata.json",
+      "transcript": "/64/46034d34a3/4/full.jsonl",
+      "context": "/64/46034d34a3/4/context.md",
+      "content_hash": "/64/46034d34a3/4/content_hash.txt",
+      "prompt": "/64/46034d34a3/4/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 364,
+    "cache_creation_tokens": 536593,
+    "cache_read_tokens": 27518721,
+    "output_tokens": 160747,
+    "api_call_count": 308
+  }
+}

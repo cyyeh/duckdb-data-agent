@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "10f1d94d0c04",
+  "session_id": "3a2deddf-a8bc-4ff7-8de0-30d62adf6969",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-20T15:06:54.076152Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-02-20-configurable-max-upload-size-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "9bfb6e67b555",
+  "checkpoint_transcript_start": 879,
+  "transcript_lines_at_start": 879,
+  "token_usage": {
+    "input_tokens": 744,
+    "cache_creation_tokens": 94617,
+    "cache_read_tokens": 4547224,
+    "output_tokens": 3768,
+    "api_call_count": 73
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-20T15:06:53.59237Z",
+    "agent_lines": 0,
+    "human_added": 44,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 44,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/3a2deddf-a8bc-4ff7-8de0-30d62adf6969.jsonl"
+}

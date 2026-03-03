@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "17ccd3352025",
+  "strategy": "manual-commit",
+  "branch": "fix/i18n-consistent-layout",
+  "checkpoints_count": 11,
+  "files_touched": [
+    ".gitignore",
+    "frontend/src/App.css",
+    "frontend/src/components/AgentPanel.css",
+    "frontend/src/components/Sidebar.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/17/ccd3352025/0/metadata.json",
+      "transcript": "/17/ccd3352025/0/full.jsonl",
+      "context": "/17/ccd3352025/0/context.md",
+      "content_hash": "/17/ccd3352025/0/content_hash.txt",
+      "prompt": "/17/ccd3352025/0/prompt.txt"
+    },
+    {
+      "metadata": "/17/ccd3352025/1/metadata.json",
+      "transcript": "/17/ccd3352025/1/full.jsonl",
+      "context": "/17/ccd3352025/1/context.md",
+      "content_hash": "/17/ccd3352025/1/content_hash.txt",
+      "prompt": "/17/ccd3352025/1/prompt.txt"
+    },
+    {
+      "metadata": "/17/ccd3352025/2/metadata.json",
+      "transcript": "/17/ccd3352025/2/full.jsonl",
+      "context": "/17/ccd3352025/2/context.md",
+      "content_hash": "/17/ccd3352025/2/content_hash.txt",
+      "prompt": "/17/ccd3352025/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 145,
+    "cache_creation_tokens": 106113,
+    "cache_read_tokens": 5143122,
+    "output_tokens": 26936,
+    "api_call_count": 103
+  }
+}

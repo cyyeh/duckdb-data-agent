@@ -1,0 +1,107 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+for CONTAINER_MAX_LIFETIME_SECONDS in sidecar container, does it mean it will be deleted even if user is still interacting with the container?
+
+### Prompt 2
+
+add idle-based tracking so active sessions don't get killed
+
+### Prompt 3
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/brainstorming
+
+# Brainstorming Ideas Into Designs
+
+## Overview
+
+Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
+
+Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
+
+<HARD-GATE>
+Do NOT invoke any implemen...
+
+### Prompt 4
+
+yes
+
+### Prompt 5
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/writing-plans
+
+# Writing Plans
+
+## Overview
+
+Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+
+...
+
+### Prompt 6
+
+what if after user comes back and asks a new question after container is killed? could he still asks a new question and pass past conversation history to newly created container?
+
+### Prompt 7
+
+ok, subagent
+
+### Prompt 8
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/subagent-driven-development
+
+# Subagent-Driven Development
+
+Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review.
+
+**Core principle:** Fresh subagent per task + two-stage review (spec then quality) = high quality, fast iteration
+
+## When to Use
+
+```dot
+digraph when_to_use {
+    "Have implementat...
+
+### Prompt 9
+
+create new branch and commit and push
+
+### Prompt 10
+
+what's relationship between session timeout and container timeout
+
+### Prompt 11
+
+but sometimes when I ask a new question I got session id xxx not found, what does that mean
+
+### Prompt 12
+
+how do you detect if the container is new?
+
+### Prompt 13
+
+with option2, if we start new container, is previous conversation history sent to new container?
+
+### Prompt 14
+
+what's the differences between the 2 options
+
+### Prompt 15
+
+let's go with both options 2
+
+### Prompt 16
+
+[Request interrupted by user]
+
+### Prompt 17
+
+let's go with option2 with Prepend history as text in the message
+
+### Prompt 18
+
+[Request interrupted by user for tool use]
+

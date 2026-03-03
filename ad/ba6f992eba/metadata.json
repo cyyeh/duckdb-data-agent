@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "adba6f992eba",
+  "strategy": "manual-commit",
+  "branch": "fix/modal-z-index-portal",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/components/CreateSkillDialog.tsx",
+    "frontend/src/components/SkillsPanel.tsx",
+    "frontend/src/contexts/AgentContext.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ad/ba6f992eba/0/metadata.json",
+      "transcript": "/ad/ba6f992eba/0/full.jsonl",
+      "context": "/ad/ba6f992eba/0/context.md",
+      "content_hash": "/ad/ba6f992eba/0/content_hash.txt",
+      "prompt": "/ad/ba6f992eba/0/prompt.txt"
+    },
+    {
+      "metadata": "/ad/ba6f992eba/1/metadata.json",
+      "transcript": "/ad/ba6f992eba/1/full.jsonl",
+      "context": "",
+      "content_hash": "/ad/ba6f992eba/1/content_hash.txt",
+      "prompt": ""
+    },
+    {
+      "metadata": "/ad/ba6f992eba/2/metadata.json",
+      "transcript": "/ad/ba6f992eba/2/full.jsonl",
+      "context": "/ad/ba6f992eba/2/context.md",
+      "content_hash": "/ad/ba6f992eba/2/content_hash.txt",
+      "prompt": "/ad/ba6f992eba/2/prompt.txt"
+    },
+    {
+      "metadata": "/ad/ba6f992eba/3/metadata.json",
+      "transcript": "/ad/ba6f992eba/3/full.jsonl",
+      "context": "/ad/ba6f992eba/3/context.md",
+      "content_hash": "/ad/ba6f992eba/3/content_hash.txt",
+      "prompt": "/ad/ba6f992eba/3/prompt.txt"
+    },
+    {
+      "metadata": "/ad/ba6f992eba/4/metadata.json",
+      "transcript": "/ad/ba6f992eba/4/full.jsonl",
+      "context": "/ad/ba6f992eba/4/context.md",
+      "content_hash": "/ad/ba6f992eba/4/content_hash.txt",
+      "prompt": "/ad/ba6f992eba/4/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 143,
+    "cache_creation_tokens": 222389,
+    "cache_read_tokens": 4319894,
+    "output_tokens": 21048,
+    "api_call_count": 108
+  }
+}

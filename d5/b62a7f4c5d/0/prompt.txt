@@ -1,0 +1,9 @@
+how to prevent generating chart with empty data values like this?
+
+---
+
+add i18n to No data available to display chart.
+
+---
+
+commit this and push

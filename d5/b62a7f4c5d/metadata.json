@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "d5b62a7f4c5d",
+  "strategy": "manual-commit",
+  "branch": "minor-updates",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "backend/app/agent.py",
+    "backend/app/mcp_sse.py",
+    "frontend/src/components/ChartWidget.tsx",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/zh-TW.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d5/b62a7f4c5d/0/metadata.json",
+      "transcript": "/d5/b62a7f4c5d/0/full.jsonl",
+      "context": "/d5/b62a7f4c5d/0/context.md",
+      "content_hash": "/d5/b62a7f4c5d/0/content_hash.txt",
+      "prompt": "/d5/b62a7f4c5d/0/prompt.txt"
+    },
+    {
+      "metadata": "/d5/b62a7f4c5d/1/metadata.json",
+      "transcript": "/d5/b62a7f4c5d/1/full.jsonl",
+      "context": "/d5/b62a7f4c5d/1/context.md",
+      "content_hash": "/d5/b62a7f4c5d/1/content_hash.txt",
+      "prompt": "/d5/b62a7f4c5d/1/prompt.txt"
+    },
+    {
+      "metadata": "/d5/b62a7f4c5d/2/metadata.json",
+      "transcript": "/d5/b62a7f4c5d/2/full.jsonl",
+      "context": "/d5/b62a7f4c5d/2/context.md",
+      "content_hash": "/d5/b62a7f4c5d/2/content_hash.txt",
+      "prompt": "/d5/b62a7f4c5d/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 133,
+    "cache_creation_tokens": 111202,
+    "cache_read_tokens": 5204170,
+    "output_tokens": 19701,
+    "api_call_count": 103
+  }
+}

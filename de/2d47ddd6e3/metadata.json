@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "de2d47ddd6e3",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "frontend/src/App.css",
+    "frontend/src/App.tsx",
+    "frontend/src/components/Sidebar.css",
+    "frontend/src/components/Sidebar.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/de/2d47ddd6e3/0/metadata.json",
+      "transcript": "/de/2d47ddd6e3/0/full.jsonl",
+      "context": "/de/2d47ddd6e3/0/context.md",
+      "content_hash": "/de/2d47ddd6e3/0/content_hash.txt",
+      "prompt": "/de/2d47ddd6e3/0/prompt.txt"
+    },
+    {
+      "metadata": "/de/2d47ddd6e3/1/metadata.json",
+      "transcript": "/de/2d47ddd6e3/1/full.jsonl",
+      "context": "/de/2d47ddd6e3/1/context.md",
+      "content_hash": "/de/2d47ddd6e3/1/content_hash.txt",
+      "prompt": "/de/2d47ddd6e3/1/prompt.txt"
+    },
+    {
+      "metadata": "/de/2d47ddd6e3/2/metadata.json",
+      "transcript": "/de/2d47ddd6e3/2/full.jsonl",
+      "context": "/de/2d47ddd6e3/2/context.md",
+      "content_hash": "/de/2d47ddd6e3/2/content_hash.txt",
+      "prompt": "/de/2d47ddd6e3/2/prompt.txt"
+    },
+    {
+      "metadata": "/de/2d47ddd6e3/3/metadata.json",
+      "transcript": "/de/2d47ddd6e3/3/full.jsonl",
+      "context": "/de/2d47ddd6e3/3/context.md",
+      "content_hash": "/de/2d47ddd6e3/3/content_hash.txt",
+      "prompt": "/de/2d47ddd6e3/3/prompt.txt"
+    },
+    {
+      "metadata": "/de/2d47ddd6e3/4/metadata.json",
+      "transcript": "/de/2d47ddd6e3/4/full.jsonl",
+      "context": "/de/2d47ddd6e3/4/context.md",
+      "content_hash": "/de/2d47ddd6e3/4/content_hash.txt",
+      "prompt": "/de/2d47ddd6e3/4/prompt.txt"
+    },
+    {
+      "metadata": "/de/2d47ddd6e3/5/metadata.json",
+      "transcript": "/de/2d47ddd6e3/5/full.jsonl",
+      "context": "/de/2d47ddd6e3/5/context.md",
+      "content_hash": "/de/2d47ddd6e3/5/content_hash.txt",
+      "prompt": "/de/2d47ddd6e3/5/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 189,
+    "cache_creation_tokens": 152253,
+    "cache_read_tokens": 5439672,
+    "output_tokens": 6481,
+    "api_call_count": 154
+  }
+}

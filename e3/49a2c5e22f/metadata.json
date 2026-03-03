@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e349a2c5e22f",
+  "strategy": "manual-commit",
+  "branch": "worktree-implement-memory",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "frontend/src/components/Sidebar.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e3/49a2c5e22f/0/metadata.json",
+      "transcript": "/e3/49a2c5e22f/0/full.jsonl",
+      "context": "/e3/49a2c5e22f/0/context.md",
+      "content_hash": "/e3/49a2c5e22f/0/content_hash.txt",
+      "prompt": "/e3/49a2c5e22f/0/prompt.txt"
+    },
+    {
+      "metadata": "/e3/49a2c5e22f/1/metadata.json",
+      "transcript": "/e3/49a2c5e22f/1/full.jsonl",
+      "context": "/e3/49a2c5e22f/1/context.md",
+      "content_hash": "/e3/49a2c5e22f/1/content_hash.txt",
+      "prompt": "/e3/49a2c5e22f/1/prompt.txt"
+    },
+    {
+      "metadata": "/e3/49a2c5e22f/2/metadata.json",
+      "transcript": "/e3/49a2c5e22f/2/full.jsonl",
+      "context": "/e3/49a2c5e22f/2/context.md",
+      "content_hash": "/e3/49a2c5e22f/2/content_hash.txt",
+      "prompt": "/e3/49a2c5e22f/2/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 131,
+    "cache_creation_tokens": 259219,
+    "cache_read_tokens": 10388414,
+    "output_tokens": 88455,
+    "api_call_count": 109
+  }
+}

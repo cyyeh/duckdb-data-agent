@@ -1,0 +1,89 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+big feature alert, please write design doc first:
+
+remove agent in subprocess mode, we only support sidecar. and remove all subprocess related stuff, also remove render and update readme in final
+
+### Prompt 2
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/brainstorming
+
+# Brainstorming Ideas Into Designs
+
+## Overview
+
+Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
+
+Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
+
+<HARD-GATE>
+Do NOT invoke any implemen...
+
+### Prompt 3
+
+sure
+
+### Prompt 4
+
+yes
+
+### Prompt 5
+
+yes
+
+### Prompt 6
+
+yes
+
+### Prompt 7
+
+yes
+
+### Prompt 8
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/writing-plans
+
+# Writing Plans
+
+## Overview
+
+Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+
+...
+
+### Prompt 9
+
+Subagent-Driven
+
+### Prompt 10
+
+Base directory for this skill: /Users/cyyeh/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/subagent-driven-development
+
+# Subagent-Driven Development
+
+Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review.
+
+**Core principle:** Fresh subagent per task + two-stage review (spec then quality) = high quality, fast iteration
+
+## When to Use
+
+```dot
+digraph when_to_use {
+    "Have implementat...
+
+### Prompt 11
+
+make install should also setup sidecar
+
+### Prompt 12
+
+Error: MCP server unreachable at http://host.docker.internal:8000/mcp/sse?session_id=70bae0a9-f414-4502-b561-6413ea5304ab: fetch failed. Check that PROXY_BASE_URL is reachable from inside the container.
+
+### Prompt 13
+
+[Request interrupted by user]
+

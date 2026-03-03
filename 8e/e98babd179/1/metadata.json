@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "8ee98babd179",
+  "session_id": "6843b29f-b640-4a21-83c3-0eccbeb43fb4",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-01T03:39:32.151548Z",
+  "branch": "fix/skill-restriction-blocks-create-skill",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "sidecar/src/server.ts"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "51ae6a8c2b35",
+  "initial_attribution": {
+    "calculated_at": "2026-03-01T03:39:32.101754Z",
+    "agent_lines": 0,
+    "human_added": 876,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 876,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-sidecar-skill/6843b29f-b640-4a21-83c3-0eccbeb43fb4.jsonl"
+}

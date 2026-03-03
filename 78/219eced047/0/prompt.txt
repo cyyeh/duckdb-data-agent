@@ -1,0 +1,21 @@
+new feature alert, please write design doc:
+
+create a new branch to re-implement "sql generation" and "chart generation" using subagents instead of tools
+
+---
+
+create implementation plan and implement
+
+---
+
+[Request interrupted by user]
+
+---
+
+new feature is comming, write design doc first:
+
+implement "sql generation" and "chart generation" using subagents instead of tools
+
+---
+
+[Request interrupted by user]

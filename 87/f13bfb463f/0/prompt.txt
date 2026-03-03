@@ -1,0 +1,9 @@
+create new branch and delete installing claude-code cli in backend and sidecar dockerfile
+
+---
+
+also update readme
+
+---
+
+commit all and push and raise pr
