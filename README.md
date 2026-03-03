@@ -337,6 +337,199 @@ The data flow for a chat message is:
 
 For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md).
 
+## Architecture Diagram
+
+```markdown                                                                                                                
+  ┌─────────────────────────────────────────────────────────────────────────────────┐                           
+  │                              BROWSER (per tab)                                  │                           
+  │                                                                                 │
+  │  ┌─────────────────────────────────────────────────────────────────────────┐    │
+  │  │                     React 18 + TypeScript (Vite)                        │    │
+  │  │                                                                         │    │
+  │  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────────────┐    │    │
+  │  │  │   App.tsx    │  │  Sidebar     │  │       AgentPanel            │    │    │
+  │  │  │  (Layout +   │  │  - Tables    │  │  - MessageBubble            │    │    │
+  │  │  │   Contexts)  │  │  - Convos    │  │  - ChartWidget (Plotly)     │    │    │
+  │  │  │              │  │  - Memories  │  │  - VegaLiteChartWidget      │    │    │
+  │  │  │              │  │  - Skills    │  │  - ResultsTable             │    │    │
+  │  │  │              │  │  - FileUpload│  │  - QueryEditor              │    │    │
+  │  │  └──────────────┘  └──────────────┘  │  - UserQuestion             │    │    │
+  │  │                                      └─────────────────────────────┘    │    │
+  │  │  ┌─────────────────────────────────────────────────────────────────┐    │    │
+  │  │  │                    Context Providers                            │    │    │
+  │  │  │  AgentContext · SessionContext · ConversationContext            │    │    │
+  │  │  │  ThemeContext · LanguageContext · ChartLibraryContext           │    │    │
+  │  │  └─────────────────────────────────────────────────────────────────┘    │    │
+  │  │                                                                         │    │
+  │  │  ┌──────────────────────┐                                               │    │
+  │  │  │   agentService.ts    │ ── SSE streaming (/api/chat) ──────────┐      │    │
+  │  │  │   (fetch + EventSource)                                       │      │    │
+  │  │  └──────────────────────┘                                        │      │    │
+  │  └──────────────────────────────────────────────────────────────────┼──────┘    │
+  │                                                                     │           │
+  │                        X-Session-ID header (UUID per tab)           │           │
+  └─────────────────────────────────────────────────────────────────────┼───────────┘
+                                                                        │
+                                REST + SSE (port 8000 dev / 10000 prod) │
+                                                                        ▼
+  ┌─────────────────────────────────────────────────────────────────────────────────┐
+  │                         BACKEND (FastAPI + Uvicorn)                             │
+  │                                                                                 │
+  │  ┌───────────────────────────────────────────────────────────────────────────┐  │
+  │  │                           Routes (app/routes/)                            │  │
+  │  │                                                                           │  │
+  │  │  POST /api/chat ──────────► SSE stream (thinking, answer, tool_result)    │  │
+  │  │  POST /api/chat/edit ─────► SSE stream (re-run from edited message)       │  │
+  │  │  POST /api/chat/respond ──► Answer pending user_question                  │  │
+  │  │  POST /api/query ─────────► Direct SQL execution (playground)             │  │
+  │  │  GET  /api/tables ────────► List loaded tables + schemas                  │  │
+  │  │  POST /api/upload ────────► Load CSV/JSON/Parquet/Excel into DuckDB       │  │
+  │  │  CRUD /api/conversations ─► Conversation history (SQLite)                 │  │
+  │  │  GET  /api/memories ──────► Agent long-term memories                      │  │
+  │  │  GET  /api/skills ────────► Skill discovery and management                │  │
+  │  │  GET  /api/config ────────► Frontend feature flags                        │  │
+  │  └───────────────────────────────────────────────────────────────────────────┘  │
+  │                                                                                 │
+  │  ┌──────────────────┐  ┌──────────────────┐  ┌─────────────────────────────┐    │
+  │  │  session_manager │  │    database.py   │  │      memory_store.py        │    │
+  │  │                  │  │                  │  │                             │    │
+  │  │  Per-tab DuckDB  │  │  DuckDB wrapper  │  │  SQLite (data/memory.db)    │    │
+  │  │  sessions with   │  │  - load_csv/json/│  │  - Conversations            │    │
+  │  │  TTL cleanup     │  │    parquet/excel │  │  - Messages                 │    │
+  │  │  /tmp/duckdb-*.db│  │  - execute_query │  │  - WAL mode                 │    │
+  │  └──────────────────┘  │  - thread-safe   │  └─────────────────────────────┘    │
+  │                        └──────────────────┘                                     │
+  │                                                                                 │
+  │  ┌──────────────────────────────────────────────────────────────────────────┐   │
+  │  │                          agent.py (Orchestration)                        │   │
+  │  │                                                                          │   │
+  │  │  build_system_prompt()  ── dynamic prompt with table schemas             │   │
+  │  │  stream_chat()          ── spawns sidecar, streams SSE events            │   │
+  │  │  build_subagent_defs()  ── sql-analyst subagent configuration            │   │
+  │  └────────────────────────────────┬─────────────────────────────────────────┘   │
+  │                                   │                                             │
+  │  ┌────────────────────────────────┼─────────────────────────────────────────┐   │
+  │  │          MCP SSE Server (mcp_sse.py — Starlette)                         │   │
+  │  │                                │                                         │   │
+  │  │  Tools exposed to Agent SDK:   │    ◄── MCP protocol ───┐                │   │
+  │  │  ┌────────────┐ ┌────────────┐ │                        │                │   │
+  │  │  │execute_sql │ │render_chart│ │                        │                │   │
+  │  │  └────────────┘ └────────────┘ │                        │                │   │
+  │  │  ┌─────────────────┐ ┌─────────┴──────┐                 │                │   │
+  │  │  │ask_user_question│ │ create_skill   │                 │                │   │
+  │  │  └─────────────────┘ └────────────────┘                 │                │   │
+  │  │  ┌─────────────┐ ┌────────────────┐ ┌──────────────┐    │                │   │
+  │  │  │save_memory  │ │recall_memories │ │forget_memory │    │                │   │
+  │  │  └─────────────┘ └────────────────┘ └──────────────┘    │                │   │
+  │  └─────────────────────────────────────────────────────────┼────────────────┘   │
+  │                                                            │                    │
+  │  ┌──────────────────────────┐  ┌───────────────────────────┼──────────────┐     │
+  │  │   container_manager.py   │  │        proxy.py           │              │     │
+  │  │                          │  │                           │              │     │
+  │  │  Docker container spawn  │  │  /anthropic/* → Bifrost   │              │     │
+  │  │  gVisor sandbox (runsc)  │  │  Model @suffix rewriting  │              │     │
+  │  │  Resource limits         │  │                           │              │     │
+  │  │  agent-sandbox network   │  └─────────────┬─────────────┘              │     │
+  │  └──────────┬───────────────┘                │                            │     │
+  │             │                                │                            │     │
+  │  ┌──────────┼─────────────────┐  ┌───────────┼──────────────────────────┐ │     │
+  │  │ skills.py│  agent_memory.py│  │ tracing.py│  pending_questions.py    │ │     │
+  │  │ SKILL.md │  MEMORY.md      │  │ Langfuse  │  Question state mgmt     │ │     │
+  │  │ parsing  │  persistence    │  │ traces    │                          │ │     │
+  │  └──────────┘─────────────────┘  └───────────┘──────────────────────────┘ │     │
+  └──────────────┬────────────────────────────────┬───────────────────────────┘     │
+                 │                                │                                 │
+                 ▼                                ▼                                 │
+  ┌───────────────────────────┐    ┌──────────────────────────────┐                 │
+  │   SIDECAR CONTAINER       │    │     BIFROST LLM GATEWAY      │                 │
+  │   (Express + TypeScript)  │    │     (maximhq/bifrost)        │                 │
+  │                           │    │                              │                 │
+  │  Claude Agent SDK 0.2.62  │    │  Port 8081                   │                 │
+  │  Port 3000 (internal)     │    │  Multi-provider routing:     │                 │
+  │                           │    │  ┌──────────┐                │                 │
+  │  POST /query              │    │  │Anthropic │ Claude models  │                 │
+  │  - Spawns CLI subprocess  │    │  └──────────┘                │                 │
+  │  - MCP client → backend ──┼────┼──│OpenAI    │ GPT models     │                 │
+  │  - Streams SSE events     │    │  └──────────┘                │                 │
+  │  - Skill allowlist check  │    │  ┌──────────┐                │                 │
+  │  - Idle timeout (10 min)  │    │  │Bedrock   │ AWS models     │                 │
+  │                           │    │  └──────────┘                │                 │
+  │  /health (liveness)       │    │  config.json routing rules   │                 │
+  │                           │    │                              │                 │
+  │  Security:                │    └──────────────────────────────┘                 │
+  │  - Read-only rootfs       │                                                     │
+  │  - 512MB memory limit     │                                                     │
+  │  - All caps dropped       │                                                     │
+  │  - agent-sandbox network  │                                                     │
+  └───────────────────────────┘                                                     │
+                                                                                    │
+  ┌─────────────────────────────────────────────────────────────────────────────────┘
+  │
+  │  DATA FLOW: User Query → Response
+  │  ═══════════════════════════════
+  │
+  │  1. User types message in AgentPanel
+  │  2. Frontend POST /api/chat (SSE) with X-Session-ID
+  │  3. Backend creates/retrieves DuckDB session
+  │  4. Backend spawns sidecar Docker container
+  │  5. Backend POST sidecar:3000/query with system prompt + table schemas
+  │  6. Sidecar spawns Claude Agent SDK subprocess
+  │  7. SDK calls MCP tools on backend /mcp/sse:
+  │     ├── execute_sql → DuckDB query → tabular results
+  │     ├── render_chart → Plotly/Vega-Lite spec → UI rendering
+  │     ├── ask_user_question → interactive clarification
+  │     ├── save_memory → persistent learning
+  │     └── create_skill → reusable workflow
+  │  8. SDK generates response, streams to sidecar
+  │  9. Sidecar streams SSE events to backend
+  │  10. Backend persists messages to SQLite, forwards SSE to frontend
+  │  11. Frontend renders: thinking → answer → charts → tables
+  │
+  │  SSE Event Types:
+  │  thinking | answer | thinking_done | tool_call | tool_result
+  │  subagent_start | subagent_end | user_question | done | error
+  │
+  └──────────────────────────────────────────────────────────────────────────────────────
+
+  ┌──────────────────────────────────────────────────────────────────────────────┐
+  │                           AGENT MODEL HIERARCHY                              │
+  │                                                                              │
+  │  ┌─────────────────────────────────────────────────────────────┐             │
+  │  │              ORCHESTRATOR (claude-sonnet-4-6)               │             │
+  │  │                                                             │             │
+  │  │  Has tools: execute_sql, render_chart, ask_user_question,   │             │
+  │  │             create_skill, save_memory, recall_memories,     │             │
+  │  │             forget_memory                                   │             │
+  │  │                                                             │             │
+  │  │  Handles: chart rendering, memory mgmt, skill creation,     │             │
+  │  │           user interaction, response generation             │             │
+  │  │                                                             │             │
+  │  │         ┌────────────────────────────────────┐              │             │
+  │  │         │  SQL ANALYST SUBAGENT (haiku)      │              │             │
+  │  │         │                                    │              │             │
+  │  │         │  Tools: execute_sql only           │              │             │
+  │  │         │  Purpose: multi-step SQL analysis  │              │             │
+  │  │         │  Lightweight, fast, cost-efficient │              │             │
+  │  │         └────────────────────────────────────┘              │             │
+  │  └─────────────────────────────────────────────────────────────┘             │
+  └──────────────────────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────────────────────────┐
+  │                           PERSISTENCE LAYER                                  │
+  │                                                                              │
+  │  ┌───────────────────┐  ┌───────────────────┐  ┌─────────────────────────┐   │
+  │  │     DuckDB        │  │     SQLite        │  │    Filesystem           │   │
+  │  │                   │  │                   │  │                         │   │
+  │  │  Per-session OLAP │  │  data/memory.db   │  │  data/memories/         │   │
+  │  │  /tmp/duckdb-*.db │  │  - conversations  │  │    {user}/MEMORY.md     │   │
+  │  │                   │  │  - messages       │  │                         │   │
+  │  │  User data:       │  │  - WAL mode       │  │  skills/                │   │
+  │  │  CSV, JSON,       │  │                   │  │    *.SKILL.md           │   │
+  │  │  Parquet, Excel   │  │                   │  │    (built-in + user)    │   │
+  │  └───────────────────┘  └───────────────────┘  └─────────────────────────┘   │
+  └──────────────────────────────────────────────────────────────────────────────┘
+```
+
 ## E2E Testing
 
 Browser-based end-to-end tests are driven by YAML scenario files using [Playwright](https://playwright.dev/). Define test scenarios declaratively — the runner handles browser automation, structural DOM assertions, and LLM-as-judge semantic verification.
