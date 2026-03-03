@@ -1,0 +1,122 @@
+Implement the following plan:
+
+# Plan: Stream Subagent SQL Activity in Real-Time
+
+## Context
+
+The SDK strips thinking blocks from subagent messages, so we cannot show subagent reasoning. However, the backend already captures subagent SQL queries and results (in `subagent_sql_data` and `subagent_internal_tools`), but only displays them after the subagent finishes (in the `subagent_end` event). The goal is to stream these intermediate SQL activities in real-time so users see progress instead of just "Executing...".
+
+## Approach
+
+Emit two new SSE event types (`subagent_sql_query` and `subagent_sql_result`) as the subagent runs. The frontend updates the `subagent_start` segment with a `sqlProgress` array that shows queries and results as they arrive. When `subagent_end` arrives, clear the progress from `subagent_start` so the final rendering in `subagent_end` takes over (no duplication).
+
+Also: clean up dead code from the previous attempt to stream subagent thinking (since the SDK doesn't expose it).
+
+## Files to Modify
+
+### 1. Backend: `backend/app/agent.py`
+
+**a) Emit `subagent_sql_query` when subagent calls execute_sql** (~line 545-551)
+- After capturing SQL in `subagent_sql_data`, yield a new SSE event:
+  ```python
+  yield f"event: subagent_sql_query\ndata: {json.dumps({'id': parent_tool_use_id, 'sql': sql})}\n\n"
+  ```
+
+**b) Emit `subagent_sql_result` when subagent gets execute_sql result** (~line 656-678)
+- After updating `subagent_sql_data` with result data, yield a new SSE event:
+  ```python
+  yield f"event: subagent_sql_result\ndata: {json.dumps({'id': parent_subagent_id, 'sql': sql, 'columns': ..., 'rows': ..., 'rowCount': ..., 'error': ...})}\n\n"
+  ```
+- Note: the `continue` on line 678 stays — we still skip the generic `tool_result` event. We just add our specific event before it.
+
+**c) Clean up dead thinking code**
+- Remove the thinking extraction from subagent assistant messages (since it never has thinking blocks)
+- Remove the `subagent_thinking` SSE emission from stream_event handler (since SDK never sends stream_events for subagents)
+- Keep `subagent_thinking` dict and `tool_use_result_thinking` as fallback infrastructure in case SDK behavior changes, but don't emit events from them unless data is actually present
+
+### 2. Frontend: `frontend/src/types.ts`
+
+Add `sqlProgress` field to `ContentSegment`:
+```typescript
+sqlProgress?: Array<{
+  sql: string;
+  status: 'executing' | 'done' | 'error';
+  columns?: string[];
+  rows?: Record<string, unknown>[];
+  rowCount?: number;
+  error?: string;
+}>;
+```
+
+### 3. Frontend: `frontend/src/agent/agentService.ts`
+
+**a) Add callbacks to `AgentCallbacks`:**
+```typescript
+onSubagentSqlQuery?: (data: { id: string; sql: string }) => void;
+onSubagentSqlResult?: (data: { id: string; sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }) => void;
+```
+
+**b) Add cases in `handleSSEEvent` switch:**
+- `'subagent_sql_query'` → call `callbacks.onSubagentSqlQuery`
+- `'subagent_sql_result'` → call `callbacks.onSubagentSqlResult`
+
+### 4. Frontend: `frontend/src/contexts/AgentContext.tsx`
+
+**a) `onSubagentSqlQuery` callback:**
+- Find matching `subagent_start` segment by `data.id`
+- Push `{sql: data.sql, status: 'executing'}` to its `sqlProgress` array
+- Trigger re-render
+
+**b) `onSubagentSqlResult` callback:**
+- Find matching `subagent_start` segment by `data.id`
+- Find matching entry in `sqlProgress` by `data.sql`
+- Update it with result data and `status: 'done'` (or `'error'`)
+- Trigger re-render
+
+**c) `onSubagentEnd` callback (existing):**
+- Find matching `subagent_start` segment and clear its `sqlProgress` to avoid duplication
+
+### 5. Frontend: `frontend/src/components/MessageBubble.tsx`
+
+Update the `subagent_start` rendering to show `sqlProgress`:
+- For each entry in `sqlProgress`:
+  - If `status === 'executing'`: show the SQL with a subtle "running..." indicator
+  - If `status === 'done'`: render using `InlineQueryResult` (already exists)
+  - If `status === 'error'`: show error message
+
+### 6. Frontend: `frontend/src/components/MessageBubble.css`
+
+No new styles needed — reuse existing `.message-bubble__tool-segment` and `InlineQueryResult` styles.
+
+### 7. Frontend: `frontend/src/utils/buildChatMessages.ts`
+
+No changes needed — `sqlProgress` is transient (real-time only). Persisted data stays on `subagent_end.sqlResults`.
+
+## Verification
+
+1. Start backend and frontend dev servers
+2. Upload a dataset and ask a question that triggers the sql-analyst subagent
+3. During execution, confirm SQL queries appear in real-time below "sql-analyst working..."
+4. After completion, confirm the final `subagent_end` shows the results (no duplication)
+5. Switch conversations and confirm persisted results still display correctly from `subagent_end`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/cyyeh/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+is it correct?
+
+---
+
+is it possible I put all related sql query and query results of same subagent together in each subgroup in thinking block?
+
+---
+
+could you add expander that could expand/unexpand these sqls/query results for each subagent in thinking block?
+
+---
+
+"quries" in expander could also be in i18n
