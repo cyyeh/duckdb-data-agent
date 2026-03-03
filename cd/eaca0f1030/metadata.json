@@ -3,7 +3,7 @@
   "checkpoint_id": "cdeaca0f1030",
   "strategy": "manual-commit",
   "branch": "feature/subagent-thinking-sql-visibility",
-  "checkpoints_count": 7,
+  "checkpoints_count": 8,
   "files_touched": [
     "backend/app/agent.py",
     "frontend/src/agent/agentService.ts",
@@ -36,13 +36,20 @@
       "context": "/cd/eaca0f1030/2/context.md",
       "content_hash": "/cd/eaca0f1030/2/content_hash.txt",
       "prompt": "/cd/eaca0f1030/2/prompt.txt"
+    },
+    {
+      "metadata": "/cd/eaca0f1030/3/metadata.json",
+      "transcript": "/cd/eaca0f1030/3/full.jsonl",
+      "context": "/cd/eaca0f1030/3/context.md",
+      "content_hash": "/cd/eaca0f1030/3/content_hash.txt",
+      "prompt": "/cd/eaca0f1030/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 180,
-    "cache_creation_tokens": 143765,
-    "cache_read_tokens": 8683219,
-    "output_tokens": 37856,
-    "api_call_count": 149
+    "input_tokens": 235,
+    "cache_creation_tokens": 228969,
+    "cache_read_tokens": 13000892,
+    "output_tokens": 56850,
+    "api_call_count": 198
   }
 }
