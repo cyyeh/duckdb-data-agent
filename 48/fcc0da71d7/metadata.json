@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "48fcc0da71d7",
+  "strategy": "manual-commit",
+  "branch": "feature/memory-and-tool-persistence",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/package-lock.json",
+    "frontend/package.json",
+    "frontend/src/components/VegaLiteChartWidget.tsx",
+    "frontend/src/utils/exportConversation.ts",
+    "sidecar/src/server.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/48/fcc0da71d7/0/metadata.json",
+      "transcript": "/48/fcc0da71d7/0/full.jsonl",
+      "context": "/48/fcc0da71d7/0/context.md",
+      "content_hash": "/48/fcc0da71d7/0/content_hash.txt",
+      "prompt": "/48/fcc0da71d7/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 43,
+    "cache_creation_tokens": 29992,
+    "cache_read_tokens": 1353546,
+    "output_tokens": 1859,
+    "api_call_count": 35
+  }
+}
