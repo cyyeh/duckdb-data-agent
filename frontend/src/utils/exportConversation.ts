@@ -172,7 +172,8 @@ function buildHTML(opts: {
 ${hasPlotly ? '<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"><\/script>' : ''}
 ${hasVegaLite ? `<script src="https://cdn.jsdelivr.net/npm/vega@5"><\/script>
 <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"><\/script>
-<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"><\/script>` : ''}
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/vega-themes"><\/script>` : ''}
 <style>
 ${css}
 
@@ -211,14 +212,21 @@ ${hasVegaLite ? `<script>
 (function() {
   var specs = ${vegaLiteChartsJSON};
   var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  var darkConfig = {
+  var pbiTheme = window.vegaThemes ? window.vegaThemes.powerbi : {};
+  var darkOverrides = {
     background: 'transparent',
-    axis: { labelColor: '#e2e8f0', titleColor: '#e2e8f0', gridColor: '#374151', domainColor: '#374151' },
+    axis: { labelColor: '#e2e8f0', titleColor: '#e2e8f0', gridColor: '#374151', domainColor: '#4b5563' },
     legend: { labelColor: '#e2e8f0', titleColor: '#e2e8f0' },
     title: { color: '#e2e8f0' },
     view: { stroke: 'transparent' }
   };
-  var lightConfig = { background: 'transparent', view: { stroke: 'transparent' } };
+  var config = isDark
+    ? Object.assign({}, pbiTheme, darkOverrides, {
+        axis: Object.assign({}, pbiTheme.axis, darkOverrides.axis),
+        legend: Object.assign({}, pbiTheme.legend, darkOverrides.legend),
+        title: Object.assign({}, pbiTheme.title, darkOverrides.title)
+      })
+    : Object.assign({}, pbiTheme, { background: 'transparent', view: { stroke: 'transparent' } });
   document.querySelectorAll('[data-vegalite-chart]').forEach(function(el) {
     var idx = parseInt(el.getAttribute('data-vegalite-chart'), 10);
     var spec = specs[idx];
@@ -226,7 +234,7 @@ ${hasVegaLite ? `<script>
       var fullSpec = Object.assign({}, spec, {
         width: 'container',
         autosize: { type: 'fit', contains: 'padding' },
-        config: isDark ? darkConfig : lightConfig
+        config: config
       });
       vegaEmbed(el, fullSpec, { actions: true, renderer: 'svg' });
     }

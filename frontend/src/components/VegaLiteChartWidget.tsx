@@ -1,7 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
 import embed from 'vega-embed';
+import { powerbi as powerbiTheme } from 'vega-themes';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../hooks/useTranslation';
+
+// Dark mode overrides on top of the Power BI theme
+const darkOverrides = {
+  background: 'transparent',
+  axis: {
+    labelColor: '#e2e8f0',
+    titleColor: '#e2e8f0',
+    gridColor: '#374151',
+    domainColor: '#4b5563',
+  },
+  legend: {
+    labelColor: '#e2e8f0',
+    titleColor: '#e2e8f0',
+  },
+  title: {
+    color: '#e2e8f0',
+  },
+  view: {
+    stroke: 'transparent',
+  },
+};
 
 interface VegaLiteChartWidgetProps {
   spec: Record<string, unknown>;
@@ -22,38 +44,15 @@ export function VegaLiteChartWidget({ spec }: VegaLiteChartWidgetProps) {
     viewRef.current?.finalize();
     viewRef.current = null;
 
-    const darkConfig = {
-      background: 'transparent',
-      axis: {
-        labelColor: '#e2e8f0',
-        titleColor: '#e2e8f0',
-        gridColor: '#374151',
-        domainColor: '#374151',
-      },
-      legend: {
-        labelColor: '#e2e8f0',
-        titleColor: '#e2e8f0',
-      },
-      title: {
-        color: '#e2e8f0',
-      },
-      view: {
-        stroke: 'transparent',
-      },
-    };
-
-    const lightConfig = {
-      background: 'transparent',
-      view: {
-        stroke: 'transparent',
-      },
-    };
+    const config = isDark
+      ? { ...powerbiTheme, ...darkOverrides, axis: { ...powerbiTheme.axis, ...darkOverrides.axis }, legend: { ...powerbiTheme.legend, ...darkOverrides.legend }, title: { ...powerbiTheme.title, ...darkOverrides.title } }
+      : { ...powerbiTheme, background: 'transparent', view: { stroke: 'transparent' } };
 
     const fullSpec = {
       ...spec,
       width: 'container',
       autosize: { type: 'fit', contains: 'padding' },
-      config: isDark ? darkConfig : lightConfig,
+      config,
     };
 
     let cancelled = false;
