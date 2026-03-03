@@ -39,9 +39,11 @@ services:
       BACKEND_BASE_URL: http://duckdb-data-agent:10000
       SKILLS_DIR: /app/skills
       SKILLS_HOST_PATH: ${SKILLS_HOST_PATH:-${PWD}/skills}
+      PLUGINS_HOST_PATH: ${PLUGINS_HOST_PATH:-${PWD}/plugins}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./skills:/app/skills
+      - ./plugins:/app/plugins:ro
       - ./data:/app/data
     group_add:
       - "${DOCKER_GID:-0}"

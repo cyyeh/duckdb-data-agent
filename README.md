@@ -67,6 +67,14 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Agent-created skills** — The agent can create new skills during a conversation via the `create_skill` MCP tool; new skills appear in the sidebar automatically
 - **Dynamic skill discovery** — Skills are stored at `skills/<name>/SKILL.md` and re-scanned per request; add or remove skills without restarting
 
+### Plugins
+
+- **Data analysis plugin** — The [knowledge-work-plugins/data](https://github.com/anthropics/knowledge-work-plugins/tree/main/data) plugin is bundled at `plugins/data/`, providing specialized commands and skills for data work
+- **Plugin commands** — Invoke via slash commands: `/data:analyze`, `/data:explore-data`, `/data:write-query`, `/data:create-viz`, `/data:build-dashboard`, `/data:validate`
+- **Plugin skills** — The plugin adds skills for SQL queries, data exploration, data visualization, statistical analysis, data validation, interactive dashboard building, and data context extraction
+- **Plugin isolation** — Plugins are bind-mounted read-only into sidecar containers at `/app/plugins/`; the plugin's external MCP server connections (Snowflake, Databricks, etc.) are neutralized since the agent uses its own DuckDB MCP server
+- **Dashboard limitation** — The `/data:build-dashboard` command can generate HTML dashboards inside the sidecar container, but the output is **not yet visible** in the UI; the sidecar writes to ephemeral tmpfs storage that is inaccessible from the browser, and the frontend has no HTML preview or iframe rendering support; see [`docs/plans/2026-03-03-inline-dashboard-rendering.md`](docs/plans/2026-03-03-inline-dashboard-rendering.md) for the implementation plan to add inline dashboard rendering via a `render_dashboard` MCP tool
+
 ## Getting Started
 
 ### Prerequisites
@@ -328,8 +336,9 @@ make compose-down
   │  - Spawns CLI subprocess  │    │  └──────────┘                │                 │
   │  - MCP client → backend ──┼────┼──│OpenAI    │ GPT models     │                 │
   │  - Streams SSE events     │    │  └──────────┘                │                 │
-  │  - Skill allowlist check  │    │  ┌──────────┐                │                 │
-  │  - Idle timeout (10 min)  │    │  │Bedrock   │ AWS models     │                 │
+  │  - Plugin loading (data)  │    │  ┌──────────┐                │                 │
+  │  - Skill allowlist check  │    │  │Bedrock   │ AWS models     │                 │
+  │  - Idle timeout (10 min)  │    │  │          │                │                 │
   │                           │    │  └──────────┘                │                 │
   │  /health (liveness)       │    │  config.json routing rules   │                 │
   │                           │    │                              │                 │
@@ -403,6 +412,9 @@ make compose-down
   │  │  User data:       │  │  - WAL mode       │  │  skills/                │   │
   │  │  CSV, JSON,       │  │                   │  │    *.SKILL.md           │   │
   │  │  Parquet, Excel   │  │                   │  │    (built-in + user)    │   │
+  │  │                   │  │                   │  │                         │   │
+  │  │                   │  │                   │  │  plugins/data/          │   │
+  │  │                   │  │                   │  │    commands + skills    │   │
   │  └───────────────────┘  └───────────────────┘  └─────────────────────────┘   │
   └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -474,7 +486,7 @@ The data flow for a chat message is:
 6. The sidecar streams SSE events back to the backend, which forwards them to the frontend.
 7. On session end, the container is stopped and removed.
 
-**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no Docker socket access, and a non-root user. The host `skills/` directory is bind-mounted read-only at `/app/.claude/skills/` (the project-level path) so the SDK's built-in Skill tool can discover and invoke them.
+**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no Docker socket access, and a non-root user. The host `skills/` directory is bind-mounted read-only at `/app/.claude/skills/` (the project-level path) so the SDK's built-in Skill tool can discover and invoke them. The host `plugins/` directory is bind-mounted read-only at `/app/plugins/` so the SDK can load installed plugins (e.g., the `data` plugin for data analysis commands and skills).
 
 **MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, `create_skill` for agent-driven skill creation, and `save_memory` / `recall_memories` / `forget_memory` for persistent agent memory. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
 
@@ -515,13 +527,14 @@ The data flow for a chat message is:
 | `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
 | `SKILLS_DIR` | `skills` | Path to skills directory (inside backend container) |
 | `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount (bind-mounted read-only at `/app/.claude/skills/` in sidecar containers) |
+| `PLUGINS_HOST_PATH` | `./plugins` | Host path for plugins volume mount (bind-mounted read-only at `/app/plugins/` in sidecar containers) |
 | `APP_UID` | `1000` | UID for the container user (set to `$(id -u)` on Linux so skills directory writes work; not needed on macOS) |
 | `MEMORY_DB_PATH` | `data/memory.db` | SQLite database for conversation history |
 | `MEMORIES_DIR` | `data/memories` | Directory for agent memory files |
 
 **Security properties:**
 
-- The container has no host filesystem access except a read-only bind mount of the `skills/` directory
+- The container has no host filesystem access except read-only bind mounts of the `skills/` and `plugins/` directories
 - gVisor intercepts all syscalls -- even arbitrary bash/python execution is sandboxed
 - No real API keys inside the container (placeholder string only; real keys managed by Bifrost)
 - Per-session isolation -- containers cannot see each other

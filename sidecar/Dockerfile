@@ -38,6 +38,7 @@ COPY --from=build /app/dist ./dist
 # Pre-create the directory so Docker can bind-mount onto it even with
 # read_only=True (the directory must exist in the image layer).
 RUN mkdir -p /app/.claude/skills
+RUN mkdir -p /app/plugins
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser

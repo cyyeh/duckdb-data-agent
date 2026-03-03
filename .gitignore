@@ -36,3 +36,7 @@ bifrost/data/
 skills/
 !skills/analyze-data
 data/
+
+# Never ignore anything under plugins/
+!plugins/
+!plugins/**

@@ -66,6 +66,11 @@ const skillAllowlistHook: HookCallbackMatcher = {
       const currentSkills = discoverSkills();
       const toolInput = (input as Record<string, unknown>).tool_input as Record<string, unknown> | undefined;
       const skillName = toolInput?.skill as string | undefined;
+      // Allow plugin-namespaced skills (e.g. "data:sql-queries") — the SDK's
+      // plugin system handles their discovery, so we only validate local skills.
+      if (skillName && skillName.includes(":")) {
+        return {};
+      }
       if (skillName && !currentSkills.has(skillName)) {
         return {
           hookSpecificOutput: {
@@ -260,9 +265,10 @@ app.post("/query", async (req: Request, res: Response) => {
     // the model to ignore any skills not in our allowlist.
     const currentSkills = discoverSkills();
     const allowedList = [...currentSkills].join(", ");
+    const pluginSkillNote = " You may also invoke any plugin-namespaced skills (skills whose name contains ':', such as 'data:sql-queries', 'data:analyze', 'data:write-query', 'data:create-viz', 'data:explore-data', 'data:build-dashboard', 'data:validate', etc.) — these are provided by installed plugins and are always allowed.";
     const skillRestriction = currentSkills.size > 0
-      ? `\n\nCRITICAL SKILL RESTRICTION: The ONLY skills you may invoke with the Skill tool are: ${allowedList}. You may see other skills (like "simplify") listed in system reminders — those are NOT available to you and MUST be ignored. When asked about available skills, list ONLY: ${allowedList}. Never mention, suggest, or attempt to invoke any skill not in this list. NOTE: The mcp__duckdb-data-agent__create_skill tool is always available for creating NEW skills — this restriction only applies to invoking existing skills via the Skill tool.`
-      : "\n\nCRITICAL SKILL RESTRICTION: You have no skills available to invoke with the Skill tool. You may see skills listed in system reminders — those are NOT available to you and MUST be ignored. Never mention, suggest, or attempt to invoke any skills. NOTE: The mcp__duckdb-data-agent__create_skill tool is always available for creating NEW skills — this restriction only applies to invoking existing skills via the Skill tool.";
+      ? `\n\nCRITICAL SKILL RESTRICTION: The ONLY local skills you may invoke with the Skill tool are: ${allowedList}. You may see other skills (like "simplify") listed in system reminders — those are NOT available to you and MUST be ignored. When asked about available skills, list ONLY: ${allowedList} (plus any plugin-namespaced skills). Never mention, suggest, or attempt to invoke any non-plugin skill not in this list.${pluginSkillNote} NOTE: The mcp__duckdb-data-agent__create_skill tool is always available for creating NEW skills — this restriction only applies to invoking existing skills via the Skill tool.`
+      : `\n\nCRITICAL SKILL RESTRICTION: You have no local skills available to invoke with the Skill tool. You may see skills listed in system reminders — those are NOT available to you and MUST be ignored. Never mention, suggest, or attempt to invoke any non-plugin skills.${pluginSkillNote} NOTE: The mcp__duckdb-data-agent__create_skill tool is always available for creating NEW skills — this restriction only applies to invoking existing skills via the Skill tool.`;
 
     const skillInstruction = body.skills?.length
       ? `\n\nIMPORTANT: The user has invoked the following skill(s): ${body.skills.map(s => `"/${s}"`).join(", ")}. You MUST use the Skill tool to invoke each skill (${body.skills.map(s => `"${s}"`).join(", ")}) before doing anything else.`
@@ -290,7 +296,7 @@ app.post("/query", async (req: Request, res: Response) => {
         "mcp__duckdb-data-agent__forget_memory",
       ] as string[],
       settingSources: ["project"] as SettingSource[],
-      plugins: [],
+      plugins: [{ type: "local" as const, path: "./plugins/data" }],
       hooks: { PreToolUse: [skillAllowlistHook] },
       permissionMode: "bypassPermissions" as const,
       allowDangerouslySkipPermissions: true,

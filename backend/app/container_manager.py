@@ -122,10 +122,24 @@ class ContainerManager:
                 )
                 if os.path.isdir(fallback):
                     skills_host_path = fallback
+        # Plugins volume: mount the host plugins directory into the sidecar
+        # so the SDK can discover locally installed plugins.
+        plugins_host_path = os.environ.get("PLUGINS_HOST_PATH", "")
+        if not plugins_host_path:
+            if not os.path.exists("/.dockerenv"):
+                fallback_plugins = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "..", "..", "plugins")
+                )
+                if os.path.isdir(fallback_plugins):
+                    plugins_host_path = fallback_plugins
+
         volumes = {}
         if skills_host_path:
             abs_skills_path = os.path.abspath(skills_host_path)
             volumes[abs_skills_path] = {"bind": "/app/.claude/skills", "mode": "ro"}
+        if plugins_host_path:
+            abs_plugins_path = os.path.abspath(plugins_host_path)
+            volumes[abs_plugins_path] = {"bind": "/app/plugins", "mode": "ro"}
 
         # Resolve container hostnames to IPs for gVisor DNS compatibility
         extra_hosts = self._resolve_network_hosts()
