@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "cdeaca0f1030",
+  "session_id": "770e9d29-4e52-47e4-9169-a999ef382f7b",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-03T15:20:54.130451Z",
+  "branch": "feature/subagent-thinking-sql-visibility",
+  "checkpoints_count": 7,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/agent/agentService.ts",
+    "frontend/src/components/MessageBubble.css",
+    "frontend/src/components/MessageBubble.tsx",
+    "frontend/src/contexts/AgentContext.tsx",
+    "frontend/src/types.ts",
+    "frontend/src/utils/buildChatMessages.ts"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "5c5639e9e70e",
+  "transcript_identifier_at_start": "6541eb4e-70d2-452c-bffb-84b3c4bc9df9",
+  "token_usage": {
+    "input_tokens": 112,
+    "cache_creation_tokens": 85120,
+    "cache_read_tokens": 6599844,
+    "output_tokens": 30438,
+    "api_call_count": 93
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-03T15:20:53.036317Z",
+    "agent_lines": 327,
+    "human_added": 5039,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 5366,
+    "agent_percentage": 6.093924711144242
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/770e9d29-4e52-47e4-9169-a999ef382f7b.jsonl"
+}
