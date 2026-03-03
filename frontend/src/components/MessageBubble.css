@@ -499,6 +499,52 @@
   font-style: italic;
 }
 
+.message-bubble__subagent-thinking {
+  padding: 6px 10px;
+  margin: 4px 0;
+  border-left: 3px solid var(--color-border, #e0e0e0);
+  font-size: 0.85em;
+  color: var(--color-text-secondary, #666);
+  white-space: pre-wrap;
+}
+
+.message-bubble__subagent-sql-group {
+  margin: 4px 0 4px 10px;
+  cursor: default;
+}
+
+.message-bubble__subagent-sql-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.8em;
+  color: var(--color-text-disabled, #999);
+  user-select: none;
+  padding: 2px 0;
+  list-style: none;
+}
+
+.message-bubble__subagent-sql-summary::-webkit-details-marker {
+  display: none;
+}
+
+.message-bubble__subagent-sql-summary::before {
+  content: '▶';
+  font-size: 8px;
+  color: var(--color-text-disabled);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.message-bubble__subagent-sql-group[open] > .message-bubble__subagent-sql-summary::before {
+  transform: rotate(90deg);
+}
+
+.message-bubble__subagent-sql-body {
+  padding-top: 4px;
+}
+
 .message-bubble__chart-in-answer {
   margin: 20px 0;
 }

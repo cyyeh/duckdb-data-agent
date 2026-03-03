@@ -57,6 +57,7 @@ export interface ContentSegment {
   toolResult?: ToolCallResult;
   subagentId?: string;
   subagentName?: string;
+  thinking?: string;
   sqlResults?: Array<{
     sql: string;
     columns?: string[];
@@ -71,6 +72,14 @@ export interface ContentSegment {
     frames?: unknown[];
     spec?: Record<string, unknown>;
   };
+  sqlProgress?: Array<{
+    sql: string;
+    status: 'executing' | 'done' | 'error';
+    columns?: string[];
+    rows?: Record<string, unknown>[];
+    rowCount?: number;
+    error?: string;
+  }>;
   questionData?: UserQuestionData;
   userAnswer?: string[];
   userFreeText?: string;

@@ -6,7 +6,10 @@ interface AgentCallbacks {
   onToolCall: (pending: ToolCallResult) => void;
   onToolResult: (result: ToolCallResult) => void;
   onSubagentStart?: (data: { id: string; name: string; prompt: string }) => void;
-  onSubagentEnd?: (data: { id: string; name: string; result?: string; sql_results?: Array<{ sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }>; chart_spec?: { library?: 'plotly' | 'vegalite'; data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[]; spec?: Record<string, unknown> } }) => void;
+  onSubagentThinking?: (data: { id: string; text: string }) => void;
+  onSubagentSqlQuery?: (data: { id: string; sql: string }) => void;
+  onSubagentSqlResult?: (data: { id: string; sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }) => void;
+  onSubagentEnd?: (data: { id: string; name: string; result?: string; thinking?: string; sql_results?: Array<{ sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }>; chart_spec?: { library?: 'plotly' | 'vegalite'; data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[]; spec?: Record<string, unknown> } }) => void;
   onDone: (sessionId: string | null) => void;
   onError: (error: string) => void;
   onUserQuestion?: (data: UserQuestionData) => void;
@@ -240,6 +243,28 @@ function handleSSEEvent(
         prompt: (data.prompt as string) ?? '',
       });
       break;
+    case 'subagent_thinking':
+      callbacks.onSubagentThinking?.({
+        id: data.id as string,
+        text: data.text as string,
+      });
+      break;
+    case 'subagent_sql_query':
+      callbacks.onSubagentSqlQuery?.({
+        id: data.id as string,
+        sql: data.sql as string,
+      });
+      break;
+    case 'subagent_sql_result':
+      callbacks.onSubagentSqlResult?.({
+        id: data.id as string,
+        sql: data.sql as string,
+        columns: (data.columns as string[]) ?? undefined,
+        rows: (data.rows as Record<string, unknown>[]) ?? undefined,
+        rowCount: (data.rowCount as number) ?? undefined,
+        error: (data.error as string) ?? undefined,
+      });
+      break;
     case 'subagent_end': {
       type ChartSpec = { library?: 'plotly' | 'vegalite'; data: unknown[]; layout?: Record<string, unknown>; frames?: unknown[]; spec?: Record<string, unknown> };
       // Backend sends chart_specs (array) for multi-chart support.
@@ -247,6 +272,8 @@ function handleSSEEvent(
       const rawSpecs = data.chart_specs as ChartSpec[] | undefined;
       const legacySpec = data.chart_spec as ChartSpec | undefined;
       const chartSpecs: ChartSpec[] = rawSpecs ?? (legacySpec ? [legacySpec] : []);
+
+      const saThinking = (data.thinking as string) ?? undefined;
 
       if (chartSpecs.length > 0) {
         // Emit one callback per chart so each gets its own segment
@@ -258,11 +285,12 @@ function handleSSEEvent(
           });
         }
         // Emit text result separately (if any) so it doesn't get lost
-        if (data.result) {
+        if (data.result || saThinking) {
           callbacks.onSubagentEnd?.({
             id: data.id as string,
             name: data.name as string,
-            result: data.result as string,
+            result: (data.result as string) ?? undefined,
+            thinking: saThinking,
           });
         }
       } else {
@@ -270,6 +298,7 @@ function handleSSEEvent(
           id: data.id as string,
           name: data.name as string,
           result: (data.result as string) ?? undefined,
+          thinking: saThinking,
           sql_results: (data.sql_results as Array<{ sql: string; columns?: string[]; rows?: Record<string, unknown>[]; rowCount?: number; error?: string }>) ?? undefined,
         });
       }

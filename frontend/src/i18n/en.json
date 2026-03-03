@@ -64,6 +64,8 @@
   "duplicateFilesExist": "Files already uploaded: {names}. Please remove or rename them before uploading.",
   "viewOnGitHub": "View on GitHub",
   "sqlAnalystWorking": "SQL Analyst working...",
+  "subagentQueryCount": "{count} query",
+  "subagentQueryCountPlural": "{count} queries",
   "questionFromAgent": "Question",
   "questionAnswered": "Answered",
   "other": "Other...",

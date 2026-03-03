@@ -73,8 +73,12 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
   // All non-answer, non-chart, non-user_question segments go inside the thinking block.
   // subagent_end with sqlResults always stays in thinking; text-only subagent_end without
   // answer goes to the answer block as a preliminary result.
+  // subagent_end segments that have a matching subagent_start are grouped into the start block.
+  const subagentStartIds = new Set(
+    segments.filter(s => s.type === 'subagent_start').map(s => s.subagentId)
+  );
   const thinkingSegments = segments.filter(
-    (s) => s.type !== 'answer' && s.type !== 'user_question' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && (s.chart_spec || (!s.sqlResults?.length && s.text?.trim() && !hasAnswer)))
+    (s) => s.type !== 'answer' && s.type !== 'user_question' && !(s.type === 'tool' && s.toolResult?.chart_spec) && !(s.type === 'subagent_end' && (s.chart_spec || (!s.sqlResults?.length && s.text?.trim() && !hasAnswer))) && !(s.type === 'subagent_end' && s.subagentId && subagentStartIds.has(s.subagentId))
   );
   const hasContent = thinkingSegments.some(
     (s) => (s.type === 'thinking' && s.text?.trim()) || (s.type === 'tool' && s.toolResult) || s.type === 'subagent_start' || (s.type === 'subagent_end' && !s.chart_spec && (s.text?.trim() || s.sqlResults?.length))
@@ -108,21 +112,78 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
             );
           }
           if (seg.type === 'subagent_start') {
+            // Find matching subagent_end to group together
+            const matchingEnd = segments.find(
+              s => s.type === 'subagent_end' && s.subagentId === seg.subagentId && !s.chart_spec
+            );
+            const isCompleted = !!matchingEnd;
             const displayName = seg.subagentName === 'sql-analyst'
               ? t('sqlAnalystWorking')
               : `${seg.subagentName} working...`;
+            // Combine thinking from both start (real-time) and end (final)
+            const combinedThinking = [seg.thinking, matchingEnd?.thinking].filter(Boolean).join('\n').trim();
+            const hasSqlContent = !!(seg.sqlProgress?.length || matchingEnd?.sqlResults?.length);
+            const sqlCount = (seg.sqlProgress?.length ?? 0) + (matchingEnd?.sqlResults?.length ?? 0);
             return (
-              <div key={i} className="message-bubble__subagent-indicator">
-                <span className="message-bubble__subagent-label">{displayName}</span>
+              <div key={i}>
+                <div className="message-bubble__subagent-indicator">
+                  <span className="message-bubble__subagent-label">{displayName}</span>
+                </div>
+                {combinedThinking && (
+                  <div className="message-bubble__subagent-thinking">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{combinedThinking}</ReactMarkdown>
+                  </div>
+                )}
+                {hasSqlContent && (
+                  <details className="message-bubble__subagent-sql-group" open={!isCompleted || undefined}>
+                    <summary className="message-bubble__subagent-sql-summary">
+                      {t(sqlCount === 1 ? 'subagentQueryCount' : 'subagentQueryCountPlural', { count: sqlCount })}
+                    </summary>
+                    <div className="message-bubble__subagent-sql-body">
+                      {/* Real-time SQL progress (shown while subagent is running) */}
+                      {seg.sqlProgress?.map((entry, qi) => (
+                        <div key={`progress-${qi}`} className="message-bubble__tool-segment">
+                          <InlineQueryResult result={{
+                            toolCallId: `${seg.subagentId}-progress-${qi}`,
+                            toolName: 'execute_sql',
+                            sql: entry.sql,
+                            columns: entry.status === 'executing' ? [] : (entry.columns ?? []),
+                            rows: entry.status === 'executing' ? [] : (entry.rows ?? []),
+                            rowCount: entry.status === 'executing' ? 0 : (entry.rowCount ?? 0),
+                            error: entry.error,
+                          }} />
+                        </div>
+                      ))}
+                      {/* Final SQL results from subagent_end (shown after completion) */}
+                      {matchingEnd?.sqlResults?.map((sqlResult, qi) => (
+                        <div key={`result-${qi}`} className="message-bubble__tool-segment">
+                          <InlineQueryResult result={{
+                            toolCallId: `${seg.subagentId}-sql-${qi}`,
+                            toolName: 'execute_sql',
+                            sql: sqlResult.sql,
+                            columns: sqlResult.columns ?? [],
+                            rows: sqlResult.rows ?? [],
+                            rowCount: sqlResult.rowCount ?? 0,
+                            error: sqlResult.error,
+                          }} />
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
               </div>
             );
           }
-          if (seg.type === 'subagent_end' && !seg.chart_spec && (seg.sqlResults?.length || seg.text?.trim())) {
-            // Render SQL results using InlineQueryResult — same as direct tool calls
-            if (seg.sqlResults?.length) {
-              return (
-                <div key={i}>
-                  {seg.sqlResults.map((sqlResult, qi) => (
+          if (seg.type === 'subagent_end' && !seg.chart_spec && (seg.sqlResults?.length || seg.text?.trim() || seg.thinking?.trim())) {
+            return (
+              <div key={i}>
+                {seg.thinking?.trim() && (
+                  <div className="message-bubble__subagent-thinking">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.thinking}</ReactMarkdown>
+                  </div>
+                )}
+                {seg.sqlResults?.length ? (
+                  seg.sqlResults.map((sqlResult, qi) => (
                     <div key={qi} className="message-bubble__tool-segment">
                       <InlineQueryResult result={{
                         toolCallId: `${seg.subagentId}-sql-${qi}`,
@@ -134,13 +195,12 @@ function ThinkingBlock({ segments, streamingRemainder, isThinkingPhase, isAgentS
                         error: sqlResult.error,
                       }} />
                     </div>
-                  ))}
-                </div>
-              );
-            }
-            return (
-              <div key={i} className="message-bubble__segment-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text!}</ReactMarkdown>
+                  ))
+                ) : seg.text?.trim() ? (
+                  <div className="message-bubble__segment-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text!}</ReactMarkdown>
+                  </div>
+                ) : null}
               </div>
             );
           }

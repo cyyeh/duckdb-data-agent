@@ -300,13 +300,74 @@ export function AgentProvider({
               )
             );
           },
+          onSubagentThinking: (data) => {
+            const startSeg = [...state.segments].reverse().find(
+              s => s.type === 'subagent_start' && s.subagentId === data.id
+            );
+            if (startSeg) {
+              startSeg.thinking = (startSeg.thinking ?? '') + data.text;
+              updateMessages(msgs =>
+                msgs.map(m =>
+                  m.id === assistantId
+                    ? { ...m, segments: [...state.segments] }
+                    : m
+                )
+              );
+            }
+          },
+          onSubagentSqlQuery: (data) => {
+            const startSeg = [...state.segments].reverse().find(
+              s => s.type === 'subagent_start' && s.subagentId === data.id
+            );
+            if (startSeg) {
+              if (!startSeg.sqlProgress) startSeg.sqlProgress = [];
+              startSeg.sqlProgress.push({ sql: data.sql, status: 'executing' });
+              updateMessages(msgs =>
+                msgs.map(m =>
+                  m.id === assistantId
+                    ? { ...m, segments: [...state.segments] }
+                    : m
+                )
+              );
+            }
+          },
+          onSubagentSqlResult: (data) => {
+            const startSeg = [...state.segments].reverse().find(
+              s => s.type === 'subagent_start' && s.subagentId === data.id
+            );
+            if (startSeg?.sqlProgress) {
+              const entry = startSeg.sqlProgress.find(e => e.sql === data.sql && e.status === 'executing');
+              if (entry) {
+                entry.status = data.error ? 'error' : 'done';
+                entry.columns = data.columns;
+                entry.rows = data.rows;
+                entry.rowCount = data.rowCount;
+                entry.error = data.error;
+                updateMessages(msgs =>
+                  msgs.map(m =>
+                    m.id === assistantId
+                      ? { ...m, segments: [...state.segments] }
+                      : m
+                  )
+                );
+              }
+            }
+          },
           onSubagentEnd: (data) => {
+            // Clear sqlProgress from matching subagent_start to avoid duplication
+            const startSeg = [...state.segments].reverse().find(
+              s => s.type === 'subagent_start' && s.subagentId === data.id
+            );
+            if (startSeg) {
+              delete startSeg.sqlProgress;
+            }
             state.segments.push({
               type: 'subagent_end',
               subagentId: data.id,
               subagentName: data.name,
               chart_spec: data.chart_spec,
               sqlResults: data.sql_results,
+              thinking: data.thinking,
               text: data.result,
             });
             updateMessages(msgs =>
@@ -619,13 +680,74 @@ export function AgentProvider({
               )
             );
           },
+          onSubagentThinking: (data) => {
+            const startSeg = [...state.segments].reverse().find(
+              s => s.type === 'subagent_start' && s.subagentId === data.id
+            );
+            if (startSeg) {
+              startSeg.thinking = (startSeg.thinking ?? '') + data.text;
+              updateMessages(msgs =>
+                msgs.map(m =>
+                  m.id === assistantId
+                    ? { ...m, segments: [...state.segments] }
+                    : m
+                )
+              );
+            }
+          },
+          onSubagentSqlQuery: (data) => {
+            const startSeg = [...state.segments].reverse().find(
+              s => s.type === 'subagent_start' && s.subagentId === data.id
+            );
+            if (startSeg) {
+              if (!startSeg.sqlProgress) startSeg.sqlProgress = [];
+              startSeg.sqlProgress.push({ sql: data.sql, status: 'executing' });
+              updateMessages(msgs =>
+                msgs.map(m =>
+                  m.id === assistantId
+                    ? { ...m, segments: [...state.segments] }
+                    : m
+                )
+              );
+            }
+          },
+          onSubagentSqlResult: (data) => {
+            const startSeg = [...state.segments].reverse().find(
+              s => s.type === 'subagent_start' && s.subagentId === data.id
+            );
+            if (startSeg?.sqlProgress) {
+              const entry = startSeg.sqlProgress.find(e => e.sql === data.sql && e.status === 'executing');
+              if (entry) {
+                entry.status = data.error ? 'error' : 'done';
+                entry.columns = data.columns;
+                entry.rows = data.rows;
+                entry.rowCount = data.rowCount;
+                entry.error = data.error;
+                updateMessages(msgs =>
+                  msgs.map(m =>
+                    m.id === assistantId
+                      ? { ...m, segments: [...state.segments] }
+                      : m
+                  )
+                );
+              }
+            }
+          },
           onSubagentEnd: (data) => {
+            // Clear sqlProgress from matching subagent_start to avoid duplication
+            const startSeg = [...state.segments].reverse().find(
+              s => s.type === 'subagent_start' && s.subagentId === data.id
+            );
+            if (startSeg) {
+              delete startSeg.sqlProgress;
+            }
             state.segments.push({
               type: 'subagent_end',
               subagentId: data.id,
               subagentName: data.name,
               chart_spec: data.chart_spec,
               sqlResults: data.sql_results,
+              thinking: data.thinking,
               text: data.result,
             });
             updateMessages(msgs =>

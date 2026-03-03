@@ -44,6 +44,7 @@ export function buildChatMessages(messages: BackendMessage[]): ChatMessage[] {
             }
             if (seg.subagentId) s.subagentId = seg.subagentId as string;
             if (seg.subagentName) s.subagentName = seg.subagentName as string;
+            if (seg.thinking && seg.type === 'subagent_end') s.thinking = seg.thinking as string;
             if (seg.sqlResults) s.sqlResults = seg.sqlResults as ContentSegment['sqlResults'];
             if (seg.chart_spec && seg.type === 'subagent_end') {
               s.chart_spec = seg.chart_spec as ContentSegment['chart_spec'];
