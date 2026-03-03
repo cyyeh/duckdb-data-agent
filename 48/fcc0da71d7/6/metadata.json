@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "48fcc0da71d7",
+  "session_id": "fe0475d7-80af-449f-ac0c-0d8f7401a026",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-03T13:11:47.978069Z",
+  "branch": "feature/memory-and-tool-persistence",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "backend/app/agent.py",
+    "frontend/src/components/VegaLiteChartWidget.tsx",
+    "frontend/src/utils/exportConversation.ts",
+    "sidecar/src/server.ts"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "230d8dd05df1",
+  "transcript_identifier_at_start": "fa243099-1ddc-4d4e-b575-e2983132b9c2",
+  "token_usage": {
+    "input_tokens": 53,
+    "cache_creation_tokens": 78158,
+    "cache_read_tokens": 2025505,
+    "output_tokens": 12054,
+    "api_call_count": 39
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-03T13:11:47.618639Z",
+    "agent_lines": 65,
+    "human_added": 14,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 80,
+    "agent_percentage": 81.25
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent/fe0475d7-80af-449f-ac0c-0d8f7401a026.jsonl"
+}

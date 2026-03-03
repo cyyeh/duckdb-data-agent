@@ -3,7 +3,7 @@
   "checkpoint_id": "48fcc0da71d7",
   "strategy": "manual-commit",
   "branch": "feature/memory-and-tool-persistence",
-  "checkpoints_count": 5,
+  "checkpoints_count": 9,
   "files_touched": [
     "backend/app/agent.py",
     "frontend/package-lock.json",
@@ -54,13 +54,20 @@
       "context": "/48/fcc0da71d7/5/context.md",
       "content_hash": "/48/fcc0da71d7/5/content_hash.txt",
       "prompt": "/48/fcc0da71d7/5/prompt.txt"
+    },
+    {
+      "metadata": "/48/fcc0da71d7/6/metadata.json",
+      "transcript": "/48/fcc0da71d7/6/full.jsonl",
+      "context": "/48/fcc0da71d7/6/context.md",
+      "content_hash": "/48/fcc0da71d7/6/content_hash.txt",
+      "prompt": "/48/fcc0da71d7/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1175,
-    "cache_creation_tokens": 427460,
-    "cache_read_tokens": 15400984,
-    "output_tokens": 74447,
-    "api_call_count": 243
+    "input_tokens": 1228,
+    "cache_creation_tokens": 505618,
+    "cache_read_tokens": 17426489,
+    "output_tokens": 86501,
+    "api_call_count": 282
   }
 }
