@@ -73,6 +73,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Plugin commands** — Invoke via slash commands: `/data:analyze`, `/data:explore-data`, `/data:write-query`, `/data:create-viz`, `/data:build-dashboard`, `/data:validate`
 - **Plugin skills** — The plugin adds skills for SQL queries, data exploration, data visualization, statistical analysis, data validation, interactive dashboard building, and data context extraction
 - **Plugin isolation** — Plugins are bind-mounted read-only into sidecar containers at `/app/plugins/`; the plugin's external MCP server connections (Snowflake, Databricks, etc.) are neutralized since the agent uses its own DuckDB MCP server
+- **Dashboard limitation** — The `/data:build-dashboard` command can generate HTML dashboards inside the sidecar container, but the output is **not yet visible** in the UI; the sidecar writes to ephemeral tmpfs storage that is inaccessible from the browser, and the frontend has no HTML preview or iframe rendering support; see [`docs/plans/2026-03-03-inline-dashboard-rendering.md`](docs/plans/2026-03-03-inline-dashboard-rendering.md) for the implementation plan to add inline dashboard rendering via a `render_dashboard` MCP tool
 
 ## Getting Started
 
