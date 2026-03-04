@@ -6,8 +6,19 @@
   "checkpoints_count": 2,
   "files_touched": [
     "Makefile",
+    "README.md",
     "backend/app/agent.py",
-    "sandbox/config.dev.toml"
+    "backend/app/sandbox_manager.py",
+    "deploy/README.md",
+    "deploy/helm/duckdb-data-agent/templates/bifrost-deployment.yaml",
+    "deploy/helm/duckdb-data-agent/templates/configmap.yaml",
+    "deploy/helm/duckdb-data-agent/values.yaml",
+    "deploy/kustomize/overlays/docker/config.docker.toml",
+    "deploy/kustomize/overlays/docker/kustomization.yaml",
+    "deploy/kustomize/overlays/docker/patches/backend-runtime.yaml",
+    "docker-compose.yml",
+    "sandbox/config.dev.toml",
+    "sandbox/config.docker.toml"
   ],
   "sessions": [
     {
@@ -16,13 +27,20 @@
       "context": "/f2/44fd0ed75c/0/context.md",
       "content_hash": "/f2/44fd0ed75c/0/content_hash.txt",
       "prompt": "/f2/44fd0ed75c/0/prompt.txt"
+    },
+    {
+      "metadata": "/f2/44fd0ed75c/1/metadata.json",
+      "transcript": "/f2/44fd0ed75c/1/full.jsonl",
+      "context": "/f2/44fd0ed75c/1/context.md",
+      "content_hash": "/f2/44fd0ed75c/1/content_hash.txt",
+      "prompt": "/f2/44fd0ed75c/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 16,
-    "cache_creation_tokens": 21541,
-    "cache_read_tokens": 412928,
-    "output_tokens": 4381,
-    "api_call_count": 10
+    "input_tokens": 23,
+    "cache_creation_tokens": 34637,
+    "cache_read_tokens": 592363,
+    "output_tokens": 5555,
+    "api_call_count": 15
   }
 }

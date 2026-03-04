@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f244fd0ed75c",
+  "session_id": "24c5e14b-d3dd-48af-aac7-8037e5408000",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-04T12:42:12.430569Z",
+  "branch": "worktree-opensandbox-integration",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "deploy/helm/duckdb-data-agent/values.yaml",
+    "deploy/kustomize/overlays/docker/kustomization.yaml",
+    "deploy/kustomize/overlays/docker/patches/backend-runtime.yaml",
+    "docker-compose.yml",
+    "sandbox/config.docker.toml",
+    "Makefile",
+    "README.md",
+    "backend/app/agent.py",
+    "backend/app/sandbox_manager.py",
+    "deploy/README.md",
+    "deploy/kustomize/overlays/docker/config.docker.toml",
+    "sandbox/config.dev.toml",
+    "deploy/helm/duckdb-data-agent/templates/bifrost-deployment.yaml",
+    "deploy/helm/duckdb-data-agent/templates/configmap.yaml"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "9906bead61b3",
+  "token_usage": {
+    "input_tokens": 7,
+    "cache_creation_tokens": 13096,
+    "cache_read_tokens": 179435,
+    "output_tokens": 1174,
+    "api_call_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-04T12:42:12.353667Z",
+    "agent_lines": 74,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 74,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-opensandbox-integration/24c5e14b-d3dd-48af-aac7-8037e5408000.jsonl"
+}
