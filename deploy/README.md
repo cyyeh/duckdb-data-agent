@@ -1,4 +1,4 @@
-# Deployment Guide
+# K8s Deployment Guide
 
 ## Overview
 
@@ -6,35 +6,14 @@ The DuckDB Data Agent consists of four services:
 
 - **Backend** (`duckdb-data-agent`) -- FastAPI application that serves the chat UI and orchestrates agent workflows.
 - **Bifrost** (`maximhq/bifrost`) -- LLM gateway that proxies Anthropic API calls with caching and rate-limiting.
-- **OpenSandbox** (`opensandbox/server`) -- Manages ephemeral sidecar containers for code execution. In Docker mode it talks to the Docker daemon; in Kubernetes mode it creates pods via the K8s API.
+- **OpenSandbox** (`opensandbox/server`) -- Manages ephemeral sidecar containers for code execution. In Kubernetes mode it creates pods via the K8s API.
 - **Sidecar** (`duckdb-agent-sidecar`) -- Short-lived containers spawned on demand by OpenSandbox to run SQL queries and user code in isolation.
 
 ## Prerequisites
 
-### Docker deployment
-
-- Docker Engine 20.10+
-- docker-compose (v2 plugin or standalone)
-
-### Kubernetes deployment
-
 - Kubernetes 1.24+
 - Helm 3+ (for Helm deployment) and/or `kubectl` with kustomize (for Kustomize deployment)
 - Container images pushed to a registry accessible from your cluster
-
-## Docker Deployment
-
-```bash
-# Build all images including the sidecar
-make compose-build
-
-# Start services (backend, bifrost, opensandbox)
-make compose-up
-```
-
-The sidecar image is built but never started directly by Compose. The backend asks OpenSandbox to spawn sidecar containers on demand via the Docker socket. Sidecars join the `agent-sandbox` network so they can reach Bifrost and the backend by hostname.
-
-Make sure `backend/.env` contains your `ANTHROPIC_API_KEY` -- Bifrost reads it from that env file.
 
 ## Kubernetes Deployment with Helm
 
