@@ -1,0 +1,136 @@
+failed to start opensandbox server using `make dev`:
+
+ERROR:    2026-03-04 06:15:19+0000 src.services.k8s.kubernetes_service: Failed to initialize Kubernetes client: Failed to load Kubernetes configuration: Invalid kube-config file. No configuration found.
+Traceback (most recent call last):
+  File "/app/src/services/k8s/client.py", line 58, in _load_config
+    config.load_kube_config(config_file=self.config.kubeconfig_path)
+  File "/app/.venv/lib/python3.10/site-packages/kubernetes/config/kube_config.py", line 836, in load_kube_config
+    loader = _get_kube_config_loader(
+  File "/app/.venv/lib/python3.10/site-packages/kubernetes/config/kube_config.py", line 793, in _get_kube_config_loader
+    raise ConfigException(
+kubernetes.config.config_exception.ConfigException: Invalid kube-config file. No configuration found.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/src/services/k8s/kubernetes_service.py", line 95, in __init__
+    self.k8s_client = K8sClient(self.app_config.kubernetes)
+  File "/app/src/services/k8s/client.py", line 44, in __init__
+    self._load_config()
+  File "/app/src/services/k8s/client.py", line 63, in _load_config
+    raise Exception(f"Failed to load Kubernetes configuration: {e}") from e
+Exception: Failed to load Kubernetes configuration: Invalid kube-config file. No configuration found.
+
+---
+
+now fix this issue in opensandbox container
+
+Invalid configuration in /etc/opensandbox/config.toml: 1 validation error for AppConfig
+docker.network_mode
+  Input should be 'host' or 'bridge' [type=literal_error, input_value='agent-sandbox', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/literal_error
+Traceback (most recent call last):
+  File "/app/.venv/bin/opensandbox-server", line 10, in <module>
+    sys.exit(main())
+  File "/app/src/cli.py", line 216, in main
+    from src import main as server_main  # local import after env is set
+  File "/app/src/main.py", line 37, in <module>
+    app_config = load_config()
+  File "/app/src/config.py", line 432, in load_config
+    _config = AppConfig(**raw_data)
+  File "/app/.venv/lib/python3.10/site-packages/pydantic/main.py", line 250, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AppConfig
+docker.network_mode
+  Input should be 'host' or 'bridge' [type=literal_error, input_value='agent-sandbox', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/literal_error
+
+---
+
+Sidecar container failed health check after 10 attempts
+
+no logs shown on sidecar container
+
+logs of sandbox container:
+INFO:     2026-03-04 06:25:28+0000 uvicorn.error: Application startup complete.
+INFO:     2026-03-04 06:25:28+0000 uvicorn.error: Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     2026-03-04 06:25:29+0000 src.api.lifecycle: ListSandboxes: state=['RUNNING'] metadata={'app': 'duckdb-agent-sidecar'}
+INFO:     2026-03-04 06:25:29+0000 uvicorn.access: 192.168.107.1:52480 - "GET /v1/sandboxes?state=RUNNING&metadata=app%3Dduckdb-agent-sidecar HTTP/1.1" 200
+INFO:     2026-03-04 06:25:41+0000 src.services.docker: sandbox=11975ea9-f6fd-4654-b0a2-9852a9adcb29 | action=inspect image duckdb-agent-sidecar:latest | duration=81.74
+INFO:     2026-03-04 06:25:41+0000 src.services.docker: sandbox=11975ea9-f6fd-4654-b0a2-9852a9adcb29 | action=create sandbox container | duration=85.55
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=execd-cache | action=pull execd image opensandbox/execd:v1.0.6 | duration=5205.97
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=execd-cache | action=execd cache create container | duration=275.61
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: Created sandbox execd archive for container cc0ad590f960645423d45e99754f950650b56219965ba7d8924e512eb3504e97
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=execd-cache | action=execd cache start container | duration=134.81
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=execd-cache | action=execd cache read archive | duration=54.27
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=execd-cache | action=execd cache cleanup container | duration=108.78
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: Dumped execd archive to memory
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=11975ea9-f6fd-4654-b0a2-9852a9adcb29 | action=ensure directory /opt/opensandbox | duration=3.56
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=11975ea9-f6fd-4654-b0a2-9852a9adcb29 | action=copy execd archive to sandbox | duration=72.17
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=11975ea9-f6fd-4654-b0a2-9852a9adcb29 | action=ensure directory /opt/opensandbox | duration=2.43
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=11975ea9-f6fd-4654-b0a2-9852a9adcb29 | action=install bootstrap script | duration=2.80
+INFO:     2026-03-04 06:25:47+0000 src.services.docker: sandbox=11975ea9-f6fd-4654-b0a2-9852a9adcb29 | action=start sandbox container | duration=102.77
+INFO:     2026-03-04 06:25:47+0000 uvicorn.access: 192.168.107.1:38676 - "POST /v1/sandboxes HTTP/1.1" 202
+INFO:     2026-03-04 06:25:47+0000 uvicorn.access: 192.168.107.1:38676 - "GET /v1/sandboxes/11975ea9-f6fd-4654-b0a2-9852a9adcb29/endpoints/44772?use_server_proxy=false HTTP/1.1" 200
+INFO:     2026-03-04 06:25:47+0000 uvicorn.access: 192.168.107.1:38676 - "GET /v1/sandboxes/11975ea9-f6fd-4654-b0a2-9852a9adcb29/endpoints/3000?use_server_proxy=false HTTP/1.1" 200
+
+---
+
+sidecar container is running
+cyyeh@ChihYuYehs-MacBook-Pro duckdb-data-agent % docker logs -f sandbox-a296e9f7-b4e0-43e4-9469-677960b531b7
+[sidecar] Initial skills: (none)
+[sidecar] Langfuse tracing enabled
+Sidecar agent server listening on port 3000
+
+opensandbox container log
+INFO:     2026-03-04 06:30:04+0000 uvicorn.error: Application startup complete.
+INFO:     2026-03-04 06:30:04+0000 uvicorn.error: Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     2026-03-04 06:30:04+0000 src.api.lifecycle: ListSandboxes: state=['RUNNING'] metadata={'app': 'duckdb-agent-sidecar'}
+INFO:     2026-03-04 06:30:04+0000 uvicorn.access: 192.168.107.1:56702 - "GET /v1/sandboxes?state=RUNNING&metadata=app%3Dduckdb-agent-sidecar HTTP/1.1" 200
+INFO:     2026-03-04 06:30:19+0000 src.services.docker: sandbox=a296e9f7-b4e0-43e4-9469-677960b531b7 | action=inspect image duckdb-agent-sidecar:latest | duration=10.87
+INFO:     2026-03-04 06:30:19+0000 src.services.docker: sandbox=a296e9f7-b4e0-43e4-9469-677960b531b7 | action=create sandbox container | duration=64.30
+INFO:     2026-03-04 06:30:19+0000 src.services.docker: Found execd image opensandbox/execd:v1.0.6 locally; skipping pull
+INFO:     2026-03-04 06:30:19+0000 src.services.docker: sandbox=execd-cache | action=execd cache create container | duration=36.46
+INFO:     2026-03-04 06:30:19+0000 src.services.docker: Created sandbox execd archive for container d0bae05a928c213384e1dc16ef5b5dcf838ebfdf67284f3ffcb2656ddc12d8ec
+INFO:     2026-03-04 06:30:19+0000 src.services.docker: sandbox=execd-cache | action=execd cache start container | duration=129.91
+INFO:     2026-03-04 06:30:20+0000 src.services.docker: sandbox=execd-cache | action=execd cache read archive | duration=105.37
+INFO:     2026-03-04 06:30:20+0000 src.services.docker: sandbox=execd-cache | action=execd cache cleanup container | duration=115.92
+INFO:     2026-03-04 06:30:20+0000 src.services.docker: Dumped execd archive to memory
+INFO:     2026-03-04 06:30:20+0000 src.services.docker: sandbox=a296e9f7-b4e0-43e4-9469-677960b531b7 | action=ensure directory /opt/opensandbox | duration=4.35
+INFO:     2026-03-04 06:30:20+0000 src.services.docker: sandbox=a296e9f7-b4e0-43e4-9469-677960b531b7 | action=copy execd archive to sandbox | duration=34.93
+INFO:     2026-03-04 06:30:20+0000 src.services.docker: sandbox=a296e9f7-b4e0-43e4-9469-677960b531b7 | action=ensure directory /opt/opensandbox | duration=7.07
+INFO:     2026-03-04 06:30:20+0000 src.services.docker: sandbox=a296e9f7-b4e0-43e4-9469-677960b531b7 | action=install bootstrap script | duration=6.78
+INFO:     2026-03-04 06:30:20+0000 src.services.docker: sandbox=a296e9f7-b4e0-43e4-9469-677960b531b7 | action=start sandbox container | duration=111.75
+INFO:     2026-03-04 06:30:20+0000 uvicorn.access: 192.168.107.1:50066 - "POST /v1/sandboxes HTTP/1.1" 202
+INFO:     2026-03-04 06:30:20+0000 uvicorn.access: 192.168.107.1:50066 - "GET /v1/sandboxes/a296e9f7-b4e0-43e4-9469-677960b531b7/endpoints/44772?use_server_proxy=false HTTP/1.1" 200
+INFO:     2026-03-04 06:30:20+0000 uvicorn.access: 192.168.107.1:50066 - "GET /v1/sandboxes/a296e9f7-b4e0-43e4-9469-677960b531b7/endpoints/3000?use_server_proxy=false HTTP/1.1" 200
+
+but seems sidecar container doesn't recieve any command, I ask hi in ui and seems no skills are found
+
+---
+
+commit all and push
+
+---
+
+update architecture diagram on readme
+
+---
+
+does opensandbox sdk support gvisor?
+
+---
+
+so actually I could still setup CONTAINER_RUNTIME as runsc?
+
+---
+
+add this to readme
+
+---
+
+commit all and push
+
+---
+
+commit all and push
