@@ -77,7 +77,7 @@ services:
       - sidecar
     # Never started directly — exists only so `docker compose build`
     # produces the sidecar image. The app spawns sidecar containers
-    # on-demand via Docker SDK.
+    # on-demand via OpenSandbox.
 
 networks:
   agent-sandbox:

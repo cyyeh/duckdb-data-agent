@@ -6,3 +6,11 @@ resources:
 
 patches:
   - path: patches/opensandbox-runtime.yaml
+
+configMapGenerator:
+  - name: opensandbox-config
+    files:
+      - sandbox.toml=config.docker.toml
+
+generatorOptions:
+  disableNameSuffixHash: true
