@@ -8,7 +8,7 @@ type = "docker"
 execd_image = "opensandbox/execd:v1.0.6"
 
 [docker]
-network_mode = "bridge"
+network_mode = "agent-sandbox"
 drop_capabilities = ["ALL"]
 no_new_privileges = true
 pids_limit = 256

@@ -30,6 +30,26 @@ spec:
               value: "kubernetes"
             - name: CONTAINER_IMAGE
               value: "duckdb-agent-sidecar:latest"
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bifrost-secret
+                  key: ANTHROPIC_API_KEY
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 10000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 10000
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             requests:
               cpu: 250m
@@ -37,3 +57,6 @@ spec:
             limits:
               cpu: "1"
               memory: 512Mi
+      volumes:
+        - name: data
+          emptyDir: {}

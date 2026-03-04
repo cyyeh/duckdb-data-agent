@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bifrost-config
+  labels:
+    app: bifrost
+data:
+  config.json: |
+    {
+      "$schema": "https://www.getbifrost.ai/schema",
+      "config_store": {
+        "enabled": true,
+        "type": "sqlite",
+        "config": {
+          "path": "config.db"
+        }
+      },
+      "providers": {
+        "anthropic": {
+          "keys": [
+            {
+              "name": "default",
+              "value": "env.ANTHROPIC_API_KEY",
+              "models": [],
+              "weight": 1.0
+            }
+          ],
+          "network_config": {
+            "default_request_timeout_in_seconds": 300
+          }
+        }
+      }
+    }

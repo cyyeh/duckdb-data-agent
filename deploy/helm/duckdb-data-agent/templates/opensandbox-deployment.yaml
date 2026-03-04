@@ -28,7 +28,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: opensandbox-config
-              mountPath: /app/config.toml
+              mountPath: /root/.sandbox.toml
               subPath: opensandbox-config.toml
               readOnly: true
           resources:

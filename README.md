@@ -494,10 +494,11 @@ The data flow for a chat message is:
 
 **Setup (Docker):**
 
-1. Build all images:
+1. Build all images and create the Docker network:
 
    ```bash
-   docker compose --profile sidecar build
+   make compose-build
+   make sidecar-network
    ```
 
 2. Start the app:

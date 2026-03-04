@@ -20,8 +20,38 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            - name: APP_HOST
+              value: "0.0.0.0"
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: bifrost-secret
                   key: ANTHROPIC_API_KEY
+          volumeMounts:
+            - name: bifrost-config
+              mountPath: /app/data/config.json
+              subPath: config.json
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: bifrost-config
+          configMap:
+            name: bifrost-config

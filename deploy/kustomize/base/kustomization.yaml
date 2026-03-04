@@ -6,6 +6,7 @@ resources:
   - backend-service.yaml
   - bifrost-deployment.yaml
   - bifrost-service.yaml
+  - bifrost-configmap.yaml
   - opensandbox-deployment.yaml
   - opensandbox-service.yaml
   - opensandbox-rbac.yaml
