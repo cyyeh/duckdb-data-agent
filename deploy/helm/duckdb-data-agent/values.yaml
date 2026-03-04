@@ -1,0 +1,69 @@
+backend:
+  image:
+    repository: duckdb-data-agent
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 10000
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  env:
+    SANDBOX_RUNTIME: kubernetes
+    CONTAINER_IMAGE: duckdb-agent-sidecar:latest
+
+bifrost:
+  image:
+    repository: maximhq/bifrost
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8080
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+opensandbox:
+  image:
+    repository: opensandbox/server
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8080
+  replicas: 1
+  runtime: kubernetes
+  k8sNamespace: default
+  workloadProvider: agent-sandbox
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+sidecar:
+  image:
+    repository: duckdb-agent-sidecar
+    tag: latest
+
+secrets:
+  anthropicApiKey: ""
+
+ingress:
+  enabled: false
+  className: nginx
+  host: duckdb-agent.local
+  tls: []
+
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 1Gi

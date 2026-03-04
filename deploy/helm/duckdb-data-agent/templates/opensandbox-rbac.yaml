@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "duckdb-data-agent.fullname" . }}-opensandbox
+  labels:
+    {{- include "duckdb-data-agent.labels" . | nindent 4 }}
+    app.kubernetes.io/component: opensandbox
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "duckdb-data-agent.fullname" . }}-opensandbox
+  labels:
+    {{- include "duckdb-data-agent.labels" . | nindent 4 }}
+    app.kubernetes.io/component: opensandbox
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "duckdb-data-agent.fullname" . }}-opensandbox
+  labels:
+    {{- include "duckdb-data-agent.labels" . | nindent 4 }}
+    app.kubernetes.io/component: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "duckdb-data-agent.fullname" . }}-opensandbox
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "duckdb-data-agent.fullname" . }}-opensandbox
+    namespace: {{ .Release.Namespace }}

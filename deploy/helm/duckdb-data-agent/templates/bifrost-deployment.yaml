@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "duckdb-data-agent.fullname" . }}-bifrost
+  labels:
+    {{- include "duckdb-data-agent.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bifrost
+spec:
+  replicas: {{ .Values.bifrost.replicas }}
+  selector:
+    matchLabels:
+      {{- include "duckdb-data-agent.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: bifrost
+  template:
+    metadata:
+      labels:
+        {{- include "duckdb-data-agent.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: bifrost
+    spec:
+      containers:
+        - name: bifrost
+          image: "{{ .Values.bifrost.image.repository }}:{{ .Values.bifrost.image.tag }}"
+          imagePullPolicy: {{ .Values.bifrost.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.bifrost.port }}
+              protocol: TCP
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "duckdb-data-agent.fullname" . }}-secret
+                  key: anthropic-api-key
+          volumeMounts:
+            - name: bifrost-config
+              mountPath: /app/config.json
+              subPath: bifrost-config.json
+              readOnly: true
+          resources:
+            {{- toYaml .Values.bifrost.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+      volumes:
+        - name: bifrost-config
+          configMap:
+            name: {{ include "duckdb-data-agent.fullname" . }}-config

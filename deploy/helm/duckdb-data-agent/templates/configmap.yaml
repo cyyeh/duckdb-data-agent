@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "duckdb-data-agent.fullname" . }}-config
+  labels:
+    {{- include "duckdb-data-agent.labels" . | nindent 4 }}
+data:
+  opensandbox-config.toml: |
+    [server]
+    host = "0.0.0.0"
+    port = {{ .Values.opensandbox.port }}
+    log_level = "INFO"
+
+    [runtime]
+    type = {{ .Values.opensandbox.runtime | quote }}
+    execd_image = "opensandbox/execd:v1.0.6"
+
+    [kubernetes]
+    namespace = {{ .Values.opensandbox.k8sNamespace | quote }}
+    workload_provider = {{ .Values.opensandbox.workloadProvider | quote }}
+
+    [agent_sandbox]
+    shutdown_policy = "Delete"
+
+  bifrost-config.json: |
+    {
+      "$schema": "https://www.getbifrost.ai/schema",
+      "config_store": {
+        "enabled": true,
+        "type": "sqlite",
+        "config": {
+          "path": "config.db"
+        }
+      },
+      "providers": {
+        "anthropic": {
+          "keys": [
+            {
+              "name": "default",
+              "value": "env.ANTHROPIC_API_KEY",
+              "models": [],
+              "weight": 1.0
+            }
+          ],
+          "network_config": {
+            "default_request_timeout_in_seconds": 300
+          }
+        }
+      }
+    }

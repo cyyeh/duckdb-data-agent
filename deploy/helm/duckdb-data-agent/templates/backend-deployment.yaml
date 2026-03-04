@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "duckdb-data-agent.fullname" . }}-backend
+  labels:
+    {{- include "duckdb-data-agent.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      {{- include "duckdb-data-agent.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "duckdb-data-agent.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.port }}
+              protocol: TCP
+          env:
+            - name: OPENSANDBOX_DOMAIN
+              value: "{{ include "duckdb-data-agent.fullname" . }}-opensandbox:{{ .Values.opensandbox.port }}"
+            - name: BIFROST_BASE_URL
+              value: "http://{{ include "duckdb-data-agent.fullname" . }}-bifrost:{{ .Values.bifrost.port }}"
+            - name: BACKEND_BASE_URL
+              value: "http://{{ include "duckdb-data-agent.fullname" . }}-backend:{{ .Values.backend.port }}"
+            - name: SANDBOX_RUNTIME
+              value: {{ .Values.backend.env.SANDBOX_RUNTIME | quote }}
+            - name: CONTAINER_IMAGE
+              value: {{ .Values.backend.env.CONTAINER_IMAGE | quote }}
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "duckdb-data-agent.fullname" . }}-secret
+                  key: anthropic-api-key
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          {{- end }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "duckdb-data-agent.fullname" . }}-data
+      {{- end }}
