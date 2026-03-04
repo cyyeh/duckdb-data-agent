@@ -1,0 +1,88 @@
+check does backend app now delete all sidecar containers if backend app is shutdown?
+
+---
+
+fix this issue
+
+INFO:     Waiting for application shutdown.
+ERROR:opensandbox.adapters.sandboxes_adapter:Failed to terminate sandbox: f8f92142-828f-4c95-8c22-7ad142616f2b
+Traceback (most recent call last):
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/opensandbox/adapters/sandboxes_adapter.py", line 358, in kill_sandbox
+    response_obj = await delete_sandboxes_sandbox_id.asyncio_detailed(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/opensandbox/api/lifecycle/api/sandboxes/delete_sandboxes_sandbox_id.py", line 171, in asyncio_detailed
+    response = await client.get_async_httpx_client().request(**kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "/opt/homebrew/Cellar/python@3.12/3.12.4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/opensandbox-integration/backend/.venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+WARNING:app.sandbox_manager:Failed to kill sandbox f8f92142-828: Network connectivity error: All connection attempts failed
+
+---
+
+^CINFO:     Shutting down
+INFO:     Waiting for application shutdown.
+WARNING:app.sandbox_manager:Failed to kill sandbox fd6e17e3-2b5: Network connectivity error: All connection attempts failed
+INFO:     Application shutdown complete.
+INFO:     Finished server process [50120]
+INFO:     Stopping reloader process [50104]
+bifrost-dev
+opensandbox-dev
+make: *** [dev] Error 129
+zsh: terminated  make dev
+cyyeh@ChihYuYehs-MacBook-Pro opensandbox-integration % docker ps
+CONTAINER ID   IMAGE                         COMMAND                  CREATED          STATUS          PORTS                                                         NAMES
+369e6f3a3ecc   duckdb-agent-sidecar:latest   "/opt/opensandbox/bo…"   13 seconds ago   Up 12 seconds   3000/tcp, 0.0.0.0:50296->8080/tcp, 0.0.0.0:42086->44772/tcp   sandbox-fd6e17e3-2b5a-4477-a6cc-d09901a5dc07
+
+sidecar container is not shut down using `make dev`. it's working for `make compose-up`

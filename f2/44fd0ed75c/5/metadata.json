@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f244fd0ed75c",
+  "session_id": "dd57bea4-232c-4be7-b9d6-f0c817089bc6",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-04T12:42:19.475028Z",
+  "branch": "worktree-opensandbox-integration",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "Makefile",
+    "backend/app/sandbox_manager.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "44788ffe4bd3",
+  "transcript_identifier_at_start": "15c67ba2-ddf9-48f5-894e-07a6aee334c5",
+  "token_usage": {
+    "input_tokens": 16,
+    "cache_creation_tokens": 28460,
+    "cache_read_tokens": 416085,
+    "output_tokens": 10248,
+    "api_call_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-04T12:42:19.342543Z",
+    "agent_lines": 32,
+    "human_added": 42,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 74,
+    "agent_percentage": 43.24324324324324
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-opensandbox-integration/dd57bea4-232c-4be7-b9d6-f0c817089bc6.jsonl"
+}
