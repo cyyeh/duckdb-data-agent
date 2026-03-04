@@ -1,0 +1,17 @@
+6226c978-0d47-440e-8f1b-07874d18d03c                          0/1     CreateContainerError   0          24s
+
+---
+
+seems sidecar container creation failed
+
+---
+
+Normal   Scheduled  33s               default-scheduler  Successfully assigned default/4fdc3147-6970-4bfd-bd92-01110ca99646 to orbstack
+  Normal   Pulled     33s               kubelet            Container image "opensandbox/execd:v1.0.6" already present on machine
+  Normal   Created    33s               kubelet            Created container: execd-installer
+  Normal   Started    33s               kubelet            Started container execd-installer
+  Normal   Pulled     33s               kubelet            Successfully pulled image "localhost:5001/duckdb-agent-sidecar:latest" in 45ms (48ms including waiting). Image size: 533624661 bytes.
+  Normal   Pulled     17s               kubelet            Successfully pulled image "localhost:5001/duckdb-agent-sidecar:latest" in 65ms (65ms including waiting). Image size: 533624661 bytes.
+  Normal   Pulling    2s (x3 over 33s)  kubelet            Pulling image "localhost:5001/duckdb-agent-sidecar:latest"
+  Warning  Failed     2s (x3 over 33s)  kubelet            Error: Error response from daemon: Minimum memory limit allowed is 6MB
+  Normal   Pulled     2s                kubelet            Successfully pulled image "localhost:5001/duckdb-agent-sidecar:latest" in 39ms (39ms including waiting). Image size: 533624661 bytes.
