@@ -324,7 +324,7 @@ make compose-down
   │   OPENSANDBOX SERVER          │ │     BIFROST LLM GATEWAY      │                │
   │   (opensandbox/server)        │ │     (maximhq/bifrost)        │                │
   │                               │ │                              │                │
-  │  Port 8082 (dev) / 8080      │ │  Port 8081                   │                │
+  │  Port 8082 (dev) / 8080       │ │  Port 8081                   │                │
   │  Docker or K8s runtime        │ │  Multi-provider routing:     │                │
   │                               │ │  ┌──────────┐                │                │
   │  Lifecycle management:        │ │  │Anthropic │ Claude models  │                │
