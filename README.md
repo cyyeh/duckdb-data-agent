@@ -318,31 +318,50 @@ make compose-down
   │  │ parsing  │  persistence    │  │ traces    │                          │ │     │
   │  └──────────┘─────────────────┘  └───────────┘──────────────────────────┘ │     │
   └──────────────┬────────────────────────────────┬───────────────────────────┘     │
-                 │                                │                                 │
+                 │ OpenSandbox SDK (HTTP)          │                                │
                  ▼                                ▼                                 │
-  ┌───────────────────────────┐    ┌──────────────────────────────┐                 │
-  │   SIDECAR CONTAINER       │    │     BIFROST LLM GATEWAY      │                 │
-  │   (Express + TypeScript)  │    │     (maximhq/bifrost)        │                 │
-  │                           │    │                              │                 │
-  │  Claude Agent SDK 0.2.62  │    │  Port 8081                   │                 │
-  │  Port 3000 (internal)     │    │  Multi-provider routing:     │                 │
-  │                           │    │  ┌──────────┐                │                 │
-  │  POST /query              │    │  │Anthropic │ Claude models  │                 │
-  │  - Spawns CLI subprocess  │    │  └──────────┘                │                 │
-  │  - MCP client → backend ──┼────┼──│OpenAI    │ GPT models     │                 │
-  │  - Streams SSE events     │    │  └──────────┘                │                 │
-  │  - Plugin loading (data)  │    │  ┌──────────┐                │                 │
-  │  - Skill allowlist check  │    │  │Bedrock   │ AWS models     │                 │
-  │  - Idle timeout (10 min)  │    │  │          │                │                 │
-  │                           │    │  └──────────┘                │                 │
-  │  /health (liveness)       │    │  config.json routing rules   │                 │
-  │                           │    │                              │                 │
-  │  Security:                │    └──────────────────────────────┘                 │
-  │  - Read-only rootfs       │                                                     │
-  │  - 512MB memory limit     │                                                     │
-  │  - All caps dropped       │                                                     │
-  │  - agent-sandbox network  │                                                     │
-  └───────────────────────────┘                                                     │
+  ┌───────────────────────────────┐ ┌──────────────────────────────┐                │
+  │   OPENSANDBOX SERVER          │ │     BIFROST LLM GATEWAY      │                │
+  │   (opensandbox/server)        │ │     (maximhq/bifrost)        │                │
+  │                               │ │                              │                │
+  │  Port 8082 (dev) / 8080      │ │  Port 8081                   │                │
+  │  Docker or K8s runtime        │ │  Multi-provider routing:     │                │
+  │                               │ │  ┌──────────┐                │                │
+  │  Lifecycle management:        │ │  │Anthropic │ Claude models  │                │
+  │  - POST /v1/sandboxes         │ │  └──────────┘                │                │
+  │  - GET  /v1/sandboxes/:id     │ │  ┌──────────┐                │                │
+  │  - GET  /v1/.../endpoints/:p  │ │  │OpenAI    │ GPT models     │                │
+  │  - DELETE /v1/sandboxes/:id   │ │  └──────────┘                │                │
+  │                               │ │  ┌──────────┐                │                │
+  │  Injects execd into sandbox   │ │  │Bedrock   │ AWS models     │                │
+  │  Bridge networking + port map │ │  └──────────┘                │                │
+  │  /health (liveness)           │ │  config.json routing rules   │                │
+  └──────────────┬────────────────┘ └──────────────────────────────┘                │
+                 │ Creates & manages                                                │
+                 ▼                                                                  │
+  ┌───────────────────────────────────────────────────────────┐                     │
+  │   SIDECAR CONTAINER (managed by OpenSandbox)              │                     │
+  │   (Express + TypeScript)                                  │                     │
+  │                                                           │                     │
+  │  Claude Agent SDK 0.2.62                                  │                     │
+  │  Port 3000 (proxied via execd on port 44772)              │                     │
+  │                                                           │                     │
+  │  POST /query                                              │                     │
+  │  - Spawns CLI subprocess                                  │                     │
+  │  - MCP client → backend (via /mcp/sse)                    │                     │
+  │  - Streams SSE events                                     │                     │
+  │  - Plugin loading (data)                                  │                     │
+  │  - Skill allowlist check                                  │                     │
+  │  - Idle timeout (10 min)                                  │                     │
+  │                                                           │                     │
+  │  /health (liveness)                                       │                     │
+  │                                                           │                     │
+  │  Security:                                                │                     │
+  │  - 512MB memory limit, 0.5 CPU                            │                     │
+  │  - no_new_privileges                                      │                     │
+  │  - Bridge network (isolated, host-mapped ports)           │                     │
+  │  - execd bootstrap (process management + proxy)           │                     │
+  └───────────────────────────────────────────────────────────┘                     │
                                                                                     │
   ┌─────────────────────────────────────────────────────────────────────────────────┘
   │
@@ -352,8 +371,9 @@ make compose-down
   │  1. User types message in AgentPanel
   │  2. Frontend POST /api/chat (SSE) with X-Session-ID
   │  3. Backend creates/retrieves DuckDB session
-  │  4. Backend spawns sidecar container via OpenSandbox (Docker or K8s)
-  │  5. Backend POST sidecar:3000/query with system prompt + table schemas
+  │  4. Backend requests sandbox via OpenSandbox SDK → server creates container
+  │     with execd bootstrap, maps ports to host (bridge mode)
+  │  5. Backend POST sidecar:3000/query (via execd proxy) with system prompt
   │  6. Sidecar spawns Claude Agent SDK subprocess
   │  7. SDK calls MCP tools on backend /mcp/sse:
   │     ├── execute_sql → DuckDB query → tabular results
@@ -487,10 +507,29 @@ The data flow for a chat message is:
 
 **MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, `create_skill` for agent-driven skill creation, and `save_memory` / `recall_memories` / `forget_memory` for persistent agent memory. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
 
+**Optional: gVisor sandbox hardening**
+
+OpenSandbox does not have a built-in OCI runtime selector, but you can run all sandbox containers under [gVisor](https://gvisor.dev/) by configuring the Docker daemon to use `runsc` as its default runtime:
+
+```jsonc
+// /etc/docker/daemon.json
+{
+  "default-runtime": "runsc",
+  "runtimes": {
+    "runsc": {
+      "path": "/usr/local/bin/runsc"
+    }
+  }
+}
+```
+
+This is transparent to OpenSandbox — all containers it creates will automatically use the gVisor kernel sandbox.
+
 **Prerequisites:**
 
 - [Docker](https://docs.docker.com/get-docker/) (for Docker runtime)
 - [Kubernetes cluster](https://kubernetes.io/) (for Kubernetes runtime, optional)
+- [gVisor](https://gvisor.dev/docs/user_guide/install/) (optional, for additional sandbox hardening)
 
 **Setup (Docker):**
 
@@ -631,7 +670,7 @@ scenarios:
 │   │   ├── agent_memory.py #   File-based agent memory (read/save/forget markdown memories, thread-safe)
 │   │   ├── skills.py       #   Skill CRUD operations (read/write SKILL.md files)
 │   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB, chart, create_skill, and memory tools over HTTP
-│   │   ├── container_manager.py  #   Docker container lifecycle management for sidecar containers
+│   │   ├── sandbox_manager.py  #   OpenSandbox SDK wrapper: sandbox lifecycle, TTL cleanup, orphan removal
 │   │   ├── proxy.py        #   Reverse proxy for per-subagent model routing (@suffix rewriting)
 │   │   ├── pending_questions.py  #   Interactive clarification (agent asks user for disambiguation)
 │   │   ├── dependencies.py #   FastAPI dependency injection utilities
@@ -648,17 +687,21 @@ scenarios:
 │   │       ├── config.py   #     Runtime configuration
 │   │       └── langfuse_status.py  #   Langfuse tracing status and link
 │   └── tests/              #   Unit tests (pytest)
+│       ├── test_sandbox_manager.py
+│       ├── test_opensandbox_config.py
 │       ├── test_skills.py
-│       ├── test_skills_routes.py
-│       ├── test_container_manager.py
 │       ├── test_mcp_sse.py
-│       ├── test_memory_store.py
 │       ├── test_proxy.py
 │       ├── test_session_manager.py
-│       └── ...             #   15 test modules total
+│       └── ...             #   17 test modules total
+├── sandbox/                # OpenSandbox server configuration
+│   ├── config.docker.toml  #   Docker runtime config (bridge mode, port mapping)
+│   └── config.kubernetes.toml  #  Kubernetes runtime config (namespace, workload provider)
 ├── skills/                 # Skill definitions (SKILL.md files, volume-mounted into sidecar containers)
 │   ├── analyze-data/       #   Built-in data analysis workflow skill
 │   └── <name>/             #   Custom skills (each with a SKILL.md file)
+├── plugins/                # Plugin data (volume-mounted into sidecar containers)
+│   └── data/               #   Plugin commands and skills
 ├── sidecar/                # Containerized agent sidecar
 │   ├── src/
 │   │   ├── server.ts       #   TypeScript HTTP server using Claude Agent SDK with token-level streaming
@@ -666,6 +709,10 @@ scenarios:
 │   ├── Dockerfile          #   Sidecar image: Node.js 20 + Python 3.12
 │   ├── package.json        #   npm config
 │   └── setup-network.sh    #   Docker network setup script
+├── deploy/                 # Deployment manifests
+│   ├── kustomize/          #   Kustomize overlays (base, docker, kubernetes)
+│   ├── helm/               #   Helm chart (duckdb-data-agent)
+│   └── README.md           #   Deployment guide
 ├── e2e/                    # Playwright E2E tests
 │   ├── scenarios/          #   YAML test scenario files
 │   ├── test-data/          #   Test fixture files (CSV, etc.)
@@ -678,7 +725,7 @@ scenarios:
 ├── docs/plans/             # Design and implementation plan documents
 ├── utils/                  # Standalone utility pages (run_plotly.html, run_vega_lite.html for testing chart specs)
 ├── .github/workflows/      # GitHub Actions CI/CD (code review, CI)
-├── docker-compose.yml      # Compose orchestration (bifrost + app + sidecar build)
+├── docker-compose.yml      # Compose orchestration (bifrost + opensandbox + app + sidecar build)
 └── Makefile                # Dev commands (install, dev, compose-build/up/down, e2e-test, clean)
 ```
 
@@ -695,7 +742,7 @@ scenarios:
 - [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
 - [MCP](https://modelcontextprotocol.io/) SSE transport (DuckDB tool bridge for containers)
 - Subagent architecture via Claude Agent SDK `AgentDefinition` API (sql-analyst)
-- [Docker SDK for Python](https://docker-py.readthedocs.io/) + [gVisor](https://gvisor.dev/) (container isolation)
+- [OpenSandbox](https://github.com/alibaba/OpenSandbox) SDK (container lifecycle, execd proxy, Docker/K8s runtime)
 - [Langfuse](https://langfuse.com/) (optional, for observability)
 
 **Sidecar**
