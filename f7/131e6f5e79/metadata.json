@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f7131e6f5e79",
+  "strategy": "manual-commit",
+  "branch": "worktree-opensandbox-integration",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "deploy/README.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f7/131e6f5e79/0/metadata.json",
+      "transcript": "/f7/131e6f5e79/0/full.jsonl",
+      "context": "/f7/131e6f5e79/0/context.md",
+      "content_hash": "/f7/131e6f5e79/0/content_hash.txt",
+      "prompt": "/f7/131e6f5e79/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 166,
+    "cache_creation_tokens": 106409,
+    "cache_read_tokens": 9524802,
+    "output_tokens": 36005,
+    "api_call_count": 109
+  }
+}
