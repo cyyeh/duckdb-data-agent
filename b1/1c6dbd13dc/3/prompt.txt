@@ -1,0 +1,66 @@
+commit all and push
+
+---
+
+docker build -t YOUR_REGISTRY/duckdb-data-agent:latest -f backend/Dockerfile .
+docker build -t REDACTED:latest ./sidecar
+docker push YOUR_REGISTRY/duckdb-data-agent:latest
+docker push REDACTED:latest
+
+how to setup local registry in mac for k8s deployment
+
+---
+
+I am using orbstack
+
+---
+
+update makefile and deploy folder about this
+
+---
+
+how about changing models and api keys for different provider for k8s deployment
+
+---
+
+where is the port of webapp for k8s deployment
+
+---
+
+add a port-forward command to the deploy README,
+
+---
+
+Create sandbox failed: Failed to create sandbox: (403) Reason: Forbidden HTTP response headers: HTTPHeaderDict({'Audit-Id': '3e909802-64c3-413e-8211-c5f840e2e8d3', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'X-Content-Type-Options': 'nosniff', 'X-Kubernetes-Pf-Flowschema-Uid': 'b14a039a-5e76-4bc8-a418-08c928b83d20', 'X-Kubernetes-Pf-Prioritylevel-Uid': 'b382ad67-1591-4d77-b6e3-c683e3f613ea', 'Date': 'Wed, 04 Mar 2026 13:56:03 GMT', 'Content-Length': '391'}) HTTP response body: {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"sandboxes.agents.x-k8s.io is forbidden: User \"system:serviceaccount:default:duckdb-agent-duckdb-data-agent-opensandbox\" cannot create resource \"sandboxes\" in API group \"agents.x-k8s.io\" in the namespace \"default\"","reason":"Forbidden","details":{"group":"agents.x-k8s.io","kind":"sandboxes"},"code":403}
+
+using `make k8s-deploy`
+
+---
+
+add k8s-delete to remove all k8s dpeloyment related things
+
+---
+
+also add k8s related command in makefile for kustomize version
+
+---
+
+allow using makefile to deploy k8s using different provider and llm models
+
+---
+
+fix error using k8s deploy
+
+Create sandbox failed: Failed to create sandbox: (404) Reason: Not Found HTTP response headers: HTTPHeaderDict({'Audit-Id': '09f3724b-64a3-4fb7-999c-bf71ad80e5f6', 'Cache-Control': 'no-cache, private', 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff', 'X-Kubernetes-Pf-Flowschema-Uid': 'b14a039a-5e76-4bc8-a418-08c928b83d20', 'X-Kubernetes-Pf-Prioritylevel-Uid': 'b382ad67-1591-4d77-b6e3-c683e3f613ea', 'Date': 'Wed, 04 Mar 2026 14:02:59 GMT', 'Content-Length': '19'}) HTTP response body: 404 page not found
+
+---
+
+wait until kubectl get pods -n agent-sandbox-system works in k8s-setup
+
+---
+
+k8s-delete should also remove agent-sandbox
+
+---
+
+add kubectl port-forward svc/duckdb-agent-duckdb-data-agent-backend 8000:10000 after k8s-deploy and kustomize-deploy

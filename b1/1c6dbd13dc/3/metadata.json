@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "b11c6dbd13dc",
+  "session_id": "e8bf05ea-c8a5-41f0-a1cb-439907ebf6d8",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-04T14:34:20.280876Z",
+  "branch": "worktree-opensandbox-integration",
+  "checkpoints_count": 11,
+  "files_touched": [
+    "Makefile",
+    "deploy/README.md",
+    "deploy/helm/duckdb-data-agent/templates/backend-deployment.yaml",
+    "deploy/helm/duckdb-data-agent/templates/opensandbox-rbac.yaml",
+    "deploy/helm/duckdb-data-agent/templates/secret.yaml",
+    "deploy/helm/duckdb-data-agent/values.yaml",
+    "deploy/kustomize/base/backend-deployment.yaml",
+    "deploy/kustomize/base/opensandbox-rbac.yaml"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "6c654826e826",
+  "transcript_identifier_at_start": "ee48221b-0f11-4dc9-bdee-c08fb32da04c",
+  "checkpoint_transcript_start": 28,
+  "transcript_lines_at_start": 28,
+  "token_usage": {
+    "input_tokens": 104,
+    "cache_creation_tokens": 52368,
+    "cache_read_tokens": 5130334,
+    "output_tokens": 21439,
+    "api_call_count": 76
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-04T14:34:19.978133Z",
+    "agent_lines": 237,
+    "human_added": 7,
+    "human_modified": 5,
+    "human_removed": 0,
+    "total_committed": 249,
+    "agent_percentage": 95.18072289156626
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-opensandbox-integration/e8bf05ea-c8a5-41f0-a1cb-439907ebf6d8.jsonl"
+}
