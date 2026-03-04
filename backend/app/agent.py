@@ -255,9 +255,9 @@ async def stream_chat(
         except Exception:
             logger.warning("Failed to persist user message", exc_info=True)
 
-    from app.container_manager import container_manager
-    if container_manager is None:
-        raise RuntimeError("Docker is not available. Container mode requires Docker.")
+    from app.sandbox_manager import sandbox_manager
+    if sandbox_manager is None:
+        raise RuntimeError("OpenSandbox is not available. Container mode requires OpenSandbox.")
     if db is None:
         raise ValueError("db must be provided")
 
@@ -305,24 +305,20 @@ async def stream_chat(
         # before we've finished the blocking Docker container creation.
         yield ": keepalive\n\n"
 
-        # container_manager.create() is synchronous (blocking Docker API call).
-        # Run it in a thread executor so the event loop stays responsive and
-        # can continue flushing keepalives to the client during startup.
-        # gVisor (runsc) containers can take 10-30 seconds to spin up.
-        loop = asyncio.get_event_loop()
-        create_future = loop.run_in_executor(None, container_manager.create, stable_session, env)
-
+        # sandbox_manager.create() is async — use asyncio.wait_for with
+        # keepalive loop for timeout and SSE liveness.
+        create_task = asyncio.create_task(sandbox_manager.create(stable_session, env))
         max_create_wait = 60.0
         elapsed = 0.0
-        while not create_future.done():
+        while not create_task.done():
             await asyncio.sleep(2.0)
             elapsed += 2.0
             if elapsed >= max_create_wait:
-                create_future.cancel()
-                raise RuntimeError(f"Container creation timed out after {max_create_wait:.0f}s")
+                create_task.cancel()
+                raise RuntimeError(f"Sandbox creation timed out after {max_create_wait:.0f}s")
             yield ": keepalive\n\n"
-        info = await create_future
-        container_manager.touch(stable_session)
+        info = await create_task
+        sandbox_manager.touch(stable_session)
 
         # Wait for container to be ready
         for attempt in range(10):
@@ -432,9 +428,9 @@ async def stream_chat(
                     except json.JSONDecodeError:
                         continue
 
-                    # Reset container idle timer on every message so
+                    # Reset sandbox idle timer on every message so
                     # long-running queries don't trigger the reaper.
-                    container_manager.touch(stable_session)
+                    sandbox_manager.touch(stable_session)
 
                     msg_type = msg.get("type")
                     # --- Token-level streaming events from SDK ---
