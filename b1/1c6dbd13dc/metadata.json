@@ -3,7 +3,7 @@
   "checkpoint_id": "b11c6dbd13dc",
   "strategy": "manual-commit",
   "branch": "worktree-opensandbox-integration",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "Makefile",
     "README.md",
@@ -26,13 +26,20 @@
       "context": "/b1/1c6dbd13dc/0/context.md",
       "content_hash": "/b1/1c6dbd13dc/0/content_hash.txt",
       "prompt": "/b1/1c6dbd13dc/0/prompt.txt"
+    },
+    {
+      "metadata": "/b1/1c6dbd13dc/1/metadata.json",
+      "transcript": "/b1/1c6dbd13dc/1/full.jsonl",
+      "context": "/b1/1c6dbd13dc/1/context.md",
+      "content_hash": "/b1/1c6dbd13dc/1/content_hash.txt",
+      "prompt": "/b1/1c6dbd13dc/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 44,
-    "cache_creation_tokens": 41819,
-    "cache_read_tokens": 2009325,
-    "output_tokens": 7715,
-    "api_call_count": 40
+    "input_tokens": 210,
+    "cache_creation_tokens": 148228,
+    "cache_read_tokens": 11534127,
+    "output_tokens": 43720,
+    "api_call_count": 149
   }
 }
