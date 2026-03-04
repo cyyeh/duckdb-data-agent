@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "b11c6dbd13dc",
+  "strategy": "manual-commit",
+  "branch": "worktree-opensandbox-integration",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "Makefile",
+    "README.md",
+    "backend/.env.example",
+    "backend/app/config.py",
+    "backend/app/sandbox_manager.py",
+    "backend/tests/test_sandbox_manager.py",
+    "deploy/README.md",
+    "deploy/helm/duckdb-data-agent/templates/backend-deployment.yaml",
+    "deploy/helm/duckdb-data-agent/templates/opensandbox-rbac.yaml",
+    "deploy/helm/duckdb-data-agent/templates/secret.yaml",
+    "deploy/helm/duckdb-data-agent/values.yaml",
+    "deploy/kustomize/base/backend-deployment.yaml",
+    "deploy/kustomize/base/opensandbox-rbac.yaml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b1/1c6dbd13dc/0/metadata.json",
+      "transcript": "/b1/1c6dbd13dc/0/full.jsonl",
+      "context": "/b1/1c6dbd13dc/0/context.md",
+      "content_hash": "/b1/1c6dbd13dc/0/content_hash.txt",
+      "prompt": "/b1/1c6dbd13dc/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 44,
+    "cache_creation_tokens": 41819,
+    "cache_read_tokens": 2009325,
+    "output_tokens": 7715,
+    "api_call_count": 40
+  }
+}
