@@ -49,12 +49,10 @@ MAX_TOTAL_SIZE_BYTES = int(os.getenv("MAX_TOTAL_SIZE_BYTES", str(500 * 1024 * 10
 
 # Container isolation settings
 CONTAINER_IMAGE = os.getenv("CONTAINER_IMAGE", "duckdb-agent-sidecar:latest")
-CONTAINER_RUNTIME = os.getenv("CONTAINER_RUNTIME", "runc")
 CONTAINER_MEMORY_LIMIT = os.getenv("CONTAINER_MEMORY_LIMIT", "512m")
 CONTAINER_CPU_LIMIT = float(os.getenv("CONTAINER_CPU_LIMIT", "0.5"))
 CONTAINER_MAX_LIFETIME_SECONDS = int(os.getenv("CONTAINER_MAX_LIFETIME_SECONDS", "3600"))
 CONTAINER_IDLE_TIMEOUT_SECONDS = int(os.getenv("CONTAINER_IDLE_TIMEOUT_SECONDS", "900"))
-CONTAINER_NETWORK = os.getenv("CONTAINER_NETWORK", "agent-sandbox")
 SDK_IDLE_TIMEOUT_MS = int(os.getenv("SDK_IDLE_TIMEOUT_MS", "600000"))
 # OpenSandbox settings
 SANDBOX_RUNTIME = os.getenv("SANDBOX_RUNTIME", "docker")  # "docker" or "kubernetes"
