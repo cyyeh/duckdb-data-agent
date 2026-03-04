@@ -25,9 +25,6 @@ The DuckDB Data Agent consists of four services:
 ## Docker Deployment
 
 ```bash
-# Create the bridge network (required -- services and sidecars share it)
-make sidecar-network
-
 # Build all images including the sidecar
 make compose-build
 

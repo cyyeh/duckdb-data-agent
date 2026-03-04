@@ -537,7 +537,6 @@ This is transparent to OpenSandbox — all containers it creates will automatica
 
    ```bash
    make compose-build
-   make sidecar-network
    ```
 
 2. Start the app:

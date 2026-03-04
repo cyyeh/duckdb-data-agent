@@ -6,6 +6,7 @@ resources:
 
 patches:
   - path: patches/opensandbox-runtime.yaml
+  - path: patches/backend-runtime.yaml
 
 configMapGenerator:
   - name: opensandbox-config

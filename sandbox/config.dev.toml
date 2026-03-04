@@ -9,6 +9,6 @@ execd_image = "opensandbox/execd:v1.0.6"
 
 [docker]
 network_mode = "bridge"
-host_ip = "host.docker.internal"
+host_ip = "localhost"
 no_new_privileges = true
 pids_limit = 256

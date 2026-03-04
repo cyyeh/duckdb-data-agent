@@ -137,7 +137,9 @@ class SandboxManager:
         if info is not None:
             info.last_activity = datetime.now(timezone.utc)
 
-    async def _stop_unlocked(self, session_id: str) -> None:
+    async def _stop_unlocked(
+        self, session_id: str, *, timeout: float = 10
+    ) -> None:
         """Kill and remove the sandbox for a session (caller must hold lock)."""
         info = self._sandboxes.pop(session_id, None)
         if info is None:
@@ -145,15 +147,21 @@ class SandboxManager:
 
         sandbox = info._sandbox
         try:
-            await sandbox.kill()
+            await asyncio.wait_for(sandbox.kill(), timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.warning(
+                "Timed out killing sandbox %s (%.0fs)", info.sandbox_id[:12], timeout
+            )
         except Exception as e:
             logger.warning(
                 "Failed to kill sandbox %s: %s", info.sandbox_id[:12], e
             )
-
-        logger.info(
-            "Stopped sandbox %s for session %s", info.sandbox_id[:12], session_id
-        )
+        else:
+            logger.info(
+                "Stopped sandbox %s for session %s",
+                info.sandbox_id[:12],
+                session_id,
+            )
 
     async def stop(self, session_id: str) -> None:
         """Kill and remove the sandbox for a session."""
@@ -180,8 +188,21 @@ class SandboxManager:
         """Kill all tracked sandboxes. Called on backend shutdown."""
         async with self._lock:
             session_ids = list(self._sandboxes.keys())
-            for sid in session_ids:
-                await self._stop_unlocked(sid)
+            if not session_ids:
+                return
+
+            # Suppress noisy ERROR tracebacks from the opensandbox library
+            # during shutdown — connection failures are expected when the
+            # OpenSandbox server is shutting down at the same time.
+            os_logger = logging.getLogger("opensandbox")
+            prev_level = os_logger.level
+            os_logger.setLevel(logging.CRITICAL)
+            try:
+                for sid in session_ids:
+                    await self._stop_unlocked(sid, timeout=5)
+            finally:
+                os_logger.setLevel(prev_level)
+
             logger.info("Shut down %d sandboxes", len(session_ids))
 
     async def cleanup_orphaned(self) -> int:

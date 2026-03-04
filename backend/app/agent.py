@@ -321,7 +321,7 @@ async def stream_chat(
         sandbox_manager.touch(stable_session)
 
         # Wait for container to be ready
-        for attempt in range(10):
+        for attempt in range(20):
             try:
                 async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as check_client:
                     resp = await check_client.get(f"{info.url}/health")
@@ -332,7 +332,7 @@ async def stream_chat(
             yield ": keepalive\n\n"
             await asyncio.sleep(1)
         else:
-            raise RuntimeError("Sidecar container failed health check after 10 attempts")
+            raise RuntimeError("Sidecar container failed health check after 20 attempts")
 
         payload: dict = {
             "message": query_message,

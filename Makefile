@@ -18,20 +18,21 @@ dev: sidecar-network
 		--network agent-sandbox \
 		-p $${OPENSANDBOX_PORT:-8082}:8080 \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v $$(pwd)/sandbox/config.docker.toml:/etc/opensandbox/config.toml \
+		-v $$(pwd)/sandbox/config.dev.toml:/etc/opensandbox/config.toml \
 		opensandbox/server:latest && \
 	echo "OpenSandbox started on port $${OPENSANDBOX_PORT:-8082}"; \
-	trap 'docker rm -f bifrost-dev opensandbox-dev 2>/dev/null; kill 0' EXIT; \
 	export BIFROST_BASE_URL=http://localhost:8081; \
 	export BACKEND_BASE_URL=http://host.docker.internal:8000; \
 	export OPENSANDBOX_DOMAIN=localhost:$${OPENSANDBOX_PORT:-8082}; \
 	cd backend && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 & \
+	BACKEND_PID=$$!; \
 	echo "Waiting for backend on port 8000..."; \
 	for i in $$(seq 1 30); do \
 		curl -sf http://localhost:8000/api/health >/dev/null 2>&1 && break; \
 		sleep 1; \
 	done && echo "Backend ready" || { echo "Backend failed to start"; exit 1; }; \
 	cd frontend && npm run dev & \
+	trap 'wait $$BACKEND_PID 2>/dev/null; docker rm -f bifrost-dev opensandbox-dev 2>/dev/null; kill 0' EXIT; \
 	wait
 
 backend:

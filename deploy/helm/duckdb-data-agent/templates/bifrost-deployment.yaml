@@ -26,6 +26,8 @@ spec:
               containerPort: {{ .Values.bifrost.port }}
               protocol: TCP
           env:
+            - name: APP_HOST
+              value: "0.0.0.0"
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -33,7 +35,7 @@ spec:
                   key: anthropic-api-key
           volumeMounts:
             - name: bifrost-config
-              mountPath: /app/config.json
+              mountPath: /app/data/config.json
               subPath: bifrost-config.json
               readOnly: true
           resources:

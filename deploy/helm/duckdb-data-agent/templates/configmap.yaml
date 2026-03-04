@@ -15,12 +15,14 @@ data:
     type = {{ .Values.opensandbox.runtime | quote }}
     execd_image = "opensandbox/execd:v1.0.6"
 
+    {{- if eq .Values.opensandbox.runtime "kubernetes" }}
     [kubernetes]
-    namespace = {{ .Values.opensandbox.k8sNamespace | quote }}
+    namespace = {{ .Release.Namespace | quote }}
     workload_provider = {{ .Values.opensandbox.workloadProvider | quote }}
 
     [agent_sandbox]
     shutdown_policy = "Delete"
+    {{- end }}
 
   bifrost-config.json: |
     {

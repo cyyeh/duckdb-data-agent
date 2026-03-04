@@ -29,7 +29,7 @@ services:
     networks:
       - agent-sandbox
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -51,7 +51,7 @@ services:
       CONTAINER_IMAGE: duckdb-agent-sidecar:latest
       OPENSANDBOX_DOMAIN: opensandbox:8080
       BIFROST_BASE_URL: http://bifrost:8080
-      BACKEND_BASE_URL: http://duckdb-data-agent:10000
+      BACKEND_BASE_URL: http://host.docker.internal:10000
       SKILLS_DIR: /app/skills
       SKILLS_HOST_PATH: ${SKILLS_HOST_PATH:-${PWD}/skills}
       PLUGINS_HOST_PATH: ${PLUGINS_HOST_PATH:-${PWD}/plugins}
