@@ -15,6 +15,10 @@ backend:
   env:
     SANDBOX_RUNTIME: kubernetes
     CONTAINER_IMAGE: duckdb-agent-sidecar:latest
+    # Model configuration (leave empty to use backend defaults)
+    ORCHESTRATOR_MODEL: ""
+    SQL_SUBAGENT_MODEL: ""
+    DEFAULT_TOOL_MODEL: ""
 
 bifrost:
   image:
@@ -57,7 +61,9 @@ sidecar:
     tag: latest
 
 secrets:
+  # Provide one or both depending on which provider you use
   anthropicApiKey: ""
+  openaiApiKey: ""
 
 ingress:
   enabled: false

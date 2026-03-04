@@ -35,6 +35,17 @@ spec:
                 secretKeyRef:
                   name: bifrost-secret
                   key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bifrost-secret
+                  key: OPENAI_API_KEY
+                  optional: true
+            # Override model names via kustomize patches or env
+            # - name: ORCHESTRATOR_MODEL
+            # - name: SQL_SUBAGENT_MODEL
+            # - name: DEFAULT_TOOL_MODEL
           volumeMounts:
             - name: data
               mountPath: /app/data

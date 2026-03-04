@@ -12,7 +12,7 @@ from app.sandbox_manager import SandboxManager, SandboxConfig, SandboxInfo
 def config():
     return SandboxConfig(
         image="duckdb-agent-sidecar:latest",
-        memory_limit="256m",
+        memory_limit="256Mi",
         cpu_limit=0.5,
         max_lifetime_seconds=3600,
         idle_timeout_seconds=300,
@@ -29,7 +29,7 @@ class TestSandboxConfig:
     def test_defaults(self):
         cfg = SandboxConfig()
         assert cfg.image == "duckdb-agent-sidecar:latest"
-        assert cfg.memory_limit == "512m"
+        assert cfg.memory_limit == "512Mi"
         assert cfg.cpu_limit == 0.5
         assert cfg.opensandbox_domain == "localhost:8080"
 
@@ -41,7 +41,7 @@ class TestSandboxConfig:
     def test_resource_dict_fractional_cpu(self):
         cfg = SandboxConfig(cpu_limit=0.5)
         res = cfg.resource_dict()
-        assert res == {"cpu": "0.5", "memory": "512m"}
+        assert res == {"cpu": "0.5", "memory": "512Mi"}
 
 
 class TestSandboxManagerCreate:

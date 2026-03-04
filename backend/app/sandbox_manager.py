@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SandboxConfig:
     image: str = "duckdb-agent-sidecar:latest"
-    memory_limit: str = "512m"
+    memory_limit: str = "512Mi"
     cpu_limit: float = 0.5
     max_lifetime_seconds: int = 3600
     idle_timeout_seconds: int = 300

@@ -559,7 +559,7 @@ See [`deploy/README.md`](deploy/README.md) for Helm and Kustomize deployment gui
 | `K8S_NAMESPACE` | `default` | Kubernetes namespace for sandboxes |
 | `K8S_WORKLOAD_PROVIDER` | `agent-sandbox` | Kubernetes workload provider |
 | `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar Docker image |
-| `CONTAINER_MEMORY_LIMIT` | `512m` | Memory limit per container |
+| `CONTAINER_MEMORY_LIMIT` | `512Mi` | Memory limit per container |
 | `CONTAINER_CPU_LIMIT` | `0.5` | CPU limit per container |
 | `CONTAINER_MAX_LIFETIME_SECONDS` | `3600` | Max container lifetime |
 | `CONTAINER_IDLE_TIMEOUT_SECONDS` | `900` | Idle timeout before container is stopped (15 min) |

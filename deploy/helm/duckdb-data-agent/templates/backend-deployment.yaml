@@ -36,11 +36,30 @@ spec:
               value: {{ .Values.backend.env.SANDBOX_RUNTIME | quote }}
             - name: CONTAINER_IMAGE
               value: {{ .Values.backend.env.CONTAINER_IMAGE | quote }}
+            {{- if .Values.backend.env.ORCHESTRATOR_MODEL }}
+            - name: ORCHESTRATOR_MODEL
+              value: {{ .Values.backend.env.ORCHESTRATOR_MODEL | quote }}
+            {{- end }}
+            {{- if .Values.backend.env.SQL_SUBAGENT_MODEL }}
+            - name: SQL_SUBAGENT_MODEL
+              value: {{ .Values.backend.env.SQL_SUBAGENT_MODEL | quote }}
+            {{- end }}
+            {{- if .Values.backend.env.DEFAULT_TOOL_MODEL }}
+            - name: DEFAULT_TOOL_MODEL
+              value: {{ .Values.backend.env.DEFAULT_TOOL_MODEL | quote }}
+            {{- end }}
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "duckdb-data-agent.fullname" . }}-secret
                   key: anthropic-api-key
+            {{- if .Values.secrets.openaiApiKey }}
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "duckdb-data-agent.fullname" . }}-secret
+                  key: openai-api-key
+            {{- end }}
           {{- if .Values.persistence.enabled }}
           volumeMounts:
             - name: data
