@@ -41,7 +41,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Bifrost LLM gateway** — A [Bifrost](https://github.com/maximhq/bifrost) gateway service manages API keys centrally and routes LLM requests to multiple providers; sidecar containers never have access to real API keys (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
-- **Container isolation** — Run each agent session inside a [gVisor](https://gvisor.dev/)-sandboxed Docker container for code execution sandboxing and multi-tenant isolation; read-only rootfs, all capabilities dropped, no host filesystem or Docker socket access (see [Container Isolation](#container-isolation))
+- **Container isolation** — Run each agent session inside a sandboxed container managed by [OpenSandbox](https://github.com/alibaba/OpenSandbox) for code execution sandboxing and multi-tenant isolation; supports both Docker and Kubernetes runtimes; read-only rootfs, all capabilities dropped, no host filesystem access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
 
 ### Editor Mode
@@ -184,7 +184,7 @@ Open http://localhost:5173 to use the app. The Vite dev server proxies `/api` re
 
 ## Production Build and Deployment
 
-Docker Compose builds both images (app + sidecar) and runs the app with [container isolation](#container-isolation) enabled. The sidecar image is built but not started as a service — the app spawns sidecar containers on-demand via the Docker SDK.
+Docker Compose builds all images (app + sidecar + OpenSandbox) and runs the app with [container isolation](#container-isolation) enabled. The sidecar image is built but not started as a service — the app spawns sidecar containers on-demand via [OpenSandbox](https://github.com/alibaba/OpenSandbox). For Kubernetes deployment, see [`deploy/README.md`](deploy/README.md).
 
 **Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop).
 
@@ -210,11 +210,6 @@ make compose-down
 
 **Notes:**
 
-- **Linux users:** Set `DOCKER_GID` to your host's docker group GID so the app container can access the Docker socket:
-  ```bash
-  DOCKER_GID=$(getent group docker | cut -d: -f3) make compose-up
-  ```
-  On macOS with Docker Desktop, the default (`0`) works out of the box.
 - **Linux users (skills write permission):** `make compose-build` automatically passes your host UID (`APP_UID`) so the container user can write to the bind-mounted `skills/` directory. If you build manually without the Makefile, pass it explicitly:
   ```bash
   APP_UID=$(id -u) docker compose --profile sidecar build
@@ -309,12 +304,12 @@ make compose-down
   │  └─────────────────────────────────────────────────────────┼────────────────┘   │
   │                                                            │                    │
   │  ┌──────────────────────────┐  ┌───────────────────────────┼──────────────┐     │
-  │  │   container_manager.py   │  │        proxy.py           │              │     │
+  │  │   sandbox_manager.py     │  │        proxy.py           │              │     │
   │  │                          │  │                           │              │     │
-  │  │  Docker container spawn  │  │  /anthropic/* → Bifrost   │              │     │
-  │  │  gVisor sandbox (runsc)  │  │  Model @suffix rewriting  │              │     │
+  │  │  OpenSandbox SDK         │  │  /anthropic/* → Bifrost   │              │     │
+  │  │  Docker or K8s runtime   │  │  Model @suffix rewriting  │              │     │
   │  │  Resource limits         │  │                           │              │     │
-  │  │  agent-sandbox network   │  └─────────────┬─────────────┘              │     │
+  │  │  TTL-based cleanup       │  └─────────────┬─────────────┘              │     │
   │  └──────────┬───────────────┘                │                            │     │
   │             │                                │                            │     │
   │  ┌──────────┼─────────────────┐  ┌───────────┼──────────────────────────┐ │     │
@@ -357,7 +352,7 @@ make compose-down
   │  1. User types message in AgentPanel
   │  2. Frontend POST /api/chat (SSE) with X-Session-ID
   │  3. Backend creates/retrieves DuckDB session
-  │  4. Backend spawns sidecar Docker container
+  │  4. Backend spawns sidecar container via OpenSandbox (Docker or K8s)
   │  5. Backend POST sidecar:3000/query with system prompt + table schemas
   │  6. Sidecar spawns Claude Agent SDK subprocess
   │  7. SDK calls MCP tools on backend /mcp/sse:
@@ -423,7 +418,7 @@ make compose-down
 
 ### Bifrost LLM Gateway
 
-When the agent runs, the backend spawns a sidecar container via the Docker SDK. A naive approach would pass `ANTHROPIC_API_KEY` directly into that container's environment — but any tool or shell command the agent executes could then read and exfiltrate the key.
+When the agent runs, the backend spawns a sidecar container via OpenSandbox. A naive approach would pass `ANTHROPIC_API_KEY` directly into that container's environment — but any tool or shell command the agent executes could then read and exfiltrate the key.
 
 Instead, a [Bifrost](https://github.com/maximhq/bifrost) LLM gateway service manages API keys centrally and routes requests to LLM providers:
 
@@ -449,7 +444,7 @@ The sidecar container only ever holds a placeholder string. Even if a tool call 
 
 ### Container Isolation
 
-The backend runs each Claude Code session inside a **gVisor-sandboxed Docker container** ("sidecar"). This provides code execution sandboxing, multi-tenant isolation, and a hardened boundary between the agent and the host system.
+The backend runs each Claude Code session inside a sandboxed container ("sidecar") managed by [OpenSandbox](https://github.com/alibaba/OpenSandbox). This provides code execution sandboxing, multi-tenant isolation, and a hardened boundary between the agent and the host system. OpenSandbox supports both **Docker** and **Kubernetes** runtimes — set `SANDBOX_RUNTIME` to choose.
 
 **Architecture:**
 
@@ -458,20 +453,22 @@ Browser
   │
   ▼
 FastAPI Backend (host)
-  ├── Chat route ──► ContainerManager ──► Docker SDK
+  ├── Chat route ──► SandboxManager ──► OpenSandbox SDK
   │                       │
   │                       ▼
-  │               ┌──────────────────────┐
-  │               │  gVisor Sandbox      │
-  │               │                      │
-  │               │  Sidecar Container   │
-  │               │  (Node.js + Claude)  │
-  │               │                      │
-  │               │  POST /query → SSE   │
-  │               └──────┬───────────────┘
-  │                      │
+  │               ┌──────────────────────────┐
+  │               │  OpenSandbox Server      │
+  │               │  (Docker or K8s runtime) │
+  │               │         │                │
+  │               │  ┌──────▼──────────────┐ │
+  │               │  │  Sidecar Container  │ │
+  │               │  │  (Node.js + Claude) │ │
+  │               │  │  POST /query → SSE  │ │
+  │               │  └──────┬──────────────┘ │
+  │               └─────────┼────────────────┘
+  │                         │
   │              ├──► Bifrost Gateway (:8080/anthropic)  (LLM routing)
-  ├── /mcp/sse   ◄───────┘  (DuckDB MCP bridge)
+  ├── /mcp/sse   ◄──────────┘  (DuckDB MCP bridge)
   │
   └── DuckDB (per-user, disk-persisted)
 ```
@@ -479,52 +476,54 @@ FastAPI Backend (host)
 The data flow for a chat message is:
 
 1. Frontend sends a chat message to the FastAPI backend.
-2. Backend spins up a gVisor container (or reuses an existing one for the session) via `ContainerManager`, configured to route LLM calls through the Bifrost gateway.
+2. Backend creates a sandbox (or reuses an existing one for the session) via `SandboxManager`, which calls the OpenSandbox SDK. The sandbox is configured to route LLM calls through the Bifrost gateway.
 3. Backend sends the query to the sidecar's `POST /query` endpoint. The sidecar calls the Claude Agent SDK's `query()` function with `includePartialMessages: true` for token-level streaming, configured with the host's MCP SSE endpoint.
 4. The agent talks to the Bifrost gateway (`/anthropic`) for LLM API access (using a placeholder key; Bifrost injects the real key).
 5. The agent's `execute_sql` tool calls reach the host DuckDB via the **MCP SSE bridge** (`/mcp/sse?session_id=...`), which routes each connection to the correct per-user DuckDB instance through the existing `SessionManager`.
 6. The sidecar streams SSE events back to the backend, which forwards them to the frontend.
-7. On session end, the container is stopped and removed.
+7. Idle sandboxes are cleaned up automatically by TTL-based expiration. On backend shutdown, all sandboxes are terminated.
 
-**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, no Docker socket access, and a non-root user. The host `skills/` directory is bind-mounted read-only at `/app/.claude/skills/` (the project-level path) so the SDK's built-in Skill tool can discover and invoke them. The host `plugins/` directory is bind-mounted read-only at `/app/plugins/` so the SDK can load installed plugins (e.g., the `data` plugin for data analysis commands and skills).
+**Sidecar container:** The `sidecar/` directory contains a TypeScript HTTP server (`src/server.ts`) that uses the Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) with `includePartialMessages: true` for true token-level streaming. The Docker image (`sidecar/Dockerfile`) bundles Node.js 20, Python 3.12, and the Agent SDK. Containers run with a read-only root filesystem, all Linux capabilities dropped, and a non-root user. The host `skills/` directory is bind-mounted read-only at `/app/.claude/skills/` (the project-level path) so the SDK's built-in Skill tool can discover and invoke them. The host `plugins/` directory is bind-mounted read-only at `/app/plugins/` so the SDK can load installed plugins (e.g., the `data` plugin for data analysis commands and skills).
 
 **MCP SSE bridge:** The backend exposes tools at `/mcp/sse` using the MCP protocol's SSE transport (`backend/app/mcp_sse.py`): `execute_sql` for DuckDB queries, `render_chart` for chart generation, `ask_user_question` for interactive clarification, `create_skill` for agent-driven skill creation, and `save_memory` / `recall_memories` / `forget_memory` for persistent agent memory. Each SSE connection requires a `session_id` query parameter to route tool calls to the correct per-user DuckDB instance. This is how the containerized agent reaches DuckDB on the host without any direct database access inside the container.
 
 **Prerequisites:**
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [gVisor (runsc)](https://gvisor.dev/docs/user_guide/install/) (Optional) runtime installed and registered with Docker
+- [Docker](https://docs.docker.com/get-docker/) (for Docker runtime)
+- [Kubernetes cluster](https://kubernetes.io/) (for Kubernetes runtime, optional)
 
-> **Note:** gVisor requires **Linux** (kernel 4.14.77+, x86_64 or ARM64). It is not available on macOS or Windows. On non-Linux hosts (e.g., macOS with Docker Desktop), set `CONTAINER_RUNTIME=runc` to use Docker's default runtime instead. You still get container isolation (filesystem, process, network, capability drop, read-only rootfs) — only gVisor's syscall interception layer is absent. For production multi-tenant deployments, use a Linux host with gVisor for full sandboxing.
+**Setup (Docker):**
 
-**Setup:**
-
-1. Build the sidecar image and create the Docker network:
+1. Build all images:
 
    ```bash
-   docker compose build
-   make sidecar-network
+   docker compose --profile sidecar build
    ```
 
-2. Install gVisor by following the [official guide](https://gvisor.dev/docs/user_guide/install/).
-
-3. Start the app:
+2. Start the app:
 
    ```bash
    make compose-up
    ```
 
+**Setup (Kubernetes):**
+
+See [`deploy/README.md`](deploy/README.md) for Helm and Kustomize deployment guides.
+
 **Environment variables:**
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `SANDBOX_RUNTIME` | `docker` | Sandbox runtime (`docker` or `kubernetes`) |
+| `OPENSANDBOX_DOMAIN` | `localhost:8080` | OpenSandbox server address |
+| `OPENSANDBOX_API_KEY` | (empty) | API key for OpenSandbox server |
+| `K8S_NAMESPACE` | `default` | Kubernetes namespace for sandboxes |
+| `K8S_WORKLOAD_PROVIDER` | `agent-sandbox` | Kubernetes workload provider |
 | `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar Docker image |
-| `CONTAINER_RUNTIME` | `runc` | Docker runtime (runc for non-gVisor, runsc for gVisor) |
 | `CONTAINER_MEMORY_LIMIT` | `512m` | Memory limit per container |
 | `CONTAINER_CPU_LIMIT` | `0.5` | CPU limit per container |
 | `CONTAINER_MAX_LIFETIME_SECONDS` | `3600` | Max container lifetime |
 | `CONTAINER_IDLE_TIMEOUT_SECONDS` | `900` | Idle timeout before container is stopped (15 min) |
-| `CONTAINER_NETWORK` | `agent-sandbox` | Docker network name |
 | `SKILLS_DIR` | `skills` | Path to skills directory (inside backend container) |
 | `SKILLS_HOST_PATH` | `./skills` | Host path for skills volume mount (bind-mounted read-only at `/app/.claude/skills/` in sidecar containers) |
 | `PLUGINS_HOST_PATH` | `./plugins` | Host path for plugins volume mount (bind-mounted read-only at `/app/plugins/` in sidecar containers) |
@@ -535,13 +534,13 @@ The data flow for a chat message is:
 **Security properties:**
 
 - The container has no host filesystem access except read-only bind mounts of the `skills/` and `plugins/` directories
-- gVisor intercepts all syscalls -- even arbitrary bash/python execution is sandboxed
 - No real API keys inside the container (placeholder string only; real keys managed by Bifrost)
 - Per-session isolation -- containers cannot see each other
 - Resource limits (CPU, memory, lifetime) prevent denial-of-service against the host
+- OpenSandbox enforces security defaults: all capabilities dropped, no new privileges, PID limits
 - Internal networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) are blocked, preventing cloud metadata and internal service access
 
-For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md).
+For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md) and [`docs/plans/2026-03-04-opensandbox-integration-design.md`](docs/plans/2026-03-04-opensandbox-integration-design.md).
 
 ## E2E Testing
 
