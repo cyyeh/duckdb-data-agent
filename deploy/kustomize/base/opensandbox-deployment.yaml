@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opensandbox
+  labels:
+    app: opensandbox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opensandbox
+  template:
+    metadata:
+      labels:
+        app: opensandbox
+    spec:
+      serviceAccountName: opensandbox
+      containers:
+        - name: opensandbox
+          image: opensandbox/server:latest
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /root/.sandbox.toml
+              subPath: sandbox.toml
+      volumes:
+        - name: config
+          configMap:
+            name: opensandbox-config

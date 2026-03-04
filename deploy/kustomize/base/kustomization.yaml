@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - bifrost-deployment.yaml
+  - bifrost-service.yaml
+  - opensandbox-deployment.yaml
+  - opensandbox-service.yaml
+  - opensandbox-rbac.yaml

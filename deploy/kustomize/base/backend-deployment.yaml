@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: duckdb-data-agent:latest
+          ports:
+            - containerPort: 10000
+          env:
+            - name: OPENSANDBOX_DOMAIN
+              value: "opensandbox:8080"
+            - name: BIFROST_BASE_URL
+              value: "http://bifrost:8080"
+            - name: BACKEND_BASE_URL
+              value: "http://backend:10000"
+            - name: SANDBOX_RUNTIME
+              value: "kubernetes"
+            - name: CONTAINER_IMAGE
+              value: "duckdb-agent-sidecar:latest"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
