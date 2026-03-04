@@ -18,7 +18,7 @@ dev: sidecar-network
 		--network agent-sandbox \
 		-p $${OPENSANDBOX_PORT:-8082}:8080 \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v $$(pwd)/sandbox/config.docker.toml:/root/.sandbox.toml \
+		-v $$(pwd)/sandbox/config.docker.toml:/etc/opensandbox/config.toml \
 		opensandbox/server:latest && \
 	echo "OpenSandbox started on port $${OPENSANDBOX_PORT:-8082}"; \
 	trap 'docker rm -f bifrost-dev opensandbox-dev 2>/dev/null; kill 0' EXIT; \

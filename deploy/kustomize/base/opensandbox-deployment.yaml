@@ -22,7 +22,7 @@ spec:
             - containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /root/.sandbox.toml
+              mountPath: /etc/opensandbox/config.toml
               subPath: sandbox.toml
           livenessProbe:
             httpGet:

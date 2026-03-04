@@ -25,7 +25,7 @@ services:
     container_name: opensandbox
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./sandbox/config.docker.toml:/root/.sandbox.toml
+      - ./sandbox/config.docker.toml:/etc/opensandbox/config.toml
     networks:
       - agent-sandbox
     healthcheck:

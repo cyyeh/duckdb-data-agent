@@ -104,6 +104,7 @@ class SandboxManager:
                     "session_id": session_id,
                 },
                 resource=self._config.resource_dict(),
+                entrypoint=["node", "dist/server.js"],
                 skip_health_check=True,
             )
 
