@@ -255,9 +255,8 @@ async def stream_chat(
         except Exception:
             logger.warning("Failed to persist user message", exc_info=True)
 
-    from app.sandbox_manager import sandbox_manager
-    if sandbox_manager is None:
-        raise RuntimeError("OpenSandbox is not available. Container mode requires OpenSandbox.")
+    from app.sandbox import get_sandbox_backend
+    sandbox_backend = get_sandbox_backend()
     if db is None:
         raise ValueError("db must be provided")
 
@@ -302,12 +301,12 @@ async def stream_chat(
     try:
         # Send SSE keepalive immediately so the HTTP response starts and
         # intermediate proxies (Vite, nginx) don't drop the idle connection
-        # before we've finished the blocking Docker container creation.
+        # before we've finished sandbox creation.
         yield ": keepalive\n\n"
 
-        # sandbox_manager.create() is async — use asyncio.wait_for with
-        # keepalive loop for timeout and SSE liveness.
-        create_task = asyncio.create_task(sandbox_manager.create(stable_session, env))
+        # create() is async — run it as a task with a keepalive loop
+        # for timeout and SSE liveness.
+        create_task = asyncio.create_task(sandbox_backend.create(stable_session, env))
         max_create_wait = 60.0
         elapsed = 0.0
         while not create_task.done():
@@ -318,7 +317,7 @@ async def stream_chat(
                 raise RuntimeError(f"Sandbox creation timed out after {max_create_wait:.0f}s")
             yield ": keepalive\n\n"
         info = await create_task
-        sandbox_manager.touch(stable_session)
+        sandbox_backend.touch(stable_session)
 
         # Wait for container to be ready
         for attempt in range(20):
@@ -430,7 +429,7 @@ async def stream_chat(
 
                     # Reset sandbox idle timer on every message so
                     # long-running queries don't trigger the reaper.
-                    sandbox_manager.touch(stable_session)
+                    sandbox_backend.touch(stable_session)
 
                     msg_type = msg.get("type")
                     # --- Token-level streaming events from SDK ---
