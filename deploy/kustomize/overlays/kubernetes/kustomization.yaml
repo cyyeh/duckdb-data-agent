@@ -3,11 +3,3 @@ kind: Kustomization
 
 resources:
   - ../../base
-
-configMapGenerator:
-  - name: opensandbox-config
-    files:
-      - sandbox.toml=config.kubernetes.toml
-
-generatorOptions:
-  disableNameSuffixHash: true

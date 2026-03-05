@@ -41,7 +41,7 @@ Each browser tab gets its own isolated DuckDB session — uploaded data and quer
 - **Edit & delete messages** — Hover over any user message to edit or delete it; editing re-sends the modified query with prior conversation as context, deleting rewinds the conversation to that point
 - **Bifrost LLM gateway** — A [Bifrost](https://github.com/maximhq/bifrost) gateway service manages API keys centrally and routes LLM requests to multiple providers; sidecar containers never have access to real API keys (see [Security](#security))
 - **Privacy-conscious** — Requires an Anthropic API key stored in a server-side `.env` file; your data and credentials are never sent anywhere besides the Anthropic API
-- **Container isolation** — Run each agent session inside a sandboxed container managed by [OpenSandbox](https://github.com/alibaba/OpenSandbox) for code execution sandboxing and multi-tenant isolation; supports both Docker and Kubernetes runtimes; read-only rootfs, all capabilities dropped, no host filesystem access (see [Container Isolation](#container-isolation))
+- **Container isolation** — Run each agent session inside a sandboxed container for code execution sandboxing and multi-tenant isolation; supports both Docker and Kubernetes runtimes; read-only rootfs, all capabilities dropped, no host filesystem access (see [Container Isolation](#container-isolation))
 - **Langfuse observability** (optional) — Built-in [Langfuse](https://langfuse.com/) tracing for monitoring agent interactions
 
 ### Editor Mode
@@ -184,7 +184,7 @@ Open http://localhost:5173 to use the app. The Vite dev server proxies `/api` re
 
 ## Production Build and Deployment
 
-Docker Compose builds all images (app + sidecar + OpenSandbox) and runs the app with [container isolation](#container-isolation) enabled. The sidecar image is built but not started as a service — the app spawns sidecar containers on-demand via [OpenSandbox](https://github.com/alibaba/OpenSandbox). For Kubernetes deployment, see [`deploy/README.md`](deploy/README.md).
+Docker Compose builds all images (app + sidecar) and runs the app with [container isolation](#container-isolation) enabled. The sidecar image is built but not started as a service — the app spawns sidecar containers on-demand via the Docker SDK. For Kubernetes deployment, see [`deploy/README.md`](deploy/README.md).
 
 **Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop).
 
@@ -304,9 +304,9 @@ make compose-down
   │  └─────────────────────────────────────────────────────────┼────────────────┘   │
   │                                                            │                    │
   │  ┌──────────────────────────┐  ┌───────────────────────────┼──────────────┐     │
-  │  │   sandbox_manager.py     │  │        proxy.py           │              │     │
+  │  │   sandbox_backend.py     │  │        proxy.py           │              │     │
   │  │                          │  │                           │              │     │
-  │  │  OpenSandbox SDK         │  │  /anthropic/* → Bifrost   │              │     │
+  │  │  Docker / K8s sandbox    │  │  /anthropic/* → Bifrost   │              │     │
   │  │  Docker or K8s runtime   │  │  Model @suffix rewriting  │              │     │
   │  │  Resource limits         │  │                           │              │     │
   │  │  TTL-based cleanup       │  └─────────────┬─────────────┘              │     │
@@ -318,29 +318,29 @@ make compose-down
   │  │ parsing  │  persistence    │  │ traces    │                          │ │     │
   │  └──────────┘─────────────────┘  └───────────┘──────────────────────────┘ │     │
   └──────────────┬────────────────────────────────┬───────────────────────────┘     │
-                 │ OpenSandbox SDK (HTTP)          │                                │
+                 │ Docker SDK / K8s API          │                                │
                  ▼                                ▼                                 │
   ┌───────────────────────────────┐ ┌──────────────────────────────┐                │
-  │   OPENSANDBOX SERVER          │ │     BIFROST LLM GATEWAY      │                │
-  │   (opensandbox/server)        │ │     (maximhq/bifrost)        │                │
+  │   SANDBOX BACKEND          │ │     BIFROST LLM GATEWAY      │                │
+  │   (Docker SDK / K8s API)        │ │     (maximhq/bifrost)        │                │
   │                               │ │                              │                │
-  │  Port 8082 (dev) / 8080       │ │  Port 8081                   │                │
+  │  Docker: Docker SDK       │ │  Port 8081                   │                │
   │  Docker or K8s runtime        │ │  Multi-provider routing:     │                │
   │                               │ │  ┌──────────┐                │                │
   │  Lifecycle management:        │ │  │Anthropic │ Claude models  │                │
-  │  - POST /v1/sandboxes         │ │  └──────────┘                │                │
-  │  - GET  /v1/sandboxes/:id     │ │  ┌──────────┐                │                │
-  │  - GET  /v1/.../endpoints/:p  │ │  │OpenAI    │ GPT models     │                │
-  │  - DELETE /v1/sandboxes/:id   │ │  └──────────┘                │                │
+  │  - create_sandbox()           │ │  └──────────┘                │                │
+  │  - get_sandbox()              │ │  ┌──────────┐                │                │
+  │  - delete_sandbox()           │ │  │OpenAI    │ GPT models     │                │
+  │                               │ │  └──────────┘                │                │
   │                               │ │  ┌──────────┐                │                │
-  │  Injects execd into sandbox   │ │  │Bedrock   │ AWS models     │                │
-  │  Bridge networking + port map │ │  └──────────┘                │                │
-  │  /health (liveness)           │ │  config.json routing rules   │                │
+  │  Resource limits & cleanup    │ │  │Bedrock   │ AWS models     │                │
+  │  Bridge networking            │ │  └──────────┘                │                │
+  │                               │ │  config.json routing rules   │                │
   └──────────────┬────────────────┘ └──────────────────────────────┘                │
                  │ Creates & manages                                                │
                  ▼                                                                  │
   ┌───────────────────────────────────────────────────────────┐                     │
-  │   SIDECAR CONTAINER (managed by OpenSandbox)              │                     │
+  │   SIDECAR CONTAINER (managed by sandbox backend)              │                     │
   │   (Express + TypeScript)                                  │                     │
   │                                                           │                     │
   │  Claude Agent SDK 0.2.62                                  │                     │
@@ -371,7 +371,7 @@ make compose-down
   │  1. User types message in AgentPanel
   │  2. Frontend POST /api/chat (SSE) with X-Session-ID
   │  3. Backend creates/retrieves DuckDB session
-  │  4. Backend requests sandbox via OpenSandbox SDK → server creates container
+  │  4. Backend requests sandbox via sandbox backend → creates container
   │     with execd bootstrap, maps ports to host (bridge mode)
   │  5. Backend POST sidecar:3000/query (via execd proxy) with system prompt
   │  6. Sidecar spawns Claude Agent SDK subprocess
@@ -438,7 +438,7 @@ make compose-down
 
 ### Bifrost LLM Gateway
 
-When the agent runs, the backend spawns a sidecar container via OpenSandbox. A naive approach would pass `ANTHROPIC_API_KEY` directly into that container's environment — but any tool or shell command the agent executes could then read and exfiltrate the key.
+When the agent runs, the backend spawns a sidecar container via the sandbox backend. A naive approach would pass `ANTHROPIC_API_KEY` directly into that container's environment — but any tool or shell command the agent executes could then read and exfiltrate the key.
 
 Instead, a [Bifrost](https://github.com/maximhq/bifrost) LLM gateway service manages API keys centrally and routes requests to LLM providers:
 
@@ -464,7 +464,7 @@ The sidecar container only ever holds a placeholder string. Even if a tool call 
 
 ### Container Isolation
 
-The backend runs each Claude Code session inside a sandboxed container ("sidecar") managed by [OpenSandbox](https://github.com/alibaba/OpenSandbox). This provides code execution sandboxing, multi-tenant isolation, and a hardened boundary between the agent and the host system. OpenSandbox supports both **Docker** and **Kubernetes** runtimes — set `SANDBOX_RUNTIME` to choose.
+The backend runs each Claude Code session inside a sandboxed container ("sidecar") managed by the sandbox backend. This provides code execution sandboxing, multi-tenant isolation, and a hardened boundary between the agent and the host system. The sandbox backend supports both **Docker** and **Kubernetes** runtimes — set `SANDBOX_RUNTIME` to choose.
 
 **Architecture:**
 
@@ -473,11 +473,11 @@ Browser
   │
   ▼
 FastAPI Backend (host)
-  ├── Chat route ──► SandboxManager ──► OpenSandbox SDK
+  ├── Chat route ──► SandboxBackend (Docker/K8s)
   │                       │
   │                       ▼
   │               ┌──────────────────────────┐
-  │               │  OpenSandbox Server      │
+  │               │  Sandbox Backend      │
   │               │  (Docker or K8s runtime) │
   │               │         │                │
   │               │  ┌──────▼──────────────┐ │
@@ -496,7 +496,7 @@ FastAPI Backend (host)
 The data flow for a chat message is:
 
 1. Frontend sends a chat message to the FastAPI backend.
-2. Backend creates a sandbox (or reuses an existing one for the session) via `SandboxManager`, which calls the OpenSandbox SDK. The sandbox is configured to route LLM calls through the Bifrost gateway.
+2. Backend creates a sandbox (or reuses an existing one for the session) via `SandboxBackend` (Docker SDK or K8s API). The sandbox is configured to route LLM calls through the Bifrost gateway.
 3. Backend sends the query to the sidecar's `POST /query` endpoint. The sidecar calls the Claude Agent SDK's `query()` function with `includePartialMessages: true` for token-level streaming, configured with the host's MCP SSE endpoint.
 4. The agent talks to the Bifrost gateway (`/anthropic`) for LLM API access (using a placeholder key; Bifrost injects the real key).
 5. The agent's `execute_sql` tool calls reach the host DuckDB via the **MCP SSE bridge** (`/mcp/sse?session_id=...`), which routes each connection to the correct per-user DuckDB instance through the existing `SessionManager`.
@@ -509,7 +509,7 @@ The data flow for a chat message is:
 
 **Optional: gVisor sandbox hardening**
 
-OpenSandbox does not have a built-in OCI runtime selector, but you can run all sandbox containers under [gVisor](https://gvisor.dev/) by configuring the Docker daemon to use `runsc` as its default runtime:
+You can run all sandbox containers under [gVisor](https://gvisor.dev/) by configuring the Docker daemon to use `runsc` as its default runtime:
 
 ```jsonc
 // /etc/docker/daemon.json
@@ -523,7 +523,7 @@ OpenSandbox does not have a built-in OCI runtime selector, but you can run all s
 }
 ```
 
-This is transparent to OpenSandbox — all containers it creates will automatically use the gVisor kernel sandbox.
+This is transparent to the sandbox backend — all containers it creates will automatically use the gVisor kernel sandbox.
 
 **Prerequisites:**
 
@@ -553,9 +553,7 @@ See [`deploy/README.md`](deploy/README.md) for Helm and Kustomize deployment gui
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SANDBOX_RUNTIME` | `docker` | Sandbox runtime (`docker` or `kubernetes`) |
-| `OPENSANDBOX_DOMAIN` | `localhost:8080` | OpenSandbox server address |
-| `OPENSANDBOX_API_KEY` | (empty) | API key for OpenSandbox server |
+| `SANDBOX_RUNTIME` | `docker` | Sandbox runtime (`docker` or `k8s`) |
 | `K8S_NAMESPACE` | `default` | Kubernetes namespace for sandboxes |
 | `K8S_WORKLOAD_PROVIDER` | `agent-sandbox` | Kubernetes workload provider |
 | `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar Docker image |
@@ -576,10 +574,10 @@ See [`deploy/README.md`](deploy/README.md) for Helm and Kustomize deployment gui
 - No real API keys inside the container (placeholder string only; real keys managed by Bifrost)
 - Per-session isolation -- containers cannot see each other
 - Resource limits (CPU, memory, lifetime) prevent denial-of-service against the host
-- OpenSandbox enforces security defaults: all capabilities dropped, no new privileges, PID limits
+- The sandbox backend enforces security defaults: all capabilities dropped, no new privileges, PID limits
 - Internal networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) are blocked, preventing cloud metadata and internal service access
 
-For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md) and [`docs/plans/2026-03-04-opensandbox-integration-design.md`](docs/plans/2026-03-04-opensandbox-integration-design.md).
+For full design details, see [`docs/plans/2026-02-22-containerized-runtime-design.md`](docs/plans/2026-02-22-containerized-runtime-design.md).
 
 ## E2E Testing
 
@@ -669,7 +667,7 @@ scenarios:
 │   │   ├── agent_memory.py #   File-based agent memory (read/save/forget markdown memories, thread-safe)
 │   │   ├── skills.py       #   Skill CRUD operations (read/write SKILL.md files)
 │   │   ├── mcp_sse.py      #   MCP SSE endpoint: exposes DuckDB, chart, create_skill, and memory tools over HTTP
-│   │   ├── sandbox_manager.py  #   OpenSandbox SDK wrapper: sandbox lifecycle, TTL cleanup, orphan removal
+│   │   ├── sandbox_backend.py  #   Sandbox backend ABC + Docker/K8s implementations
 │   │   ├── proxy.py        #   Reverse proxy for per-subagent model routing (@suffix rewriting)
 │   │   ├── pending_questions.py  #   Interactive clarification (agent asks user for disambiguation)
 │   │   ├── dependencies.py #   FastAPI dependency injection utilities
@@ -687,13 +685,13 @@ scenarios:
 │   │       └── langfuse_status.py  #   Langfuse tracing status and link
 │   └── tests/              #   Unit tests (pytest)
 │       ├── test_sandbox_manager.py
-│       ├── test_opensandbox_config.py
+│       ├── test_sandbox_backend.py
 │       ├── test_skills.py
 │       ├── test_mcp_sse.py
 │       ├── test_proxy.py
 │       ├── test_session_manager.py
 │       └── ...             #   17 test modules total
-├── sandbox/                # OpenSandbox server configuration
+├── deploy/                 # Kubernetes deployment manifests
 │   ├── config.docker.toml  #   Docker runtime config (bridge mode, port mapping)
 │   └── config.kubernetes.toml  #  Kubernetes runtime config (namespace, workload provider)
 ├── skills/                 # Skill definitions (SKILL.md files, volume-mounted into sidecar containers)
@@ -724,7 +722,7 @@ scenarios:
 ├── docs/plans/             # Design and implementation plan documents
 ├── utils/                  # Standalone utility pages (run_plotly.html, run_vega_lite.html for testing chart specs)
 ├── .github/workflows/      # GitHub Actions CI/CD (code review, CI)
-├── docker-compose.yml      # Compose orchestration (bifrost + opensandbox + app + sidecar build)
+├── docker-compose.yml      # Compose orchestration (bifrost + app + sidecar build)
 └── Makefile                # Dev commands (install, dev, compose-build/up/down, e2e-test, clean)
 ```
 
@@ -741,7 +739,7 @@ scenarios:
 - [Anthropic Agent SDK](https://github.com/anthropics/anthropic-sdk-python)
 - [MCP](https://modelcontextprotocol.io/) SSE transport (DuckDB tool bridge for containers)
 - Subagent architecture via Claude Agent SDK `AgentDefinition` API (sql-analyst)
-- [OpenSandbox](https://github.com/alibaba/OpenSandbox) SDK (container lifecycle, execd proxy, Docker/K8s runtime)
+- Docker SDK / Kubernetes API (container lifecycle, Docker/K8s runtime)
 - [Langfuse](https://langfuse.com/) (optional, for observability)
 
 **Sidecar**

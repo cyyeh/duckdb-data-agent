@@ -35,26 +35,6 @@ bifrost:
       cpu: 500m
       memory: 256Mi
 
-opensandbox:
-  image:
-    repository: opensandbox/server
-    tag: latest
-    pullPolicy: IfNotPresent
-  port: 8080
-  replicas: 1
-  runtime: kubernetes
-  # Must match the namespace where the Helm release is deployed.
-  # OpenSandbox creates sandbox pods in this namespace.
-  k8sNamespace: default
-  workloadProvider: agent-sandbox
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
-
 sidecar:
   image:
     repository: duckdb-agent-sidecar

@@ -26,8 +26,6 @@ spec:
               containerPort: {{ .Values.backend.port }}
               protocol: TCP
           env:
-            - name: OPENSANDBOX_DOMAIN
-              value: "{{ include "duckdb-data-agent.fullname" . }}-opensandbox:{{ .Values.opensandbox.port }}"
             - name: BIFROST_BASE_URL
               value: "http://{{ include "duckdb-data-agent.fullname" . }}-bifrost:{{ .Values.bifrost.port }}"
             - name: BACKEND_BASE_URL

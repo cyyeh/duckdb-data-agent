@@ -20,8 +20,6 @@ spec:
           ports:
             - containerPort: 10000
           env:
-            - name: OPENSANDBOX_DOMAIN
-              value: "opensandbox:8080"
             - name: BIFROST_BASE_URL
               value: "http://bifrost:8080"
             - name: BACKEND_BASE_URL

@@ -6,15 +6,14 @@ The DuckDB Data Agent consists of four services:
 
 - **Backend** (`duckdb-data-agent`) -- FastAPI application that serves the chat UI and orchestrates agent workflows.
 - **Bifrost** (`maximhq/bifrost`) -- LLM gateway that proxies Anthropic API calls with caching and rate-limiting.
-- **OpenSandbox** (`opensandbox/server`) -- Manages ephemeral sidecar containers for code execution. In Kubernetes mode it creates pods via the K8s API.
-- **Sidecar** (`duckdb-agent-sidecar`) -- Short-lived containers spawned on demand by OpenSandbox to run SQL queries and user code in isolation.
+- **Sidecar** (`duckdb-agent-sidecar`) -- Short-lived containers spawned on demand by the sandbox backend to run SQL queries and user code in isolation.
 
 ## Prerequisites
 
 - Kubernetes 1.24+
 - Helm 3+ (for Helm deployment) and/or `kubectl` with kustomize (for Kustomize deployment)
 - Container images pushed to a registry accessible from your cluster
-- [Agent Sandbox CRD](https://github.com/kubernetes-sigs/agent-sandbox) installed in the cluster (required by OpenSandbox)
+- [Agent Sandbox CRD](https://github.com/kubernetes-sigs/agent-sandbox) installed in the cluster (required by K8s sandbox backend)
 
 ### Cluster Setup (one-time)
 
@@ -24,7 +23,7 @@ Install the agent-sandbox CRD and controller:
 make k8s-setup
 ```
 
-This installs the `sandboxes.agents.x-k8s.io` CRD that OpenSandbox uses to create ephemeral sidecar pods.
+This installs the `sandboxes.agents.x-k8s.io` CRD that the K8s sandbox backend uses to create ephemeral sidecar pods.
 
 ## Local Development (OrbStack / Docker Desktop)
 
@@ -89,14 +88,14 @@ Key Helm values (see `deploy/helm/duckdb-data-agent/values.yaml` for the full li
 | `secrets.anthropicApiKey` | `""` | Anthropic API key |
 | `secrets.openaiApiKey` | `""` | OpenAI API key |
 | `backend.image.repository` | `duckdb-data-agent` | Backend image |
-| `backend.env.CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar image for OpenSandbox to spawn |
+| `backend.env.CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar image for sandbox backend to spawn |
 | `backend.env.SANDBOX_RUNTIME` | `kubernetes` | Sandbox runtime (`docker` or `kubernetes`) |
 | `backend.env.ORCHESTRATOR_MODEL` | `""` | Orchestrator model override |
 | `backend.env.SQL_SUBAGENT_MODEL` | `""` | SQL sub-agent model override |
 | `backend.env.DEFAULT_TOOL_MODEL` | `""` | Tool-calling model override |
 | `ingress.enabled` | `false` | Enable Ingress resource |
 | `ingress.host` | `duckdb-agent.local` | Hostname for Ingress |
-| `opensandbox.runtime` | `kubernetes` | OpenSandbox runtime type |
+| `backend.env.SANDBOX_RUNTIME` | `kubernetes` | Sandbox runtime type (`docker` or `k8s`) |
 | `persistence.enabled` | `true` | Enable PVC for data storage |
 
 ## Kubernetes Deployment with Kustomize
@@ -119,7 +118,7 @@ kubectl get pods
 
 **Note:** Update the image references in `deploy/kustomize/base/backend-deployment.yaml` to point to your registry before applying.
 
-The Kubernetes overlay generates an `opensandbox-config` ConfigMap from `config.kubernetes.toml` that sets the runtime to `kubernetes`.
+The Kubernetes overlay uses the base manifests directly.
 
 ## Switching LLM Providers
 
@@ -174,8 +173,7 @@ The model format is `provider/model-id@tier` where `@tier` maps to the Bifrost r
 | Variable | Default | Description |
 |---|---|---|
 | `SANDBOX_RUNTIME` | `docker` | Sandbox runtime mode: `docker` or `kubernetes` |
-| `OPENSANDBOX_DOMAIN` | `opensandbox:8080` | Host and port of the OpenSandbox server |
-| `OPENSANDBOX_API_KEY` | (empty) | API key for OpenSandbox server (optional) |
+| `SANDBOX_RUNTIME` | `docker` | Sandbox runtime (`docker` or `k8s`) |
 | `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Docker image used for sidecar containers |
 | `CONTAINER_MEMORY_LIMIT` | `512Mi` | Memory limit per sidecar container |
 | `CONTAINER_CPU_LIMIT` | `0.5` | CPU limit per sidecar container |
@@ -192,13 +190,13 @@ The model format is `provider/model-id@tier` where `@tier` maps to the Bifrost r
 ## Troubleshooting
 
 **Sidecar containers not being created**
-- Check OpenSandbox logs: `kubectl logs deploy/opensandbox`.
+- Check backend logs: `kubectl logs deploy/backend`.
 - Ensure the sidecar image is pushed to the registry and accessible from the cluster.
 - Verify `CONTAINER_IMAGE` env var on the backend matches the pushed image tag.
 
 **Network connectivity between services**
 - All services must be in the same namespace.
-- The backend must be able to reach both Bifrost and OpenSandbox by hostname.
+- The backend must be able to reach Bifrost by hostname.
 - Sidecars must be able to reach the backend at `BACKEND_BASE_URL` to report results.
 
 **Bifrost not routing LLM requests**

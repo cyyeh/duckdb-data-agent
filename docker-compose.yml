@@ -20,21 +20,6 @@ services:
       retries: 3
     restart: unless-stopped
 
-  opensandbox:
-    image: opensandbox/server:latest
-    container_name: opensandbox
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./sandbox/config.docker.toml:/etc/opensandbox/config.toml
-    networks:
-      - agent-sandbox
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    restart: unless-stopped
-
   app:
     build:
       context: .
@@ -49,13 +34,13 @@ services:
       - backend/.env
     environment:
       CONTAINER_IMAGE: duckdb-agent-sidecar:latest
-      OPENSANDBOX_DOMAIN: opensandbox:8080
       BIFROST_BASE_URL: http://bifrost:8080
       BACKEND_BASE_URL: http://host.docker.internal:10000
       SKILLS_DIR: /app/skills
       SKILLS_HOST_PATH: ${SKILLS_HOST_PATH:-${PWD}/skills}
       PLUGINS_HOST_PATH: ${PLUGINS_HOST_PATH:-${PWD}/plugins}
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./skills:/app/skills
       - ./plugins:/app/plugins:ro
       - ./data:/app/data
@@ -63,8 +48,6 @@ services:
       - agent-sandbox
     depends_on:
       bifrost:
-        condition: service_healthy
-      opensandbox:
         condition: service_healthy
     restart: unless-stopped
 
@@ -77,7 +60,7 @@ services:
       - sidecar
     # Never started directly — exists only so `docker compose build`
     # produces the sidecar image. The app spawns sidecar containers
-    # on-demand via OpenSandbox.
+    # on-demand via the sandbox backend (Docker SDK).
 
 networks:
   agent-sandbox:
