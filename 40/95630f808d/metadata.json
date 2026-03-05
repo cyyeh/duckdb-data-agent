@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "4095630f808d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-03-05-k8s-agent-sandbox-design.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/40/95630f808d/0/metadata.json",
+      "transcript": "/40/95630f808d/0/full.jsonl",
+      "context": "/40/95630f808d/0/context.md",
+      "content_hash": "/40/95630f808d/0/content_hash.txt",
+      "prompt": "/40/95630f808d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 1380,
+    "cache_read_tokens": 199172,
+    "output_tokens": 698,
+    "api_call_count": 3
+  }
+}
