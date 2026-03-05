@@ -54,13 +54,16 @@ CONTAINER_CPU_LIMIT = float(os.getenv("CONTAINER_CPU_LIMIT", "0.5"))
 CONTAINER_MAX_LIFETIME_SECONDS = int(os.getenv("CONTAINER_MAX_LIFETIME_SECONDS", "3600"))
 CONTAINER_IDLE_TIMEOUT_SECONDS = int(os.getenv("CONTAINER_IDLE_TIMEOUT_SECONDS", "900"))
 SDK_IDLE_TIMEOUT_MS = int(os.getenv("SDK_IDLE_TIMEOUT_MS", "600000"))
-# OpenSandbox settings
-SANDBOX_RUNTIME = os.getenv("SANDBOX_RUNTIME", "docker")  # "docker" or "kubernetes"
-OPENSANDBOX_DOMAIN = os.getenv("OPENSANDBOX_DOMAIN", "localhost:8080")
-OPENSANDBOX_API_KEY = os.getenv("OPENSANDBOX_API_KEY", "")
-# Kubernetes-specific
+CONTAINER_RUNTIME = os.getenv("CONTAINER_RUNTIME", "runsc")
+CONTAINER_NETWORK = os.getenv("CONTAINER_NETWORK", "agent-sandbox")
+
+# Sandbox runtime selection
+SANDBOX_RUNTIME = os.getenv("SANDBOX_RUNTIME", "docker")  # "docker" | "k8s"
+
+# K8s-specific (only used when SANDBOX_RUNTIME="k8s")
+K8S_TEMPLATE_NAME = os.getenv("K8S_TEMPLATE_NAME", "duckdb-agent-sidecar")
 K8S_NAMESPACE = os.getenv("K8S_NAMESPACE", "default")
-K8S_WORKLOAD_PROVIDER = os.getenv("K8S_WORKLOAD_PROVIDER", "agent-sandbox")
+K8S_GATEWAY_NAME = os.getenv("K8S_GATEWAY_NAME", "")
 MEMORY_DB_PATH = os.getenv("MEMORY_DB_PATH", os.path.join(PROJECT_DIR, "data", "memory.db"))
 MEMORIES_DIR = os.getenv("MEMORIES_DIR", os.path.join(PROJECT_DIR, "data", "memories"))
 # CORS: comma-separated list of allowed origins, or "*" for all (no credentials).
