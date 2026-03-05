@@ -473,6 +473,17 @@ files = [
 all = ["adbc-driver-manager", "fsspec", "ipython", "numpy", "pandas", "pyarrow"]
 
 [[package]]
+name = "durationpy"
+version = "0.10"
+description = "Module for converting between datetime.timedelta and Go's Duration strings."
+optional = true
+python-versions = "*"
+files = [
+    {file = "durationpy-0.10-py3-none-any.whl", hash = "sha256:3b41e1b601234296b4fb368338fdcd3e13e0b4fb5b67345948f4f2bf9868b286"},
+    {file = "durationpy-0.10.tar.gz", hash = "sha256:1fa6893409a6e739c9c72334fc65cca1f355dbdd93405d30f726deb5bde42fba"},
+]
+
+[[package]]
 name = "et-xmlfile"
 version = "2.0.0"
 description = "An implementation of lxml.xmlfile for the standard library"
@@ -837,6 +848,52 @@ files = [
 referencing = ">=0.31.0"
 
 [[package]]
+name = "k8s-agent-sandbox"
+version = "0.1.1.post3"
+description = "A client library to interact with the Agentic Sandbox on Kubernetes."
+optional = true
+python-versions = ">=3.10"
+files = [
+    {file = "k8s_agent_sandbox-0.1.1.post3-py3-none-any.whl", hash = "sha256:60144426cbb8f547352123de6de97746a96a9c8743d6672bbeadee6935932ea1"},
+    {file = "k8s_agent_sandbox-0.1.1.post3.tar.gz", hash = "sha256:b8405f0f2b319f6547f927b4b1cb1e5cc9a930acb41e4a13edadb852e72c9a31"},
+]
+
+[package.dependencies]
+kubernetes = "*"
+pydantic = "*"
+requests = "*"
+
+[package.extras]
+test = ["pytest", "pytest-xdist"]
+tracing = ["opentelemetry-api (>=1.39.0,<1.40.0)", "opentelemetry-exporter-otlp (>=1.39.0,<1.40.0)", "opentelemetry-instrumentation-requests (>=0.60b0,<1.0)", "opentelemetry-sdk (>=1.39.0,<1.40.0)"]
+
+[[package]]
+name = "kubernetes"
+version = "35.0.0"
+description = "Kubernetes python client"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "kubernetes-35.0.0-py2.py3-none-any.whl", hash = "sha256:39e2b33b46e5834ef6c3985ebfe2047ab39135d41de51ce7641a7ca5b372a13d"},
+    {file = "kubernetes-35.0.0.tar.gz", hash = "sha256:3d00d344944239821458b9efd484d6df9f011da367ecb155dadf9513f05f09ee"},
+]
+
+[package.dependencies]
+certifi = ">=14.05.14"
+durationpy = ">=0.7"
+python-dateutil = ">=2.5.3"
+pyyaml = ">=5.4.1"
+requests = "*"
+requests-oauthlib = "*"
+six = ">=1.9.0"
+urllib3 = ">=1.24.2,<2.6.0 || >2.6.0"
+websocket-client = ">=0.32.0,<0.40.0 || >0.40.0,<0.41.dev0 || >=0.43.dev0"
+
+[package.extras]
+adal = ["adal (>=1.0.2)"]
+google-auth = ["google-auth (>=1.0.1)"]
+
+[[package]]
 name = "langfuse"
 version = "3.14.4"
 description = "A client library for accessing langfuse"
@@ -927,6 +984,22 @@ rich = ["rich (>=13.9.4)"]
 ws = ["websockets (>=15.0.1)"]
 
 [[package]]
+name = "oauthlib"
+version = "3.3.1"
+description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "oauthlib-3.3.1-py3-none-any.whl", hash = "sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1"},
+    {file = "oauthlib-3.3.1.tar.gz", hash = "sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9"},
+]
+
+[package.extras]
+rsa = ["cryptography (>=3.0.0)"]
+signals = ["blinker (>=1.4.0)"]
+signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
+
+[[package]]
 name = "openai"
 version = "2.21.0"
 description = "The official Python library for the openai API"
@@ -966,23 +1039,6 @@ files = [
 
 [package.dependencies]
 et-xmlfile = "*"
-
-[[package]]
-name = "opensandbox"
-version = "0.1.5"
-description = "OpenSandbox Python SDK - Secure, isolated execution environments"
-optional = false
-python-versions = ">=3.10"
-files = [
-    {file = "opensandbox-0.1.5-py3-none-any.whl", hash = "sha256:f21d2f45c88695c341067e3b932a71bae220e5260c06cfeb7a6f0e2e8c0677e0"},
-    {file = "opensandbox-0.1.5.tar.gz", hash = "sha256:90471035bc6e61056a731d9e8e693fa6f51b84894e42bd09e49515e67c8dcd59"},
-]
-
-[package.dependencies]
-attrs = ">=21.3.0"
-httpx = ">=0.27.0,<1.0"
-pydantic = ">=2.4.2,<3.0"
-python-dateutil = ">=2.8.2,<3.0"
 
 [[package]]
 name = "opentelemetry-api"
@@ -1475,7 +1531,7 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
-optional = false
+optional = true
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
     {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
@@ -1659,6 +1715,24 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "requests-oauthlib"
+version = "2.0.0"
+description = "OAuthlib authentication support for Requests."
+optional = true
+python-versions = ">=3.4"
+files = [
+    {file = "requests-oauthlib-2.0.0.tar.gz", hash = "sha256:b3dffaebd884d8cd778494369603a9e7b58d29111bf6b41bdc2dcd87203af4e9"},
+    {file = "requests_oauthlib-2.0.0-py2.py3-none-any.whl", hash = "sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36"},
+]
+
+[package.dependencies]
+oauthlib = ">=3.0.0"
+requests = ">=2.0.0"
+
+[package.extras]
+rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
+
+[[package]]
 name = "requests-toolbelt"
 version = "1.0.0"
 description = "A utility belt for advanced users of python-requests"
@@ -1800,7 +1874,7 @@ files = [
 name = "six"
 version = "1.17.0"
 description = "Python 2 and 3 compatibility utilities"
-optional = false
+optional = true
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
     {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
@@ -2159,6 +2233,22 @@ files = [
 
 [package.dependencies]
 anyio = ">=3.0.0"
+
+[[package]]
+name = "websocket-client"
+version = "1.9.0"
+description = "WebSocket client for Python with low level API options"
+optional = true
+python-versions = ">=3.9"
+files = [
+    {file = "websocket_client-1.9.0-py3-none-any.whl", hash = "sha256:af248a825037ef591efbf6ed20cc5faa03d3b47b9e5a2230a529eeee1c1fc3ef"},
+    {file = "websocket_client-1.9.0.tar.gz", hash = "sha256:9e813624b6eb619999a97dc7958469217c3176312b3a16a4bd1bc7e08a46ec98"},
+]
+
+[package.extras]
+docs = ["Sphinx (>=6.0)", "myst-parser (>=2.0.0)", "sphinx_rtd_theme (>=1.1.0)"]
+optional = ["python-socks", "wsaccel"]
+test = ["pytest", "websockets"]
 
 [[package]]
 name = "websockets"
@@ -2599,7 +2689,10 @@ files = [
 [package.extras]
 cffi = ["cffi (>=1.17,<2.0)", "cffi (>=2.0.0b)"]
 
+[extras]
+k8s = ["k8s-agent-sandbox"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "df7d12751d38cef01c10a5501376b5ec2b2bfc0ed5a956add5ce80e8eda9ad97"
+content-hash = "24c5b83da3094fed9a8b1ac60e5fa77eccc00d95e066e424459da558a4fd90d3"
