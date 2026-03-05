@@ -9,7 +9,7 @@ class SandboxInfo:
     session_id: str
     url: str
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_activity: datetime = field(default=None)
+    last_activity: datetime | None = field(default=None)
 
     def __post_init__(self):
         if self.last_activity is None:
