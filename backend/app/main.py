@@ -9,12 +9,18 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.routes import tables, query, chat, langfuse_status, config, session, skills, conversations, memories
-from app.sandbox_manager import sandbox_manager
+from app.sandbox import get_sandbox_backend
 from app.mcp_sse import mcp_app
 from app.proxy import router as proxy_router
 from app.config import CORS_ALLOWED_ORIGINS
 
 logger = logging.getLogger(__name__)
+
+try:
+    sandbox_backend = get_sandbox_backend()
+except Exception:
+    logger.error("Failed to create sandbox backend", exc_info=True)
+    sandbox_backend = None
 
 from app.session_manager import session_manager
 from app.memory_store import memory_store
@@ -29,8 +35,8 @@ async def _cleanup_loop():
                 memory_store.delete_conversations_by_session(sid)
             if removed:
                 logger.info("Background cleanup: removed %d stale sessions", len(removed))
-            if sandbox_manager is not None:
-                sandbox_removed = await sandbox_manager.cleanup_expired()
+            if sandbox_backend is not None:
+                sandbox_removed = await sandbox_backend.cleanup_expired()
                 if sandbox_removed:
                     logger.info("Background cleanup: removed %d expired sandboxes", sandbox_removed)
         except Exception:
@@ -40,15 +46,15 @@ async def _cleanup_loop():
 @asynccontextmanager
 async def lifespan(app):
     # Clean up orphaned sandboxes from a previous unclean shutdown.
-    if sandbox_manager is not None:
-        orphans = await sandbox_manager.cleanup_orphaned()
+    if sandbox_backend is not None:
+        orphans = await sandbox_backend.cleanup_orphaned()
         if orphans:
             logger.info("Startup: cleaned up %d orphaned sandboxes", orphans)
     task = asyncio.create_task(_cleanup_loop())
     yield
     task.cancel()
-    if sandbox_manager is not None:
-        await sandbox_manager.shutdown_all()
+    if sandbox_backend is not None:
+        await sandbox_backend.shutdown_all()
 
 
 app = FastAPI(title="DuckDB Data Agent API", lifespan=lifespan)
