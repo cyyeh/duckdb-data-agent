@@ -1,0 +1,34 @@
+apiVersion: extensions.agents.x-k8s.io/v1alpha1
+kind: SandboxTemplate
+metadata:
+  name: duckdb-agent-sidecar
+spec:
+  podTemplate:
+    metadata:
+      labels:
+        app: duckdb-agent-sidecar
+    spec:
+      runtimeClassName: gvisor
+      containers:
+      - name: sidecar
+        image: duckdb-agent-sidecar:latest
+        ports:
+        - containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
