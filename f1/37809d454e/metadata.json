@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f137809d454e",
+  "strategy": "manual-commit",
+  "branch": "worktree-git-s3-integration",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/skills.py",
+    "backend/tests/test_skills_s3.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f1/37809d454e/0/metadata.json",
+      "transcript": "/f1/37809d454e/0/full.jsonl",
+      "context": "/f1/37809d454e/0/context.md",
+      "content_hash": "/f1/37809d454e/0/content_hash.txt",
+      "prompt": "/f1/37809d454e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 731,
+    "cache_creation_tokens": 241970,
+    "cache_read_tokens": 2335625,
+    "output_tokens": 50714,
+    "api_call_count": 55
+  }
+}
