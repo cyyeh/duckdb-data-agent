@@ -3,7 +3,7 @@
   "checkpoint_id": "997d1b5a1035",
   "strategy": "manual-commit",
   "branch": "worktree-k8s-agent-sandbox",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "deploy/README.md"
   ],
@@ -21,13 +21,20 @@
       "context": "/99/7d1b5a1035/1/context.md",
       "content_hash": "/99/7d1b5a1035/1/content_hash.txt",
       "prompt": "/99/7d1b5a1035/1/prompt.txt"
+    },
+    {
+      "metadata": "/99/7d1b5a1035/2/metadata.json",
+      "transcript": "/99/7d1b5a1035/2/full.jsonl",
+      "context": "/99/7d1b5a1035/2/context.md",
+      "content_hash": "/99/7d1b5a1035/2/content_hash.txt",
+      "prompt": "/99/7d1b5a1035/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 105,
-    "cache_creation_tokens": 61614,
-    "cache_read_tokens": 1462858,
-    "output_tokens": 13355,
-    "api_call_count": 63
+    "input_tokens": 123,
+    "cache_creation_tokens": 79536,
+    "cache_read_tokens": 2778866,
+    "output_tokens": 19864,
+    "api_call_count": 75
   }
 }
