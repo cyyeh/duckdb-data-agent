@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "e2318d112266",
+  "session_id": "eb529204-a1f1-4a0a-9581-ef75bcbfffc8",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T02:52:18.695715Z",
+  "branch": "worktree-git-s3-integration",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/2026-03-06-git-s3-storage-design.md"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "bcc7a9110d15",
+  "token_usage": {
+    "input_tokens": 85,
+    "cache_creation_tokens": 37164,
+    "cache_read_tokens": 813629,
+    "output_tokens": 10721,
+    "api_call_count": 32
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T02:52:18.385287Z",
+    "agent_lines": 252,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 252,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-git-s3-integration/eb529204-a1f1-4a0a-9581-ef75bcbfffc8.jsonl"
+}
