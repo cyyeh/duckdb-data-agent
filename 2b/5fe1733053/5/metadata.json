@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "2b5fe1733053",
+  "session_id": "efd9c383-cba3-4afb-9f07-579679c75576",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T06:59:21.914223Z",
+  "branch": "worktree-k8s-agent-sandbox",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "backend/app/config.py",
+    "backend/app/sandbox/__init__.py",
+    "backend/app/sandbox/k8s_backend.py",
+    "backend/tests/test_k8s_backend.py",
+    "backend/tests/test_sandbox_factory.py",
+    "deploy/README.md",
+    "deploy/helm/duckdb-data-agent/templates/backend-deployment.yaml",
+    "deploy/helm/duckdb-data-agent/templates/bifrost-deployment.yaml",
+    "deploy/helm/duckdb-data-agent/templates/configmap.yaml",
+    "deploy/helm/duckdb-data-agent/templates/rbac.yaml",
+    "deploy/kustomize/base/backend-deployment.yaml",
+    "deploy/kustomize/base/kustomization.yaml",
+    "deploy/kustomize/base/rbac.yaml"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "714d3db1c740",
+  "transcript_identifier_at_start": "c0a00440-4b95-40df-98fb-5ea228b594a7",
+  "token_usage": {
+    "input_tokens": 159,
+    "cache_creation_tokens": 271155,
+    "cache_read_tokens": 10145560,
+    "output_tokens": 55814,
+    "api_call_count": 128
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T06:59:21.397029Z",
+    "agent_lines": 323,
+    "human_added": 36,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 359,
+    "agent_percentage": 89.97214484679665
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-k8s-agent-sandbox/efd9c383-cba3-4afb-9f07-579679c75576.jsonl"
+}
