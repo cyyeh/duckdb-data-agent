@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "66c061a552fd",
+  "strategy": "manual-commit",
+  "branch": "worktree-git-s3-integration",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "sidecar/Dockerfile",
+    "sidecar/scripts/git-init.sh",
+    "sidecar/scripts/git-push.sh",
+    "sidecar/src/server.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/66/c061a552fd/0/metadata.json",
+      "transcript": "/66/c061a552fd/0/full.jsonl",
+      "context": "/66/c061a552fd/0/context.md",
+      "content_hash": "/66/c061a552fd/0/content_hash.txt",
+      "prompt": "/66/c061a552fd/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 735,
+    "cache_creation_tokens": 248622,
+    "cache_read_tokens": 2730782,
+    "output_tokens": 55580,
+    "api_call_count": 59
+  }
+}
