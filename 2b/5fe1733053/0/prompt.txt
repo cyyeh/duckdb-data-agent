@@ -1,0 +1,516 @@
+fix this issue:
+
+cyyeh@ChihYuYehs-MacBook-Pro duckdb-data-agent % kubectl logs -f agent-sandbox-controller-0 -n agent-sandbox-system 
+2026-03-06T04:48:07Z    INFO    setup   starting manager
+2026-03-06T04:48:07Z    INFO    controller-runtime.metrics      Starting metrics server
+2026-03-06T04:48:07Z    INFO    controller-runtime.metrics      Serving metrics server  {"bindAddress": ":8080", "secure": false}
+2026-03-06T04:48:07Z    INFO    starting server {"name": "health probe", "addr": "[::]:8081"}
+2026-03-06T04:48:07Z    INFO    Starting EventSource    {"controller": "sandbox", "controllerGroup": "agents.x-k8s.io", "controllerKind": "Sandbox", "source": "kind source: *v1.Service"}
+2026-03-06T04:48:07Z    INFO    Starting EventSource    {"controller": "sandbox", "controllerGroup": "agents.x-k8s.io", "controllerKind": "Sandbox", "source": "kind source: *v1.Pod"}
+2026-03-06T04:48:07Z    INFO    Starting EventSource    {"controller": "sandbox", "controllerGroup": "agents.x-k8s.io", "controllerKind": "Sandbox", "source": "kind source: *v1alpha1.Sandbox"}
+2026-03-06T04:48:07Z    INFO    Starting EventSource    {"controller": "sandboxclaim", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxClaim", "source": "kind source: *v1alpha1.Sandbox"}
+2026-03-06T04:48:07Z    INFO    Starting EventSource    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "source": "kind source: *v1.Pod"}
+2026-03-06T04:48:07Z    INFO    Starting EventSource    {"controller": "sandboxclaim", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxClaim", "source": "kind source: *v1alpha1.SandboxClaim"}
+2026-03-06T04:48:07Z    INFO    Starting EventSource    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "source": "kind source: *v1alpha1.SandboxWarmPool"}
+2026-03-06T04:48:07Z    INFO    Starting Controller     {"controller": "sandbox", "controllerGroup": "agents.x-k8s.io", "controllerKind": "Sandbox"}
+2026-03-06T04:48:07Z    INFO    Starting workers        {"controller": "sandbox", "controllerGroup": "agents.x-k8s.io", "controllerKind": "Sandbox", "worker count": 1}
+2026-03-06T04:48:07Z    INFO    Starting Controller     {"controller": "sandboxclaim", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxClaim"}
+2026-03-06T04:48:07Z    INFO    Starting workers        {"controller": "sandboxclaim", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxClaim", "worker count": 1}
+2026-03-06T04:48:07Z    INFO    Starting Controller     {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool"}
+2026-03-06T04:48:07Z    INFO    Starting workers        {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "worker count": 1}
+2026-03-06T04:48:08Z    INFO    Pool status     {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "5bb468ca-1104-47ce-b145-8b660591194c", "desired": 2, "current": 0, "poolName": "duckdb-agent-sidecar-pool", "poolNameHash": "485bda61"}
+2026-03-06T04:48:08Z    INFO    Creating new pods       {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "5bb468ca-1104-47ce-b145-8b660591194c", "count": 2}
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "5bb468ca-1104-47ce-b145-8b660591194c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "5bb468ca-1104-47ce-b145-8b660591194c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "5bb468ca-1104-47ce-b145-8b660591194c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "5bb468ca-1104-47ce-b145-8b660591194c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Reconciler error        {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "5bb468ca-1104-47ce-b145-8b660591194c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found\npods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:474
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    INFO    Pool status     {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "116e6cf6-ecb6-4b18-acf3-0e39f4f0d3b3", "desired": 2, "current": 0, "poolName": "duckdb-agent-sidecar-pool", "poolNameHash": "485bda61"}
+2026-03-06T04:48:08Z    INFO    Creating new pods       {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "116e6cf6-ecb6-4b18-acf3-0e39f4f0d3b3", "count": 2}
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "116e6cf6-ecb6-4b18-acf3-0e39f4f0d3b3", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "116e6cf6-ecb6-4b18-acf3-0e39f4f0d3b3", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "116e6cf6-ecb6-4b18-acf3-0e39f4f0d3b3", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "116e6cf6-ecb6-4b18-acf3-0e39f4f0d3b3", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Reconciler error        {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "116e6cf6-ecb6-4b18-acf3-0e39f4f0d3b3", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found\npods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:474
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    INFO    Pool status     {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "cb2763fd-366c-4f0c-8b9a-a9bbb6ecb89c", "desired": 2, "current": 0, "poolName": "duckdb-agent-sidecar-pool", "poolNameHash": "485bda61"}
+2026-03-06T04:48:08Z    INFO    Creating new pods       {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "cb2763fd-366c-4f0c-8b9a-a9bbb6ecb89c", "count": 2}
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "cb2763fd-366c-4f0c-8b9a-a9bbb6ecb89c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "cb2763fd-366c-4f0c-8b9a-a9bbb6ecb89c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "cb2763fd-366c-4f0c-8b9a-a9bbb6ecb89c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "cb2763fd-366c-4f0c-8b9a-a9bbb6ecb89c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Reconciler error        {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "cb2763fd-366c-4f0c-8b9a-a9bbb6ecb89c", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found\npods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:474
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    INFO    Pool status     {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "e695c9d1-d7d9-42ce-adc7-526edeb1641a", "desired": 2, "current": 0, "poolName": "duckdb-agent-sidecar-pool", "poolNameHash": "485bda61"}
+2026-03-06T04:48:08Z    INFO    Creating new pods       {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "e695c9d1-d7d9-42ce-adc7-526edeb1641a", "count": 2}
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "e695c9d1-d7d9-42ce-adc7-526edeb1641a", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "e695c9d1-d7d9-42ce-adc7-526edeb1641a", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "e695c9d1-d7d9-42ce-adc7-526edeb1641a", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "e695c9d1-d7d9-42ce-adc7-526edeb1641a", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Reconciler error        {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "e695c9d1-d7d9-42ce-adc7-526edeb1641a", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found\npods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:474
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    INFO    Pool status     {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "680bb235-b0b6-4a97-80f3-019487df8dfd", "desired": 2, "current": 0, "poolName": "duckdb-agent-sidecar-pool", "poolNameHash": "485bda61"}
+2026-03-06T04:48:08Z    INFO    Creating new pods       {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "680bb235-b0b6-4a97-80f3-019487df8dfd", "count": 2}
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "680bb235-b0b6-4a97-80f3-019487df8dfd", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "680bb235-b0b6-4a97-80f3-019487df8dfd", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "680bb235-b0b6-4a97-80f3-019487df8dfd", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).createPoolPod
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:261
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:175
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Failed to create pod    {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "680bb235-b0b6-4a97-80f3-019487df8dfd", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).reconcilePool
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:176
+sigs.k8s.io/agent-sandbox/extensions/controllers.(*SandboxWarmPoolReconciler).Reconcile
+        /workspace/extensions/controllers/sandboxwarmpool_controller.go:77
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Reconcile
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:216
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:461
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+2026-03-06T04:48:08Z    ERROR   Reconciler error        {"controller": "sandboxwarmpool", "controllerGroup": "extensions.agents.x-k8s.io", "controllerKind": "SandboxWarmPool", "SandboxWarmPool": {"name":"duckdb-agent-sidecar-pool","namespace":"default"}, "namespace": "default", "name": "duckdb-agent-sidecar-pool", "reconcileID": "680bb235-b0b6-4a97-80f3-019487df8dfd", "error": "pods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found\npods \"duckdb-agent-sidecar-pool-\" is forbidden: pod rejected: RuntimeClass \"gvisor\" not found"}
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).reconcileHandler
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:474
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).processNextWorkItem
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:421
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller[...]).Start.func1.1
+        /go/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.2/pkg/internal/controller/controller.go:296
+
+---
+
+Tool loaded.
+
+---
+
+Tool loaded.
+
+---
+
+Tool loaded.
+
+---
+
+<task-notification>
+<task-id>bymjtt6am</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-k8s-agent-sandbox/tasks/bymjtt6am.output</output-file>
+<status>completed</status>
+<summary>Background command "Check controller logs after restart" completed (exit code 0)</summary>
+</task-notification>
+Read the output file to retrieve the result: /private/tmp/claude-501/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-k8s-agent-sandbox/tasks/bymjtt6am.output
+
+---
+
+how to add gvisor in k8s
+
+---
+
+seems duckdb-agent-sidecar-pool-27725                           0/1     ImagePullBackOff   0          4m
+duckdb-agent-sidecar-pool-9j2mb                           0/1     ImagePullBackOff   0          4m
+
+---
+
+fix this in backend pod
+
+  + Exception Group Traceback (most recent call last):
+  |   File "/usr/local/lib/python3.12/site-packages/starlette/_utils.py", line 81, in collapse_excgroups
+  |     yield
+  |   File "/usr/local/lib/python3.12/site-packages/starlette/responses.py", line 270, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    |     result = await app(  # type: ignore[func-returns-value]
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    |     return await self.app(scope, receive, send)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/local/lib/python3.12/site-packages/fastapi/applications.py", line 1134, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/applications.py", line 107, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/middleware/cors.py", line 95, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/middleware/cors.py", line 153, in simple_response
+    |     await self.app(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/usr/local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 119, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 106, in app
+    |     await response(scope, receive, send)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/responses.py", line 269, in __call__
+    |     with collapse_excgroups():
+    |          ^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/local/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    |     raise exc
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/responses.py", line 273, in wrap
+    |     await func()
+    |   File "/usr/local/lib/python3.12/site-packages/starlette/responses.py", line 253, in stream_response
+    |     async for chunk in self.body_iterator:
+    |   File "/app/app/agent.py", line 259, in stream_chat
+    |     sandbox_backend = get_sandbox_backend()
+    |                       ^^^^^^^^^^^^^^^^^^^^^
+    |   File "/app/app/sandbox/__init__.py", line 41, in get_sandbox_backend
+    |     raise ValueError(f"Unknown SANDBOX_RUNTIME: {rt!r}. Use 'docker' or 'k8s'.")
+    | ValueError: Unknown SANDBOX_RUNTIME: 'kubernetes'. Use 'docker' or 'k8s'.
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/middleware/cors.py", line 95, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/usr/local/lib/python3.12/site-packages/starlette/middleware/cors.py", line 153, in simple_response
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 106, in app
+    await response(scope, receive, send)
+  File "/usr/local/lib/python3.12/site-packages/starlette/responses.py", line 269, in __call__
+    with collapse_excgroups():
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/usr/local/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/starlette/responses.py", line 273, in wrap
+    await func()
+  File "/usr/local/lib/python3.12/site-packages/starlette/responses.py", line 253, in stream_response
+    async for chunk in self.body_iterator:
+  File "/app/app/agent.py", line 259, in stream_chat
+    sandbox_backend = get_sandbox_backend()
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/sandbox/__init__.py", line 41, in get_sandbox_backend
+    raise ValueError(f"Unknown SANDBOX_RUNTIME: {rt!r}. Use 'docker' or 'k8s'.")
+ValueError: Unknown SANDBOX_RUNTIME: 'kubernetes'. Use 'docker' or 'k8s'.
+
+---
+
+I only accept k8s or docker
