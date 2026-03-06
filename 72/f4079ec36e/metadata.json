@@ -3,8 +3,9 @@
   "checkpoint_id": "72f4079ec36e",
   "strategy": "manual-commit",
   "branch": "worktree-k8s-agent-sandbox",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
+    "Makefile",
     "backend/pyproject.toml"
   ],
   "sessions": [
@@ -14,13 +15,20 @@
       "context": "/72/f4079ec36e/0/context.md",
       "content_hash": "/72/f4079ec36e/0/content_hash.txt",
       "prompt": "/72/f4079ec36e/0/prompt.txt"
+    },
+    {
+      "metadata": "/72/f4079ec36e/1/metadata.json",
+      "transcript": "/72/f4079ec36e/1/full.jsonl",
+      "context": "/72/f4079ec36e/1/context.md",
+      "content_hash": "/72/f4079ec36e/1/content_hash.txt",
+      "prompt": "/72/f4079ec36e/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 26,
-    "cache_creation_tokens": 23416,
-    "cache_read_tokens": 280418,
-    "output_tokens": 2119,
-    "api_call_count": 16
+    "input_tokens": 46,
+    "cache_creation_tokens": 35972,
+    "cache_read_tokens": 419070,
+    "output_tokens": 3651,
+    "api_call_count": 26
   }
 }
