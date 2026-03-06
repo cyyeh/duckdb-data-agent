@@ -17,9 +17,11 @@ claude-agent-sdk = "^0.1.44"
 langfuse = "^3.0.0"
 langsmith = {extras = ["claude-agent-sdk", "otel"], version = ">=0.3.0"}
 openpyxl = "^3.1.0"
+docker = {version = "^7.0.0", optional = true}
 k8s-agent-sandbox = {version = "^0.1.1", optional = true}
 
 [tool.poetry.extras]
+docker = ["docker"]
 k8s = ["k8s-agent-sandbox"]
 
 [tool.poetry.group.dev.dependencies]

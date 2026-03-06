@@ -52,7 +52,7 @@ frontend:
 install: install-backend install-frontend sidecar-build sidecar-network install-e2e
 
 install-backend:
-	cd backend && poetry install
+	cd backend && poetry install -E docker
 
 install-frontend:
 	cd frontend && npm install
