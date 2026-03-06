@@ -3,7 +3,7 @@
   "checkpoint_id": "7cff70ea79d8",
   "strategy": "manual-commit",
   "branch": "worktree-k8s-agent-sandbox",
-  "checkpoints_count": 4,
+  "checkpoints_count": 9,
   "files_touched": [
     "Makefile",
     "backend/Dockerfile",
@@ -19,13 +19,20 @@
       "context": "/7c/ff70ea79d8/0/context.md",
       "content_hash": "/7c/ff70ea79d8/0/content_hash.txt",
       "prompt": "/7c/ff70ea79d8/0/prompt.txt"
+    },
+    {
+      "metadata": "/7c/ff70ea79d8/1/metadata.json",
+      "transcript": "/7c/ff70ea79d8/1/full.jsonl",
+      "context": "/7c/ff70ea79d8/1/context.md",
+      "content_hash": "/7c/ff70ea79d8/1/content_hash.txt",
+      "prompt": "/7c/ff70ea79d8/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 42,
-    "cache_creation_tokens": 37130,
-    "cache_read_tokens": 702850,
-    "output_tokens": 7593,
-    "api_call_count": 28
+    "input_tokens": 85,
+    "cache_creation_tokens": 49058,
+    "cache_read_tokens": 1324206,
+    "output_tokens": 11823,
+    "api_call_count": 53
   }
 }
