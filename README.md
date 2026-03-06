@@ -318,13 +318,13 @@ make compose-down
   │  │ parsing  │  persistence    │  │ traces    │                          │ │     │
   │  └──────────┘─────────────────┘  └───────────┘──────────────────────────┘ │     │
   └──────────────┬────────────────────────────────┬───────────────────────────┘     │
-                 │ Docker SDK / K8s API          │                                │
+                 │ Docker SDK / K8s API           │                                 │
                  ▼                                ▼                                 │
   ┌───────────────────────────────┐ ┌──────────────────────────────┐                │
-  │   SANDBOX BACKEND          │ │     BIFROST LLM GATEWAY      │                │
-  │   (Docker SDK / K8s API)        │ │     (maximhq/bifrost)        │                │
+  │   SANDBOX BACKEND             │ │     BIFROST LLM GATEWAY      │                │
+  │   (Docker SDK / K8s API)      │ │     (maximhq/bifrost)        │                │
   │                               │ │                              │                │
-  │  Docker: Docker SDK       │ │  Port 8081                   │                │
+  │  Docker: Docker SDK           │ │  Port 8081                   │                │
   │  Docker or K8s runtime        │ │  Multi-provider routing:     │                │
   │                               │ │  ┌──────────┐                │                │
   │  Lifecycle management:        │ │  │Anthropic │ Claude models  │                │
@@ -340,7 +340,7 @@ make compose-down
                  │ Creates & manages                                                │
                  ▼                                                                  │
   ┌───────────────────────────────────────────────────────────┐                     │
-  │   SIDECAR CONTAINER (managed by sandbox backend)              │                     │
+  │   SIDECAR CONTAINER (managed by sandbox backend)          │                     │
   │   (Express + TypeScript)                                  │                     │
   │                                                           │                     │
   │  Claude Agent SDK 0.2.62                                  │                     │

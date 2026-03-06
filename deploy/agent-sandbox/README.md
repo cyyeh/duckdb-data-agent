@@ -19,7 +19,7 @@ kubectl apply \
 ## Apply manifests
 
 ```bash
-kubectl apply -f deploy/k8s/
+kubectl apply -f deploy/agent-sandbox/
 ```
 
 This creates:

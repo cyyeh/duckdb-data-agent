@@ -41,7 +41,7 @@ make k8s-build    # build images tagged for localhost:5001
 make k8s-push     # push to local registry
 helm upgrade --install duckdb-agent deploy/helm/duckdb-data-agent \
   --set secrets.anthropicApiKey=sk-ant-... \
-  --set backend.image.repository=localhost:5001/duckdb-data-agent \
+  --set backend.image.repository=localhost:5001/duckdb-data-agent-k8s \
   --set backend.image.pullPolicy=Always \
   --set backend.env.CONTAINER_IMAGE=localhost:5001/duckdb-agent-sidecar:latest
 
@@ -63,15 +63,15 @@ REGISTRY=my-registry.example.com make k8s-push
 
 ```bash
 # Build and push images to your registry
-docker build -t YOUR_REGISTRY/duckdb-data-agent:latest -f backend/Dockerfile .
+docker build -t YOUR_REGISTRY/duckdb-data-agent-k8s:latest --build-arg SANDBOX_EXTRA=k8s -f backend/Dockerfile .
 docker build -t YOUR_REGISTRY/duckdb-agent-sidecar:latest ./sidecar
-docker push YOUR_REGISTRY/duckdb-data-agent:latest
+docker push YOUR_REGISTRY/duckdb-data-agent-k8s:latest
 docker push YOUR_REGISTRY/duckdb-agent-sidecar:latest
 
 # Install the chart
 helm install duckdb-agent deploy/helm/duckdb-data-agent \
   --set secrets.anthropicApiKey=sk-ant-... \
-  --set backend.image.repository=YOUR_REGISTRY/duckdb-data-agent \
+  --set backend.image.repository=YOUR_REGISTRY/duckdb-data-agent-k8s \
   --set backend.env.CONTAINER_IMAGE=YOUR_REGISTRY/duckdb-agent-sidecar:latest \
   --set ingress.enabled=true \
   --set ingress.host=duckdb.example.com
@@ -87,7 +87,7 @@ Key Helm values (see `deploy/helm/duckdb-data-agent/values.yaml` for the full li
 |---|---|---|
 | `secrets.anthropicApiKey` | `""` | Anthropic API key |
 | `secrets.openaiApiKey` | `""` | OpenAI API key |
-| `backend.image.repository` | `duckdb-data-agent` | Backend image |
+| `backend.image.repository` | `duckdb-data-agent-k8s` | Backend image |
 | `backend.env.CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar image for sandbox backend to spawn |
 | `backend.env.SANDBOX_RUNTIME` | `kubernetes` | Sandbox runtime (`docker` or `kubernetes`) |
 | `backend.env.ORCHESTRATOR_MODEL` | `""` | Orchestrator model override |
@@ -132,7 +132,7 @@ helm upgrade --install duckdb-agent deploy/helm/duckdb-data-agent \
   --set backend.env.ORCHESTRATOR_MODEL="openai/gpt-5.2-2025-12-11@sonnet" \
   --set backend.env.SQL_SUBAGENT_MODEL="openai/gpt-5-mini-2025-08-07@haiku" \
   --set backend.env.DEFAULT_TOOL_MODEL="openai/gpt-5-mini-2025-08-07@haiku" \
-  --set backend.image.repository=localhost:5001/duckdb-data-agent \
+  --set backend.image.repository=localhost:5001/duckdb-data-agent-k8s \
   --set backend.env.CONTAINER_IMAGE=localhost:5001/duckdb-agent-sidecar:latest
 ```
 

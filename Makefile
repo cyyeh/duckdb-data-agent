@@ -2,11 +2,12 @@
        sidecar-build sidecar-network clean compose-build compose-up compose-down \
        install-e2e e2e-test e2e-test-headed e2e-test-ui e2e-report \
        registry k8s-build k8s-push k8s-deploy k8s-delete \
-       kustomize-deploy kustomize-delete k8s-setup
+       kustomize-deploy kustomize-delete k8s-setup k8s-sandbox
 
 # Local container registry (OrbStack / Docker Desktop K8s)
 REGISTRY ?= localhost:5001
 BACKEND_IMAGE = $(REGISTRY)/duckdb-data-agent:latest
+BACKEND_K8S_IMAGE = $(REGISTRY)/duckdb-data-agent-k8s:latest
 SIDECAR_IMAGE = $(REGISTRY)/duckdb-agent-sidecar:latest
 
 # LLM provider and model configuration (override via env or command line)
@@ -85,7 +86,8 @@ clean:
 
 # Install agent-sandbox CRD and controller (one-time cluster setup)
 k8s-setup:
-	kubectl apply -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/$(AGENT_SANDBOX_VERSION)/manifest.yaml
+	kubectl apply -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/$(AGENT_SANDBOX_VERSION)/manifest.yaml \
+		-f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/$(AGENT_SANDBOX_VERSION)/extensions.yaml
 	@echo "Waiting for agent-sandbox controller pods to be ready..."
 	@for i in $$(seq 1 30); do \
 		kubectl get pods -n agent-sandbox-system 2>/dev/null | grep -q Running && break; \
@@ -93,6 +95,11 @@ k8s-setup:
 	done
 	kubectl -n agent-sandbox-system wait --for=condition=Ready pod --all --timeout=120s
 	@echo "Agent-sandbox controller is ready"
+
+# Apply project-specific SandboxTemplate and WarmPool CRs
+k8s-sandbox: k8s-setup
+	kubectl apply -f deploy/agent-sandbox/sandbox-template.yaml -f deploy/agent-sandbox/warm-pool.yaml
+	@echo "SandboxTemplate and WarmPool applied"
 
 # Start a local container registry (idempotent)
 registry:
@@ -103,18 +110,18 @@ registry:
 
 # Build images tagged for the local registry
 k8s-build:
-	docker build -t $(BACKEND_IMAGE) -f backend/Dockerfile .
+	docker build -t $(BACKEND_K8S_IMAGE) --build-arg SANDBOX_EXTRA=k8s -f backend/Dockerfile .
 	docker build -t $(SIDECAR_IMAGE) ./sidecar
 
 # Push images to the local registry
 k8s-push: k8s-build
-	docker push $(BACKEND_IMAGE)
+	docker push $(BACKEND_K8S_IMAGE)
 	docker push $(SIDECAR_IMAGE)
 
 # Deploy to K8s via Helm using the local registry
-k8s-deploy: k8s-push k8s-setup
+k8s-deploy: k8s-push k8s-sandbox
 	helm upgrade --install duckdb-agent deploy/helm/duckdb-data-agent \
-		--set backend.image.repository=$(REGISTRY)/duckdb-data-agent \
+		--set backend.image.repository=$(REGISTRY)/duckdb-data-agent-k8s \
 		--set backend.image.pullPolicy=Always \
 		--set backend.env.CONTAINER_IMAGE=$(SIDECAR_IMAGE) \
 		$(if $(ANTHROPIC_API_KEY),--set secrets.anthropicApiKey=$${ANTHROPIC_API_KEY}) \
@@ -131,10 +138,11 @@ k8s-deploy: k8s-push k8s-setup
 k8s-delete:
 	helm uninstall duckdb-agent || true
 	kubectl delete pvc -l app.kubernetes.io/instance=duckdb-agent || true
+	kubectl delete -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/$(AGENT_SANDBOX_VERSION)/extensions.yaml || true
 	kubectl delete -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/$(AGENT_SANDBOX_VERSION)/manifest.yaml || true
 
 # Deploy to K8s via Kustomize using the local registry
-kustomize-deploy: k8s-push k8s-setup
+kustomize-deploy: k8s-push k8s-sandbox
 	@kubectl get secret bifrost-secret >/dev/null 2>&1 \
 		|| (echo "Error: bifrost-secret not found. Create it with:" \
 			&& echo "  kubectl create secret generic bifrost-secret --from-literal=ANTHROPIC_API_KEY=sk-ant-..." \
@@ -148,6 +156,7 @@ kustomize-deploy: k8s-push k8s-setup
 # Remove all Kustomize-deployed resources
 kustomize-delete:
 	kubectl delete -k deploy/kustomize/overlays/kubernetes/ || true
+	kubectl delete -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/$(AGENT_SANDBOX_VERSION)/extensions.yaml || true
 	kubectl delete -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/$(AGENT_SANDBOX_VERSION)/manifest.yaml || true
 
 # E2E tests

@@ -1,6 +1,6 @@
 backend:
   image:
-    repository: duckdb-data-agent
+    repository: duckdb-data-agent-k8s
     tag: latest
     pullPolicy: IfNotPresent
   port: 10000

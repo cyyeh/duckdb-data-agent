@@ -26,6 +26,7 @@ services:
       dockerfile: backend/Dockerfile
       args:
         APP_UID: ${APP_UID:-1000}
+        SANDBOX_EXTRA: docker
     image: duckdb-data-agent:latest
     container_name: duckdb-data-agent
     ports:
@@ -39,6 +40,8 @@ services:
       SKILLS_DIR: /app/skills
       SKILLS_HOST_PATH: ${SKILLS_HOST_PATH:-${PWD}/skills}
       PLUGINS_HOST_PATH: ${PLUGINS_HOST_PATH:-${PWD}/plugins}
+    group_add:
+      - ${DOCKER_GID:-0}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./skills:/app/skills

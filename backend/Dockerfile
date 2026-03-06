@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false
 
 COPY backend/pyproject.toml backend/poetry.lock ./
-RUN poetry install --no-root --no-interaction --only main
+ARG SANDBOX_EXTRA=docker
+RUN poetry install --no-root --no-interaction --only main -E ${SANDBOX_EXTRA}
 
 COPY backend/app/ app/
 

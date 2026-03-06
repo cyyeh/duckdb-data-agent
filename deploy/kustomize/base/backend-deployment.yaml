@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: duckdb-data-agent:latest
+          image: duckdb-data-agent-k8s:latest
           ports:
             - containerPort: 10000
           env:
