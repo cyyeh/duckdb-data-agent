@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "72f4079ec36e",
+  "session_id": "1b6782b6-b183-4d66-bc5d-ff139ab297c6",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T03:01:21.433956Z",
+  "branch": "worktree-k8s-agent-sandbox",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/pyproject.toml"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "26a6111e3d15",
+  "transcript_identifier_at_start": "23bbb1a8-3129-41ee-848b-2e8e106feeb4",
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 23416,
+    "cache_read_tokens": 280418,
+    "output_tokens": 2119,
+    "api_call_count": 16
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T03:01:21.07427Z",
+    "agent_lines": 2,
+    "human_added": 25,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 27,
+    "agent_percentage": 7.4074074074074066
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-k8s-agent-sandbox/1b6782b6-b183-4d66-bc5d-ff139ab297c6.jsonl"
+}
