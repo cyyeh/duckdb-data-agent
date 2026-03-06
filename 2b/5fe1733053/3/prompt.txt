@@ -1,0 +1,69 @@
+why I see this error?
+
+Bifrost started on port 8081
+Waiting for backend on port 8000...
+INFO:     Will watch for changes in these directories: ['/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/k8s-agent-sandbox/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [29634] using WatchFiles
+Failed to create sandbox backend
+Traceback (most recent call last):
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/k8s-agent-sandbox/backend/app/main.py", line 20, in <module>
+    sandbox_backend = get_sandbox_backend()
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/k8s-agent-sandbox/backend/app/sandbox/__init__.py", line 12, in get_sandbox_backend
+    from app.sandbox.docker_backend import DockerBackend, DockerConfig
+  File "/Users/cyyeh/Desktop/duckdb-data-agent/.claude/worktrees/k8s-agent-sandbox/backend/app/sandbox/docker_backend.py", line 15, in <module>
+    import docker
+ModuleNotFoundError: No module named 'docker'
+
+---
+
+Tool loaded.
+
+---
+
+update makefile, install-backend should add docker
+
+---
+
+Tool loaded.
+
+---
+
+commit all and push
+
+---
+
+Tool loaded.
+
+---
+
+deploy folder
+
+---
+
+I suppose make k8s-setup command already sets up agent-sandbox?
+
+---
+
+when to use deploy/k8s/ files
+
+---
+
+yes
+
+---
+
+seems make k8s-setup is not the same as README.md in deploy/k8s?
+
+---
+
+update makefile since I rename deploy/k8s
+
+---
+
+deploy/k8s-agent-sandbox
+
+---
+
+rename k8s-agent-sandbox to agent-sandbox
