@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "34a9ead96b75",
+  "strategy": "manual-commit",
+  "branch": "worktree-git-s3-integration",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/main.py",
+    "backend/app/routes/git_sync.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/34/a9ead96b75/0/metadata.json",
+      "transcript": "/34/a9ead96b75/0/full.jsonl",
+      "context": "/34/a9ead96b75/0/context.md",
+      "content_hash": "/34/a9ead96b75/0/content_hash.txt",
+      "prompt": "/34/a9ead96b75/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 735,
+    "cache_creation_tokens": 248622,
+    "cache_read_tokens": 2730782,
+    "output_tokens": 55580,
+    "api_call_count": 59
+  }
+}
