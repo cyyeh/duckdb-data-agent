@@ -3,7 +3,7 @@
   "checkpoint_id": "2b5fe1733053",
   "strategy": "manual-commit",
   "branch": "worktree-k8s-agent-sandbox",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
     "backend/app/config.py",
     "backend/app/sandbox/__init__.py",
@@ -35,13 +35,20 @@
       "context": "/2b/5fe1733053/1/context.md",
       "content_hash": "/2b/5fe1733053/1/content_hash.txt",
       "prompt": "/2b/5fe1733053/1/prompt.txt"
+    },
+    {
+      "metadata": "/2b/5fe1733053/2/metadata.json",
+      "transcript": "/2b/5fe1733053/2/full.jsonl",
+      "context": "/2b/5fe1733053/2/context.md",
+      "content_hash": "/2b/5fe1733053/2/content_hash.txt",
+      "prompt": "/2b/5fe1733053/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 141,
-    "cache_creation_tokens": 97468,
-    "cache_read_tokens": 2753608,
-    "output_tokens": 14498,
-    "api_call_count": 76
+    "input_tokens": 173,
+    "cache_creation_tokens": 139911,
+    "cache_read_tokens": 3369779,
+    "output_tokens": 18712,
+    "api_call_count": 100
   }
 }
