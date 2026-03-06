@@ -8,10 +8,10 @@ spec:
       labels:
         app: duckdb-agent-sidecar
     spec:
-      runtimeClassName: gvisor
       containers:
       - name: sidecar
         image: duckdb-agent-sidecar:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 3000
         readinessProbe:
@@ -27,8 +27,18 @@ spec:
           limits:
             cpu: "500m"
             memory: "512Mi"
+        volumeMounts:
+        - name: user-home
+          mountPath: /home/appuser
+        - name: tmp
+          mountPath: /tmp
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+      volumes:
+      - name: user-home
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}

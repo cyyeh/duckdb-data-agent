@@ -3,9 +3,18 @@ from unittest.mock import patch
 
 import pytest
 
+import app.sandbox as sandbox_mod
 from app.sandbox import get_sandbox_backend
 from app.sandbox.docker_backend import DockerBackend
 from app.sandbox.k8s_backend import K8sBackend
+
+
+@pytest.fixture(autouse=True)
+def _reset_singleton():
+    """Reset the sandbox backend singleton between tests."""
+    sandbox_mod._singleton = None
+    yield
+    sandbox_mod._singleton = None
 
 
 def test_factory_returns_docker_backend_by_default():

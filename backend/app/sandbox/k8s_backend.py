@@ -28,21 +28,36 @@ class K8sConfig:
     template_name: str = "duckdb-agent-sidecar"
     namespace: str = "default"
     gateway_name: str = ""  # empty = tunnel/dev mode
+    api_url: str = ""  # set to router service URL for in-cluster connectivity
     server_port: int = 3000
     max_lifetime_seconds: int = 3600
     idle_timeout_seconds: int = 300
 
 
-async def _resolve_endpoint(client: object, port: int) -> str:
+async def _resolve_endpoint(client: object, port: int, namespace: str = "default") -> str:
     """Resolve the sandbox endpoint URL from a SandboxClient.
 
-    This is kept as a module-level function so tests can easily patch it
-    without reaching into the backend instance.  The exact attribute used
-    on ``client`` is implementation-defined; keeping it here makes future
-    SDK changes a single-point edit.
+    When running in-cluster, uses the headless service DNS created by the
+    agent-sandbox controller for each SandboxClaim.  This is kept as a
+    module-level function so tests can easily patch it without reaching
+    into the backend instance.
     """
-    host = client.host  # type: ignore[attr-defined]
+    claim_name = client.claim_name  # type: ignore[attr-defined]
+    host = f"{claim_name}.{namespace}.svc.cluster.local"
     return f"http://{host}:{port}"
+
+
+def _init_k8s_api():
+    """Create a CustomObjectsApi client, loading cluster or local kubeconfig."""
+    try:
+        from kubernetes import client as k8s_client, config as k8s_config
+        try:
+            k8s_config.load_incluster_config()
+        except k8s_config.ConfigException:
+            k8s_config.load_kube_config()
+        return k8s_client.CustomObjectsApi()
+    except Exception:
+        return None
 
 
 class K8sBackend(SandboxBackend):
@@ -53,6 +68,7 @@ class K8sBackend(SandboxBackend):
         self._sandboxes: dict[str, SandboxInfo] = {}
         self._clients: dict[str, object] = {}  # SandboxClient instances
         self._lock = asyncio.Lock()
+        self._k8s_api = _init_k8s_api()
 
     # ------------------------------------------------------------------
     # Public API (SandboxBackend interface)
@@ -76,13 +92,15 @@ class K8sBackend(SandboxBackend):
                 "namespace": self._config.namespace,
                 "server_port": self._config.server_port,
             }
-            if self._config.gateway_name:
+            if self._config.api_url:
+                kwargs["api_url"] = self._config.api_url
+            elif self._config.gateway_name:
                 kwargs["gateway_name"] = self._config.gateway_name
 
             client = SandboxClient(**kwargs)
-            await client.__aenter__()
+            await asyncio.to_thread(client.__enter__)
 
-            url = await _resolve_endpoint(client, self._config.server_port)
+            url = await _resolve_endpoint(client, self._config.server_port, self._config.namespace)
 
             info = SandboxInfo(
                 sandbox_id=session_id,  # pod name derived from session
@@ -115,7 +133,7 @@ class K8sBackend(SandboxBackend):
                 return
 
             try:
-                await client.__aexit__(None, None, None)  # type: ignore[union-attr]
+                await asyncio.to_thread(client.__exit__, None, None, None)
             except Exception as exc:
                 logger.warning(
                     "Failed to destroy K8s sandbox for session %s: %s",
@@ -161,5 +179,49 @@ class K8sBackend(SandboxBackend):
         logger.info("Shut down %d K8s sandboxes", len(session_ids))
 
     async def cleanup_orphaned(self) -> int:
-        # Kubernetes controller handles orphan cleanup via ownerReferences.
-        return 0
+        """Delete SandboxClaims not tracked by this backend instance.
+
+        On startup ``_sandboxes`` is empty, so this effectively removes all
+        leftover claims from previous backend pods that were not cleaned up
+        during shutdown (e.g. due to forced termination).
+        """
+        if self._k8s_api is None:
+            return 0
+
+        try:
+            claims = await asyncio.to_thread(
+                self._k8s_api.list_namespaced_custom_object,
+                group="extensions.agents.x-k8s.io",
+                version="v1alpha1",
+                namespace=self._config.namespace,
+                plural="sandboxclaims",
+            )
+
+            tracked_claims = {
+                c.claim_name  # type: ignore[attr-defined]
+                for c in self._clients.values()
+                if hasattr(c, "claim_name") and c.claim_name
+            }
+
+            removed = 0
+            for item in claims.get("items", []):
+                name = item["metadata"]["name"]
+                if name not in tracked_claims:
+                    try:
+                        await asyncio.to_thread(
+                            self._k8s_api.delete_namespaced_custom_object,
+                            group="extensions.agents.x-k8s.io",
+                            version="v1alpha1",
+                            namespace=self._config.namespace,
+                            plural="sandboxclaims",
+                            name=name,
+                        )
+                        removed += 1
+                        print(f"[k8s] Deleted orphaned SandboxClaim: {name}", flush=True)
+                    except Exception as exc:
+                        print(f"[k8s] Failed to delete orphaned claim {name}: {exc}", flush=True)
+
+            return removed
+        except Exception as exc:
+            print(f"[k8s] Error during orphan cleanup: {exc}", flush=True)
+            return 0

@@ -13,7 +13,7 @@ backend:
       cpu: "1"
       memory: 512Mi
   env:
-    SANDBOX_RUNTIME: kubernetes
+    SANDBOX_RUNTIME: k8s
     CONTAINER_IMAGE: duckdb-agent-sidecar:latest
     # Model configuration (leave empty to use backend defaults)
     ORCHESTRATOR_MODEL: ""

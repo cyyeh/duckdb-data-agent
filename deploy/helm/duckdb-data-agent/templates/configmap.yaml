@@ -16,6 +16,7 @@ data:
         }
       },
       "providers": {
+        {{- if .Values.secrets.anthropicApiKey }}
         "anthropic": {
           "keys": [
             {
@@ -28,6 +29,22 @@ data:
           "network_config": {
             "default_request_timeout_in_seconds": 300
           }
+        }{{ if .Values.secrets.openaiApiKey }},{{ end }}
+        {{- end }}
+        {{- if .Values.secrets.openaiApiKey }}
+        "openai": {
+          "keys": [
+            {
+              "name": "default",
+              "value": "env.OPENAI_API_KEY",
+              "models": [],
+              "weight": 1.0
+            }
+          ],
+          "network_config": {
+            "default_request_timeout_in_seconds": 300
+          }
         }
+        {{- end }}
       }
     }

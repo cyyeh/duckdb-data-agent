@@ -64,6 +64,10 @@ SANDBOX_RUNTIME = os.getenv("SANDBOX_RUNTIME", "docker")  # "docker" | "k8s"
 K8S_TEMPLATE_NAME = os.getenv("K8S_TEMPLATE_NAME", "duckdb-agent-sidecar")
 K8S_NAMESPACE = os.getenv("K8S_NAMESPACE", "default")
 K8S_GATEWAY_NAME = os.getenv("K8S_GATEWAY_NAME", "")
+# Set to any non-empty value when running in-cluster to skip kubectl port-forward.
+# The backend resolves sandbox endpoints via headless service DNS, so the SDK's
+# own HTTP routing (through this URL) is unused.
+K8S_API_URL = os.getenv("K8S_API_URL", "http://unused-in-cluster")
 MEMORY_DB_PATH = os.getenv("MEMORY_DB_PATH", os.path.join(PROJECT_DIR, "data", "memory.db"))
 MEMORIES_DIR = os.getenv("MEMORIES_DIR", os.path.join(PROJECT_DIR, "data", "memories"))
 # CORS: comma-separated list of allowed origins, or "*" for all (no credentials).

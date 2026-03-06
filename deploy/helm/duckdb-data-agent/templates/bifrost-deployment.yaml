@@ -28,11 +28,20 @@ spec:
           env:
             - name: APP_HOST
               value: "0.0.0.0"
+            {{- if .Values.secrets.anthropicApiKey }}
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "duckdb-data-agent.fullname" . }}-secret
                   key: anthropic-api-key
+            {{- end }}
+            {{- if .Values.secrets.openaiApiKey }}
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "duckdb-data-agent.fullname" . }}-secret
+                  key: openai-api-key
+            {{- end }}
           volumeMounts:
             - name: bifrost-config
               mountPath: /app/data/config.json

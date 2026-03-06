@@ -2,11 +2,86 @@
 
 ## Overview
 
-The DuckDB Data Agent consists of four services:
+The DuckDB Data Agent consists of three services deployed on Kubernetes:
 
-- **Backend** (`duckdb-data-agent`) -- FastAPI application that serves the chat UI and orchestrates agent workflows.
-- **Bifrost** (`maximhq/bifrost`) -- LLM gateway that proxies Anthropic API calls with caching and rate-limiting.
-- **Sidecar** (`duckdb-agent-sidecar`) -- Short-lived containers spawned on demand by the sandbox backend to run SQL queries and user code in isolation.
+- **Backend** (`duckdb-data-agent-k8s`) — FastAPI application that serves the chat UI, orchestrates agent workflows, and manages sandbox lifecycle via the Kubernetes API.
+- **Bifrost** (`maximhq/bifrost`) — LLM gateway that proxies Anthropic/OpenAI API calls with caching and rate-limiting.
+- **Sidecar** (`duckdb-agent-sidecar`) — Ephemeral sandbox pods spawned on demand to run SQL queries and user code in isolation.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Kubernetes Cluster                                                 │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  agent-sandbox-system namespace                              │   │
+│  │                                                              │   │
+│  │  ┌────────────────────────────┐                              │   │
+│  │  │  Agent Sandbox Controller  │  Watches SandboxClaims,      │   │
+│  │  │  (StatefulSet)             │  creates Sandbox CRs,        │   │
+│  │  │                            │  manages warm pool           │   │
+│  │  └────────────────────────────┘                              │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  default namespace                                           │   │
+│  │                                                              │   │
+│  │  ┌──────────┐    LLM API     ┌──────────┐                    │   │
+│  │  │ Backend  │───────────────▶│ Bifrost  │──▶ Anthropic/      │   │
+│  │  │ (FastAPI)│                │ (Gateway)│    OpenAI APIs     │   │
+│  │  └────┬─────┘                └──────────┘                    │   │
+│  │       │                                                      │   │
+│  │       │ 1. Create SandboxClaim (K8s API)                     │   │
+│  │       │ 2. Watch Sandbox until Ready                         │   │
+│  │       │ 3. Connect via headless Service DNS                  │   │
+│  │       │                                                      │   │
+│  │       │    ┌─────────────────────────────────────────┐       │   │
+│  │       │    │  SandboxWarmPool                        │       │   │
+│  │       │    │  (pre-warmed pods for fast allocation)  │       │   │
+│  │       ▼    └─────────────────────────────────────────┘       │   │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐                    │   │
+│  │  │ Sidecar  │  │ Sidecar  │  │ Sidecar  │  Ephemeral pods    │   │
+│  │  │ Pod A    │  │ Pod B    │  │ Pod C    │  (1 per session)   │   │
+│  │  └──────────┘  └──────────┘  └──────────┘                    │   │
+│  │       ▲              ▲             ▲                         │   │
+│  │       │              │             │                         │   │
+│  │  sandbox-claim-*  (headless Services, auto-created)          │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### How It Works
+
+1. **User sends a chat message** → Backend receives the request and needs a sandbox to execute code.
+
+2. **Backend creates a SandboxClaim** → Uses the `k8s-agent-sandbox` SDK to create a `SandboxClaim` custom resource via the Kubernetes API, referencing the `SandboxTemplate` (`duckdb-agent-sidecar`).
+
+3. **Controller fulfills the claim** → The Agent Sandbox Controller (running in `agent-sandbox-system` namespace) watches for new claims. If a `SandboxWarmPool` has pre-warmed pods available, it assigns one immediately; otherwise it creates a new pod from the template.
+
+4. **Sandbox becomes ready** → The controller creates a `Sandbox` CR and a headless `Service` for the pod. The backend watches the `Sandbox` resource until its status is `Ready`.
+
+5. **Backend connects to sidecar** → The backend resolves the sandbox endpoint via the headless service DNS (`sandbox-claim-<id>.default.svc.cluster.local:3000`) and communicates with the sidecar over HTTP (MCP SSE protocol).
+
+6. **Sidecar executes queries** → The sidecar runs the Claude Agent SDK, executes SQL queries against DuckDB, and streams results back to the backend.
+
+7. **Cleanup** → When the session ends, the backend deletes the `SandboxClaim`. The controller cleans up the pod and service via owner references.
+
+### Key Resources
+
+| Resource | API Group | Purpose |
+|---|---|---|
+| `SandboxTemplate` | `extensions.agents.x-k8s.io` | Pod template for sidecar containers |
+| `SandboxWarmPool` | `extensions.agents.x-k8s.io` | Pre-warms pods for fast sandbox allocation |
+| `SandboxClaim` | `extensions.agents.x-k8s.io` | Request for a sandbox (created by backend) |
+| `Sandbox` | `agents.x-k8s.io` | Represents a running sandbox (created by controller) |
+
+### RBAC
+
+The backend pod runs with a dedicated `ServiceAccount` that has a `Role` granting:
+- `create`, `get`, `list`, `watch`, `delete` on `sandboxclaims` (`extensions.agents.x-k8s.io`)
+- `get`, `list`, `watch` on `sandboxes` (`agents.x-k8s.io`)
+- `get`, `list`, `watch` on `pods` and `services` (core API)
 
 ## Prerequisites
 

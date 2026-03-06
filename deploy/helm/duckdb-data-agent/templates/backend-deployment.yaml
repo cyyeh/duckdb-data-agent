@@ -17,6 +17,7 @@ spec:
         {{- include "duckdb-data-agent.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: backend
     spec:
+      serviceAccountName: {{ include "duckdb-data-agent.fullname" . }}-backend
       containers:
         - name: backend
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"

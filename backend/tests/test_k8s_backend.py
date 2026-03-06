@@ -61,10 +61,10 @@ def config():
 
 
 def _make_mock_client():
-    """Create a mock SandboxClient with async context manager support."""
-    client = AsyncMock()
-    client.__aenter__ = AsyncMock(return_value=client)
-    client.__aexit__ = AsyncMock(return_value=None)
+    """Create a mock SandboxClient with sync context manager support."""
+    client = MagicMock()
+    client.__enter__ = MagicMock(return_value=client)
+    client.__exit__ = MagicMock(return_value=None)
     client.host = "10.0.0.42"
     return client
 
@@ -112,7 +112,7 @@ def test_create_stores_sandbox_info(
     assert isinstance(info, SandboxInfo)
     assert info.session_id == "session-1"
     assert info.url == "http://10.0.0.42:3000"
-    client.__aenter__.assert_awaited_once()
+    client.__enter__.assert_called_once()
 
 
 @patch("app.sandbox.k8s_backend._resolve_endpoint", new_callable=AsyncMock)
@@ -262,7 +262,7 @@ def test_stop_destroys_sandbox_and_removes_record(
     run(be.create("session-1", {}))
     run(be.stop("session-1"))
 
-    client.__aexit__.assert_awaited_once_with(None, None, None)
+    client.__exit__.assert_called_once_with(None, None, None)
     assert "session-1" not in be._sandboxes
     assert "session-1" not in be._clients
 
@@ -274,9 +274,9 @@ def test_stop_nonexistent_session_is_safe(backend):
 @patch("app.sandbox.k8s_backend._resolve_endpoint", new_callable=AsyncMock)
 @patch("app.sandbox.k8s_backend.SandboxClient")
 def test_stop_tolerates_aexit_errors(mock_client_cls, mock_resolve, config):
-    """If __aexit__ raises, stop() logs a warning but does not raise."""
+    """If __exit__ raises, stop() logs a warning but does not raise."""
     client = _make_mock_client()
-    client.__aexit__ = AsyncMock(side_effect=Exception("destroy failed"))
+    client.__exit__ = MagicMock(side_effect=Exception("destroy failed"))
     mock_client_cls.return_value = client
     mock_resolve.return_value = "http://10.0.0.42:3000"
 
@@ -393,8 +393,8 @@ def test_shutdown_all_stops_all_sandboxes(
     run(be.create("s2", {}))
     run(be.shutdown_all())
 
-    client1.__aexit__.assert_awaited_once()
-    client2.__aexit__.assert_awaited_once()
+    client1.__exit__.assert_called_once()
+    client2.__exit__.assert_called_once()
     assert len(be._sandboxes) == 0
     assert len(be._clients) == 0
 
@@ -404,7 +404,56 @@ def test_shutdown_all_stops_all_sandboxes(
 # ------------------------------------------------------------------
 
 
-def test_cleanup_orphaned_returns_zero(backend):
+@patch("app.sandbox.k8s_backend._init_k8s_api")
+def test_cleanup_orphaned_deletes_untracked_claims(mock_init_api):
+    """cleanup_orphaned should delete claims not tracked in _sandboxes."""
+    mock_api = MagicMock()
+    mock_api.list_namespaced_custom_object.return_value = {
+        "items": [
+            {"metadata": {"name": "sandbox-claim-aaa"}},
+            {"metadata": {"name": "sandbox-claim-bbb"}},
+        ]
+    }
+    mock_api.delete_namespaced_custom_object.return_value = None
+    mock_init_api.return_value = mock_api
+
+    be = K8sBackend(K8sConfig())
+    count = run(be.cleanup_orphaned())
+
+    assert count == 2
+    assert mock_api.delete_namespaced_custom_object.call_count == 2
+
+
+@patch("app.sandbox.k8s_backend._init_k8s_api")
+def test_cleanup_orphaned_skips_tracked_claims(mock_init_api):
+    """cleanup_orphaned should not delete claims tracked by active sessions."""
+    mock_api = MagicMock()
+    mock_api.list_namespaced_custom_object.return_value = {
+        "items": [
+            {"metadata": {"name": "sandbox-claim-tracked"}},
+            {"metadata": {"name": "sandbox-claim-orphan"}},
+        ]
+    }
+    mock_api.delete_namespaced_custom_object.return_value = None
+    mock_init_api.return_value = mock_api
+
+    be = K8sBackend(K8sConfig())
+    # Simulate a tracked client
+    tracked_client = MagicMock()
+    tracked_client.claim_name = "sandbox-claim-tracked"
+    be._clients["session-1"] = tracked_client
+
+    count = run(be.cleanup_orphaned())
+
+    assert count == 1
+    mock_api.delete_namespaced_custom_object.assert_called_once()
+    call_args = mock_api.delete_namespaced_custom_object.call_args
+    assert call_args.kwargs["name"] == "sandbox-claim-orphan"
+
+
+def test_cleanup_orphaned_returns_zero_when_no_api(backend):
+    """cleanup_orphaned should return 0 when K8s API is unavailable."""
+    backend._k8s_api = None
     count = run(backend.cleanup_orphaned())
     assert count == 0
 
