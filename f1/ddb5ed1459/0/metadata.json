@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f1ddb5ed1459",
+  "session_id": "eb529204-a1f1-4a0a-9581-ef75bcbfffc8",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T03:13:32.16192Z",
+  "branch": "worktree-git-s3-integration",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/config.py",
+    "docker-compose.yml"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "5e076da99346",
+  "token_usage": {
+    "input_tokens": 377,
+    "cache_creation_tokens": 230307,
+    "cache_read_tokens": 1464003,
+    "output_tokens": 39179,
+    "api_call_count": 45
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T03:13:31.610913Z",
+    "agent_lines": 0,
+    "human_added": 36,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 36,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-git-s3-integration/eb529204-a1f1-4a0a-9581-ef75bcbfffc8.jsonl"
+}

@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "f1ddb5ed1459",
+  "strategy": "manual-commit",
+  "branch": "worktree-git-s3-integration",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/config.py",
+    "docker-compose.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f1/ddb5ed1459/0/metadata.json",
+      "transcript": "/f1/ddb5ed1459/0/full.jsonl",
+      "context": "/f1/ddb5ed1459/0/context.md",
+      "content_hash": "/f1/ddb5ed1459/0/content_hash.txt",
+      "prompt": "/f1/ddb5ed1459/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 377,
+    "cache_creation_tokens": 230307,
+    "cache_read_tokens": 1464003,
+    "output_tokens": 39179,
+    "api_call_count": 45
+  }
+}
