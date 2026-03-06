@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "90ce38b2321c",
+  "session_id": "eb529204-a1f1-4a0a-9581-ef75bcbfffc8",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T03:18:23.906575Z",
+  "branch": "worktree-git-s3-integration",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/git_repo_manager.py",
+    "backend/tests/test_git_repo_manager.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "5e076da99346",
+  "token_usage": {
+    "input_tokens": 728,
+    "cache_creation_tokens": 234522,
+    "cache_read_tokens": 2059791,
+    "output_tokens": 46704,
+    "api_call_count": 52
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T03:18:23.291502Z",
+    "agent_lines": 0,
+    "human_added": 266,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 266,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-git-s3-integration/eb529204-a1f1-4a0a-9581-ef75bcbfffc8.jsonl"
+}
