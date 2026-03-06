@@ -3,11 +3,23 @@
   "checkpoint_id": "2b5fe1733053",
   "strategy": "manual-commit",
   "branch": "worktree-k8s-agent-sandbox",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
+    "backend/app/config.py",
     "backend/app/sandbox/__init__.py",
+    "backend/app/sandbox/k8s_backend.py",
+    "backend/tests/test_k8s_backend.py",
+    "backend/tests/test_sandbox_factory.py",
+    "deploy/README.md",
     "deploy/agent-sandbox/sandbox-template.yaml",
-    "deploy/helm/duckdb-data-agent/values.yaml"
+    "deploy/helm/duckdb-data-agent/templates/backend-deployment.yaml",
+    "deploy/helm/duckdb-data-agent/templates/bifrost-deployment.yaml",
+    "deploy/helm/duckdb-data-agent/templates/configmap.yaml",
+    "deploy/helm/duckdb-data-agent/templates/rbac.yaml",
+    "deploy/helm/duckdb-data-agent/values.yaml",
+    "deploy/kustomize/base/backend-deployment.yaml",
+    "deploy/kustomize/base/kustomization.yaml",
+    "deploy/kustomize/base/rbac.yaml"
   ],
   "sessions": [
     {
@@ -16,13 +28,20 @@
       "context": "/2b/5fe1733053/0/context.md",
       "content_hash": "/2b/5fe1733053/0/content_hash.txt",
       "prompt": "/2b/5fe1733053/0/prompt.txt"
+    },
+    {
+      "metadata": "/2b/5fe1733053/1/metadata.json",
+      "transcript": "/2b/5fe1733053/1/full.jsonl",
+      "context": "/2b/5fe1733053/1/context.md",
+      "content_hash": "/2b/5fe1733053/1/content_hash.txt",
+      "prompt": "/2b/5fe1733053/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 99,
-    "cache_creation_tokens": 60338,
-    "cache_read_tokens": 2050758,
-    "output_tokens": 6905,
-    "api_call_count": 48
+    "input_tokens": 141,
+    "cache_creation_tokens": 97468,
+    "cache_read_tokens": 2753608,
+    "output_tokens": 14498,
+    "api_call_count": 76
   }
 }
