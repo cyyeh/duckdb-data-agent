@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "7cff70ea79d8",
+  "session_id": "6e2280d6-2326-433d-aa03-8e165c4bd4c6",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T03:25:31.858243Z",
+  "branch": "worktree-k8s-agent-sandbox",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "Makefile",
+    "backend/Dockerfile",
+    "deploy/README.md",
+    "deploy/helm/duckdb-data-agent/values.yaml",
+    "deploy/kustomize/base/backend-deployment.yaml",
+    "docker-compose.yml"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "b402cd24d65d",
+  "transcript_identifier_at_start": "ee6b2356-5bf6-4a5e-81f3-6a48705381cb",
+  "token_usage": {
+    "input_tokens": 42,
+    "cache_creation_tokens": 37130,
+    "cache_read_tokens": 702850,
+    "output_tokens": 7593,
+    "api_call_count": 28
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T03:25:31.350412Z",
+    "agent_lines": 29,
+    "human_added": 101,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 130,
+    "agent_percentage": 22.30769230769231
+  },
+  "transcript_path": ".claude/projects/-Users-cyyeh-Desktop-duckdb-data-agent--claude-worktrees-k8s-agent-sandbox/6e2280d6-2326-433d-aa03-8e165c4bd4c6.jsonl"
+}
