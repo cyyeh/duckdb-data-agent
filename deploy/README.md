@@ -53,26 +53,26 @@ The DuckDB Data Agent consists of three services deployed on Kubernetes:
 
 ### How It Works
 
-1. **User sends a chat message** → Backend receives the request and needs a sandbox to execute code.
+1. **User sends a chat message** — Backend receives the request and needs a sandbox to execute code.
 
-2. **Backend creates a SandboxClaim** → Uses the `k8s-agent-sandbox` SDK to create a `SandboxClaim` custom resource via the Kubernetes API, referencing the `SandboxTemplate` (`duckdb-agent-sidecar`).
+2. **Backend creates a SandboxClaim** — Uses the `k8s-agent-sandbox` SDK to create a `SandboxClaim` custom resource via the Kubernetes API, referencing the `SandboxTemplate` (`duckdb-agent-sidecar`).
 
-3. **Controller fulfills the claim** → The Agent Sandbox Controller (running in `agent-sandbox-system` namespace) watches for new claims. If a `SandboxWarmPool` has pre-warmed pods available, it assigns one immediately; otherwise it creates a new pod from the template.
+3. **Controller fulfills the claim** — The Agent Sandbox Controller (running in `agent-sandbox-system` namespace) watches for new claims. If a `SandboxWarmPool` has pre-warmed pods available, it assigns one immediately; otherwise it creates a new pod from the template.
 
-4. **Sandbox becomes ready** → The controller creates a `Sandbox` CR and a headless `Service` for the pod. The backend watches the `Sandbox` resource until its status is `Ready`.
+4. **Sandbox becomes ready** — The controller creates a `Sandbox` CR and a headless `Service` for the pod. The backend watches the `Sandbox` resource until its status is `Ready`.
 
-5. **Backend connects to sidecar** → The backend resolves the sandbox endpoint via the headless service DNS (`sandbox-claim-<id>.default.svc.cluster.local:3000`) and communicates with the sidecar over HTTP (MCP SSE protocol).
+5. **Backend connects to sidecar** — The backend resolves the sandbox endpoint via the headless service DNS (`sandbox-claim-<id>.default.svc.cluster.local:3000`) and communicates with the sidecar over HTTP (SSE streaming).
 
-6. **Sidecar executes queries** → The sidecar runs the Claude Agent SDK, executes SQL queries against DuckDB, and streams results back to the backend.
+6. **Sidecar executes queries** — The sidecar runs the Claude Agent SDK, executes SQL queries against DuckDB via MCP, and streams results back to the backend.
 
-7. **Cleanup** → When the session ends, the backend deletes the `SandboxClaim`. The controller cleans up the pod and service via owner references.
+7. **Cleanup** — When the session ends or expires, the backend deletes the `SandboxClaim`. The controller cleans up the pod and service via owner references. On startup, the backend also cleans up orphaned `SandboxClaim` resources left by previous backend pods.
 
 ### Key Resources
 
 | Resource | API Group | Purpose |
 |---|---|---|
 | `SandboxTemplate` | `extensions.agents.x-k8s.io` | Pod template for sidecar containers |
-| `SandboxWarmPool` | `extensions.agents.x-k8s.io` | Pre-warms pods for fast sandbox allocation |
+| `SandboxWarmPool` | `extensions.agents.x-k8s.io` | Pre-warms pods for fast sandbox allocation (default: 2 replicas) |
 | `SandboxClaim` | `extensions.agents.x-k8s.io` | Request for a sandbox (created by backend) |
 | `Sandbox` | `agents.x-k8s.io` | Represents a running sandbox (created by controller) |
 
@@ -83,22 +83,36 @@ The backend pod runs with a dedicated `ServiceAccount` that has a `Role` grantin
 - `get`, `list`, `watch` on `sandboxes` (`agents.x-k8s.io`)
 - `get`, `list`, `watch` on `pods` and `services` (core API)
 
+### Sidecar Pod Security
+
+Sidecar pods run with `readOnlyRootFilesystem: true` and drop all Linux capabilities. Writable storage is limited to two emptyDir volumes:
+
+- `/home/appuser` — User home directory (required by the Claude CLI for `~/.claude.json` config and `~/.claude/` session data)
+- `/tmp` — Temporary files
+
 ## Prerequisites
 
 - Kubernetes 1.24+
 - Helm 3+ (for Helm deployment) and/or `kubectl` with kustomize (for Kustomize deployment)
 - Container images pushed to a registry accessible from your cluster
-- [Agent Sandbox CRD](https://github.com/kubernetes-sigs/agent-sandbox) installed in the cluster (required by K8s sandbox backend)
+- [Agent Sandbox Controller](https://github.com/kubernetes-sigs/agent-sandbox) installed in the cluster
 
 ### Cluster Setup (one-time)
 
-Install the agent-sandbox CRD and controller:
+Install the agent-sandbox CRDs, controller, and project-specific resources:
 
 ```bash
+# Install CRDs and controller
 make k8s-setup
+
+# Apply SandboxTemplate and WarmPool (done automatically by k8s-deploy)
+make k8s-sandbox
 ```
 
-This installs the `sandboxes.agents.x-k8s.io` CRD that the K8s sandbox backend uses to create ephemeral sidecar pods.
+This installs:
+- The `SandboxTemplate`, `SandboxWarmPool`, `SandboxClaim` CRDs and controller (in `agent-sandbox-system` namespace)
+- The `duckdb-agent-sidecar` SandboxTemplate (defines the sidecar pod spec)
+- The `duckdb-agent-sidecar-pool` SandboxWarmPool (pre-warms 2 pods)
 
 ## Local Development (OrbStack / Docker Desktop)
 
@@ -108,12 +122,13 @@ OrbStack's built-in K8s can pull from a local registry at `localhost:5001` witho
 # Start a local registry (one-time)
 make registry
 
-# Build, push, and deploy in one step
+# Build, push, and deploy in one step (opens port-forward automatically)
 ANTHROPIC_API_KEY=sk-ant-... make k8s-deploy
 
 # Or step by step:
-make k8s-build    # build images tagged for localhost:5001
+make k8s-build    # build backend-k8s and sidecar images
 make k8s-push     # push to local registry
+make k8s-sandbox  # apply SandboxTemplate + WarmPool
 helm upgrade --install duckdb-agent deploy/helm/duckdb-data-agent \
   --set secrets.anthropicApiKey=sk-ant-... \
   --set backend.image.repository=localhost:5001/duckdb-data-agent-k8s \
@@ -132,6 +147,12 @@ To use a different registry, override the `REGISTRY` variable:
 
 ```bash
 REGISTRY=my-registry.example.com make k8s-push
+```
+
+To tear down everything:
+
+```bash
+make k8s-delete
 ```
 
 ## Kubernetes Deployment with Helm
@@ -163,14 +184,13 @@ Key Helm values (see `deploy/helm/duckdb-data-agent/values.yaml` for the full li
 | `secrets.anthropicApiKey` | `""` | Anthropic API key |
 | `secrets.openaiApiKey` | `""` | OpenAI API key |
 | `backend.image.repository` | `duckdb-data-agent-k8s` | Backend image |
-| `backend.env.CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar image for sandbox backend to spawn |
-| `backend.env.SANDBOX_RUNTIME` | `kubernetes` | Sandbox runtime (`docker` or `kubernetes`) |
+| `backend.env.CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Sidecar image for sandbox pods |
+| `backend.env.SANDBOX_RUNTIME` | `k8s` | Sandbox runtime (`docker` or `k8s`) |
 | `backend.env.ORCHESTRATOR_MODEL` | `""` | Orchestrator model override |
 | `backend.env.SQL_SUBAGENT_MODEL` | `""` | SQL sub-agent model override |
 | `backend.env.DEFAULT_TOOL_MODEL` | `""` | Tool-calling model override |
 | `ingress.enabled` | `false` | Enable Ingress resource |
 | `ingress.host` | `duckdb-agent.local` | Hostname for Ingress |
-| `backend.env.SANDBOX_RUNTIME` | `kubernetes` | Sandbox runtime type (`docker` or `k8s`) |
 | `persistence.enabled` | `true` | Enable PVC for data storage |
 
 ## Kubernetes Deployment with Kustomize
@@ -184,7 +204,7 @@ make k8s-push  # localhost:5001, or:
 kubectl create secret generic bifrost-secret \
   --from-literal=ANTHROPIC_API_KEY=sk-ant-...
 
-# Deploy all resources
+# Deploy all resources (includes RBAC, backend, bifrost, services)
 kubectl apply -k deploy/kustomize/overlays/kubernetes/
 
 # Verify
@@ -192,8 +212,6 @@ kubectl get pods
 ```
 
 **Note:** Update the image references in `deploy/kustomize/base/backend-deployment.yaml` to point to your registry before applying.
-
-The Kubernetes overlay uses the base manifests directly.
 
 ## Switching LLM Providers
 
@@ -247,38 +265,58 @@ The model format is `provider/model-id@tier` where `@tier` maps to the Bifrost r
 
 | Variable | Default | Description |
 |---|---|---|
-| `SANDBOX_RUNTIME` | `docker` | Sandbox runtime mode: `docker` or `kubernetes` |
 | `SANDBOX_RUNTIME` | `docker` | Sandbox runtime (`docker` or `k8s`) |
 | `CONTAINER_IMAGE` | `duckdb-agent-sidecar:latest` | Docker image used for sidecar containers |
 | `CONTAINER_MEMORY_LIMIT` | `512Mi` | Memory limit per sidecar container |
 | `CONTAINER_CPU_LIMIT` | `0.5` | CPU limit per sidecar container |
 | `CONTAINER_MAX_LIFETIME_SECONDS` | `3600` | Max container lifetime before forced cleanup |
 | `CONTAINER_IDLE_TIMEOUT_SECONDS` | `900` | Idle timeout before container is stopped |
+| `K8S_TEMPLATE_NAME` | `duckdb-agent-sidecar` | Name of the SandboxTemplate CR (K8s mode only) |
+| `K8S_NAMESPACE` | `default` | Namespace for sandbox pods (K8s mode only) |
+| `K8S_API_URL` | `http://unused-in-cluster` | Set to any value when in-cluster; the backend uses headless service DNS instead |
 | `BIFROST_BASE_URL` | `http://bifrost:8080` | URL of the Bifrost LLM gateway |
 | `BACKEND_BASE_URL` | `http://duckdb-data-agent:10000` | URL of the backend (used by sidecars to call back) |
-| `ORCHESTRATOR_MODEL` | (backend default) | Model for the orchestrator agent |
-| `SQL_SUBAGENT_MODEL` | (backend default) | Model for the SQL sub-agent |
-| `DEFAULT_TOOL_MODEL` | (backend default) | Model for tool-calling tasks |
+| `ORCHESTRATOR_MODEL` | `claude-sonnet-4-6` | Model for the orchestrator agent |
+| `SQL_SUBAGENT_MODEL` | `inherit` | Model for the SQL sub-agent |
+| `DEFAULT_TOOL_MODEL` | (none) | Fallback model for tool-calling tasks |
+| `SDK_IDLE_TIMEOUT_MS` | `600000` | Idle timeout (ms) for the Claude Agent SDK before aborting |
 | `ANTHROPIC_API_KEY` | -- | Anthropic API key, consumed by Bifrost |
 | `OPENAI_API_KEY` | -- | OpenAI API key (when using OpenAI models) |
 
 ## Troubleshooting
 
+**Sidecar stream ended without result message**
+- Check the sidecar pod's debug logs: `kubectl exec <pod> -- cat ~/.claude/debug/latest`
+- Common cause: `readOnlyRootFilesystem` blocking writes to `~/.claude.json` or `/tmp`. Ensure the sandbox template mounts writable emptyDir volumes at `/home/appuser` and `/tmp`.
+- The Claude CLI exits silently (code 0) when it cannot write its config file.
+
 **Sidecar containers not being created**
-- Check backend logs: `kubectl logs deploy/backend`.
-- Ensure the sidecar image is pushed to the registry and accessible from the cluster.
-- Verify `CONTAINER_IMAGE` env var on the backend matches the pushed image tag.
+- Check backend logs: `kubectl logs deploy/duckdb-agent-duckdb-data-agent-backend`
+- Verify the agent-sandbox controller is running: `kubectl get pods -n agent-sandbox-system`
+- Verify the SandboxTemplate exists: `kubectl get sandboxtemplates`
+- Check SandboxClaim status: `kubectl get sandboxclaims -o yaml`
+
+**Pre-warmed pool pods not being used**
+- The pool pods have names like `duckdb-agent-sidecar-pool-*`. When a claim is fulfilled, one pod is assigned and a new one is created to replace it.
+- Check which pod the claim is using: `kubectl get endpoints <claim-name>` and match the IP to `kubectl get pods -o wide`.
+- The user may be looking at a replacement pool pod's logs instead of the claimed pod.
 
 **Network connectivity between services**
-- All services must be in the same namespace.
-- The backend must be able to reach Bifrost by hostname.
-- Sidecars must be able to reach the backend at `BACKEND_BASE_URL` to report results.
+- All services must be in the same namespace (default).
+- The backend must be able to reach Bifrost by service name.
+- Sidecars must be able to reach the backend at `BACKEND_BASE_URL` (set automatically by Helm to the backend service URL).
+- Verify from sidecar: `kubectl exec <pod> -- curl -s http://duckdb-agent-duckdb-data-agent-backend:10000/api/health`
 
 **Bifrost not routing LLM requests**
-- Ensure `ANTHROPIC_API_KEY` is set in the Bifrost secret/environment.
-- Check Bifrost logs: `kubectl logs deploy/bifrost`.
+- Ensure `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`) is set in the secret.
+- Check Bifrost logs: `kubectl logs deploy/duckdb-agent-duckdb-data-agent-bifrost`
+- Verify the configmap has the correct provider configuration: `kubectl get configmap duckdb-agent-duckdb-data-agent-bifrost -o yaml`
 
 **Local registry not reachable from K8s pods**
-- Ensure the registry container is running: `docker ps | grep registry`.
+- Ensure the registry container is running: `docker ps | grep registry`
 - OrbStack and Docker Desktop K8s can reach `localhost:5001` natively.
 - For other K8s distros, you may need to configure containerd to trust `localhost:5001` as an insecure registry.
+
+**Orphaned SandboxClaims after backend restart**
+- The backend cleans up orphaned claims on startup via `cleanup_orphaned()`.
+- Manual cleanup: `kubectl delete sandboxclaims --all`
